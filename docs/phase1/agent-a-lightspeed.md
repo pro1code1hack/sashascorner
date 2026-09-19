@@ -49,3 +49,22 @@ A working `uv run cafeops sync --from YYYY-MM-DD --to YYYY-MM-DD --fixtures` tha
 ingests recorded payloads into the demo DB idempotently, plus a short written
 answer to the two questions above. Show the command's real output twice in a row
 to demonstrate idempotency.
+
+
+---
+
+## v2 additions
+
+Two research answers of yours are now recorded in `ARCHITECTURE.md` §11 and acted on:
+modifiers exist only on K-Series' real-time endpoints, and there is no recipe API. Oat
+milk therefore stays tier B.
+
+**The v2 job:** if you judge it worth it, build the real-time path — `Get All Open
+Checks` and/or the online-ordering order notification — so alt-milk consumption becomes
+visible and oat milk can be promoted. That is a stateful stream, not a nightly job, so
+say plainly whether it is worth the complexity before building it. If not, say so and
+stop; a clear "no" is a good outcome here.
+
+Also: `sale.channel` now has `DELIVEROO` and `JUST_EAT` members. If K-Series
+distinguishes aggregator orders on a receipt, map them — channel contribution (spec
+§4.6) is much more useful when POS and aggregator sales can be told apart.

@@ -78,3 +78,33 @@ example of the shape.
 No tests. Show real output for: an impact preview on the latte template's milk
 quantity; a cost rollup before/after an ingredient price change; and a proposal
 materialised into a template with its menu items re-pointed.
+
+
+---
+
+## v2 additions
+
+**`domain/labour.py`** (new, yours). `LabourCost` in `domain/types.py` already computes
+`labour_cost_pence`, `true_margin_pence` and `margin_per_minute_pence`, and is verified:
+a £4.00 drink at 85% margin taking 3 minutes yields 113p/min while one at 70% taking 40
+seconds yields 420p/min. The ranking genuinely inverts, and spec §5.6 says that
+disagreement is the finding.
+
+What is missing is the wiring:
+
+- `drink_template.prep_seconds_by_size` and `menu_item.prep_seconds` exist and are
+  **empty**. The seeded latte template has no prep times. Populate plausible ones and
+  flag them as estimates.
+- The loaded hourly rate is **£14.50/hr** (confirmed with the owner). Put it in
+  `config.Settings`, not in `domain/` — take it as an argument.
+- `menu_item_cost` now has `labour_cost_pence`, `prep_seconds` and
+  `loaded_hourly_rate_pence`. Populate them in the rollup. The rate is stored per row so
+  a later rate change is auditable rather than retroactively rewriting history.
+- All three must be `None` when prep time or the rate is unset. A labour figure from a
+  guessed rate is a guess wearing a number's clothes.
+
+**Seasons on variant options.** `variant_option.season_id` exists and the seeded
+`Pistachio` option is attached to "Spring seasonal drinks". Resolution currently ignores
+seasons entirely. Decide what an out-of-season option means for `resolve_recipe` — it
+almost certainly should still resolve (a past sale must resolve) while the *menu* treats
+it as unavailable. Say what you chose.

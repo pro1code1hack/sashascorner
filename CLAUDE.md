@@ -1,39 +1,44 @@
 # Café Ops — Stock, Composition & Auto-Ordering
 
-**Single source of truth for this project. Backend and frontend.**
+**Single source of truth. Backend and frontend. v2.**
 
-> **Phase 0 is complete and committed.** Read [`ARCHITECTURE.md`](ARCHITECTURE.md)
-> too — it records every decision that differs from this brief and why. Several are
-> load-bearing, including **no test suite** (owner's instruction, §11 below is
-> superseded) and the tier-A hold on oat milk.
+> **Status: v2 Phase 0 complete.** v1's Phase 1 (Lightspeed, composition, stock/drift,
+> forecast/ordering) is merged; the v2 extension — batches, shelf life, seasons,
+> multi-supplier sourcing, prep time, channels, agent log — has landed on top.
 >
-> Phase 1 agent briefs: [`docs/phase1/`](docs/phase1/).
+> **Read [`ARCHITECTURE.md`](ARCHITECTURE.md) too.** It records every decision that
+> differs from this brief and why. Several are load-bearing, in particular §1
+> (**no test suite**, owner's instruction, which supersedes §14 below) and §8E (a
+> silent `Qty` comparison bug worth understanding before you write repository code).
+>
+> Agent briefs: [`docs/phase1/`](docs/phase1/).
 
 ---
 
 ## 1. Context
 
-Single-site independent café in Dundee, Scotland. Opened November 2025. ~£3–5k
-monthly revenue, 25–40 transactions a day, one or two staff on shift plus a manager.
-POS is **Lightspeed Restaurant K-Series** (Square previously). Also sells through
-Deliveroo and Just Eat.
+Single-site independent café in Dundee. Opened November 2025. ~£3–5k monthly revenue,
+25–40 transactions a day, one or two staff plus a manager. POS is **Lightspeed
+Restaurant K-Series**. Also sells through Deliveroo and Just Eat.
 
-Today, stock lives in one person's head and gets topped up by walking to a shop most
-mornings. Costs live in a spreadsheet maintained by hand.
+Stock lives in one person's head and gets topped up by walking to a shop most
+mornings. Costs live in a hand-maintained spreadsheet.
 
-The system replaces both: POS sales → recipe resolution → theoretical stock
-depletion → par-level calculation → a draft purchase order in Telegram for one-tap
-confirmation. Plus a back-office web app where the menu's *composition* is
+The system replaces both: POS sales → recipe resolution → theoretical stock depletion
+→ par levels constrained by shelf life → draft purchase orders **per supplier** in
+Telegram for one-tap confirmation. Plus a back-office web app where composition is
 configured once and every cost recalculates from it.
 
 ### Goals
 
 1. Nobody has to remember what is running out.
-2. A correctly-sized draft order is ready before each delivery day.
-3. Theoretical stock stays within 10% of physical counts, and the system says so
-   when it does not.
-4. Changing one ingredient price or one recipe quantity updates every affected
-   item's cost instantly.
+2. Correctly-sized draft orders are ready before each delivery day, split across the
+   right suppliers.
+3. Theoretical stock stays within 10% of physical counts, and the system says so when
+   it does not.
+4. Nothing is ordered in a quantity that will spoil before it is used.
+5. Changing one ingredient price or recipe quantity updates every affected item's cost
+   instantly.
 
 ### Non-goals in v1
 
@@ -41,143 +46,155 @@ configured once and every cost recalculates from it.
 - Payment or order submission without human confirmation
 - User management beyond a single shared password
 - Multi-site anything
+- **A load balancer.** This runs on one box. See §3.
 
 ---
 
 ## 2. The real shape of the menu
 
-From the legacy workbook (`sashas_corner_finance__LEGACY_.xlsx`):
-
-| Fact | Spec | Actual (measured) |
+| Fact | Spec | Measured |
 |---|---|---|
 | Ingredients | 114 | 113 |
 | Base menu items | 175 | 174 |
 | Item × size rows | 318 | 314 |
-| Recipe lines | ~1,600 | 1,595 |
-| Sizes in use | S, M, XL, One | confirmed |
+| Recipe lines | ~1,600 | 1,595 (1,577 after removing a duplicated recipe) |
+| Sizes | S, M, XL, One | confirmed |
 
-Ingredient frequency (measured, matches spec exactly):
+Ingredient frequency (measured, matches spec exactly): Napkin 265, Whole milk 230,
+Coffee beans 121, 12oz cup/lid 102, 16oz cup/lid 101, 8oz cup/lid 62.
 
-```
-Napkin       265    12oz cup/lid  102 each
-Whole milk   230    16oz cup/lid  101 each
-Coffee beans 121     8oz cup/lid   62 each
-```
-
-### The conclusion that drives the whole design
+### The conclusion that drives the design
 
 **318 rows is not 318 recipes. It is roughly 20 patterns, multiplied out.**
 
-62 flavoured lattes are one recipe with the syrup swapped and quantities scaled by
-size. 42 hot chocolates are one recipe with a flavour axis. The legacy spreadsheet
-flattened all of it, which is why it has ~1,600 hand-maintained lines and why
-changing milk quantity in a latte was a day's work. **Do not port that structure.**
-Model the pattern, generate the leaves.
+Pattern detection found **27 proposed templates + 43 one-off groups**, confirming it.
+Do not port the flat structure. Model the pattern, generate the leaves.
 
-Phase 0's pattern detection found **27 proposed templates + 43 one-off groups**,
-confirming the thesis. See `ARCHITECTURE.md` §8.
+The workbook also carries a seasonal dimension. That is a first-class field (§4.3).
 
 ---
 
-## 3. Stack
+## 3. Stack and deployment
 
-| Concern | Choice |
-|---|---|
-| Language | Python 3.12, `uv` |
-| ORM | SQLAlchemy 2.0, declarative, fully typed (`Mapped[...]`) |
-| Migrations | Alembic — every schema change, no exceptions |
-| DB | SQLite, WAL mode |
-| Validation | Pydantic v2 |
-| HTTP client | httpx (async) |
-| Bot | aiogram 3.x |
-| Scheduling | APScheduler |
-| API | FastAPI, read-only except the composition editor |
-| Tests | ~~pytest, hypothesis, freezegun~~ — **not used, see ARCHITECTURE.md §1** |
-| Lint / types | ruff, mypy strict on `domain/` and `services/` |
-| Frontend | React 18 + TypeScript, Vite, Tailwind, TanStack Query + Table |
-| Charts | visx or hand-rolled SVG |
+Python 3.12 / `uv` · SQLAlchemy 2.0 declarative, fully typed · Alembic (every schema
+change) · SQLite WAL · Pydantic v2 · httpx async · aiogram 3 · APScheduler · FastAPI ·
+Anthropic SDK for the bounded agent (§9) · ruff + mypy strict on `domain/` and
+`services/` · React 18 + TS, Vite, Tailwind, TanStack Query/Table · visx or hand-rolled SVG.
+
+**Tests: not used.** See `ARCHITECTURE.md` §1 — owner's instruction, three times,
+including when asked directly. §14 below is superseded.
+
+### Deployment
+
+One VM. Caddy or nginx terminating TLS, FastAPI behind it, bot and scheduler as
+separate systemd units, SQLite on local disk, nightly off-box backup.
+
+**No load balancer.** 40 transactions a day, two users, one SQLite file with a single
+writer. A second app instance would contend on the same file and make things worse.
+Reverse proxy yes. Revisit only if this becomes multi-site.
 
 ### On async
 
-**Do not make everything async.** SQLite has one writer. Async repositories buy
-nothing at 40 transactions a day and make reasoning worse.
+**Do not make everything async.** SQLite has one writer.
 
-- Async only at I/O edges: the Lightspeed client, aiogram handlers.
-- Sync everywhere else, including all DB access via SQLAlchemy's sync `Session`.
+- Async only at I/O edges: Lightspeed client, aiogram handlers, agent calls.
+- Sync everywhere else, including all DB access via the sync `Session`.
 - Handlers reach DB work through `asyncio.to_thread`.
-- Connect pragmas: `journal_mode=WAL`, `busy_timeout=5000`, `foreign_keys=ON`,
-  `synchronous=NORMAL`.
+- Pragmas: `journal_mode=WAL`, `busy_timeout=5000`, `foreign_keys=ON`,
+  `synchronous=NORMAL`. (Alembic runs with FK enforcement OFF — see `ARCHITECTURE.md`
+  §8F.7 for why it must.)
 - No SQLite-specific SQL in application code.
 
 ---
 
 ## 4. Domain model
 
-**All money as integer pence.** All quantities `Decimal` with explicit scale. All
-timestamps UTC, timezone-aware. The implemented schema is `cafeops/db/models/` —
-22 tables. It is spec §4 plus the additions in `ARCHITECTURE.md` §2.
+**All money integer pence. Quantities `Decimal`. Timestamps UTC, tz-aware.**
+29 tables in `cafeops/db/models/`.
 
-### 4.1 Ingredients and stock
+> **Before writing any query against a quantity column, read `ARCHITECTURE.md` §8E.**
+> `Qty` is stored as a scaled integer on SQLite for a reason.
 
-`ingredient` (unit enum **L|KG|ML|G|EACH**, category, tier, tracking_enabled,
-waste_factor, current_cost_pence_per_unit + current_cost_source as a denormalised
-cache), `ingredient_price` (effective-dated, with `source` INVOICE|ESTIMATE|
-SUPPLIER_FEED), `stock_count`, `stock_movement` (append-only), `par_level`,
-`drift_observation`.
+### 4.1 Ingredients, batches, shelf life
 
-### 4.2 Composition — the core of this build
+`ingredient` (unit `L|KG|ML|G|EACH`, tier, waste_factor, **storage
+`AMBIENT|CHILLED|FROZEN`**, **shelf_life_days**, **open_life_days**,
+**transit_buffer_days**, cost cache + `current_cost_source`), `ingredient_price`
+(effective-dated, **supplier_id**, `source INVOICE|ESTIMATE|SUPPLIER_FEED`),
+**`stock_batch`** (qty_received/remaining, received_at, expires_at, opened_at,
+unit_cost_pence, expired_at), `stock_count`, `stock_movement` (append-only, **batch_id**,
+type now includes **`EXPIRED`**), `par_level`, `drift_observation`
+(**expired_qty_in_window**).
 
-`drink_template`, `size_profile` (belongs to a template: XL latte and XL milkshake
-are unrelated), `template_component` (role + nullable ingredient + `qty_by_size` JSON
-+ `is_substitutable` + effective dating), `variant_axis`, `variant_option`,
-`modifier` (action SUBSTITUTE|ADD|SCALE, targets a **role** not an ingredient),
-`menu_item` (template_id + size_code + selected_options, or `manual_recipe=True`),
-`manual_recipe_line`, `menu_item_cost` (materialised), `legacy_staged_recipe`.
+Shelf life **caps order size** (§5.4, invariant 4). Milk with a 7-day life must never
+be ordered on a 9-day cover window however good the forecast.
 
-`component_role` is an enum, not a table:
-`COFFEE | MILK | BASE | FLAVOUR | TOPPING | PACKAGING | SUNDRY`.
+Depletion is FIFO across batches **by effective expiry**, not receipt date. A batch
+reaching expiry with stock left produces an `EXPIRED` movement and an alert — the
+honest waste figure nobody currently has.
 
-### 4.3 Recipe resolution — `domain/composition.py::resolve_recipe`
+### 4.2 Composition
 
-```python
-def resolve_recipe(item, modifiers, at, *, ingredients) -> ResolvedRecipe
-```
+`drink_template` (+ **prep_seconds_by_size**), `size_profile`, `template_component`
+(role, nullable ingredient, `qty_by_size` JSON of **strings**, is_substitutable,
+effective dating), `variant_axis`, `variant_option` (+ **season_id**), `modifier`
+(targets a **role**), `menu_item` (+ **prep_seconds**, **season_id**),
+`manual_recipe_line`, `menu_item_cost` (+ **labour_cost_pence**, **prep_seconds**,
+**loaded_hourly_rate_pence**), `legacy_staged_recipe`.
 
-1. Start from `template_component` rows valid at `at`, take `qty_by_size[size_code]`.
-2. Each `variant_axis`'s selected option fills the role-matched slot. An option with
-   its own `qty_by_size` overrides the slot's.
-3. Apply modifiers in the order **SUBSTITUTE → SCALE → ADD**.
-4. A `SUBSTITUTE` against a slot with `is_substitutable = False` **raises
-   `SubstitutionError`** — an error, not a silent no-op.
-5. Multiply by `(1 + waste_factor)` for stock depletion. **Not** for menu cost.
-   `ResolvedRecipe` exposes `lines` (cost) and `depletion_lines` (stock) as separate
-   fields so they cannot be conflated.
-6. `manual_recipe` items bypass all of it and read `manual_recipe_line`.
+### 4.3 Seasons
 
-**Effective dating is mandatory** (invariant 3). Resolution takes an `at`; every
-component and option carries `effective_from`/`effective_to`. An edit closes the old
-rows and opens new ones — never an in-place update. The date narrowing happens in
-`db/repositories/composition.py`, before `resolve_recipe` runs.
+`season` (name, starts_on, ends_on, is_recurring_annually). Two mandatory consequences:
 
-### 4.4 Sales, suppliers, orders
+1. **Forecasting excludes out-of-season history.** Pumpkin in October must not inflate
+   the July baseline, nor read as "unused for 9 months, drop it".
+2. **Ordering respects the window.** Cap at remaining season days; warn when a season
+   ends with stock on hand.
 
-`sale` (idempotent on `lightspeed_line_id`, `applied_modifiers` JSON, plus `voided`,
-`is_refund`, `expanded_at`), `supplier` (+ `order_url`, `agent_instructions` for the
-`BROWSER_AGENT` channel), `supplier_product`, `purchase_order`, `po_line`,
-`checklist_response`.
+Recurring seasons that wrap the new year are handled — see `ARCHITECTURE.md` §8F.6.
 
-### 4.5 Tier semantics
+### 4.4 Suppliers and multi-sourcing
 
-- **A** — high volume, stable, business-stopping if out. Consumption calculated from
-  sales. Eligible for auto-ordering.
-- **B** — calculated, always surfaced for human review.
-- **C** — never calculated. Yes/no checklist only.
+Eight suppliers: Cakesmiths, Brakes, Booker, Cups Direct, Monolith (portals/email),
+Tesco and Amazon (manual), Nataly (custom, **unspecified — spec §15 q5**).
 
-**Tier A membership is earned, not assigned** (§5.2). Current roster is 12 items:
-Napkin, Whole milk, Coffee beans, 12oz cup+lid, 16oz cup+lid, 8oz cup+lid,
-Chocolate powder, Matcha powder — and **Oat milk (barista), which starts at tier B**
-until a real Lightspeed payload proves modifiers arrive on sale lines. See
-`ARCHITECTURE.md` §2.1.
+`supplier` (+ **cutoff_time**, **delivery_fee_pence**,
+**free_delivery_threshold_pence**, **terms_are_placeholders**), `supplier_product`
+(+ **moq_packs**, **last_seen_price_at**).
+
+**Only Tesco and Amazon have real terms.** The other six carry
+`terms_are_placeholders = True`. Every order built from them must say so.
+
+One ordering run produces **N draft orders**, one per supplier. Sourcing prefers the
+preferred product unless an alternate is materially cheaper per unit **and** the switch
+does not push another supplier below its minimum. Surface that trade-off; never resolve
+it silently.
+
+Every Tesco routing is logged in `tesco_routing` with its retail premium. The
+accumulated log is the argument for fixing the ordering cadence.
+
+### 4.5 Sales and orders
+
+`sale` (+ `applied_modifiers` JSON, voided, is_refund, expanded_at), `purchase_order`
+(+ **routing_reason**, **delivery_fee_pence**), `po_line` (+ **received_expires_at**,
+**cap_reason**), `checklist_response`.
+
+### 4.6 Channel marketing metrics
+
+`channel_metric`, `channel_item_metric`. Deliveroo and Just Eat are an ad platform as
+well as a channel: impressions, ranking, spend. Worth showing — ROAS, contribution
+after commission **and** ad spend, and items that rank well but convert badly.
+
+**Access reality:** partner APIs are gated to certified POS integrators. Owner has
+portal logins and can export manually, so build a `ChannelSource` protocol with a CSV
+implementation first and a browser-agent one second. Every row records its `source`.
+
+### 4.7 Tiers
+
+A: calculated, auto-order eligible. B: calculated, always reviewed. C: checklist only.
+
+**Tier A membership is earned, not assigned** (§5.2). Roster is 12 items; **oat milk
+starts at B** — see `ARCHITECTURE.md` §2.1 and the K-Series modifier finding.
 
 ---
 
@@ -186,14 +203,13 @@ until a real Lightspeed payload proves modifiers arrive on sale lines. See
 ### 5.1 Theoretical on-hand — IMPLEMENTED
 
 ```
-on_hand(ingredient, at) = latest stock_count before `at`
-                        + Σ stock_movement.qty in (that count, at]
+on_hand(ingredient, at) = latest count before `at` + Σ movements in (that count, at]
 ```
 
-Sales become `SALE` movements via expansion, resolving at `sale.sold_at` and
-applying `waste_factor`. Expect 0.08–0.12 for milk.
+Sales become `SALE` movements via `resolve_recipe(..., at=sale.sold_at)`, depleting
+batches FIFO by expiry, with `waste_factor` applied.
 
-### 5.2 Drift — the trust metric — IMPLEMENTED (`domain/drift.py`, `domain/tiers.py`)
+### 5.2 Drift — IMPLEMENTED
 
 ```
 drift_pct = (theoretical - counted) / max(counted, epsilon) * 100
@@ -203,81 +219,92 @@ drift_pct = (theoretical - counted) / max(counted, epsilon) * 100
 |---|---|
 | < 10% | eligible for `auto_order_enabled = True` |
 | 10–15% | propose a `waste_factor` adjustment, stay manual |
-| > 15% | force `auto_order_enabled = False`, raise an alert |
+| > 15% | force off, alert |
 
 **No ingredient enters auto-ordering without two consecutive counts under 10%.**
-Enforce in code. This rule is the difference between a useful system and one that
-orders £200 of milk nobody needed.
+Enforced structurally: `set_auto_order(..., True)` raises.
 
-### 5.3 Forecast — IMPLEMENTED (`domain/forecast.py`)
+**v2 adds attribution.** If `EXPIRED` movements explain most of the gap, the problem is
+over-ordering, not a bad recipe. The two fixes are opposite, so report which it is.
+
+### 5.3 Forecast — IMPLEMENTED
 
 ```
 base_daily    = EWMA(daily consumption, trailing 28 days, alpha=0.3)
-dow_factor[d] = mean(weekday d) / mean(all days), trailing 8 weeks, clamp [0.5, 2.0]
-forecast(day)  = base_daily * dow_factor[weekday(day)]
+dow_factor[d] = mean(weekday d) / mean(all), trailing 8 weeks, clamp [0.5, 2.0]
+forecast(day) = base_daily * dow_factor[weekday(day)]
 ```
 
-Under 14 days of history, flat mean and mark low-confidence. The API returns the
-flag; the UI must render it.
+**Correction applied:** taken literally this counts the weekday effect twice, swinging
+`base_daily` by 32.6% depending on which weekday the window ends. The implementation
+deseasonalises first. See `ARCHITECTURE.md` §8C.
 
-**Correction to this formula, applied:** taken literally it counts the weekday effect
-twice — EWMA of raw values carries the last day's weekday into `base_daily`, and the
-multiplication then applies that weekday's factor again. Measured swing of 32.6% in
-`base_daily` purely from which weekday the window ends on. The implementation
-deseasonalises first (`EWMA(x_t / dow_factor[weekday(t)])`), cutting the swing to
-7.6%. Pass `deseasonalise=False` for the literal reading. See `ARCHITECTURE.md` §8C.
+**Seasonal items** use the same calendar window from the previous season scaled by
+year-on-year growth. With no prior season, flat-rate from the first two weeks and mark
+low-confidence. NOT YET BUILT.
 
-### 5.4 Order sizing — IMPLEMENTED (`domain/ordering.py`)
+Under 14 days of history: flat mean, flagged. The API returns the flag; the UI renders
+it **in place of** the number.
 
-```
-cover_days = lead_time_days + days_to_next_delivery_after(target) + safety_days
-need   = Σ forecast over the cover window - on_hand - qty on open POs
-packs  = ceil(need / pack_size), clamped so on-hand lands in [min_qty, max_qty]
-```
-
-Below `min_order_pence`, top up with tier B items ranked by shortest remaining
-cover. Report that it happened and why — never silently inflate an order.
-
-### 5.5 Cost rollup — IMPLEMENTED (`jobs/cost_rollup.py`)
+### 5.4 Order sizing, shelf-life constrained
 
 ```
-ingredient_price change -> template_component -> menu_item -> margin, P&L COGS
+cover_days      = lead_time_days + days_to_next_delivery_after(target) + safety_days
+effective_cover = min(cover_days,
+                      shelf_life_days - transit_buffer,   if perishable
+                      days_remaining_in_season,           if seasonal)
+need  = Σ forecast over effective_cover - on_hand - qty on open POs
+packs = ceil(need / pack_size), clamped into [min_qty, max_qty]
 ```
 
-Compute on read, cache in `menu_item_cost`, refreshed by a job and on every
-composition edit. Never 318 resolutions inside a request handler.
+When `effective_cover < cover_days`, **say so on the line** ("capped at 4 days — milk
+shelf life"). Otherwise the user overrides it and creates the waste the cap prevented.
 
-Before committing a composition edit, produce an **impact preview**: affected item
-count, cost delta per item, projected monthly COGS delta from the last 30 days of
-sales. A domain function, not a UI concern.
+Below `min_order_pence` or `free_delivery_threshold_pence`, top up with
+**non-perishable** tier B items by shortest remaining cover. **Never top up with
+perishables** — that is buying waste to save a delivery fee (invariant 5).
+
+The shelf-life and season caps are **NOT YET BUILT**. `cover_days` and the top-up are.
+
+### 5.5 Supplier split — PARTIALLY BUILT
+
+One order per supplier with its own terms; re-source or defer a group short of its
+minimum; a Tesco `MANUAL` order only for what cannot wait. Output is a set of orders
+each with a one-line rationale, not one basket. Per-supplier grouping works; sourcing
+choice between alternates is **not yet built**.
+
+### 5.6 Cost, labour and true margin — IMPLEMENTED
+
+```
+labour_cost       = prep_seconds / 3600 * loaded_hourly_rate_pence   (£14.50/hr)
+true_margin       = price - ingredient_cost - labour_cost
+margin_per_minute = (price - ingredient_cost) / (prep_seconds / 60)
+```
+
+`margin_per_minute` reorders the menu against plain margin % — verified, a 85%/3min
+drink loses to a 70%/40s one. Cost changes cascade into `menu_item_cost`. Every
+composition edit produces an **impact preview** before commit.
+
+### 5.7 Recipe resolution — IMPLEMENTED
+
+Pure `resolve_recipe(item, modifiers, at)`. Components valid at `at` for the item's
+size; variant options fill role-matched slots; modifiers in `SUBSTITUTE → SCALE → ADD`;
+`SUBSTITUTE` into a non-substitutable slot **raises**; `waste_factor` applies to
+depletion only; `manual_recipe` bypasses.
+
+**Effective dating is mandatory.** Editing closes old rows and opens new ones.
 
 ---
 
 ## 6. Seeding from the legacy workbook — IMPLEMENTED
 
-`uv run cafeops import-legacy --dry-run` runs three passes:
+`cafeops import-legacy`, three passes: ingredients → `ingredient` + `ingredient_price`
++ shelf-life defaults; flat recipes → `legacy_staged_recipe` + `manual_recipe_line`;
+**pattern detection that proposes, never writes.** A human confirms in the UI before
+templates exist. 43 one-off groups stay `manual_recipe = True`, which is correct.
 
-1. **Ingredients** → `ingredient` + `ingredient_price`, `source` from the
-   "Supplier / notes" column, defaulting to ESTIMATE. 42 of 113 are estimates.
-2. **Flat recipes** → `legacy_staged_recipe`. Verbatim, no interpretation.
-3. **Pattern detection, assisted not automatic.** Proposes templates:
-
-```
-Proposed template: Flavoured Latte (Coffee beans (house blend))
-  matches 66 menu items across 15 flavours, sizes S/M/XL
-  common: Coffee beans (COFFEE), Whole milk (MILK), cups, lids, Napkin (SUNDRY)
-  varying: flavour (FLAVOUR) -- 15 distinct
-  conflicts: 27 items differ in Whole milk qty at size M (0.18, 0.24)  -> review
-```
-
-The importer **proposes**, a human confirms, and only then are templates written.
-Auto-generating templates from dirty data and treating them as truth is how you get
-a system confidently costing drinks wrong. Items fitting no pattern import as
-`manual_recipe = True`.
-
-Known dirt is surfaced, not silently fixed: `'card' (£3.00)` at zero cost,
-`Syrup Gift Set`, rows noted "VERIFY", `Strawberry bliss`, and a genuine duplicate
-(`Rose Hot Chocolate` under two recipe numbers).
+Known dirt is surfaced, not fixed: `'card' (£3.00)`, `Syrup Gift Set`, VERIFY rows,
+`Strawberry bliss`, a duplicated `Rose Hot Chocolate`, and 42 of 113 prices ESTIMATE.
 
 ---
 
@@ -287,109 +314,141 @@ Known dirt is surfaced, not silently fixed: `'card' (£3.00)` at zero cost,
 cafeops/
   config.py
   db/{base,types}.py  models/  repositories/protocols.py
-  domain/                   PURE: no SQLAlchemy, no I/O, no config import
-    types.py                shared dataclasses + enums   [INTEGRATOR-OWNED]
-    units.py                5 units, dimension-safe conversion
-    composition.py          resolve_recipe, impact preview
-    stock.py                theoretical on-hand
-    drift.py tiers.py       (Agent C)
-    forecast.py ordering.py (Agent D)
-  integrations/lightspeed/  (Agent A)   suppliers/  channel adapters
-  services/                 use cases, transaction boundaries
-  bot/ jobs/ api/           (Agent E, Phase 2/3)
-  seed/                     legacy importer, pattern detection, demo generator
-  cli.py
-migrations/  docs/phase1/  web/
+  domain/                  PURE: no SQLAlchemy, no I/O, no config import
+    types.py               shared dataclasses + enums   [INTEGRATOR-OWNED]
+    units.py composition.py stock.py forecast.py ordering.py drift.py tiers.py
+    sourcing.py labour.py   (v2, not yet written)
+  integrations/lightspeed/  channels/ (v2)  suppliers/
+  agent/                    (v2, not yet written) runner.py tools.py policies.py
+  services/  bot/ (not built)  jobs/  api/ (not built)  seed/  cli.py
+migrations/  docs/phase1/  web/ (not built)
 ```
 
-`domain/types.py` and `db/repositories/protocols.py` are **integrator-owned**. An
-agent needing a change there raises it; it does not edit them.
+`domain/types.py` and `db/repositories/protocols.py` are **integrator-owned**. An agent
+needing a change raises it.
 
 ---
 
-## 8. Frontend (Phase 3)
+## 8. Architecture
 
-The daily interface is the **Telegram bot** (Russian). The web app is the other
-half: where you sit down and think about the business, and where composition is
-configured. Opened a few times a week, mostly on a laptop. Nothing in it is urgent.
-It should not look like an operations console with live tiles and alert badges.
-
-**Dashboard language: English only** (confirmed). Design for the laptop, survive at
-375px.
-
-Screens, in build order: **composition editor** (three panes — template list,
-per-size component grid, live consequences; impact preview mandatory before commit),
-**stock** (theoretical vs counted distinguishable at a glance, by type/weight/
-position — not a tooltip), menu margin (velocity × margin scatter), today, week &
-month, money, P&L, import review.
-
-Design direction, avoid-list, and API shapes: see the full brief history and
-`docs/phase1/`. Key rules: numbers carry the design (tabular figures, deliberately
-set); resist the traffic light — reserve colour for crossed thresholds; estimated or
-missing costs are shown, flagged, and excluded from aggregates, never defaulted to
-zero.
+Everything writes through the **services layer**. The bot, the API and the agent are
+all clients of it — none touches the database directly. That is what keeps §13's
+invariants enforceable in one place.
 
 ---
 
-## 9. Commands
+## 9. Where the AI agent belongs
+
+**Deterministic stays deterministic.** Stock maths, par levels, cover windows, order
+sizing and costing must be reproducible and identical on every run. An LLM in that path
+makes an unauditable system that orders differently on Tuesday than Monday.
+
+The agent gets three jobs, each behind a whitelisted tool interface:
+
+1. **Browser automation where no API exists** — channel reports, supplier portal
+   baskets. Output is data or a staged basket, never a submitted payment. Falls back to
+   CSV when it breaks, and it will break.
+2. **Narration and anomaly explanation** — turning a drift report into a sentence
+   somebody acts on. Reads computed numbers, never computes them.
+3. **Import assistance** — proposing template groupings and `waste_factor`
+   adjustments, always as a proposal a human confirms.
+
+Hard rules: never writes to `stock_movement`, `purchase_order` or composition directly.
+Every action logged to `agent_action_log` with inputs, output and tool. Anything that
+would spend money stops at a human.
+
+---
+
+## 10. Frontend (not built)
+
+Daily interface is the **Telegram bot** (Russian). The web app is where you think about
+the business and configure composition; opened a few times a week on a laptop, must
+survive 375px. **English only.** Nothing in it is urgent — it should not look like an
+operations console with live tiles.
+
+Build order: **composition editor** (three panes, per-size grid incl. prep seconds,
+live consequences, mandatory impact preview, apply-from-today only) → **stock**
+(theoretical vs counted distinguishable at a glance by type/weight/position, not a
+tooltip; open batches, short-dated list, expiry write-offs; drift split into
+measurement vs expiry) → orders and suppliers (grouped, with cap reasons and the
+panic-buy report) → menu margin (velocity × margin scatter, y-axis toggle to
+margin-per-minute; the disagreement is the finding) → channels → today/money/P&L →
+import review.
+
+Design: numbers carry it (tabular figures, deliberately set). Resist the traffic
+light — colour only for crossed thresholds. Avoid the KPI card grid, cream/serif/
+terracotta, identical rounded cards, uppercase eyebrow labels, green-good/red-bad as
+the only encoding, decorative sparklines. Estimated or missing costs: shown, flagged,
+excluded from aggregates, never zero.
+
+---
+
+## 11. Commands
 
 ```bash
 uv run alembic upgrade head
-uv run cafeops import-legacy --dry-run          # proposed templates + conflicts
-uv run cafeops import-legacy --commit
-uv run cafeops seed --demo                      # latte template + 60 days of sales
-uv run cafeops stock --as-of today [--tier A]   # THEORETICAL on-hand
-uv run cafeops ingredients [--tier A]
-uv run cafeops expand
-uv run cafeops count / drift [--backfill]       # physical counts, drift + gate status
-uv run cafeops simulate                         # replay 60 days of ordering
-uv run cafeops sync --fixtures --from D --to D   # Lightspeed ingestion (fixtures)
+uv run cafeops import-legacy --dry-run | --commit
+uv run cafeops seed --demo
+uv run cafeops stock --as-of today [--tier A] [--batches]
+uv run cafeops drift [--backfill] [--tier A]     # REQUIRED after any reseed
+uv run cafeops count / expand / ingredients / info
+uv run cafeops simulate [--weeks 8] [--supplier X] [--cadence-days 7]
+uv run cafeops sync --fixtures --from D --to D
 uv run cafeops proposals / materialise-template / templates / components
 uv run cafeops edit-recipe / cost-rollup / menu-costs / set-price
-uv run cafeops info                             # config + what is NOT built
 uv run ruff check . && uv run ruff format --check .
 uv run mypy cafeops/domain/ cafeops/services/   # strict, zero type: ignore
 ```
 
 ---
 
-## 10. Build plan
+## 12. Build plan
 
-- **Phase 0 — done.** Contracts, models, migration, `domain/types.py`, protocols,
-  legacy importer with pattern detection, demo seed, `resolve_recipe`.
-- **Phase 1 — done.** A: Lightspeed (client, mappers, fixtures, idempotent
-  ingestion). B: composition engine (impact preview, cost rollup, proposal
-  materialisation). C: stock engine (drift, tier gate, record_count). D: forecast &
-  ordering. **E: bot & jobs — not started**, deliberately held until A–D settled.
-- **Phase 2 — in progress.** Contract reconciliation across ~12 requested changes to
-  the integrator-owned files; four bugs already fixed (`ARCHITECTURE.md` §8B, §8C).
-- **Phase 3 —** frontend: composition editor and stock first.
-
----
-
-## 11. Testing
-
-**Superseded by owner instruction: no tests are written.** See `ARCHITECTURE.md` §1
-for what that costs and which invariants are consequently unguarded. Two of the
-five proofs this section asked for were moved into places that need no test: the
-confirmation invariant is a `CHECK` constraint, and effective dating is a repository
-query rather than a rule each caller must remember.
+- **v2 Phase 0 — done.** 29-table model, squashed migration, `domain/types.py`,
+  protocols, shelf-life defaults, FIFO + expiry, batch rebuild, eight suppliers,
+  seasons, labour types, §16 deliverables.
+- **v2 Phase 1 — six agents.** A Lightspeed · B Composition + labour · C Stock &
+  batches · D Forecast, sourcing, ordering · E Bot & jobs · F Channels & agent.
+  E is held until A–D settle, as it consumes their output.
+- **Phase 2 —** wire together, resolve contract drift, real legacy import, shelf-life
+  confirmation, deploy.
+- **Phase 3 —** frontend.
 
 ---
 
-## 12. Invariants to encode
+## 13. Invariants
 
 1. Nothing is ordered without human confirmation. Ever, in v1.
-2. Auto-order eligibility is earned per ingredient through drift history, never set
-   manually as a shortcut.
+2. Auto-order eligibility is earned through drift history, never set manually.
 3. Recipe edits are effective-dated. History is never rewritten.
-4. Every stock figure shown to a user is labelled theoretical or counted. Never
-   blurred.
-5. Waste factor affects stock depletion, never menu cost.
-6. Estimated costs stay flagged as estimates through every rollup, aggregate and
-   export. A missing cost is `None`, never zero.
-7. Low-confidence forecasts say so in place of the number, not beside it.
-8. All money in integer pence. A float touching money is a bug — `Qty` raises
-   `TypeError` on float assignment.
-9. The stock ledger is append-only. Corrections are `ADJUSTMENT` movements, never
-   updates or deletes.
+4. Order quantity never exceeds what will be consumed within shelf life or season.
+5. Minimum-order top-ups never use perishables.
+6. Every stock figure is labelled theoretical or counted. Never blurred.
+7. Waste factor affects stock depletion, never menu cost.
+8. Estimated costs stay flagged through every rollup, aggregate and export. A missing
+   cost is `None`, never zero.
+9. Low-confidence forecasts say so in place of the number, not beside it.
+10. The agent never writes to stock, orders or composition directly. It calls a service
+    or emits a proposal, and every action is logged.
+11. All money in integer pence. A float touching money is a bug — `Qty` raises.
+12. The stock ledger is append-only. Corrections are `ADJUSTMENT` movements.
+
+---
+
+## 14. Testing
+
+**Superseded by owner instruction: no tests are written.** See `ARCHITECTURE.md` §1 for
+what that costs and which invariants are consequently unguarded. Invariants 1 and 3
+were moved into places that need no test — a `CHECK` constraint and a repository query
+respectively — and invariant 2 into a repository that raises.
+
+---
+
+## 15. Questions
+
+Answered: §15.1 K-Series · §15.2 modifiers only on real-time endpoints, so oat milk
+stays tier B · §15.3 shelf lives seeded as ESTIMATE · §15.4 supplier terms are
+placeholders · §15.6 portal login + manual export · §15.7 £14.50/hr · §15.8 tier A 12
+items · §15.9 English dashboard.
+
+**Still open: §15.5 — what does "Nataly (custom)" supply, and through what channel?**

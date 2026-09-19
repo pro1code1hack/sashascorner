@@ -55,18 +55,56 @@ template with 3 flavours × 3 sizes = 9 sellable items, 3 alt-milk modifiers,
 **deliberately varied drift**: several tier-A items under 10%, `Napkin` at 12%
 (tuning band), `16oz paper cup` at 19% (must be refused auto-ordering).
 
-## What Phase 0 already gives you
+## What v2 Phase 0 already gives you
 
-- All 22 models, initial migration, WAL pragmas, `Qty`/`UTCDateTime` portable types
-- `domain/types.py` — every shared dataclass and enum
-- `domain/units.py` — 5 units, dimension-safe exact conversion
-- `domain/stock.py` — `theoretical_on_hand`, `apply_waste`, `depletion_movements`
-- `domain/composition.py` — **`resolve_recipe`**, implementing spec §4.3 rules 1–6
-- `db/repositories/` — `ingredient`, `composition` (effective dating), `stock`, `sale`
-- `services/expand_recipes.py`, `services/read_stock.py`
-- `integrations/suppliers/` — `OrderChannelAdapter` + 4 channels
-- `seed/` — legacy importer (3 passes), pattern detection, demo generator
-- `cli.py` — `import-legacy`, `seed`, `stock`, `expand`, `ingredients`, `info`
+- **29 models**, one squashed migration (round-trip verified), WAL pragmas
+- `db/types.py` — `Qty` (scaled integer on SQLite) and `UTCDateTime`.
+  **Read `ARCHITECTURE.md` §8E before writing any query against a quantity column.**
+- `domain/types.py` — every shared dataclass and enum, including v2's `BatchSpec`,
+  `ShelfLifeSpec`, `SeasonSpec`, `LabourCost`, `SupplierTerms`, `SourcingOption`,
+  `SourcingChoice`, `SupplierSplit`, `EmergencyLine`, `ExpiryLoss`,
+  `DepletionAllocation`, `AgentProposal`
+- `db/repositories/protocols.py` — 15 protocols including v2's `BatchRepository`,
+  `SeasonRepository`, `SourcingRepository`, `ChannelRepository`, `AgentLogRepository`
+- `domain/units.py` — 5 units, dimension-safe exact conversion (raises across dimensions)
+- `domain/stock.py` — on-hand, `allocate_fifo`, `find_expiry_losses`,
+  `expiry_movements`, `batch_expiry_for`, `drift_attribution`
+- `domain/composition.py` — `resolve_recipe` + impact preview · `domain/drift.py` ·
+  `domain/tiers.py` (the gate) · `domain/forecast.py` (deseasonalised) ·
+  `domain/ordering.py`
+- `services/` — ingest_sales, expand_recipes, record_count, edit_composition,
+  build_order, materialise_template, rebuild_batches, read_stock
+- `seed/` — legacy importer (3 passes), pattern detection (27 proposals), shelf-life
+  defaults, eight suppliers with alternates, seasons, demo generator
+- `integrations/lightspeed/` (client, mapper, sync, fixtures) ·
+  `integrations/suppliers/` (channel adapters)
+- ~25 CLI commands
 
-Modules marked `PHASE 0 SCOPE NOTE` are yours to extend, not rewrite from scratch
-unless you can say why.
+Modules marked `PHASE 0 SCOPE NOTE` are yours to extend, not restart.
+
+## Not built at all yet
+
+`domain/sourcing.py`, `domain/labour.py`, `integrations/channels/`, `agent/`, `bot/`,
+most of `jobs/`, `api/`, `web/`. Seasonal forecasting, the shelf-life and season order
+caps, and sourcing choice between alternates.
+
+## v2 seeded scenario
+
+113 ingredients (A=11, B=43, C=59) · **100 perishable** with ESTIMATE shelf lives ·
+113 price rows (42 ESTIMATE) · 1,577 staged legacy lines → 1,576 manual recipe lines ·
+314 menu items · 27 template proposals · `Flavoured Latte` materialised with 3 flavours
+× 3 sizes · **8 suppliers** (6 with placeholder terms) + 6 alternate sources ·
+2 seasons · ~2,830 sale lines over 60 days · ~17,000 movements ·
+**122 batches, 8 expiry write-offs worth £190.27** · 72 counts with varied drift.
+
+Milk's usable window is **5 days** (7 less a 2-day transit buffer) — the shelf-life cap
+that matters.
+
+## Two v2 traps worth knowing before you start
+
+1. **`Qty` comparisons.** `ARCHITECTURE.md` §8E. The old TEXT storage made
+   `WHERE qty_remaining > 0` match every depleted batch, because SQLite ranks TEXT
+   above all numbers. It is fixed, but the lesson stands: when you filter on a quantity
+   in SQL, check the result against the same predicate in Python at least once.
+2. **`cafeops drift --backfill` after any reseed.** Drift observations derive from
+   counts and are wiped with the database; the ordering path depends on them.
