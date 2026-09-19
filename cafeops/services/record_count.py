@@ -16,6 +16,21 @@ One unit of work, in this order, and the order matters:
 All four happen inside the caller's transaction -- the CLI and the jobs wrap this in
 `session_scope`, so a crash between steps leaves no count without its observation and
 no observation without a gate decision.
+
+## v2: attribution -- which of the two problems is it? (spec 5.2)
+
+A drift number on its own is not actionable, because the two things that cause it have
+OPPOSITE fixes. If the loss is stock that expired, the answer is to order less. If it is
+not, the answer is to change the recipe or the waste factor. Cut the order when the
+recipe was wrong and you cause a stockout with the gap still there; tune the recipe when
+you were over-ordering and you make every menu cost wrong as well as keeping the waste.
+
+`DriftObservation.expired_qty_in_window` stores what was known AT THE COUNT, and
+`explain_drift_history` recomputes the figure live from the ledger. The two differ often
+and the difference is informative rather than a bug: the expiry sweep usually runs after
+somebody counted, so a gap that was unexplained on Tuesday is explained by Wednesday's
+write-off. The stored value keeps the audit trail honest about what the gate acted on;
+the live value is what the report should be read from.
 """
 
 from __future__ import annotations
@@ -31,7 +46,14 @@ from cafeops.db.repositories.drift import SqlDriftRepository
 from cafeops.db.repositories.ingredient import SqlIngredientRepository
 from cafeops.db.repositories.par import SqlParLevelRepository
 from cafeops.db.repositories.stock import SqlStockRepository
-from cafeops.domain.drift import DEFAULT_WASTE_DAMPING, MAX_WASTE_FACTOR, evaluate_drift
+from cafeops.domain.drift import (
+    DEFAULT_WASTE_DAMPING,
+    MAX_WASTE_FACTOR,
+    DriftCause,
+    DriftExplanation,
+    evaluate_drift,
+    explain_drift,
+)
 from cafeops.domain.stock import theoretical_on_hand
 from cafeops.domain.tiers import GateDecision, evaluate_gate
 from cafeops.domain.types import DriftResult, DriftVerdict, IngredientSnapshot, OnHand
@@ -60,6 +82,9 @@ class CountOutcome:
     #: history that the gate would then act on.
     drift: DriftResult | None
     drift_observation_id: int | None
+    #: Spec 5.2's attribution: over-ordering or a bad recipe. None whenever `drift` is,
+    #: because there is nothing to attribute without a gap.
+    explanation: DriftExplanation | None
     decision: GateDecision
     par_level_written: bool
     notes: tuple[str, ...] = field(default_factory=tuple)
@@ -156,6 +181,7 @@ def record_count(
     # --- 3. drift ----------------------------------------------------------------
     drift: DriftResult | None = None
     observation_id: int | None = None
+    explanation: DriftExplanation | None = None
     if not on_hand_before.has_count_basis:
         notes.append(
             "first count for this ingredient: it establishes the anchor, so there is "
@@ -163,6 +189,12 @@ def record_count(
         )
     else:
         consumption = drift_repo.consumption_between(
+            ingredient_id, after=anchor[1] if anchor else None, until=counted_at
+        )
+        # Spec 5.2's second diagnostic, over exactly the window the drift was measured
+        # across. Read from the ledger rather than from the sweep's report: a write-off
+        # entered by any path counts, and one the sweep has not run yet does not.
+        expired_in_window = stock.expired_qty_between(
             ingredient_id, after=anchor[1] if anchor else None, until=counted_at
         )
         drift = evaluate_drift(
@@ -185,6 +217,15 @@ def record_count(
             drift.drift_pct,
             ingredient.waste_factor,
             drift.observed_at,
+            expired_qty_in_window=expired_in_window,
+        )
+        explanation = explain_drift(
+            ingredient_id=ingredient_id,
+            observed_at=drift.observed_at,
+            theoretical_qty=drift.theoretical_qty,
+            counted_qty=drift.counted_qty,
+            expired_qty=expired_in_window,
+            consumption_qty=consumption or None,
         )
 
     # --- 4. the gate -------------------------------------------------------------
@@ -205,6 +246,7 @@ def record_count(
         on_hand_before=on_hand_before,
         drift=drift,
         drift_observation_id=observation_id,
+        explanation=explanation,
         decision=decision,
         par_level_written=written,
         notes=tuple(notes),
@@ -320,6 +362,7 @@ def backfill_drift_observations(
             continue
 
         movement_sum, _ = stock.movement_sum_between(ing_id, after=anchor[1], until=counted_at)
+        expired_in_window = stock.expired_qty_between(ing_id, after=anchor[1], until=counted_at)
         drift = evaluate_drift(
             ingredient_id=ing_id,
             theoretical_qty=anchor[0] + movement_sum,
@@ -343,6 +386,7 @@ def backfill_drift_observations(
             drift.drift_pct,
             ingredient.waste_factor,
             drift.observed_at,
+            expired_qty_in_window=expired_in_window,
         )
         report.observations_written += 1
 
@@ -369,12 +413,94 @@ def backfill_drift_observations(
                 ),
                 drift=None,
                 drift_observation_id=None,
+                explanation=None,
                 decision=decision,
                 par_level_written=written,
                 notes=("gate re-run after backfill",),
             )
         )
     return report
+
+
+@dataclass(frozen=True, slots=True)
+class DriftExplanationRow:
+    """One stored observation, attributed. What `cafeops drift --explain` prints."""
+
+    observation_id: int
+    ingredient: IngredientSnapshot
+    explanation: DriftExplanation
+    #: The start of the window this observation measures: the count before it. None
+    #: means the observation has no predecessor, which only happens if a count was
+    #: deleted -- the first count of an ingredient never produces an observation.
+    window_start: datetime | None
+    #: The figure recorded WHEN THE COUNT WAS TAKEN, from
+    #: `DriftObservation.expired_qty_in_window`. None for pre-v2 rows.
+    stored_expired_qty: Decimal | None
+
+    @property
+    def sweep_ran_after_count(self) -> bool:
+        """True when a write-off dated inside the window was booked after the count.
+
+        Not a discrepancy -- it is the ordinary case, and the reason attribution is
+        worth doing at all. Somebody counted a shelf that was already short; the sweep
+        later named the reason. The gate acted on the stored figure, the report should
+        be read from the live one, and the report says which is which.
+        """
+        stored = self.stored_expired_qty or Decimal("0")
+        return self.explanation.expired_qty > stored
+
+    @property
+    def cause(self) -> DriftCause:
+        return self.explanation.cause
+
+
+def explain_drift_history(
+    session: Session,
+    *,
+    ingredient_id: int,
+    limit: int = 6,
+) -> list[DriftExplanationRow]:
+    """Attribute each stored drift observation: over-ordering, or the recipe?
+
+    The expiry figure is RECOMPUTED from the ledger rather than read from the stored
+    column. Both are returned -- see `DriftExplanationRow.sweep_ran_after_count` -- but
+    the live one is the answer to "what do I fix", because the ledger is append-only and
+    a write-off booked after the count is still a write-off that happened in the window.
+    """
+    ingredients = SqlIngredientRepository(session)
+    drift_repo = SqlDriftRepository(session)
+    stock = SqlStockRepository(session)
+
+    ingredient = ingredients.get(ingredient_id)
+    if ingredient is None:
+        raise LookupError(f"ingredient {ingredient_id} not found")
+
+    rows: list[DriftExplanationRow] = []
+    for observation in drift_repo.history(ingredient_id, limit=limit):
+        anchor = stock.latest_count(ingredient_id, before=observation.observed_at - _A_MOMENT)
+        window_start = anchor[1] if anchor else None
+        rows.append(
+            DriftExplanationRow(
+                observation_id=observation.id,
+                ingredient=ingredient,
+                explanation=explain_drift(
+                    ingredient_id=ingredient_id,
+                    observed_at=observation.observed_at,
+                    theoretical_qty=observation.theoretical_qty,
+                    counted_qty=observation.counted_qty,
+                    expired_qty=stock.expired_qty_between(
+                        ingredient_id, after=window_start, until=observation.observed_at
+                    ),
+                    consumption_qty=drift_repo.consumption_between(
+                        ingredient_id, after=window_start, until=observation.observed_at
+                    )
+                    or None,
+                ),
+                window_start=window_start,
+                stored_expired_qty=observation.expired_qty_in_window,
+            )
+        )
+    return rows
 
 
 def apply_waste_suggestion(

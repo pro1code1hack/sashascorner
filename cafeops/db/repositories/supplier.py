@@ -15,7 +15,12 @@ from sqlalchemy.orm import Session
 from cafeops.db.models import Supplier, SupplierProduct
 from cafeops.domain.types import PackChoice, SupplierSpec
 
-#: Suppliers whose terms were invented during Phase 0 and never confirmed.
+#: DEPRECATED, and wrong twice over. v2 added `supplier.terms_are_placeholders` and
+#: SIX of the eight suppliers carry it, not two -- and the name here is "CakeSmiths"
+#: where the seed writes "Cakesmiths", so this set never even matched the one supplier
+#: it was right about. Kept only so existing importers do not break; ask
+#: `has_placeholder_terms` or `SourcingRepository.terms(...).terms_are_placeholders`,
+#: both of which read the column.
 PLACEHOLDER_TERMS: frozenset[str] = frozenset({"CakeSmiths", "Cups Direct"})
 
 
@@ -66,9 +71,16 @@ class SqlSupplierRepository:
         return [_spec(r) for r in self.session.scalars(select(Supplier).order_by(Supplier.name))]
 
     def has_placeholder_terms(self, supplier_id: int) -> bool:
-        """True when this supplier's lead time and minimum were never confirmed."""
+        """True when this supplier's lead time, minimum or schedule were never confirmed.
+
+        Reads the `terms_are_placeholders` COLUMN. It used to match the name against a
+        hard-coded pair, which is exactly the bug that column exists to prevent: the pair
+        was out of date (six suppliers are placeholders in v2, not two) and one of the two
+        names did not match the seed's spelling, so the check answered False for every
+        supplier whose terms are invented.
+        """
         row = self.session.get(Supplier, supplier_id)
-        return row is not None and row.name in PLACEHOLDER_TERMS
+        return row is not None and row.terms_are_placeholders
 
     def preferred_pack(self, ingredient_id: int, supplier_id: int) -> PackChoice | None:
         """The pack to order this ingredient in from this supplier.

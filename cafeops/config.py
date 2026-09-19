@@ -51,6 +51,48 @@ class Settings(BaseSettings):
     dow_factor_max: float = 2.0
     min_history_days: int = 14
 
+    # --- labour and true margin (spec 5.6, answered in spec 15.7) -----------
+    # GBP 14.50/hr LOADED -- wage plus employer NI, pension, holiday accrual --
+    # confirmed with the owner. It lives here and never in `domain/`: the domain
+    # takes it as an argument so it can be asked "and what if it were 15.50?", and
+    # so a rate change is a config change rather than a code change.
+    #
+    # It is OPTIONAL, and that is deliberate. Set it to 0 or clear it and every
+    # labour figure in the system becomes None rather than a flattering number
+    # computed from nothing. A labour cost from a guessed rate is a guess wearing a
+    # number's clothes, and once it is in a table nobody can tell it from a real one.
+    loaded_hourly_rate_pence: int | None = 1450
+
+    # --- channels: Deliveroo / Just Eat (spec 4.6) --------------------------
+    # Partner APIs are gated to certified POS integrators, so there are two real
+    # implementations and which one runs is THIS setting. `CSV` is the path that
+    # works today (the owner has portal logins and exports by hand);
+    # `BROWSER_AGENT` drives a browser and falls back to CSV when it breaks --
+    # which spec 4.6 says to assume it will. Falling back is this line, not a
+    # rewrite. `PARTNER_API` is not constructible and says so.
+    channel_source: str = "CSV_UPLOAD"
+    # Where hand-exported portal CSVs are dropped. Unset uses the shipped fixtures,
+    # so a fresh checkout can exercise the whole path before anyone downloads
+    # anything.
+    channel_csv_dir: Path | None = None
+    # Which browser driver backs BROWSER_AGENT. Unset means none is wired, which is
+    # the normal state today: the source raises ChannelSourceUnavailable and the
+    # sync job uses the CSV fallback. `fixture` runs the no-network driver against
+    # the sample files so the path is demonstrable without touching a portal.
+    channel_browser_driver: str | None = None
+
+    # --- the bounded agent (spec 9) -----------------------------------------
+    # Absent key is a SUPPORTED state, not an error: the narration tool falls back
+    # to a deterministic template-built sentence rather than refusing to report.
+    anthropic_api_key: str | None = None
+    # Model id for narration. Kept in config because it is an operational choice
+    # and belongs in an audit row (`agent_action_log.model`), not in a constant.
+    agent_model: str = "claude-opus-5"
+    agent_max_tokens: int = 1200
+    # Hard ceiling on tool calls in one run. An agent that loops is an agent that
+    # spends money, and spec 9 says anything spending money stops at a human.
+    agent_max_tool_calls: int = 12
+
     # --- drift gate (spec section 3.2) --------------------------------------
     drift_auto_order_max_pct: float = 10.0
     drift_warn_max_pct: float = 15.0

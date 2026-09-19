@@ -68,12 +68,27 @@ class SqlPurchaseOrderRepository:
             total += Decimal(packs) * convert(pack_size, pack_unit, ingredient.unit)
         return total
 
-    def create_draft(self, suggestion: object) -> int:
+    def create_draft(
+        self,
+        suggestion: object,
+        *,
+        routing_reason: str | None = None,
+        delivery_fee_pence: int = 0,
+    ) -> int:
         """Write an `OrderSuggestion` as a DRAFT purchase order. Never further.
 
         `suggested_packs` and `final_packs` start equal; the human moves `final_packs`
         with the +/- buttons in Telegram, which is why the suggestion survives
         alongside the decision instead of being overwritten by it.
+
+        `routing_reason` and `delivery_fee_pence` are keyword arguments rather than fields
+        on `OrderSuggestion`, which is integrator-owned and has neither. They are what
+        spec 4.4 asks a Tesco order to carry, and passing them here keeps the protocol
+        signature satisfied while the contract catches up.
+
+        **`cap_reason` travels to the line** (spec 5.4). Without it the database holds a
+        quantity smaller than the forecast with no record of why, and the next person to
+        look at it -- or the bot rendering it -- puts it back up.
         """
         if not isinstance(suggestion, OrderSuggestion):
             raise TypeError(f"expected an OrderSuggestion, got {type(suggestion)!r}")
@@ -91,6 +106,8 @@ class SqlPurchaseOrderRepository:
             min_order_topped_up=suggestion.min_order_topped_up,
             notes="\n".join(suggestion.notes) or None,
             confidence_notes=_confidence_notes(suggestion),
+            routing_reason=routing_reason,
+            delivery_fee_pence=delivery_fee_pence,
         )
         self.session.add(po)
         self.session.flush()
@@ -106,6 +123,7 @@ class SqlPurchaseOrderRepository:
                     unit_price_pence=line.pack.price_pence,
                     need_qty=line.need_qty,
                     is_top_up=line.is_top_up,
+                    cap_reason=_capped(line.cap_reason),
                 )
             )
         self.session.flush()
@@ -172,6 +190,21 @@ class SqlPurchaseOrderRepository:
         if statuses:
             stmt = stmt.where(PurchaseOrder.status.in_(list(statuses)))
         return list(self.session.scalars(stmt.order_by(PurchaseOrder.id)))
+
+
+#: `po_line.cap_reason` is String(80). The phrase is written to fit, so a longer one is
+#: a bug in the phrase rather than in the column -- but it is truncated visibly rather
+#: than raising, because losing an order over the length of an explanation would be the
+#: worse failure.
+_CAP_REASON_MAX = 80
+
+
+def _capped(reason: str | None) -> str | None:
+    if reason is None:
+        return None
+    if len(reason) <= _CAP_REASON_MAX:
+        return reason
+    return reason[: _CAP_REASON_MAX - 4].rstrip() + " ..."
 
 
 def _confidence_notes(suggestion: OrderSuggestion) -> str | None:

@@ -22,15 +22,19 @@ from cafeops.db.models import (
     ManualRecipeLine,
     MenuItem,
     Modifier,
+    Season,
     TemplateComponent,
     VariantAxis,
     VariantOption,
 )
+from cafeops.domain.composition import OptionSeason
+from cafeops.domain.labour import UNTIMED, PrepTime, resolve_prep_time
 from cafeops.domain.types import (
     ComponentRole,
     ComponentSpec,
     MenuItemSpec,
     ModifierSpec,
+    SeasonSpec,
     SizeCode,
     Unit,
     VariantOptionSpec,
@@ -132,6 +136,7 @@ class SqlCompositionRepository:
                 template_id=item.template_id,
                 price_pence=item.price_pence,
                 manual_recipe=item.manual_recipe,
+                season_id=item.season_id,
                 components=components,
                 options=options,
                 manual_lines=tuple(manual_by_item.get(item.id, [])),
@@ -198,6 +203,10 @@ class SqlCompositionRepository:
                         ingredient_id=option.ingredient_id,
                         qty=_qty_for_size(option.qty_by_size, item.size_code),
                         price_delta_pence=option.price_delta_pence,
+                        # Rides on the spec so no caller can lose it by forgetting an
+                        # argument. The richer season lookups below still exist for the
+                        # menu layer, which needs names and remaining days, not just an id.
+                        season_id=option.season_id,
                     )
                 )
         return chosen
@@ -320,6 +329,147 @@ class SqlCompositionRepository:
         if component is None:
             raise LookupError(f"template_component {component_id} not found")
         return self.menu_item_ids_for_template(component.template_id)
+
+    # -- seasons on the composition side (spec 4.3) ------------------------
+    #
+    # `SqlSeasonRepository` owns the ordering-side answers ("is this ingredient
+    # seasonal", "what is running today"). These three are the COMPOSITION-side
+    # answers -- "which seasons do THIS menu item's selected options belong to" --
+    # and they live here because they are joins across `menu_item.selected_options`,
+    # `variant_option` and `variant_axis`, which is this module's subject.
+
+    def _seasons_by_id(self) -> dict[int, SeasonSpec]:
+        return {
+            row.id: SeasonSpec(
+                season_id=row.id,
+                name=row.name,
+                starts_on=row.starts_on,
+                ends_on=row.ends_on,
+                is_recurring_annually=row.is_recurring_annually,
+            )
+            for row in self.session.scalars(select(Season))
+        }
+
+    def item_seasons(self, menu_item_ids: Sequence[int]) -> dict[int, SeasonSpec]:
+        """menu_item_id -> its OWN season, for the items that have one."""
+        if not menu_item_ids:
+            return {}
+        seasons = self._seasons_by_id()
+        rows = self.session.execute(
+            select(MenuItem.id, MenuItem.season_id).where(
+                MenuItem.id.in_(list(menu_item_ids)), MenuItem.season_id.is_not(None)
+            )
+        ).all()
+        return {
+            item_id: seasons[season_id]
+            for item_id, season_id in rows
+            if season_id is not None and season_id in seasons
+        }
+
+    def option_season_details(self, menu_item_ids: Sequence[int]) -> dict[int, list[OptionSeason]]:
+        """menu_item_id -> the seasonal options it actually SELECTS, with their names.
+
+        Only the selected options. A template may carry a seasonal option this leaf
+        does not use, and warning about it would be noise -- which is how real
+        warnings come to be ignored (ARCHITECTURE 7.5).
+
+        The names travel with the seasons because "Pistachio Latte is unavailable" is
+        not actionable, whereas "option 'Pistachio' is 'Spring seasonal drinks' only
+        (01 Mar to 31 May, recurring)" is.
+        """
+        if not menu_item_ids:
+            return {}
+        seasons = self._seasons_by_id()
+        items = list(
+            self.session.scalars(
+                select(MenuItem).where(
+                    MenuItem.id.in_(list(menu_item_ids)), MenuItem.template_id.is_not(None)
+                )
+            )
+        )
+        if not items:
+            return {}
+
+        template_ids = sorted({i.template_id for i in items if i.template_id is not None})
+        rows = self.session.execute(
+            select(VariantOption.id, VariantOption.name, VariantOption.season_id)
+            .join(VariantAxis, VariantAxis.id == VariantOption.axis_id)
+            .where(
+                VariantAxis.template_id.in_(template_ids),
+                VariantOption.season_id.is_not(None),
+            )
+        ).all()
+        seasonal = {
+            option_id: (name, season_id)
+            for option_id, name, season_id in rows
+            if season_id is not None and season_id in seasons
+        }
+        if not seasonal:
+            return {}
+
+        out: dict[int, list[OptionSeason]] = {}
+        for item in items:
+            chosen: list[OptionSeason] = []
+            for raw_option_id in (item.selected_options or {}).values():
+                found = seasonal.get(int(raw_option_id))
+                if found is None:
+                    continue
+                name, season_id = found
+                chosen.append(
+                    OptionSeason(option_id=int(raw_option_id), name=name, season=seasons[season_id])
+                )
+            if chosen:
+                out[item.id] = chosen
+        return out
+
+    def option_seasons_for_items(
+        self, menu_item_ids: Sequence[int]
+    ) -> dict[int, dict[int, SeasonSpec]]:
+        """The same mapping in the shape `resolve_recipe` takes: option_id -> season."""
+        return {
+            item_id: {option.option_id: option.season for option in options}
+            for item_id, options in self.option_season_details(menu_item_ids).items()
+        }
+
+    # -- prep time (spec 4.2, 5.6) -----------------------------------------
+
+    def prep_times(self, menu_item_ids: Sequence[int]) -> dict[int, PrepTime]:
+        """menu_item_id -> the prep time that applies, with its provenance.
+
+        Two sources and one precedence rule, both decided in `domain/labour.py`:
+        `menu_item.prep_seconds` overrides `drink_template.prep_seconds_by_size` at the
+        item's size. This method only supplies the raw values -- which one wins, and
+        what an absent or non-positive value means, is domain logic and stays there.
+
+        Every id asked for appears in the result, `UNTIMED` when nothing is recorded.
+        A caller iterating its own id list must not have to distinguish "not in the
+        dict" from "no prep time", because those would be the same fact wearing two
+        shapes.
+        """
+        if not menu_item_ids:
+            return {}
+        rows = self.session.execute(
+            select(
+                MenuItem.id,
+                MenuItem.size_code,
+                MenuItem.prep_seconds,
+                MenuItem.prep_seconds_is_estimate,
+                DrinkTemplate.prep_seconds_by_size,
+                DrinkTemplate.prep_seconds_is_estimate,
+            )
+            .outerjoin(DrinkTemplate, DrinkTemplate.id == MenuItem.template_id)
+            .where(MenuItem.id.in_(list(menu_item_ids)))
+        ).all()
+        out: dict[int, PrepTime] = {int(i): UNTIMED for i in menu_item_ids}
+        for item_id, size_code, item_seconds, item_est, template_map, template_est in rows:
+            out[item_id] = resolve_prep_time(
+                template_prep_seconds_by_size=template_map,
+                item_prep_seconds=item_seconds,
+                size_code=size_code,
+                item_is_estimate=item_est,
+                template_is_estimate=template_est,
+            )
+        return out
 
     def all_menu_item_ids(self, *, active_only: bool = True) -> list[int]:
         stmt = select(MenuItem.id).order_by(MenuItem.id)

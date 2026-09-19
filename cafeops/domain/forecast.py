@@ -41,17 +41,36 @@ predict zero for a weekday, however many zeros the history holds. When a raw fac
 is clamped upward the fact is recorded in `confidence_reasons`, because the usual
 cause is a closed day that nobody declared.
 
-## A known weakness of the spec's formula, recorded not fixed
+## A bug in the spec's formula, FIXED by default
 
-`base_daily` is an EWMA of *raw* daily consumption, so with `alpha=0.3` the last day
-in the window carries 30% of the weight -- and then `forecast()` multiplies by that
-weekday's factor a second time. Anchor the window on a busy Saturday and the result
-is inflated; anchor it on a quiet Monday and it is deflated. The mathematically
-FIXED by default: `deseasonalise=True` smooths `x_t / dow_factor[weekday(t)]`,
-so the weekday effect is applied exactly once. Pass `deseasonalise=False` for the
-literal spec. See the DESEASONALISE NOTE in `forecast_consumption`.
-This module implements the spec as written; the deviation is measurable (see the
-agent-D summary) and is a decision for the owner, not a silent fix here.
+`base_daily` as spec 5.3 writes it is an EWMA of *raw* daily consumption, so with
+`alpha=0.3` the last day in the window carries 30% of the weight -- and then
+`forecast()` multiplies by that weekday's factor a second time. Anchor the window on a
+busy Saturday and the result is inflated; anchor it on a quiet Monday and it is
+deflated, by 32.6% across seven consecutive anchors on the seeded milk history.
+
+`deseasonalise=True` (the default) smooths `x_t / dow_factor[weekday(t)]` so the
+weekday effect is applied exactly once, and `base_daily` means what multiplying it by
+a weekday factor already assumed it meant. `deseasonalise=False` restores the literal
+spec and says in `confidence_reasons` that the value is anchor-sensitive. See the
+DESEASONALISE NOTE in `forecast_consumption` and `ARCHITECTURE.md` 8C.
+
+## Seasons (spec 4.3, spec 5.3)
+
+Two separate jobs, and conflating them is how a seasonal line gets ordered wrong in
+both directions:
+
+1. **Out-of-season history must not reach the ordinary baseline.** Pass `season=` to
+   `forecast_consumption` and every day outside the season is dropped from the history
+   and forecast as zero demand. Without it, nine months of zeros make pumpkin syrup
+   read as dead stock in October, and three months of October make it look like a
+   staple in July.
+2. **A seasonal item is forecast from the previous season, not the last 28 days.**
+   `seasonal_forecast` reads the same calendar window one year back and scales it by
+   the growth measured season-to-date. With no prior season there is nothing to read,
+   so it flat-rates the first two weeks and marks itself low-confidence -- invariant 9
+   then puts that sentence on screen INSTEAD of the number, which for a first pumpkin
+   season is the honest output.
 """
 
 from __future__ import annotations
@@ -60,16 +79,26 @@ from collections.abc import Collection, Iterable, Sequence
 from datetime import date, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 
-from cafeops.domain.types import ConsumptionPoint, ForecastPoint, ForecastResult
+from cafeops.domain.types import ConsumptionPoint, ForecastPoint, ForecastResult, SeasonSpec
 
 __all__ = [
+    "SEASON_LOOKBACK_DAYS",
     "WEEKDAY_NAMES",
     "daily_series",
     "dow_factors",
     "ewma",
     "flat_mean",
     "forecast_consumption",
+    "occurrence_start",
+    "out_of_season_days",
+    "seasonal_forecast",
 ]
+
+#: One year back, measured in whole weeks. 364 rather than 365 so a Saturday is
+#: compared with a Saturday: the calendar window is the same to within a day, and the
+#: day-of-week shape -- which for a cafe is most of the signal -- survives the
+#: comparison instead of being smeared by a one-day rotation.
+SEASON_LOOKBACK_DAYS = 364
 
 #: ISO weekday (Mon=1 .. Sun=7) -> label. Back-office English; the Russian bot
 #: renders its own strings, so domain/ stays locale-free.
@@ -125,6 +154,55 @@ def daily_series(
             series.append((day, observed.get(day, _ZERO)))
         day += timedelta(days=1)
     return tuple(series)
+
+
+def out_of_season_days(season: SeasonSpec, *, start: date, end: date) -> set[date]:
+    """Every day in `[start, end]` that the season does not cover.
+
+    Spec 4.3's first consequence, as a set the history builder can subtract. Computed
+    day by day rather than from the season's endpoints because `SeasonSpec.contains`
+    already handles a recurring window that wraps the new year, and re-deriving that
+    logic here is how the two answers come to disagree.
+    """
+    if end < start:
+        raise ValueError(f"end {end} is before start {start}")
+    excluded: set[date] = set()
+    day = start
+    while day <= end:
+        if not season.contains(day):
+            excluded.add(day)
+        day += timedelta(days=1)
+    return excluded
+
+
+def _same_day_in_year(day: date, year: int) -> date:
+    """`day` moved to `year`, stepping 29 February back to the 28th.
+
+    A season starting on 29 February has no anniversary in three years out of four.
+    Failing there would take out the whole forecast for a calendar artefact.
+    """
+    try:
+        return day.replace(year=year)
+    except ValueError:
+        return day.replace(year=year, day=28)
+
+
+def occurrence_start(season: SeasonSpec, at: date) -> date | None:
+    """The first day of the occurrence of `season` that contains `at`. None if out.
+
+    For a recurring season this is not simply "this year's start date": a Nov 15 - Feb
+    28 winter season that contains 10 January started the PREVIOUS November, and using
+    this January's 15 November would measure the season-to-date growth over a window
+    that has not happened yet.
+    """
+    if not season.contains(at):
+        return None
+    if not season.is_recurring_annually:
+        return season.starts_on
+    candidate = _same_day_in_year(season.starts_on, at.year)
+    if candidate > at:
+        candidate = _same_day_in_year(season.starts_on, at.year - 1)
+    return candidate
 
 
 def ewma(values: Sequence[Decimal], alpha: Decimal) -> Decimal:
@@ -224,8 +302,14 @@ def forecast_consumption(
     min_history_days: int,
     closed_days: Collection[date] = (),
     deseasonalise: bool = True,
+    season: SeasonSpec | None = None,
 ) -> ForecastResult:
     """Forecast consumption for each day in `days`. Spec 5.3.
+
+    `season` excludes out-of-season history from the baseline and forecasts
+    out-of-season days as zero (spec 4.3). It is the *non-seasonal* arithmetic applied
+    to a seasonal item's in-season days -- use `seasonal_forecast` when the item's own
+    history is too short to carry it and last year's season is the better evidence.
 
     ``deseasonalise`` (default True) corrects a double-count in spec 5.3 as
     written -- see DESEASONALISE NOTE below. Pass False for the literal spec.
@@ -257,6 +341,22 @@ def forecast_consumption(
 
     points = list(history)
     closed = set(closed_days)
+    season_reasons: list[str] = []
+    if season is not None:
+        # Out-of-season days are removed the same way a closed day is -- not zero-filled.
+        # A zero on a day the item was not on the menu is not evidence about demand, and
+        # averaging nine months of them in is how a seasonal line reads as dead stock.
+        widest = max(ewma_window_days, dow_window_weeks * 7)
+        excluded = out_of_season_days(season, start=as_of - timedelta(days=widest - 1), end=as_of)
+        if excluded:
+            season_reasons.append(
+                f"{len(excluded)} of the last {widest} day(s) fall outside "
+                f"{season.name} and were EXCLUDED from the baseline, not counted as "
+                "zero demand (spec 4.3): out-of-season silence is not evidence about "
+                "in-season demand, in either direction"
+            )
+        closed = closed | excluded
+
     base_series = daily_series(
         points,
         start=as_of - timedelta(days=ewma_window_days - 1),
@@ -346,10 +446,18 @@ def forecast_consumption(
         # caveat; one that hides them hides a clamped weekday.
         reasons.extend(dow_notes)
 
+    reasons.extend(season_reasons)
+
     forecast_points: list[ForecastPoint] = []
     closed_in_window: list[date] = []
+    out_of_season_in_window: list[date] = []
+    declared_closed = set(closed_days)
     for day in days:
-        if day in closed:
+        if season is not None and not season.contains(day):
+            out_of_season_in_window.append(day)
+            forecast_points.append(ForecastPoint(day=day, qty=_ZERO, dow_factor=_ZERO))
+            continue
+        if day in declared_closed:
             closed_in_window.append(day)
             forecast_points.append(ForecastPoint(day=day, qty=_ZERO, dow_factor=_ZERO))
             continue
@@ -360,12 +468,226 @@ def forecast_consumption(
             f"{len(closed_in_window)} day(s) in the window are declared closed and "
             f"forecast as zero demand: {', '.join(str(d) for d in closed_in_window)}"
         )
+    if out_of_season_in_window and season is not None:
+        reasons.append(
+            f"{len(out_of_season_in_window)} day(s) in the window fall outside "
+            f"{season.name} and are forecast as zero demand: "
+            f"{out_of_season_in_window[0]}..{out_of_season_in_window[-1]}. Ordering for "
+            "them would be buying stock for a drink that is off the menu (spec 4.3)"
+        )
 
     return ForecastResult(
         ingredient_id=ingredient_id,
         base_daily=base_daily,
         points=tuple(forecast_points),
         history_days=history_days,
+        low_confidence=low_confidence,
+        confidence_reasons=tuple(reasons),
+        used_flat_average=used_flat_average,
+    )
+
+
+# ==========================================================================
+# Seasonal items: last year's season, scaled (spec 5.3, 4.3)
+# ==========================================================================
+
+
+def _growth_factor(
+    by_day: dict[date, Decimal],
+    *,
+    season_start: date,
+    as_of: date,
+    lookback_days: int,
+    growth_min: Decimal,
+    growth_max: Decimal,
+) -> tuple[Decimal, str]:
+    """Season-to-date this year over the same span last year, clamped.
+
+    Returns `(factor, explanation)` and never raises: a missing or zero prior span
+    gives 1.0 with a sentence saying the level was carried across unscaled, which is
+    the honest fallback -- inventing growth from a division by nothing is worse than
+    admitting there is no growth figure.
+    """
+    current = _span_total(by_day, start=season_start, end=as_of)
+    prior_start = season_start - timedelta(days=lookback_days)
+    prior_end = as_of - timedelta(days=lookback_days)
+    prior = _span_total(by_day, start=prior_start, end=prior_end)
+    span = (as_of - season_start).days + 1
+    if prior <= _ZERO:
+        return _ONE, (
+            f"no consumption recorded in the {span} matching day(s) of the previous "
+            f"season ({prior_start}..{prior_end}), so last year's level is carried "
+            "across unscaled: there is nothing to compute a year-on-year ratio against"
+        )
+    raw = current / prior
+    factor = min(max(raw, growth_min), growth_max)
+    note = (
+        f"year-on-year growth {_shown(factor)}x, from {_shown(current)} in the first "
+        f"{span} day(s) of {season_start}'s season against {_shown(prior)} in the same "
+        f"days a year earlier"
+    )
+    if factor != raw:
+        note += (
+            f" (raw ratio {_shown(raw)} clamped into [{_shown(growth_min)}, "
+            f"{_shown(growth_max)}]; a season-to-date ratio off a handful of days is "
+            "noise before it is a trend)"
+        )
+    return factor, note
+
+
+def _span_total(by_day: dict[date, Decimal], *, start: date, end: date) -> Decimal:
+    total = _ZERO
+    day = start
+    while day <= end:
+        total += by_day.get(day, _ZERO)
+        day += timedelta(days=1)
+    return total
+
+
+def seasonal_forecast(
+    *,
+    ingredient_id: int,
+    history: Iterable[ConsumptionPoint],
+    as_of: date,
+    days: Sequence[date],
+    season: SeasonSpec,
+    flat_rate_days: int = 14,
+    lookback_days: int = SEASON_LOOKBACK_DAYS,
+    growth_min: Decimal = Decimal("0.5"),
+    growth_max: Decimal = Decimal("2"),
+    closed_days: Collection[date] = (),
+) -> ForecastResult:
+    """Forecast a seasonal item from the previous season, scaled by growth. Spec 5.3.
+
+    ```
+    forecast(day) = consumption(day - 364 days) * year_on_year_growth
+    ```
+
+    For each in-season day in `days` the matching day of the previous occurrence is
+    read straight out of the history and scaled. Not an average of last season: a
+    pumpkin season ramps, peaks at half term and falls away, and the shape is most of
+    what is worth knowing about it. An EWMA of the last 28 days cannot see any of that,
+    which is why spec 5.3 gives seasonal items their own path rather than a factor.
+
+    Out-of-season days in `days` are zero, for the same reason as in
+    `forecast_consumption`: no menu, no demand.
+
+    **With no prior season** there is nothing to read, and the spec's answer is a flat
+    rate from the first two weeks marked low-confidence. That is implemented literally
+    and it is the common case in the first year of trading -- so `low_confidence` is
+    set, `used_flat_average` is set, and invariant 9 requires the caller to render
+    `confidence_reasons` INSTEAD of the quantity. A seasonal quantity extrapolated from
+    nine days of a brand-new season is a guess, and it must not be shown as anything
+    else.
+
+    `base_daily` is the mean of the forecast days, so a caller that wants a daily rate
+    for a cover calculation still has one. It is a *result* here rather than an input,
+    which is the opposite of the non-seasonal path.
+    """
+    if flat_rate_days < 1:
+        raise ValueError(f"flat_rate_days must be >= 1, got {flat_rate_days}")
+    if lookback_days < 1:
+        raise ValueError(f"lookback_days must be >= 1, got {lookback_days}")
+    if growth_min <= _ZERO or growth_max < growth_min:
+        raise ValueError(f"growth clamp [{growth_min}, {growth_max}] is not a usable range")
+
+    closed = set(closed_days)
+    by_day: dict[date, Decimal] = {}
+    for point in history:
+        by_day[point.day] = by_day.get(point.day, _ZERO) + point.qty
+
+    reasons: list[str] = []
+    in_season_days = [d for d in days if season.contains(d) and d not in closed]
+    out_days = [d for d in days if not season.contains(d)]
+
+    prior_days = {d: d - timedelta(days=lookback_days) for d in in_season_days}
+    prior_observed = [d for d in prior_days.values() if d in by_day]
+    start = occurrence_start(season, as_of)
+
+    forecast_points: list[ForecastPoint] = []
+    low_confidence = False
+    used_flat_average = False
+
+    if prior_observed and start is not None:
+        factor, growth_note = _growth_factor(
+            by_day,
+            season_start=start,
+            as_of=as_of,
+            lookback_days=lookback_days,
+            growth_min=growth_min,
+            growth_max=growth_max,
+        )
+        reasons.append(
+            f"seasonal forecast from {season.name} one year back "
+            f"({lookback_days} days = {lookback_days // 7} weeks, so weekdays line up), "
+            f"{len(prior_observed)} of {len(in_season_days)} day(s) matched"
+        )
+        reasons.append(growth_note)
+        missing = [d for d, prior in prior_days.items() if prior not in by_day]
+        if missing:
+            # A gap in last season's ledger is not zero demand: it is a day nobody
+            # recorded. Filling it with zero would under-order the same day this year.
+            in_season_mean = _span_total(by_day, start=start, end=as_of) / Decimal(
+                max((as_of - start).days + 1, 1)
+            )
+            reasons.append(
+                f"{len(missing)} day(s) of last season have no record and were filled "
+                f"with this season's running mean rather than zero: an unrecorded day is "
+                "not a day nothing sold, and zero-filling it would under-order the same "
+                "day this year"
+            )
+        else:
+            in_season_mean = _ZERO
+        for day in days:
+            if day in out_days or day in closed:
+                forecast_points.append(ForecastPoint(day=day, qty=_ZERO, dow_factor=_ZERO))
+                continue
+            prior = prior_days[day]
+            raw = by_day.get(prior)
+            qty = (raw * factor) if raw is not None else in_season_mean
+            forecast_points.append(ForecastPoint(day=day, qty=qty, dow_factor=factor))
+    else:
+        # No prior season. Spec 5.3: flat-rate the first two weeks, low confidence.
+        low_confidence = True
+        used_flat_average = True
+        window_start = start if start is not None else as_of - timedelta(days=flat_rate_days - 1)
+        window_end = min(window_start + timedelta(days=flat_rate_days - 1), as_of)
+        observed = [
+            by_day.get(window_start + timedelta(days=offset), _ZERO)
+            for offset in range((window_end - window_start).days + 1)
+            if (window_start + timedelta(days=offset)) not in closed
+        ]
+        rate = flat_mean(observed) if observed else _ZERO
+        reasons.append(
+            f"{season.name} has no previous occurrence in the history, so there is no "
+            f"season to scale: this is a FLAT RATE from the first {len(observed)} day(s) "
+            f"of the current season ({window_start}..{window_end}), spec 5.3's "
+            "no-prior-season fallback. It carries no weekday shape and no ramp, and the "
+            "first weeks of a season are its least representative -- treat the quantity "
+            "as a placeholder and show this sentence instead of it (invariant 9)"
+        )
+        if not observed:
+            reasons.append(
+                f"the season has not started yet as of {as_of}, so even the flat rate "
+                "has nothing behind it: this forecast is zero because nothing is known, "
+                "not because nothing is needed"
+            )
+        for day in days:
+            qty = _ZERO if (day in out_days or day in closed) else rate
+            forecast_points.append(ForecastPoint(day=day, qty=qty, dow_factor=_ONE))
+
+    if out_days:
+        reasons.append(
+            f"{len(out_days)} day(s) of the window fall outside {season.name} and are "
+            f"forecast as zero demand: {out_days[0]}..{out_days[-1]}"
+        )
+    counted = [p.qty for p in forecast_points]
+    base_daily = flat_mean(counted)
+    return ForecastResult(
+        ingredient_id=ingredient_id,
+        base_daily=base_daily,
+        points=tuple(forecast_points),
+        history_days=len(by_day),
         low_confidence=low_confidence,
         confidence_reasons=tuple(reasons),
         used_flat_average=used_flat_average,

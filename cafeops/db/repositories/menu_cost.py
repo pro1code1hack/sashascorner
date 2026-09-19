@@ -20,7 +20,8 @@ from sqlalchemy.orm import Session
 
 from cafeops.config import settings
 from cafeops.db.models import MenuItem, MenuItemCost, Sale
-from cafeops.domain.types import PriceSource, ResolvedRecipe, SizeCode
+from cafeops.domain.labour import UNTIMED, PrepTime, labour_for
+from cafeops.domain.types import LabourCost, PriceSource, ResolvedRecipe, SizeCode
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,6 +44,13 @@ class CachedCost:
     ingredient_count: int
     computed_at: datetime
     resolved_at: datetime
+    # --- labour (spec 5.6) -------------------------------------------------
+    # All four are None together: no prep time or no rate means no labour figure,
+    # and a labour cost from a guessed rate is a guess wearing a number's clothes.
+    labour_cost_pence: Decimal | None = None
+    prep_seconds: int | None = None
+    loaded_hourly_rate_pence: int | None = None
+    prep_seconds_is_estimate: bool | None = None
 
     @property
     def margin_pct(self) -> float | None:
@@ -52,6 +60,34 @@ class CachedCost:
         return float(
             (Decimal(self.price_pence) - self.cost_pence) / Decimal(self.price_pence) * 100
         )
+
+    @property
+    def labour(self) -> LabourCost:
+        """The cached row as the domain's labour type. Spec 5.6's three figures.
+
+        Rebuilt from the cache rather than recomputed from the recipe: the rate stored
+        on the row is the rate that was in force when the cost was computed, so a
+        later rate change does not retroactively rewrite what this item's margin was
+        reported as.
+        """
+        return LabourCost(
+            menu_item_id=self.menu_item_id,
+            prep_seconds=self.prep_seconds,
+            loaded_hourly_rate_pence=self.loaded_hourly_rate_pence,
+            ingredient_cost_pence=self.cost_pence,
+            price_pence=self.price_pence,
+        )
+
+    @property
+    def true_margin_pct(self) -> float | None:
+        true_margin = self.labour.true_margin_pence
+        if true_margin is None or self.price_pence <= 0:
+            return None
+        return float(true_margin / Decimal(self.price_pence) * 100)
+
+    @property
+    def margin_per_minute_pence(self) -> Decimal | None:
+        return self.labour.margin_per_minute_pence
 
 
 class SqlMenuCostRepository:
@@ -93,13 +129,33 @@ class SqlMenuCostRepository:
             stmt = stmt.where(MenuItemCost.has_missing_cost.is_(True))
         return [_detail(cost, item) for cost, item in self.session.execute(stmt).all()]
 
-    def upsert(self, menu_item_id: int, recipe: ResolvedRecipe, computed_at: datetime) -> None:
-        """Write the resolved cost through, unknowns included.
+    def upsert(
+        self,
+        menu_item_id: int,
+        recipe: ResolvedRecipe,
+        computed_at: datetime,
+        *,
+        prep: PrepTime = UNTIMED,
+        loaded_hourly_rate_pence: int | None = None,
+    ) -> None:
+        """Write the resolved cost and the labour figures through, unknowns included.
 
         `recipe.cost_pence` is None when any ingredient is unpriced and
         `recipe.cost_source` is the WEAKEST source among them. Both are stored as
         they come: an estimate stays an estimate and a missing cost stays missing
         (invariant 6). Nothing here substitutes a zero.
+
+        The labour arguments are keyword-only with defaults so this still satisfies
+        `protocols.MenuCostRepository.upsert` -- the protocol is integrator-owned and a
+        signature change there would need raising, while an optional keyword needs
+        nothing. Omitting them writes NULL labour, which is the honest result of
+        calling a cost rollup that was not told the rate.
+
+        `labour_cost_pence`, `prep_seconds` and `loaded_hourly_rate_pence` are written
+        or cleared as a SET. Two of three would be a row nobody could interpret: a
+        prep time with no rate beside it invites the reader to apply today's rate to
+        last month's figure, which is exactly the retroactive rewrite storing the rate
+        per row exists to prevent.
         """
         row = self.session.scalar(
             select(MenuItemCost).where(MenuItemCost.menu_item_id == menu_item_id)
@@ -113,6 +169,27 @@ class SqlMenuCostRepository:
         row.ingredient_count = len(recipe.cost_breakdown)
         row.computed_at = computed_at
         row.resolved_at = recipe.resolved_at
+
+        labour = labour_for(
+            menu_item_id=menu_item_id,
+            price_pence=0,  # price is irrelevant to labour_cost_pence itself
+            ingredient_cost_pence=recipe.cost_pence,
+            prep=prep,
+            loaded_hourly_rate_pence=loaded_hourly_rate_pence,
+        )
+        cost = labour.labour_cost_pence
+        if cost is None:
+            # Clear all four rather than leaving a stale number beside a now-absent
+            # rate. A half-populated labour row reads as a real one.
+            row.labour_cost_pence = None
+            row.prep_seconds = None
+            row.loaded_hourly_rate_pence = None
+            row.prep_seconds_is_estimate = None
+            return
+        row.labour_cost_pence = cost
+        row.prep_seconds = labour.prep_seconds
+        row.loaded_hourly_rate_pence = labour.loaded_hourly_rate_pence
+        row.prep_seconds_is_estimate = prep.is_estimate
 
     def delete(self, menu_item_id: int) -> None:
         row = self.session.scalar(
@@ -171,4 +248,8 @@ def _detail(cost: MenuItemCost, item: MenuItem) -> CachedCost:
         ingredient_count=cost.ingredient_count,
         computed_at=cost.computed_at,
         resolved_at=cost.resolved_at,
+        labour_cost_pence=cost.labour_cost_pence,
+        prep_seconds=cost.prep_seconds,
+        loaded_hourly_rate_pence=cost.loaded_hourly_rate_pence,
+        prep_seconds_is_estimate=cost.prep_seconds_is_estimate,
     )

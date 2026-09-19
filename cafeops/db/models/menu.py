@@ -52,8 +52,13 @@ class MenuItem(Base):
     price_pence: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     manual_recipe: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    # Overrides the template's prep_seconds_by_size for this item (spec 4.2).
+    # Overrides the template's prep_seconds_by_size for this item (spec 4.2). The
+    # override wins unconditionally -- an iced version of a hot drink genuinely takes
+    # a different time, and a per-size template default that could silently beat an
+    # explicit per-item number would make this field a lie.
     prep_seconds: Mapped[int | None] = mapped_column(Integer)
+    # NULL: nothing recorded. True: an estimate (invariant 8). False: timed.
+    prep_seconds_is_estimate: Mapped[bool | None] = mapped_column(Boolean)
     # Spec 4.3: a seasonal item is excluded from out-of-season forecasting and
     # capped by its remaining season days when ordering.
     season_id: Mapped[int | None] = mapped_column(ForeignKey("season.id"))
@@ -143,6 +148,12 @@ class MenuItemCost(Base):
     #: Loaded hourly rate in force when this was computed, so a rate change is
     #: auditable rather than retroactively rewriting history.
     loaded_hourly_rate_pence: Mapped[int | None] = mapped_column(Integer)
+    #: Whether `prep_seconds` above was an estimate when this row was computed.
+    #: Cached alongside the number rather than joined back to the template, for the
+    #: same reason `cost_source` is: an aggregate built on this cache must be able to
+    #: separate estimates from measurements without a second query, or it will not
+    #: bother (invariant 8).
+    prep_seconds_is_estimate: Mapped[bool | None] = mapped_column(Boolean)
 
     computed_at: Mapped[datetime] = mapped_column(UTCDateTime, nullable=False)
     # The recipe date this cost was resolved at, so a stale cache is detectable.

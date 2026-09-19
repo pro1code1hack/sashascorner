@@ -21,21 +21,30 @@ exist.
 
 from __future__ import annotations
 
+import enum
 from collections.abc import Sequence
+from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
 
+from cafeops.domain.stock import drift_attribution
 from cafeops.domain.types import EPSILON, DriftResult, DriftVerdict
 
 __all__ = [
     "DEFAULT_ELIGIBLE_MAX_PCT",
+    "DEFAULT_EXPIRY_DOMINANT_SHARE",
+    "DEFAULT_MATERIAL_LOSS_PCT_OF_CONSUMPTION",
+    "DEFAULT_MEASUREMENT_DOMINANT_SHARE",
     "DEFAULT_WARN_MAX_PCT",
     "DEFAULT_WASTE_DAMPING",
     "MAX_WASTE_FACTOR",
     "WASTE_FACTOR_SCALE",
+    "DriftCause",
+    "DriftExplanation",
     "classify_drift",
     "drift_pct",
     "evaluate_drift",
+    "explain_drift",
     "mean_abs_drift_pct",
     "suggest_waste_factor",
 ]
@@ -196,3 +205,213 @@ def mean_abs_drift_pct(pcts: Sequence[float]) -> float | None:
     if not pcts:
         return None
     return sum(abs(p) for p in pcts) / len(pcts)
+
+
+# ==========================================================================
+# Attribution: which of the two problems is this? Spec 5.2 (v2)
+# ==========================================================================
+
+#: Above this share of the loss, expiry is the story and the fix is to order less.
+DEFAULT_EXPIRY_DOMINANT_SHARE = 0.60
+#: Below this share, expiry is noise and the fix is the recipe or the waste factor.
+DEFAULT_MEASUREMENT_DOMINANT_SHARE = 0.25
+#: Loss smaller than this fraction of what the ledger consumed in the window is not
+#: worth sending anybody to fix. Without a floor, an ingredient losing 4 ml of syrup
+#: gets the same sentence as one losing 12 litres of milk, and the report stops being
+#: read.
+DEFAULT_MATERIAL_LOSS_PCT_OF_CONSUMPTION = 2.0
+
+
+class DriftCause(enum.StrEnum):
+    """What a drift gap is actually telling you to do.
+
+    Defined here rather than in `domain/types.py` for the same reason `GateAction`
+    lives in `domain/tiers.py`: it is the vocabulary of one decision, and that file is
+    integrator-owned.
+    """
+
+    NEGLIGIBLE = "NEGLIGIBLE"
+    EXPIRY = "EXPIRY"
+    MEASUREMENT = "MEASUREMENT"
+    MIXED = "MIXED"
+
+
+@dataclass(frozen=True, slots=True)
+class DriftExplanation:
+    """A drift gap split into the two problems, with the action each one implies.
+
+    Spec 5.2: *"If EXPIRED movements explain most of the gap, the problem is
+    over-ordering, not a bad recipe."* The two fixes are opposite -- order less versus
+    change the recipe -- so a single undifferentiated percentage tells the owner to do
+    the wrong thing roughly half the time.
+
+    One subtlety decides how these numbers must be read. **An `EXPIRED` movement that
+    the sweep has already written is inside theoretical on-hand**, so it REDUCES the
+    gap rather than inflating it. Attribution therefore only has work to do while the
+    physical loss is visible to a count and the write-off is not yet in the ledger --
+    the ordinary case, because the milk goes in the bin before the job runs. That is
+    why `expired_qty` is carried and reported next to the gap rather than folded into
+    it, and why `expiry_share` is measured against the whole loss (unexplained gap
+    plus recorded write-off) instead of against the gap alone. An ingredient with a
+    clean count and eight litres written off is an over-ordering problem, and a report
+    that only looked at the gap would call it healthy.
+    """
+
+    ingredient_id: int
+    observed_at: datetime
+    theoretical_qty: Decimal
+    counted_qty: Decimal
+    #: Signed: positive means the ledger thinks there is MORE stock than the shelf has.
+    gap_qty: Decimal
+    #: Magnitude of EXPIRED movements in the same window.
+    expired_qty: Decimal
+    #: `drift_attribution`'s split of the gap.
+    measurement_qty: Decimal
+    expiry_qty: Decimal
+    #: What the ledger believes was consumed in the window, for the materiality floor.
+    consumption_qty: Decimal | None
+    cause: DriftCause
+
+    @property
+    def unexplained_loss_qty(self) -> Decimal:
+        """`measurement_qty`, but only when the gap is a SHORTFALL.
+
+        `drift_attribution` works on the absolute gap, because the auto-order gate
+        rightly distrusts over-statement and under-statement equally. Attribution is a
+        different question: a NEGATIVE gap means the shelf holds more than the ledger
+        knows, which is not a loss at all -- it is almost always an unrecorded delivery
+        (`domain/drift.py` module docstring). Counting it as loss would invent waste out
+        of a bookkeeping omission and send somebody to cut an order that was fine.
+        """
+        return self.measurement_qty if self.gap_qty > 0 else Decimal("0")
+
+    @property
+    def surplus_qty(self) -> Decimal:
+        """Stock the count found that the ledger did not know about. Not a loss."""
+        return -self.gap_qty if self.gap_qty < 0 else Decimal("0")
+
+    @property
+    def total_loss_qty(self) -> Decimal:
+        """Everything lost beyond sales: unexplained shortfall plus recorded write-off."""
+        return self.unexplained_loss_qty + self.expired_qty
+
+    @property
+    def expiry_share(self) -> float | None:
+        """Fraction of the loss that expiry accounts for. None when there is no loss."""
+        total = self.total_loss_qty
+        if total <= 0:
+            return None
+        return float(self.expired_qty / total)
+
+    @property
+    def loss_pct_of_consumption(self) -> float | None:
+        if self.consumption_qty is None or self.consumption_qty <= 0:
+            return None
+        return float(self.total_loss_qty / self.consumption_qty * Decimal(100))
+
+    @property
+    def headline(self) -> str:
+        return {
+            DriftCause.EXPIRY: "OVER-ORDERING",
+            DriftCause.MEASUREMENT: "RECIPE OR WASTE FACTOR",
+            DriftCause.MIXED: "BOTH",
+            DriftCause.NEGLIGIBLE: "NOTHING TO FIX",
+        }[self.cause]
+
+    @property
+    def action(self) -> str:
+        """The sentence somebody acts on. One cause, one instruction."""
+        share = self.expiry_share
+        pct = f"{share * 100:.0f}%" if share is not None else "n/a"
+        if self.cause is DriftCause.NEGLIGIBLE:
+            return (
+                "no material loss in this window: the count agrees with the ledger and "
+                "nothing expired. Do not tune anything."
+            )
+        if self.cause is DriftCause.EXPIRY:
+            return (
+                f"{pct} of the loss is stock that expired, not consumption the recipe "
+                "missed. ORDER LESS: shorten the cover window or cut the pack count. "
+                "Tuning waste_factor here would hide a purchasing problem inside the "
+                "recipe and make every cost wrong as well."
+            )
+        if self.cause is DriftCause.MEASUREMENT:
+            return (
+                f"only {pct} of the loss is expiry, so the stock left unrecorded. FIX THE "
+                "RECIPE or tune waste_factor: order size is not the problem, and cutting "
+                "it would cause a stockout while the real gap stayed."
+            )
+        return (
+            f"{pct} of the loss is expiry and the rest is unrecorded. Fix the ordering "
+            "first -- it is the half that is measured -- then re-count before touching "
+            "waste_factor, or you will tune against a gap that is about to move."
+        )
+
+    @property
+    def surplus_note(self) -> str | None:
+        """Said separately from `action`, because it is a different problem.
+
+        A surplus is not waste and has nothing to do with the recipe: the shelf holds
+        stock the ledger never recorded arriving. Merging it into the loss sentence would
+        make one number out of two unrelated faults.
+        """
+        if self.surplus_qty <= 0:
+            return None
+        return (
+            f"the count also found {self.surplus_qty} MORE than the ledger expected. That "
+            "is not a loss -- it points at a delivery nobody entered, or a miscount. Chase "
+            "it separately; it is not evidence about the recipe or the order size."
+        )
+
+
+def explain_drift(
+    *,
+    ingredient_id: int,
+    observed_at: datetime,
+    theoretical_qty: Decimal,
+    counted_qty: Decimal,
+    expired_qty: Decimal,
+    consumption_qty: Decimal | None = None,
+    expiry_dominant_share: float = DEFAULT_EXPIRY_DOMINANT_SHARE,
+    measurement_dominant_share: float = DEFAULT_MEASUREMENT_DOMINANT_SHARE,
+    material_loss_pct: float = DEFAULT_MATERIAL_LOSS_PCT_OF_CONSUMPTION,
+) -> DriftExplanation:
+    """Split one drift observation into over-ordering versus recipe error.
+
+    `expired_qty` is the magnitude of `EXPIRED` movements over the same window the
+    drift was measured across -- `StockRepository.expired_qty_between` returns it.
+    """
+    gap = theoretical_qty - counted_qty
+    expired = abs(expired_qty)
+    measurement, expiry = drift_attribution(total_gap=gap, expired_qty=expired)
+    # Only a SHORTFALL counts as loss. See `DriftExplanation.unexplained_loss_qty`.
+    total = (measurement if gap > 0 else Decimal("0")) + expired
+
+    cause = DriftCause.NEGLIGIBLE
+    if total > 0:
+        immaterial = (
+            consumption_qty is not None
+            and consumption_qty > 0
+            and total < consumption_qty * Decimal(str(material_loss_pct)) / Decimal(100)
+        )
+        if not immaterial:
+            share = float(expired / total)
+            if share >= expiry_dominant_share:
+                cause = DriftCause.EXPIRY
+            elif share <= measurement_dominant_share:
+                cause = DriftCause.MEASUREMENT
+            else:
+                cause = DriftCause.MIXED
+
+    return DriftExplanation(
+        ingredient_id=ingredient_id,
+        observed_at=observed_at,
+        theoretical_qty=theoretical_qty,
+        counted_qty=counted_qty,
+        gap_qty=gap,
+        expired_qty=expired,
+        measurement_qty=measurement,
+        expiry_qty=expiry,
+        consumption_qty=consumption_qty,
+        cause=cause,
+    )

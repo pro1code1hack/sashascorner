@@ -23,6 +23,18 @@ Three rules the rest of the system depends on:
 
 Nothing here commits. The caller owns the transaction, so a rollup triggered by an
 edit lands in the same unit of work as the edit.
+
+v2 adds **labour** (spec 5.6). Three more columns get written --
+`labour_cost_pence`, `prep_seconds` and `loaded_hourly_rate_pence` -- and two rules
+come with them:
+
+- **The rate is stored per row**, not looked up at read time. When the owner puts the
+  loaded rate up, last month's reported margins must not silently change; the audit
+  trail is the point of the column.
+- **All three are NULL together** when prep time or the rate is unset. The rate is
+  read from `config` here, at the edge, and handed to `domain/` as an argument --
+  `domain/` never imports config, and a labour figure computed from a guessed rate is
+  a guess wearing a number's clothes.
 """
 
 from __future__ import annotations
@@ -33,10 +45,12 @@ from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
+from cafeops.config import settings
 from cafeops.db.repositories.composition import SqlCompositionRepository
 from cafeops.db.repositories.ingredient import SqlIngredientRepository
 from cafeops.db.repositories.menu_cost import SqlMenuCostRepository
 from cafeops.domain.composition import resolve_recipe
+from cafeops.domain.labour import UNTIMED
 from cafeops.domain.types import (
     IngredientSnapshot,
     PriceSource,
@@ -47,12 +61,30 @@ from cafeops.domain.types import (
 
 __all__ = [
     "RollupReport",
+    "configured_rate_pence",
     "rollup_all",
     "rollup_for_ingredient",
     "rollup_for_template",
     "rollup_menu_items",
     "snapshots_at",
 ]
+
+
+def configured_rate_pence() -> int | None:
+    """The loaded hourly rate from config, with 0 or absent read as UNSET.
+
+    This is the only place in the cost path that reads the rate from settings, and it
+    is deliberately at the edge: `domain/labour.py` takes the rate as an argument so
+    it can be asked "and what if it were GBP 15.50?".
+
+    A rate of 0 is treated as missing rather than as free labour. There is no way to
+    ask a rollup to "pretend the rate is unset" -- clear
+    `CAFEOPS_LOADED_HOURLY_RATE_PENCE` instead. A rate is either configured or it is
+    not, and a flag that made it conditionally invisible would let one caller write
+    NULL labour into a cache every other caller reads as authoritative.
+    """
+    rate = settings.loaded_hourly_rate_pence
+    return rate if rate is not None and rate > 0 else None
 
 
 @dataclass
@@ -69,6 +101,10 @@ class RollupReport:
     skipped_no_spec: int = 0
     substitution_errors: int = 0
     templates_in_scope: int = 0
+    # --- labour (spec 5.6) ---------------------------------------------------
+    with_labour: int = 0
+    without_prep_time: int = 0
+    loaded_hourly_rate_pence: int | None = None
     warnings: list[str] = field(default_factory=list)
 
     @property
@@ -95,6 +131,19 @@ class RollupReport:
             parts.append(f"{self.skipped_no_spec} had no resolvable recipe")
         if self.substitution_errors:
             parts.append(f"{self.substitution_errors} substitution error(s)")
+        if self.loaded_hourly_rate_pence is None:
+            # Not "labour 0" -- unknown. The same wording invariant 6 needs for cost.
+            parts.append(
+                "NO loaded hourly rate configured, so every labour figure is UNKNOWN "
+                "(set CAFEOPS_LOADED_HOURLY_RATE_PENCE)"
+            )
+        else:
+            parts.append(
+                f"{self.with_labour} with labour at GBP "
+                f"{self.loaded_hourly_rate_pence / 100:.2f}/hr"
+            )
+            if self.without_prep_time:
+                parts.append(f"{self.without_prep_time} with NO prep time (labour UNKNOWN)")
         return "; ".join(parts)
 
 
@@ -133,7 +182,13 @@ def rollup_menu_items(
     sale, not to the menu item.
     """
     at = at or datetime.now(UTC)
-    report = RollupReport(trigger=trigger, at=at, considered=len(menu_item_ids))
+    rate = configured_rate_pence()
+    report = RollupReport(
+        trigger=trigger,
+        at=at,
+        considered=len(menu_item_ids),
+        loaded_hourly_rate_pence=rate,
+    )
     if not menu_item_ids:
         return report
 
@@ -141,7 +196,14 @@ def rollup_menu_items(
     costs = SqlMenuCostRepository(session)
     snapshots = snapshots if snapshots is not None else snapshots_at(session, at)
 
-    specs = composition.item_specs(list(menu_item_ids), at)
+    ids = list(menu_item_ids)
+    specs = composition.item_specs(ids, at)
+    prep_times = composition.prep_times(ids)
+    # Seasons reach resolution as a side channel rather than as fields on
+    # MenuItemSpec, which is integrator-owned. They only ever add a warning -- see
+    # `domain/composition.py` for why an out-of-season item must still resolve.
+    option_seasons = composition.option_seasons_for_items(ids)
+    item_seasons = composition.item_seasons(ids)
     computed_at = datetime.now(UTC)
 
     for menu_item_id in menu_item_ids:
@@ -151,7 +213,14 @@ def rollup_menu_items(
             report.warnings.append(f"menu item {menu_item_id} no longer exists; not recosted")
             continue
         try:
-            recipe = resolve_recipe(spec, (), at, ingredients=snapshots)
+            recipe = resolve_recipe(
+                spec,
+                (),
+                at,
+                ingredients=snapshots,
+                option_seasons=option_seasons.get(menu_item_id),
+                item_season=item_seasons.get(menu_item_id),
+            )
         except SubstitutionError as exc:
             # Cannot happen without modifiers, but a raise here would abort a whole
             # nightly rollup over one bad row. Record it and keep going.
@@ -167,8 +236,19 @@ def rollup_menu_items(
             report.skipped_no_spec += 1
             continue
 
-        costs.upsert(menu_item_id, recipe, computed_at)
+        prep = prep_times.get(menu_item_id, UNTIMED)
+        costs.upsert(
+            menu_item_id,
+            recipe,
+            computed_at,
+            prep=prep,
+            loaded_hourly_rate_pence=rate,
+        )
         report.costed += 1
+        if prep.is_known and rate is not None:
+            report.with_labour += 1
+        elif not prep.is_known:
+            report.without_prep_time += 1
         if recipe.has_missing_cost:
             report.missing_cost += 1
             report.warnings.append(

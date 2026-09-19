@@ -135,7 +135,16 @@ def seed(
             for warning in report.warnings:
                 console.print(f"  [yellow]warning[/yellow] {warning}")
 
+    # Prep times are seeded whether or not --demo runs: without them every labour
+    # figure, true margin and margin-per-minute in the system is None, and spec 5.6's
+    # finding cannot be computed at all. Every value is written as an ESTIMATE.
+    from cafeops.seed.prep_times import seed_prep_times
+
     if not demo:
+        with session_scope() as session:
+            console.print("[bold]Estimating[/bold] prep times")
+            prep = seed_prep_times(session)
+            console.print(f"  {prep.summary()}")
         console.print("[green]done[/green] (pass --demo for the full scenario)")
         return
 
@@ -147,7 +156,11 @@ def seed(
 
     with session_scope() as session:
         console.print("[bold]Expanding[/bold] sales into stock movements")
-        expansion = expand_pending(session)
+        # allocate_batches=False: the seed expands 60 days of sales BEFORE the
+        # deliveries that supplied them exist, then builds batches by replaying the
+        # finished ledger (ARCHITECTURE.md 8F.2). Allocating here would report every
+        # movement as a shortfall against batches that have not been created yet.
+        expansion = expand_pending(session, allocate_batches=False)
         console.print(f"  {expansion.summary()}")
         for warning in expansion.warnings[:5]:
             console.print(f"  [yellow]warning[/yellow] {warning}")
@@ -183,6 +196,22 @@ def seed(
             f"  {resized} re-sized from throughput; {skipped} left at the seeded "
             "pack multiple (no measured consumption)"
         )
+
+    # After the template exists, so its per-size defaults can be written to it.
+    with session_scope() as session:
+        console.print("[bold]Estimating[/bold] prep times (all ESTIMATE, spec 5.6)")
+        prep = seed_prep_times(session)
+        console.print(f"  {prep.summary()}")
+        for warning in prep.warnings:
+            console.print(f"  [yellow]warning[/yellow] {warning}")
+
+    # Labour lands in menu_item_cost, so the cache has to be built after prep times.
+    from cafeops.jobs.cost_rollup import rollup_all
+
+    with session_scope() as session:
+        console.print("[bold]Costing[/bold] the menu (cost + labour)")
+        rollup = rollup_all(session)
+        console.print(f"  {rollup.summary()}")
 
     console.print()
     for line in demo_report.lines():
@@ -615,6 +644,16 @@ def drift(
         str | None,
         typer.Option("--apply-waste", help="Adopt the suggested waste_factor for this ingredient."),
     ] = None,
+    explain: Annotated[
+        bool,
+        typer.Option(
+            "--explain",
+            help=(
+                "Attribute each gap: over-ordering (expiry write-offs) or a recipe error. "
+                "The two have OPPOSITE fixes (spec 5.2)."
+            ),
+        ),
+    ] = False,
 ) -> None:
     """Drift history and auto-order gate status per ingredient (spec 5.2)."""
     from cafeops.db.repositories.drift import SqlDriftRepository
@@ -624,6 +663,7 @@ def drift(
     from cafeops.services.record_count import (
         apply_waste_suggestion,
         backfill_drift_observations,
+        explain_drift_history,
         gate_status,
     )
 
@@ -708,6 +748,8 @@ def drift(
                 detail.append((subject.name, (subject, rows, decision, audit)))
 
         console.print(table)
+        if explain:
+            _print_attribution(session, subjects, history, explain_drift_history)
         console.print(
             "[dim]Drift = (theoretical - counted) / max(counted, epsilon) * 100. The gate "
             "reads |drift|: over-stating stock and under-stating it are both untrustworthy. "
@@ -715,6 +757,90 @@ def drift(
             "the streak is counted over the stored series.[/dim]"
         )
         _print_detail(detail)
+
+
+def _print_attribution(session, subjects, history: int, explain_drift_history) -> None:
+    """Spec 5.2's v2 diagnostic: which problem is this, and therefore what do you fix.
+
+    Over-ordering and a bad recipe have opposite fixes, so an undifferentiated drift
+    percentage sends the owner the wrong way roughly half the time. `EXPIRED` movements
+    are the evidence that separates them.
+    """
+    from cafeops.domain.drift import DriftCause
+
+    styles = {
+        DriftCause.EXPIRY: "red",
+        DriftCause.MEASUREMENT: "yellow",
+        DriftCause.MIXED: "magenta",
+        DriftCause.NEGLIGIBLE: "green",
+    }
+
+    table = Table(
+        title="Drift attribution -- is this over-ordering, or the recipe?  (spec 5.2)",
+        title_style="bold",
+        width=118,
+    )
+    table.add_column("Ingredient", no_wrap=True)
+    table.add_column("Observed")
+    table.add_column("Gap", justify="right", no_wrap=True)
+    table.add_column("Expired", justify="right", no_wrap=True)
+    table.add_column("Unexplained", justify="right", no_wrap=True)
+    table.add_column("Expiry share", justify="right")
+    table.add_column("Verdict")
+
+    seen: list[tuple[str, object, str, str]] = []
+    swept_late = 0
+    for subject in subjects:
+        for row in explain_drift_history(session, ingredient_id=subject.id, limit=history):
+            explanation = row.explanation
+            style = styles[explanation.cause]
+            share = explanation.expiry_share
+            if row.sweep_ran_after_count:
+                swept_late += 1
+            table.add_row(
+                subject.name,
+                f"{explanation.observed_at.astimezone(settings.tz):%Y-%m-%d}",
+                format_qty(explanation.gap_qty, subject.unit),
+                format_qty(explanation.expired_qty, subject.unit),
+                format_qty(explanation.unexplained_loss_qty, subject.unit),
+                "-" if share is None else f"{share * 100:.0f}%",
+                f"[{style}]{explanation.headline}[/{style}]",
+            )
+            # One sentence per (ingredient, cause): repeating the same instruction once
+            # per observation is how a report stops being read.
+            if explanation.cause is not DriftCause.NEGLIGIBLE and not any(
+                name == subject.name and cause is explanation.cause for name, cause, _, _ in seen
+            ):
+                action = explanation.action
+                note = explanation.surplus_note
+                if note is not None:
+                    action = f"{action}  ALSO: {note}"
+                seen.append((subject.name, explanation.cause, style, action))
+
+    console.print()
+    console.print(table)
+    console.print(
+        "[dim]Gap = theoretical - counted. Expired = EXPIRED write-offs dated inside the "
+        "same window, recomputed from the ledger. Unexplained = the part no write-off "
+        "accounts for. The share is measured against the whole loss (unexplained + "
+        "written off), because a write-off the sweep has already booked is inside "
+        "theoretical and so shrinks the gap rather than inflating it.[/dim]"
+    )
+    if swept_late:
+        console.print(
+            f"[dim]{swept_late} observation(s) have a write-off booked AFTER the count that "
+            "measured them. Not a discrepancy -- somebody counted a short shelf and the sweep "
+            "later named the reason. The gate acted on what was stored at the time; the live "
+            "figure above is what to fix from.[/dim]"
+        )
+    if not seen:
+        console.print(
+            "[green]Nothing to fix: no ingredient shows a material loss over these windows.[/green]"
+        )
+        return
+    console.print()
+    for name, _cause, style, action in seen[:12]:
+        console.print(f"[{style}]{name}[/{style}]: {action}")
 
 
 def _print_detail(detail) -> None:
@@ -854,6 +980,84 @@ def _render_preview(preview: object, header: str) -> None:
             f"{_pct(worst.margin_pct(worst.cost_after_pence))}"
         )
     for warning in preview.warnings:
+        console.print(f"  [yellow]warning[/yellow] {warning}")
+
+
+def _pence(value: object, *, signed: bool = False) -> str:
+    """A pence figure at one decimal place. 'unknown' when it is not known."""
+    if value is None:
+        return "[yellow]unknown[/yellow]"
+    dec = Decimal(str(value))
+    sign = "+" if (signed and dec >= 0) else ("-" if signed else "")
+    shown = abs(dec) if signed else dec
+    # Drop the decimal above 1000p: a whole cake at 3000p/min does not need a tenth
+    # of a penny, and the column is narrower than the number is precise.
+    places = 0 if abs(dec) >= 1000 else 1
+    return f"{sign}{shown:.{places}f}p"
+
+
+def _prep(prep: object) -> str:
+    """Compact prep time. A trailing `*` marks an ESTIMATE; the footnote says so."""
+    if prep is None or prep.seconds is None:
+        return "[yellow]-[/yellow]"
+    return f"{prep.seconds}s{'*' if prep.is_estimate else ''}"
+
+
+def _range(value: object, spread: object, *, signed: bool = False) -> str:
+    """One figure when the affected items agree, else the range they span.
+
+    Never an average: a mean across items that disagree describes no menu item, and
+    the label beside it says "per item".
+    """
+    if value is not None:
+        return _money(value, signed=signed)
+    if spread is not None:
+        low, high = spread
+        return f"{_money(low, signed=signed)} to {_money(high, signed=signed)} [dim](varies)[/dim]"
+    return "[yellow]unknown[/yellow]"
+
+
+def _render_labour(labour: object) -> None:
+    """Spec 5.6's half of the preview: what the edit does to labour and to throughput.
+
+    Labour cost is printed even though a quantity edit never moves it, because "did
+    that change my labour cost?" is the first thing a reader wonders and an absent line
+    does not answer it.
+    """
+    if labour is None:
+        return
+    console.print("\n  [bold]Labour and throughput[/bold] (spec 5.6)")
+    per_item = _range(labour.labour_cost_pence_per_item, labour.labour_cost_pence_range)
+    true_delta = _range(
+        labour.true_margin_delta_pence_per_item,
+        labour.true_margin_delta_pence_range,
+        signed=True,
+    )
+    console.print(
+        f"  Labour per item      {per_item}"
+        "  [dim](unchanged by a recipe edit -- prep time did not move)[/dim]"
+    )
+    console.print(f"  True margin delta    {true_delta}")
+    worst_true = labour.worst_true_margin_after
+    if worst_true is not None:
+        console.print(
+            f"  Lowest TRUE margin   {worst_true.label}, "
+            f"{_pct(worst_true.before.true_margin_pct)} -> {_pct(worst_true.after.true_margin_pct)}"
+        )
+    worst_min = labour.worst_margin_per_minute_after
+    if worst_min is not None:
+        console.print(
+            f"  Worst margin/minute  {worst_min.label}, "
+            f"{_pence(worst_min.before.margin_per_minute_pence)} -> "
+            f"{_pence(worst_min.after.margin_per_minute_pence)}"
+        )
+    if labour.rank_moves:
+        console.print("  Margin/minute order MOVED among the affected items:")
+        for label, was, now in labour.rank_moves[:6]:
+            console.print(f"    {label}: #{was} -> #{now}")
+    elif labour.ranking_after is not None and labour.ranking_after.ranked:
+        console.print("  [dim]margin/minute order unchanged among the affected items[/dim]")
+    for warning in labour.warnings:
         console.print(f"  [yellow]warning[/yellow] {warning}")
 
 
@@ -1089,7 +1293,7 @@ def edit_recipe_cmd(
     from cafeops.domain.types import SizeCode
     from cafeops.services.edit_composition import (
         apply_component_qty_change,
-        preview_component_qty_change,
+        preview_component_qty_change_with_labour,
         qty_map_with,
     )
 
@@ -1117,8 +1321,11 @@ def edit_recipe_cmd(
         )
 
         if not commit:
-            preview = preview_component_qty_change(session, component, qty_by_size=qty_by_size)
-            _render_preview(preview, header)
+            labour = preview_component_qty_change_with_labour(
+                session, component, qty_by_size=qty_by_size
+            )
+            _render_preview(labour.preview, header)
+            _render_labour(labour)
             console.print(
                 "\n[yellow]PREVIEW: nothing written. Re-run with --commit to apply from "
                 "today.[/yellow]"
@@ -1129,6 +1336,7 @@ def edit_recipe_cmd(
             session, component, qty_by_size=qty_by_size, actor=actor
         )
         _render_preview(result.preview, header)
+        _render_labour(result.labour)
         console.print(
             f"\n[green]applied[/green] component {result.component_id} closed, "
             f"{result.new_component_id} opened, effective "
@@ -1277,6 +1485,267 @@ def menu_costs_cmd(
     )
 
 
+@app.command()
+def margin(
+    limit: Annotated[int, typer.Option(help="Rows per ranking.")] = 15,
+    template: Annotated[str | None, typer.Option("--template", help="Only this template.")] = None,
+    window_days: Annotated[
+        int, typer.Option("--window-days", help="Sales window behind the volume weighting.")
+    ] = 30,
+    rate_pence: Annotated[
+        int | None,
+        typer.Option("--rate-pence", help="Override the loaded hourly rate, in PENCE."),
+    ] = None,
+    show_excluded: Annotated[
+        bool, typer.Option("--show-excluded", help="List the items that cannot be ranked.")
+    ] = False,
+) -> None:
+    """The menu ranked by margin % AND by margin-per-minute, side by side (spec 5.6).
+
+    Two tables, deliberately not merged into one score. Margin % is what the menu was
+    priced on; margin-per-minute is what matters when there is a queue, because the
+    scarce resource at 11am is the person behind the counter and not the money. The two
+    orderings disagree, and the disagreement is the finding.
+    """
+    from cafeops.services.menu_margin import menu_margin
+
+    with session_scope() as session:
+        try:
+            view = menu_margin(
+                session,
+                template=template,
+                window_days=window_days,
+                loaded_hourly_rate_pence=rate_pence,
+            )
+        except LookupError as exc:
+            raise typer.BadParameter(str(exc)) from exc
+
+    rate = view.loaded_hourly_rate_pence
+    rate_text = (
+        "[yellow]NO loaded hourly rate configured[/yellow]"
+        if rate is None
+        else f"loaded rate GBP {rate / 100:.2f}/hr"
+    )
+    console.print(
+        f"[bold]{view.items_costed} costed menu item(s)[/bold] -- {rate_text}; "
+        f"volume over {view.since} to {view.until}"
+    )
+
+    ranking = view.ranking
+    if not ranking.ranked:
+        console.print(
+            "[yellow]Nothing can be ranked: ranking needs an ingredient cost AND a prep "
+            "time on the cached row.[/yellow]"
+        )
+        for item, reason in ranking.excluded[:limit]:
+            console.print(f"  {item.label}: [yellow]{reason}[/yellow]")
+        if len(ranking.excluded) > limit:
+            console.print(f"  [dim]... {len(ranking.excluded) - limit} more[/dim]")
+        for warning in view.warnings:
+            console.print(f"  [yellow]warning[/yellow] {warning}")
+        return
+
+    table = Table(
+        title=(
+            f"{ranking.rankable_count} rankable item(s) -- BY MARGIN % (left) vs "
+            "BY MARGIN PER MINUTE (right)"
+        ),
+        title_style="bold",
+    )
+    table.add_column("#", justify="right")
+    table.add_column("By margin %", no_wrap=True)
+    table.add_column("Margin", justify="right")
+    table.add_column("p/min", justify="right")
+    table.add_column("#", justify="right")
+    table.add_column("By margin per minute", no_wrap=True)
+    table.add_column("p/min", justify="right")
+    table.add_column("Prep", justify="right")
+    table.add_column("Margin", justify="right")
+
+    left = ranking.by_margin_pct[:limit]
+    right = ranking.by_margin_per_minute[:limit]
+    for index in range(max(len(left), len(right))):
+        lo = left[index] if index < len(left) else None
+        ro = right[index] if index < len(right) else None
+        table.add_row(
+            str(index + 1) if lo else "",
+            lo.label if lo else "",
+            _pct(lo.margin_pct) if lo else "",
+            _pence(lo.margin_per_minute_pence) if lo else "",
+            str(index + 1) if ro else "",
+            ro.label if ro else "",
+            _pence(ro.margin_per_minute_pence) if ro else "",
+            _prep(ro.prep) if ro else "",
+            _pct(ro.margin_pct) if ro else "",
+        )
+    console.print(table)
+
+    if ranking.orderings_agree:
+        console.print(
+            "[yellow]The two orderings AGREE exactly, which on a real menu means every "
+            "ranked item takes the same time to make. Check the prep times.[/yellow]"
+        )
+    else:
+        console.print("[bold]Where the two views disagree most[/bold]")
+        for entry in ranking.biggest_disagreements[:6]:
+            direction = (
+                "margin/minute rates it HIGHER"
+                if entry.rank_delta > 0
+                else "margin/minute rates it LOWER"
+            )
+            console.print(
+                f"  {entry.item.label}: margin % #{entry.margin_rank} vs margin/minute "
+                f"#{entry.margin_per_minute_rank} ({entry.disagreement} places, {direction}) "
+                f"-- {_pct(entry.item.margin_pct)} at {_prep(entry.item.prep)} = "
+                f"{_pence(entry.item.margin_per_minute_pence)}/min"
+            )
+
+    console.print(f"\n[bold]Labour over the window[/bold]  {view.menu.summary()}")
+    if view.menu.labour_share_of_revenue_pct is not None:
+        console.print(
+            f"  labour is {view.menu.labour_share_of_revenue_pct:.1f}% of revenue on the "
+            "included items"
+        )
+    for rollup in view.by_template:
+        console.print(f"  [dim]{rollup.summary()}[/dim]")
+
+    if show_excluded and ranking.excluded:
+        console.print(f"\n[bold]{len(ranking.excluded)} item(s) that cannot be ranked[/bold]")
+        for item, reason in ranking.excluded[:limit]:
+            console.print(f"  {item.label}: [yellow]{reason}[/yellow]")
+        if len(ranking.excluded) > limit:
+            console.print(f"  [dim]... {len(ranking.excluded) - limit} more[/dim]")
+    for warning in view.warnings:
+        console.print(f"  [yellow]warning[/yellow] {warning}")
+    console.print(
+        "[dim]* prep time is an ESTIMATE, not a measurement. Both views are true, and "
+        "neither is blended into a single score -- the disagreement between them is the "
+        "finding (spec 5.6).[/dim]"
+    )
+
+
+@app.command()
+def availability(
+    as_of: Annotated[
+        str, typer.Option("--as-of", help="Which day the menu is being asked about.")
+    ] = "today",
+    unavailable_only: Annotated[
+        bool, typer.Option("--unavailable-only", help="Only what the menu should not offer.")
+    ] = True,
+    limit: Annotated[int, typer.Option(help="Rows to print.")] = 30,
+) -> None:
+    """What the MENU should offer on a given day, and why not (spec 4.3).
+
+    This is the half of the seasonal question that says no. `resolve_recipe` is the
+    other half and it always says yes: an out-of-season item still has a recipe, still
+    costs what it costs, and a past sale of one still depleted stock. Only its place on
+    a given day's menu is in question.
+    """
+    from cafeops.services.menu_margin import menu_availability
+
+    on = _parse_as_of(as_of).astimezone(settings.tz).date()
+    with session_scope() as session:
+        answers = menu_availability(session, on=on, unavailable_only=unavailable_only)
+
+    if not answers:
+        console.print(f"[green]Nothing is unavailable on {on}.[/green]")
+        return
+
+    table = Table(title=f"Menu availability on {on}", title_style="bold")
+    table.add_column("Item", no_wrap=True)
+    table.add_column("Size", justify="center")
+    table.add_column("Status")
+    table.add_column("Why")
+    for answer in answers[:limit]:
+        status = (
+            "[green]AVAILABLE[/green]"
+            if answer.is_available
+            else f"[yellow]{answer.availability.value}[/yellow]"
+        )
+        why = "; ".join(answer.reasons)
+        if answer.is_available and answer.binding_season is not None:
+            why = (
+                f"{answer.binding_season.name}, {answer.days_remaining} day(s) left"
+                if answer.days_remaining is not None
+                else answer.binding_season.name
+            )
+        table.add_row(answer.name, answer.size_code.value if answer.size_code else "-", status, why)
+    console.print(table)
+    if len(answers) > limit:
+        console.print(f"[dim]... {len(answers) - limit} more[/dim]")
+    console.print(
+        "[dim]Unavailable means the MENU does not offer it. Its recipe still resolves -- "
+        "a sale that happened consumed what it consumed (invariant 3).[/dim]"
+    )
+
+
+@app.command(name="prep-times")
+def prep_times_cmd(
+    apply: Annotated[
+        bool, typer.Option("--apply", help="Write the estimates. Without it, nothing is written.")
+    ] = False,
+    limit: Annotated[int, typer.Option(help="Rows to print.")] = 25,
+) -> None:
+    """Prep times per menu item, and the items nobody has timed (spec 4.2, 5.6).
+
+    Every seeded prep time is an ESTIMATE and says so. The untimed list is not a bug:
+    an item with no prep time reports labour, true margin and margin-per-minute as
+    UNKNOWN rather than as a flattering number, and the list is the worklist.
+    """
+    from sqlalchemy import select
+
+    from cafeops.db.models import MenuItem
+    from cafeops.db.repositories.composition import SqlCompositionRepository
+    from cafeops.seed.prep_times import seed_prep_times
+
+    if apply:
+        with session_scope() as session:
+            report = seed_prep_times(session)
+        console.print(report.summary())
+        for warning in report.warnings:
+            console.print(f"  [yellow]warning[/yellow] {warning}")
+
+    with session_scope() as session:
+        items = list(session.scalars(select(MenuItem).order_by(MenuItem.name, MenuItem.size_code)))
+        prep = SqlCompositionRepository(session).prep_times([i.id for i in items])
+        rows = [
+            (item.name, item.size_code.value if item.size_code else "-", prep[item.id])
+            for item in items
+        ]
+
+    timed = [row for row in rows if row[2].is_known]
+    untimed = [row for row in rows if not row[2].is_known]
+    table = Table(
+        title=(
+            f"{len(timed)} of {len(rows)} menu item(s) have a prep time; "
+            f"{len(untimed)} do NOT (their labour figures are UNKNOWN)"
+        ),
+        title_style="bold",
+    )
+    table.add_column("Item", no_wrap=True)
+    table.add_column("Size", justify="center")
+    table.add_column("Prep", justify="right")
+    table.add_column("From")
+    for name, size, value in timed[:limit]:
+        table.add_row(
+            name,
+            size,
+            value.describe(),
+            value.source.value,
+        )
+    console.print(table)
+    if len(timed) > limit:
+        console.print(f"[dim]... {len(timed) - limit} more timed[/dim]")
+    if untimed:
+        console.print(f"\n[bold]{len(untimed)} item(s) with NO prep time[/bold]")
+        for name, size, _value in untimed[:limit]:
+            console.print(f"  {name} [{size}]")
+    console.print(
+        "[dim]Every value here is an ESTIMATE, not a measurement. The ~15 items that "
+        "actually sell are the ones worth timing with a stopwatch.[/dim]"
+    )
+
+
 @app.command(name="set-price")
 def set_price_cmd(
     ingredient: Annotated[str, typer.Option("--ingredient", help="Ingredient name.")],
@@ -1366,17 +1835,29 @@ def set_price_cmd(
 # --------------------------------------------------------------------------
 
 SIM_CAVEATS = (
-    "CakeSmiths and Cups Direct lead times, delivery weekdays and minimum orders are "
-    "INVENTED PLACEHOLDERS (ARCHITECTURE.md 8.2). Every cover window below is only as "
-    "good as they are, and nothing in the forecaster or the sizing has been tuned "
-    "against them. Confirm the real terms with each supplier before trusting an order "
-    "size. Tesco's terms (walk-in, any day, lead 0, no minimum) are real.",
     "Every order below is a DRAFT for human confirmation (invariant 1), so "
     "par_level.auto_order_enabled does not gate it unless --require-auto-order is "
     "passed. That flag is the unattended path, where invariant 2 does gate it.",
     "This replay reads only what was knowable on each order date: on-hand at local "
     "midnight that morning, history to the previous day. No hindsight.",
+    "Shelf lives are ESTIMATE defaults, not measurements (ARCHITECTURE.md 8F.1). They "
+    "CAP order quantities (invariant 4), so a wrong one either wastes stock or causes a "
+    "stockout. The ~15 perishables that actually move are worth confirming first.",
 )
+
+
+def _sim_terms_caveat(terms) -> str:
+    """The placeholder caveat, built from the column rather than a hard-coded list."""
+    invented = [t.name for t in terms if t.terms_are_placeholders]
+    real = [t.name for t in terms if not t.terms_are_placeholders]
+    return (
+        f"{len(invented)} of {len(terms)} suppliers' terms are INVENTED PLACEHOLDERS: "
+        f"{', '.join(invented)}. Lead time, delivery weekdays, cutoff, minimum order and "
+        "free-delivery threshold were never confirmed with any of them "
+        "(ARCHITECTURE.md 8F.4). Every cover window below is only as good as they are, "
+        "and nothing in the forecaster or the sizing has been tuned against them. Only "
+        f"{' and '.join(real)} have terms anybody has checked."
+    )
 
 
 def _sim_history_range(session) -> tuple[date, date] | None:
@@ -1440,6 +1921,19 @@ def _sim_print_line(outcome) -> None:
         f"  = lead {cover.lead_time_days} + gap {cover.days_until_next_delivery}"
         f" + safety {cover.safety_days}"
     )
+    if candidate.is_capped:
+        # SPEC 5.4 / INVARIANT 4: the deliberate under-order has to be visible, and
+        # visible NEXT TO the quantity rather than in a note further down the page.
+        shelf = candidate.shelf_life
+        detail = ""
+        if shelf is not None and shelf.shelf_life_days is not None:
+            detail = (
+                f"  (shelf life {shelf.shelf_life_days}d - transit {shelf.transit_buffer_days}d)"
+            )
+        console.print(
+            f"      [yellow]CAPPED: effective cover {candidate.effective_cover_days}d of "
+            f"{cover.length}d -- {line.cap_reason}[/yellow]{detail}"
+        )
     if line.low_confidence:
         # INVARIANT 7: the reason goes in place of the number, not beside it.
         console.print("      [yellow]forecast WITHHELD -- low confidence:[/yellow]")
@@ -1451,9 +1945,19 @@ def _sim_print_line(outcome) -> None:
             f"   -> [bold]{line.packs} pack(s)[/bold] {pounds(line.line_total_pence)}"
         )
     else:
+        window = (
+            f"{candidate.effective_cover_days}d of {cover.length}d"
+            if candidate.is_capped
+            else f"{cover.length}d"
+        )
         console.print(
-            f"      forecast {_sim_qty(line.forecast_qty, unit)}"
-            f"  - on-hand {_sim_qty(line.on_hand_qty, unit)}"
+            f"      forecast {_sim_qty(line.forecast_qty, unit)} over {window}"
+            + (
+                f" (uncapped {_sim_qty(candidate.full_forecast_qty, unit)})"
+                if candidate.is_capped
+                else ""
+            )
+            + f"  - on-hand {_sim_qty(line.on_hand_qty, unit)}"
             f"  - open POs {_sim_qty(line.on_open_pos_qty, unit)}"
             f"  = need {_sim_qty(line.need_qty, unit)}"
         )
@@ -1471,6 +1975,91 @@ def _sim_print_line(outcome) -> None:
     )
     if outcome.note:
         console.print(f"      [dim]{outcome.note}[/dim]")
+
+
+def _sim_print_sourcing(result, *, verbose: bool) -> None:
+    """Every sourcing decision, and what each one cost or saved. Spec 4.4.
+
+    All of them, not only the switches. A decision to keep the incumbent because the
+    alternate is DEARER is the case that proves the comparison is running at all, and
+    the two deliberately worse seeded alternates (Monolith beans, Amazon cups) exist to
+    be shown losing. Only ingredients with a real alternate reach `choices`, so this
+    stays a handful of lines rather than a wall.
+    """
+    from cafeops.domain.ordering import pounds
+
+    choices = result.split.choices
+    if not choices:
+        return
+    switched = [c for c in choices if not c.chosen.is_preferred]
+    rejected = [c for c in choices if c.cheaper_rejected is not None]
+    console.print(
+        f"\n[bold]sourcing[/bold]  {len(choices)} ingredient(s) with a real choice: "
+        f"{len(switched)} switched, {len(rejected)} kept a dearer supplier on purpose"
+    )
+    for choice in choices:
+        if not choice.alternatives and not verbose:
+            continue
+        marker = "[green]SWITCHED[/green]" if not choice.chosen.is_preferred else "KEPT"
+        console.print(f"  {marker} {choice.reason}")
+        if choice.cheaper_rejected is not None and choice.forgone_saving_pence is not None:
+            console.print(
+                f"    [yellow]forgone saving {pounds(int(choice.forgone_saving_pence))}"
+                f"[/yellow] -- a decision, not an oversight (spec 4.4)"
+            )
+
+
+def _sim_print_emergency(session, result, *, order_date, commit: bool) -> None:
+    """The Tesco run: what could not wait, and the premium it cost. Spec 4.4."""
+    from datetime import UTC, datetime
+    from datetime import time as dtime
+
+    from cafeops.domain.ordering import pounds
+    from cafeops.services.build_order import record_emergency_lines
+
+    plan = result.emergency
+    if not plan.lines and not plan.notes:
+        return
+    if plan.lines:
+        premium = plan.total_premium_pence
+        console.print(
+            f"\n[bold red]Tesco emergency routing[/bold red]  {len(plan.lines)} line(s)"
+            + (
+                f", retail premium {pounds(int(premium))} over the scheduled suppliers"
+                if premium is not None
+                else ", premium not computable -- a unit price is missing"
+            )
+        )
+        for line in plan.lines:
+            console.print(
+                f"    [bold]{line.ingredient_name}[/bold] {_sim_qty(line.qty, line.unit)}"
+                + (
+                    f"  retail {line.retail_unit_price_pence:.2f}p/{line.unit.value}"
+                    if line.retail_unit_price_pence is not None
+                    else "  retail price unknown"
+                )
+                + (
+                    f"  vs preferred {line.preferred_unit_price_pence:.2f}p/{line.unit.value}"
+                    if line.preferred_unit_price_pence is not None
+                    else ""
+                )
+                + (
+                    f"  = [red]premium {pounds(int(line.premium_pence))}[/red]"
+                    if line.premium_pence is not None
+                    else ""
+                )
+            )
+            console.print(f"      [dim]{line.reason}[/dim]")
+    for note in plan.notes:
+        console.print(f"  [yellow]note[/yellow] {note}")
+    if commit and plan.lines:
+        at = datetime.combine(order_date, dtime(9, 0), tzinfo=settings.tz).astimezone(UTC)
+        written = record_emergency_lines(session, result, at=at)
+        console.print(
+            f"  [green]logged {len(written)} routing(s) to tesco_routing[/green] -- the "
+            "accumulated log is the argument for fixing the ordering cadence, so it is "
+            "data rather than a note (spec 4.4)"
+        )
 
 
 @app.command()
@@ -1500,9 +2089,20 @@ def simulate(
         typer.Option(
             "--min-order-pence",
             help=(
-                "WHAT-IF: override every supplier's minimum order. The stored minimums for "
-                "CakeSmiths and Cups Direct are invented placeholders, so asking 'what if "
-                "it were really X' is the only honest way to exercise the top-up."
+                "WHAT-IF: override every supplier's minimum order. Six of the eight stored "
+                "minimums are invented placeholders, so asking 'what if it were really X' "
+                "is the only honest way to exercise the top-up."
+            ),
+        ),
+    ] = None,
+    order_time: Annotated[
+        str | None,
+        typer.Option(
+            "--order-time",
+            help=(
+                "Local time of day the order is placed, HH:MM. Past a supplier's cutoff "
+                "the lead time starts tomorrow and the cover window grows a day -- which "
+                "is how a Tesco run happens. Omitted, no cutoff is applied."
             ),
         ),
     ] = None,
@@ -1531,22 +2131,30 @@ def simulate(
     ordered line shows its cover window, forecast total, on-hand, open-PO quantity,
     need, pack division, resulting on-hand, and any clamp or top-up.
     """
-    from dataclasses import replace as dc_replace
+    from datetime import time as dtime
 
     from sqlalchemy import select
 
     from cafeops.db.models import Ingredient, ParLevel
+    from cafeops.db.repositories.sourcing import SqlSourcingRepository
     from cafeops.db.repositories.stock import SqlStockRepository
-    from cafeops.db.repositories.supplier import PLACEHOLDER_TERMS, SqlSupplierRepository
+    from cafeops.db.repositories.supplier import SqlSupplierRepository
     from cafeops.domain.forecast import WEEKDAY_NAMES, daily_series, dow_factors
     from cafeops.domain.ordering import pounds
-    from cafeops.services.build_order import ForecastKnobs, build_order_plan, create_draft_po
+    from cafeops.services.build_order import ForecastKnobs, build_split, create_draft_po
 
     if order_weekday < 1 or order_weekday > 7:
         raise typer.BadParameter(f"--order-weekday must be 1..7 (Mon..Sun), got {order_weekday}")
     cadence: int | None = None if cadence_days == 0 else cadence_days
     if cadence is not None and cadence < 1:
         raise typer.BadParameter("--cadence-days must be 0 (spec literal) or a positive integer")
+    placed_at: dtime | None = None
+    if order_time is not None:
+        try:
+            hours, _, minutes = order_time.partition(":")
+            placed_at = dtime(int(hours), int(minutes or 0))
+        except ValueError as exc:
+            raise typer.BadParameter(f"--order-time must be HH:MM, got {order_time!r}") from exc
 
     knobs = ForecastKnobs.from_settings()
 
@@ -1559,14 +2167,16 @@ def simulate(
             )
             return
         start, end = span
+        terms_by_id = SqlSourcingRepository(session).terms_by_id()
         suppliers = SqlSupplierRepository(session).list_all()
         if supplier:
             wanted = supplier.strip().lower()
             suppliers = [s for s in suppliers if s.name.lower() == wanted]
             if not suppliers:
                 raise typer.BadParameter(f"{supplier!r}: no such supplier")
-        if min_order_pence is not None:
-            suppliers = [dc_replace(s, min_order_pence=min_order_pence) for s in suppliers]
+        # The minimum override is applied inside sizing (`build_split`), not to the
+        # supplier list: the top-up is part of sizing, and re-labelling the header while
+        # the lines came from the stored minimum would show an order nobody built.
 
         order_dates = _sim_order_dates(start, end, order_weekday)
         if weeks is not None:
@@ -1593,8 +2203,15 @@ def simulate(
                 f"[magenta]WHAT-IF: every supplier minimum overridden to "
                 f"{pounds(min_order_pence)}[/magenta]"
             )
+        console.print(f"[yellow]CAVEAT[/yellow] {_sim_terms_caveat(list(terms_by_id.values()))}")
         for caveat in SIM_CAVEATS:
             console.print(f"[yellow]CAVEAT[/yellow] {caveat}")
+        if placed_at is not None:
+            console.print(
+                f"[magenta]orders placed at {placed_at} local: any supplier whose cutoff "
+                "is earlier loses a delivery cycle, and its cover window grows to pay for "
+                "it.[/magenta]"
+            )
         earned = list(
             session.scalars(
                 select(Ingredient.name)
@@ -1622,33 +2239,34 @@ def simulate(
         drafts: list[tuple[date, str, int]] = []
         for order_date in order_dates:
             console.rule(f"[bold]{order_date} {WEEKDAY_NAMES[order_date.isoweekday()]}[/bold]")
-            for spec in suppliers:
-                plan = build_order_plan(
-                    session,
-                    supplier_id=spec.id,
-                    order_date=order_date,
-                    knobs=knobs,
-                    reorder_cadence_days=cadence,
-                    require_auto_order=require_auto_order,
-                )
+            result = build_split(
+                session,
+                order_date=order_date,
+                knobs=knobs,
+                reorder_cadence_days=cadence,
+                require_auto_order=require_auto_order,
+                supplier_ids=[s.id for s in suppliers] if supplier else None,
+                min_order_pence=min_order_pence,
+                order_time=placed_at,
+            )
+            for plan in result.plans:
                 suggestion = plan.suggestion
-                if min_order_pence is not None:
-                    # Re-size against the what-if minimum rather than re-labelling the
-                    # result: the top-up is part of sizing, not presentation.
-                    from cafeops.domain.ordering import build_suggestion
-
-                    plan = build_suggestion(
-                        supplier=spec,
-                        target_delivery_date=suggestion.target_delivery_date,
-                        cover_window=suggestion.cover_window,
-                        candidates=tuple(o.candidate for o in plan.outcomes),
-                    )
-                    suggestion = plan.suggestion
-
+                spec = suggestion.supplier
+                terms = terms_by_id.get(spec.id)
                 window = suggestion.cover_window
                 placeholder = (
                     " [yellow](terms are PLACEHOLDERS)[/yellow]"
-                    if (spec.name in PLACEHOLDER_TERMS)
+                    if (terms is not None and terms.terms_are_placeholders)
+                    else ""
+                )
+                fee_text = ""
+                if terms is not None and terms.delivery_fee_pence > 0:
+                    fee_text = f"  delivery {pounds(terms.delivery_fee_pence)}"
+                    if terms.free_delivery_threshold_pence is not None:
+                        fee_text += f" (free over {pounds(terms.free_delivery_threshold_pence)})"
+                cutoff_text = (
+                    f"  cutoff {terms.cutoff_time}"
+                    if terms is not None and terms.cutoff_time is not None
                     else ""
                 )
                 console.print(
@@ -1657,6 +2275,7 @@ def simulate(
                     f"  delivers {_sim_delivery_text(spec)}"
                     f"  min order {pounds(spec.min_order_pence)}"
                     f"  channel {spec.order_channel.value}"
+                    f"{cutoff_text}{fee_text}"
                 )
                 console.print(
                     f"  target delivery {suggestion.target_delivery_date}"
@@ -1723,6 +2342,11 @@ def simulate(
                         drafts.append((order_date, spec.name, po_id))
                         console.print(f"  [green]wrote DRAFT purchase order {po_id}[/green]")
 
+            _sim_print_sourcing(result, verbose=verbose)
+            _sim_print_emergency(session, result, order_date=order_date, commit=commit)
+            for note in result.split.notes:
+                console.print(f"[yellow]run note[/yellow] {note}")
+
         # The weekday shape the forecaster actually found, for one busy ingredient.
         console.rule("[bold]day-of-week factors discovered[/bold]")
         stock_repo = SqlStockRepository(session)
@@ -1778,6 +2402,251 @@ def simulate(
             "human and are refused by ck_po_confirmed_requires_human otherwise "
             "(invariant 1).[/dim]"
         )
+
+
+# --------------------------------------------------------------------------
+# receive / expiry-sweep / open-batch -- the batch lifecycle (spec 4.1)
+# --------------------------------------------------------------------------
+
+
+def _parse_expiry(raw: str | None) -> datetime | None:
+    """A date read off a carton. End of that local day, because a best-before date
+    means "good through this day", not "good until midnight at its start"."""
+    if raw is None:
+        return None
+    try:
+        parsed = date.fromisoformat(raw.strip())
+    except ValueError as exc:
+        raise typer.BadParameter(f"{raw!r}: expected YYYY-MM-DD (the date on the carton)") from exc
+    return datetime.combine(parsed, time.max, tzinfo=settings.tz).astimezone(UTC)
+
+
+@app.command()
+def receive(
+    po_line: Annotated[
+        int | None, typer.Option("--po-line", help="po_line.id being received.")
+    ] = None,
+    ingredient: Annotated[
+        str | None,
+        typer.Option(
+            "--ingredient",
+            "-i",
+            help="Ad-hoc delivery with no order behind it (a Tesco run): ingredient name or id.",
+        ),
+    ] = None,
+    packs: Annotated[
+        int | None, typer.Option("--packs", help="Packs that arrived. --po-line only.")
+    ] = None,
+    qty: Annotated[
+        str | None, typer.Option("--qty", help="Quantity in the ingredient's stocking unit.")
+    ] = None,
+    expires: Annotated[
+        str | None,
+        typer.Option(
+            "--expires",
+            help="YYYY-MM-DD from the carton. Omitted means assumed, and the receipt says so.",
+        ),
+    ] = None,
+    at: Annotated[
+        str, typer.Option("--at", help="'now', 'today', or YYYY-MM-DD. When it arrived.")
+    ] = "now",
+    by: Annotated[str, typer.Option("--by", help="Who took the delivery. Recorded.")] = "cli",
+    price_pence: Annotated[
+        str | None,
+        typer.Option("--price-pence", help="Ad-hoc only: what it cost per stocking unit."),
+    ] = None,
+    note: Annotated[str | None, typer.Option("--note")] = None,
+) -> None:
+    """Receive a delivery: create a batch with its expiry and a linked DELIVERY movement."""
+    from cafeops.services.receive_delivery import ReceiveRefused, receive_adhoc, receive_po_line
+
+    if (po_line is None) == (ingredient is None):
+        raise typer.BadParameter(
+            "give exactly one of --po-line (a confirmed order line) or --ingredient "
+            "(an ad-hoc delivery with no order behind it)"
+        )
+    parsed_qty = None if qty is None else Decimal(qty)
+    received_at = _parse_as_of(at)
+    expires_at = _parse_expiry(expires)
+
+    with session_scope() as session:
+        try:
+            if po_line is not None:
+                receipt = receive_po_line(
+                    session,
+                    po_line_id=po_line,
+                    received_packs=packs,
+                    received_qty=parsed_qty,
+                    expires_at=expires_at,
+                    received_at=received_at,
+                    received_by=by,
+                    note=note,
+                )
+            else:
+                assert ingredient is not None
+                found = _resolve_ingredient(session, ingredient)
+                if parsed_qty is None:
+                    raise typer.BadParameter("--qty is required for an ad-hoc delivery")
+                receipt = receive_adhoc(
+                    session,
+                    ingredient_id=found.id,
+                    qty=parsed_qty,
+                    expires_at=expires_at,
+                    received_at=received_at,
+                    received_by=by,
+                    unit_cost_pence=None if price_pence is None else Decimal(price_pence),
+                    note=note,
+                )
+        except ReceiveRefused as exc:
+            console.print(f"[red]REFUSED[/red] {exc}")
+            raise typer.Exit(code=1) from exc
+
+        table = Table(
+            title=f"{receipt.ingredient_name} -- delivery received",
+            title_style="bold",
+            show_header=False,
+        )
+        table.add_column("key")
+        table.add_column("value")
+        table.add_row("batch", str(receipt.batch_id))
+        table.add_row("quantity", format_qty(receipt.qty, receipt.unit))
+        table.add_row(
+            "received", f"{receipt.received_at.astimezone(settings.tz):%Y-%m-%d %H:%M %Z}"
+        )
+        if receipt.expires_at is None:
+            table.add_row("expires", "[dim]never (this ingredient does not spoil)[/dim]")
+        else:
+            style = "yellow" if receipt.expiry_was_assumed else "green"
+            table.add_row(
+                "expires",
+                f"[{style}]{receipt.expires_at.astimezone(settings.tz):%Y-%m-%d}"
+                f" ({receipt.shelf_life_days_left}d)"
+                + (" -- ASSUMED, not read off the carton" if receipt.expiry_was_assumed else "")
+                + f"[/{style}]",
+            )
+        table.add_row("unit cost", f"{receipt.unit_cost_pence:.4f}p per {receipt.unit.value}")
+        table.add_row("batch value", f"GBP {receipt.value_pence / 100:.2f}")
+        table.add_row("DELIVERY movements", str(receipt.movements_written))
+        if receipt.po_line_id is not None:
+            table.add_row("po_line", str(receipt.po_line_id))
+        if receipt.order_completed:
+            table.add_row("order", "[green]every line received -> RECEIVED[/green]")
+        console.print(table)
+        for warning in receipt.warnings:
+            console.print(f"[yellow]warning[/yellow] {warning}")
+        console.print(
+            "[dim]The batch is sealed: opened_at is NULL, so the effective expiry is the "
+            "unopened one. The first FIFO draw opens it and the open-life clock starts "
+            "then (services/receive_delivery.py).[/dim]"
+        )
+
+
+@app.command(name="expiry-sweep")
+def expiry_sweep_cmd(
+    at: Annotated[
+        str, typer.Option("--at", help="'now', 'today', or YYYY-MM-DD. Sweep as of this instant.")
+    ] = "now",
+    ingredient: Annotated[
+        str | None, typer.Option("--ingredient", "-i", help="One ingredient only.")
+    ] = None,
+    short_dated_days: Annotated[
+        int, typer.Option("--short-dated-days", help="Also report stock expiring within N days.")
+    ] = 3,
+    dry_run: Annotated[
+        bool, typer.Option("--dry-run/--commit", help="Show the write-offs without booking them.")
+    ] = False,
+) -> None:
+    """Write off batches that reached their expiry with stock left, and say what it cost."""
+    from cafeops.jobs.expiry_sweep import sweep_expiry
+
+    swept_at = _parse_as_of(at)
+    with session_scope() as session:
+        target = None if ingredient is None else _resolve_ingredient(session, ingredient).id
+        report = sweep_expiry(
+            session,
+            at=swept_at,
+            ingredient_id=target,
+            short_dated_days=short_dated_days,
+            dry_run=dry_run,
+        )
+
+        console.print(
+            f"[bold]expiry sweep[/bold] as of "
+            f"{report.swept_at.astimezone(settings.tz):%Y-%m-%d %H:%M %Z}: {report.summary()}"
+        )
+        if report.write_offs:
+            table = Table(title="EXPIRED -- written off", title_style="bold")
+            table.add_column("Ingredient", no_wrap=True)
+            table.add_column("Batch", justify="right")
+            table.add_column("Qty", justify="right", no_wrap=True)
+            table.add_column("Expired", no_wrap=True)
+            table.add_column("Days ago", justify="right")
+            table.add_column("Value lost", justify="right")
+            table.add_column("Why")
+            for write_off in report.write_offs:
+                why = "open life" if write_off.expired_after_opening else "carton date"
+                if write_off.expiry_was_assumed:
+                    why += " [yellow](ASSUMED)[/yellow]"
+                table.add_row(
+                    write_off.ingredient_name,
+                    str(write_off.batch_id),
+                    format_qty(write_off.qty, write_off.unit),
+                    f"{write_off.expired_at.astimezone(settings.tz):%Y-%m-%d}",
+                    str(write_off.days_overdue),
+                    (
+                        "[dim]unpriced[/dim]"
+                        if write_off.loss_pence is None
+                        else f"[red]GBP {write_off.loss_pence / 100:.2f}[/red]"
+                    ),
+                    why,
+                )
+            console.print(table)
+            console.print(
+                f"[red]total written off: GBP {report.total_loss_pence / 100:.2f}[/red]"
+                "  -- this is real money, and it is the number that says the cover window "
+                "is too long, not that the recipe is wrong."
+            )
+        if report.short_dated:
+            console.print(
+                f"\n[yellow]{len(report.short_dated)} batch(es) expiring within "
+                f"{short_dated_days} days -- still sellable:[/yellow]"
+            )
+            for soon in report.short_dated[:12]:
+                console.print(f"  {soon.line()}")
+        for warning in report.warnings:
+            console.print(f"[yellow]warning[/yellow] {warning}")
+        console.print(
+            "[dim]Idempotent: stock_batch.expired_at and an existing EXPIRED movement both "
+            "guard the write-off, so a second run books nothing twice.[/dim]"
+        )
+
+
+@app.command(name="open-batch")
+def open_batch_cmd(
+    batch: Annotated[int, typer.Option("--batch", help="stock_batch.id that was opened.")],
+    at: Annotated[str, typer.Option("--at", help="'now', 'today', or YYYY-MM-DD.")] = "now",
+) -> None:
+    """Record that a pack was opened, shortening its expiry to its open life.
+
+    Normally unnecessary: the first FIFO draw stamps `opened_at` on its own. Use this
+    for a carton opened for prep rather than a sale, or one opened out of FIFO order.
+    """
+    from cafeops.services.receive_delivery import open_batch
+
+    with session_scope() as session:
+        changed, message = open_batch(session, batch_id=batch, at=_parse_as_of(at))
+    console.print(f"[{'green' if changed else 'yellow'}]{message}[/]")
+
+
+# --------------------------------------------------------------------------
+# Sub-apps, each defined next to the code it drives (spec 4.6, spec 9).
+# --------------------------------------------------------------------------
+
+from cafeops.agent.commands import app as _agent_app  # noqa: E402
+from cafeops.integrations.channels.commands import app as _channels_app  # noqa: E402
+
+app.add_typer(_channels_app, name="channels")
+app.add_typer(_agent_app, name="agent")
 
 
 if __name__ == "__main__":

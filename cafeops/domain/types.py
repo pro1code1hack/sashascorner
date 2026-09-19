@@ -137,6 +137,10 @@ class VariantOptionSpec:
     ingredient_id: int | None
     qty: Decimal | None  # overrides the slot's quantity when not None
     price_delta_pence: int = 0
+    #: Spec 4.3. Carried on the spec rather than passed alongside it, so a caller
+    #: cannot silently lose the out-of-season warning by forgetting an argument --
+    #: the "every caller must remember" failure this module exists to prevent.
+    season_id: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -163,6 +167,8 @@ class MenuItemSpec:
     template_id: int | None
     price_pence: int
     manual_recipe: bool = False
+    #: Spec 4.3. See VariantOptionSpec.season_id for why this is a field.
+    season_id: int | None = None
     #: Components already narrowed to this item's size, valid at the resolve date.
     components: tuple[ComponentSpec, ...] = ()
     #: Options selected on each axis, already resolved from selected_options.
@@ -323,6 +329,15 @@ class MovementSpec:
     ref_type: str | None = None
     ref_id: int | None = None
     note: str | None = None
+    #: Which batch this movement drew from or created. None for movements that are
+    #: about the ingredient as a whole (ADJUSTMENT, COUNT_RESET), and for a refund --
+    #: a refunded latte's milk is not back in the carton.
+    #:
+    #: Added because its absence forced a SECOND write path into `stock_movement`:
+    #: batch-linked rows went through the batch repository while everything else went
+    #: through the stock repository. Two writers into one append-only table diverge
+    #: eventually, and the ledger is the last place that should happen.
+    batch_id: int | None = None
 
 
 @dataclass(frozen=True, slots=True)

@@ -54,10 +54,88 @@ class SqlStockRepository:
         qtys = list(self.session.scalars(stmt))
         return sum(qtys, Decimal("0")), len(qtys)
 
+    def consumption_between(
+        self,
+        ingredient_id: int,
+        *,
+        after: datetime | None,
+        until: datetime,
+        movement_types: Sequence[MovementType] = (MovementType.SALE,),
+    ) -> Decimal:
+        """Positive consumption magnitude over the INSTANT window (after, until].
+
+        Distinct from `daily_consumption`, which buckets by local calendar day.
+        Waste-factor tuning needs count-to-count, and a calendar-day series cannot
+        express "between 21:04 on Tuesday and 20:58 three Tuesdays later".
+
+        This is the protocol's declared home for the query. `SqlDriftRepository` had it
+        first (with a note saying it belonged here) and now delegates, so there is one
+        implementation rather than two that can disagree in the last place.
+        """
+        stmt = select(StockMovement.qty).where(
+            StockMovement.ingredient_id == ingredient_id,
+            StockMovement.type.in_(list(movement_types)),
+            StockMovement.occurred_at <= until,
+        )
+        if after is not None:
+            stmt = stmt.where(StockMovement.occurred_at > after)
+        total = sum(self.session.scalars(stmt), Decimal("0"))
+        return -total if total < 0 else total
+
+    def expired_qty_between(
+        self, ingredient_id: int, *, after: datetime | None, until: datetime
+    ) -> Decimal:
+        """Magnitude of EXPIRED write-offs over (after, until].
+
+        Spec 5.2's second diagnostic. Summed in Python for the same reason
+        `movement_sum_between` is: the qty column is a scaled integer on SQLite, and
+        letting SQL add it would mean re-deriving the scale in two places.
+
+        Returned as a POSITIVE magnitude although the movements are negative -- it is
+        compared against a drift gap, and a sign flip there would attribute a
+        write-off to measurement error and send somebody to fix the recipe.
+        """
+        stmt = select(StockMovement.qty).where(
+            StockMovement.ingredient_id == ingredient_id,
+            StockMovement.type == MovementType.EXPIRED,
+            StockMovement.occurred_at <= until,
+        )
+        if after is not None:
+            stmt = stmt.where(StockMovement.occurred_at > after)
+        total = sum(self.session.scalars(stmt), Decimal("0"))
+        return -total if total < 0 else total
+
+    def movements_for(self, ref_type: str, ref_id: int) -> list[MovementSpec]:
+        """Every movement written for one source row. Used to reverse an expansion."""
+        rows = self.session.scalars(
+            select(StockMovement)
+            .where(StockMovement.ref_type == ref_type, StockMovement.ref_id == ref_id)
+            .order_by(StockMovement.id)
+        )
+        return [
+            MovementSpec(
+                ingredient_id=row.ingredient_id,
+                type=row.type,
+                qty=row.qty,
+                occurred_at=row.occurred_at,
+                ref_type=row.ref_type,
+                ref_id=row.ref_id,
+                note=row.note,
+            )
+            for row in rows
+        ]
+
     def append_movements(self, movements: Iterable[MovementSpec]) -> int:
+        """The ONE write path into `stock_movement`.
+
+        `MovementSpec.batch_id` is honoured here so batch-linked rows do not need a
+        second writer. An append-only ledger with two writers diverges eventually,
+        and this is the last table where that should be allowed to happen.
+        """
         rows = [
             StockMovement(
                 ingredient_id=m.ingredient_id,
+                batch_id=m.batch_id,
                 type=m.type,
                 qty=m.qty,
                 occurred_at=m.occurred_at,

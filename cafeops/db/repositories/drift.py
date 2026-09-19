@@ -15,7 +15,8 @@ from decimal import Decimal
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from cafeops.db.models import DriftObservation, StockCount, StockMovement
+from cafeops.db.models import DriftObservation, StockCount
+from cafeops.db.repositories.stock import SqlStockRepository
 from cafeops.domain.types import MovementType
 
 
@@ -32,6 +33,11 @@ class DriftHistoryRow:
     drift_pct: float
     waste_factor_at_count: Decimal
     observed_at: datetime
+    #: Spec 5.2's second diagnostic, as it stood WHEN THE COUNT WAS TAKEN. None for
+    #: an observation written before attribution existed. It is deliberately not
+    #: refreshed: the sweep often runs after a count, and an observation that quietly
+    #: grew an explanation later would stop recording what was known at the time.
+    expired_qty_in_window: Decimal | None = None
 
 
 class SqlDriftRepository:
@@ -47,6 +53,7 @@ class SqlDriftRepository:
         drift_pct: float,
         waste_factor_at_count: Decimal,
         observed_at: datetime,
+        expired_qty_in_window: Decimal | None = None,
     ) -> int:
         row = DriftObservation(
             ingredient_id=ingredient_id,
@@ -55,6 +62,7 @@ class SqlDriftRepository:
             counted_qty=counted_qty,
             drift_pct=drift_pct,
             waste_factor_at_count=waste_factor_at_count,
+            expired_qty_in_window=expired_qty_in_window,
             observed_at=observed_at,
         )
         self.session.add(row)
@@ -93,6 +101,7 @@ class SqlDriftRepository:
                 drift_pct=row.drift_pct,
                 waste_factor_at_count=row.waste_factor_at_count,
                 observed_at=row.observed_at,
+                expired_qty_in_window=row.expired_qty_in_window,
             )
             for row in self.session.scalars(stmt)
         ]
@@ -139,19 +148,13 @@ class SqlDriftRepository:
 
         The waste-factor suggestion needs "how much did the ledger think we consumed",
         and it needs it over the exact count-to-count window rather than by calendar
-        day, so `StockRepository.daily_consumption` is the wrong shape here. Summed in
-        Python because the qty column is TEXT on SQLite (db/types.Qty) and a SQL SUM()
-        would coerce through float.
+        day, so `StockRepository.daily_consumption` is the wrong shape here.
 
-        Belongs in `StockRepository` -- raised for the integrator rather than added to
-        another agent's module.
+        `StockRepository` is where the protocol declares this, and it now lives there.
+        Kept as a delegation rather than deleted: several callers reach it through the
+        drift repository, and two copies of the same window arithmetic is exactly how
+        two callers start disagreeing about one number.
         """
-        stmt = select(StockMovement.qty).where(
-            StockMovement.ingredient_id == ingredient_id,
-            StockMovement.type.in_(list(movement_types)),
-            StockMovement.occurred_at <= until,
+        return SqlStockRepository(self.session).consumption_between(
+            ingredient_id, after=after, until=until, movement_types=movement_types
         )
-        if after is not None:
-            stmt = stmt.where(StockMovement.occurred_at > after)
-        total = sum(self.session.scalars(stmt), Decimal("0"))
-        return -total if total < 0 else total

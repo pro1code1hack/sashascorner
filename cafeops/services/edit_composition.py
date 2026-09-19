@@ -15,6 +15,13 @@ row that is already closed.
 
 The impact preview is deliberately computed BEFORE the write, from the same
 quantities the write will use, so what the reviewer approved is what lands.
+
+v2 extends the preview with **labour** (spec 5.6). A recipe change moves two things
+the old preview could not see: TRUE margin, which is net of labour, and
+margin-per-minute, which can reorder the menu. Labour cost itself does not move -- a
+recipe edit changes what is in the cup, not how long it takes -- and reporting that it
+did not move is worth as much as reporting that it did, because it is the number a
+reviewer would otherwise assume changed.
 """
 
 from __future__ import annotations
@@ -28,20 +35,32 @@ from sqlalchemy.orm import Session
 from cafeops.config import settings
 from cafeops.db.repositories.composition import SqlCompositionRepository
 from cafeops.db.repositories.menu_cost import SqlMenuCostRepository
-from cafeops.domain.composition import ItemImpact, preview_impact, resolve_recipe
+from cafeops.domain.composition import (
+    ItemImpact,
+    LabourImpact,
+    preview_labour_impact,
+    resolve_recipe,
+)
+from cafeops.domain.labour import UNTIMED
 from cafeops.domain.types import (
     ImpactPreview,
     MenuItemSpec,
     SizeCode,
     SubstitutionError,
 )
-from cafeops.jobs.cost_rollup import RollupReport, rollup_for_template, snapshots_at
+from cafeops.jobs.cost_rollup import (
+    RollupReport,
+    configured_rate_pence,
+    rollup_for_template,
+    snapshots_at,
+)
 
 __all__ = [
     "EditResult",
     "RetroactiveEditError",
     "apply_component_qty_change",
     "preview_component_qty_change",
+    "preview_component_qty_change_with_labour",
     "qty_map_with",
     "require_not_retroactive",
 ]
@@ -71,6 +90,8 @@ class EditResult:
     qty_by_size_after: dict[str, str]
     preview: ImpactPreview
     rollup: RollupReport
+    #: The same preview with spec 5.6's labour consequences. `labour.preview is preview`.
+    labour: LabourImpact | None = None
 
     def summary(self) -> str:
         return (
@@ -91,6 +112,39 @@ def qty_map_with(current: dict[str, str], size_code: SizeCode, qty: Decimal) -> 
     return out
 
 
+def preview_component_qty_change_with_labour(
+    session: Session,
+    component_id: int,
+    *,
+    qty_by_size: dict[str, str],
+    at: datetime | None = None,
+    window_days: int = COGS_WINDOW_DAYS,
+    loaded_hourly_rate_pence: int | None = None,
+) -> LabourImpact:
+    """What changing this component's quantities would do, cost AND labour. Writes nothing.
+
+    The richer of the two preview entry points, and the one `apply_...` uses. There is
+    one code path: the cost-only `preview_component_qty_change` returns
+    `.preview` from this, so a reviewer cannot be shown one set of affected items and
+    have a different set committed.
+    """
+    at = at or datetime.now(UTC)
+    rate = (
+        loaded_hourly_rate_pence
+        if loaded_hourly_rate_pence is not None
+        else configured_rate_pence()
+    )
+    candidates, warnings = _candidates(
+        session,
+        component_id,
+        qty_by_size=qty_by_size,
+        at=at,
+        window_days=window_days,
+        loaded_hourly_rate_pence=rate,
+    )
+    return preview_labour_impact(candidates, window_days=window_days, extra_warnings=warnings)
+
+
 def preview_component_qty_change(
     session: Session,
     component_id: int,
@@ -99,12 +153,14 @@ def preview_component_qty_change(
     at: datetime | None = None,
     window_days: int = COGS_WINDOW_DAYS,
 ) -> ImpactPreview:
-    """What changing this component's quantities would do. Writes nothing."""
-    at = at or datetime.now(UTC)
-    candidates, warnings = _candidates(
-        session, component_id, qty_by_size=qty_by_size, at=at, window_days=window_days
-    )
-    return preview_impact(candidates, window_days=window_days, extra_warnings=warnings)
+    """The spec 5.5 preview alone, for callers that do not want the labour half."""
+    return preview_component_qty_change_with_labour(
+        session,
+        component_id,
+        qty_by_size=qty_by_size,
+        at=at,
+        window_days=window_days,
+    ).preview
 
 
 def apply_component_qty_change(
@@ -138,13 +194,14 @@ def apply_component_qty_change(
     after_map = _validated(qty_by_size)
 
     try:
-        preview = preview_component_qty_change(
+        labour = preview_component_qty_change_with_labour(
             session,
             component_id,
             qty_by_size=after_map,
             at=effective_from,
             window_days=window_days,
         )
+        preview = labour.preview
         new_id = composition.close_and_open_component(
             component_id, qty_by_size=after_map, effective_from=effective_from
         )
@@ -169,6 +226,7 @@ def apply_component_qty_change(
         qty_by_size_after=after_map,
         preview=preview,
         rollup=rollup,
+        labour=labour,
     )
 
 
@@ -221,6 +279,7 @@ def _candidates(
     qty_by_size: dict[str, str],
     at: datetime,
     window_days: int,
+    loaded_hourly_rate_pence: int | None = None,
 ) -> tuple[list[ItemImpact], list[str]]:
     """Resolve every item on the template twice: as it is, and as it would be.
 
@@ -250,6 +309,10 @@ def _candidates(
     until = at.astimezone(settings.tz).date()
     since = until - timedelta(days=window_days - 1)
     volumes = costs.units_sold_bulk(item_ids, since=since, until=until)
+    prep_times = composition.prep_times(item_ids)
+    # Seasons only ever add a warning to a resolution; see `domain/composition.py`.
+    option_seasons = composition.option_seasons_for_items(item_ids)
+    item_seasons = composition.item_seasons(item_ids)
 
     candidates: list[ItemImpact] = []
     for item_id in item_ids:
@@ -257,9 +320,21 @@ def _candidates(
         if spec is None:
             continue
         try:
-            before = resolve_recipe(spec, (), at, ingredients=snapshots)
+            before = resolve_recipe(
+                spec,
+                (),
+                at,
+                ingredients=snapshots,
+                option_seasons=option_seasons.get(item_id),
+                item_season=item_seasons.get(item_id),
+            )
             after = resolve_recipe(
-                _with_component_qty(spec, component_id, qty_by_size), (), at, ingredients=snapshots
+                _with_component_qty(spec, component_id, qty_by_size),
+                (),
+                at,
+                ingredients=snapshots,
+                option_seasons=option_seasons.get(item_id),
+                item_season=item_seasons.get(item_id),
             )
         except SubstitutionError as exc:  # pragma: no cover -- no modifiers are applied
             warnings.append(f"{spec.name}: {exc}")
@@ -273,6 +348,9 @@ def _candidates(
                 before=before,
                 after=after,
                 units_sold=volumes.get(item_id, Decimal("0")),
+                prep=prep_times.get(item_id, UNTIMED),
+                loaded_hourly_rate_pence=loaded_hourly_rate_pence,
+                template_id=spec.template_id,
             )
         )
 

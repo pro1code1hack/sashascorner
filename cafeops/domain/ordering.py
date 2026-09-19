@@ -1,12 +1,42 @@
-"""Order sizing and the minimum-order top-up. Spec 5.4.
+"""Order sizing, the shelf-life cap and the two top-up decisions. Spec 5.4.
 
 ```
-cover_days = lead_time_days + days_to_next_delivery_after(target) + safety_days
-need   = sum(forecast over the cover window) - on_hand - qty on open POs
+cover_days      = lead_time_days + days_to_next_delivery_after(target) + safety_days
+effective_cover = min(cover_days,
+                      shelf_life_days - transit_buffer_days,  if perishable
+                      days_remaining_in_season,               if seasonal)
+need   = sum(forecast over the EFFECTIVE cover) - on_hand - qty on open POs
 packs  = ceil(need / pack_size), clamped so on-hand lands in [min_qty, max_qty]
 ```
 
 Pure: dataclasses in, dataclasses out. No SQLAlchemy, no I/O, no `config` import.
+
+## The shelf-life cap is the point, not a refinement (invariant 4)
+
+Whole milk has a 7-day life and a 2-day transit buffer, so five days of it will keep.
+A Brakes order on a weekly cadence has a ten-day cover window. Without the cap the
+forecast asks for ten days of milk, four to five days of which cannot be drunk before
+it turns -- the system would buy the waste itself, with confidence, every week.
+
+So the cap truncates the *forecast window*, not the pack count: `forecast_qty` is the
+sum of the first `effective_cover_days` forecast points. That keeps the arithmetic
+legible -- the same forecast, read over a shorter window -- and it is why both figures
+are kept on `OrderCandidate`. When the cap bites, `cap_reason` is set and every
+renderer must show it. Spec 5.4 is explicit about why: an under-order the user cannot
+see the reason for is an under-order the user overrides, and the override recreates
+exactly the waste the cap prevented.
+
+A season caps the same way, and an ingredient whose season is *over* is not ordered at
+all: `days_remaining` is then `None`, the effective cover is zero, and the line
+disappears with a note saying so rather than silently shrinking.
+
+## A cutoff missed by ten minutes costs a delivery cycle
+
+`SupplierTerms.cutoff_time` is local. Order after it and the lead time starts
+tomorrow: Booker's noon cutoff missed at 12:10 on Monday does not mean a late Tuesday
+delivery, it means Thursday. That is one extra day the shelf has to cover, and it is
+how a Tesco run happens. `cover_plan` reports the slip so the day is visible rather
+than absorbed into a number.
 
 ## Where the cover window starts, and why it matters
 
@@ -43,7 +73,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, replace
-from datetime import date, timedelta
+from datetime import date, time, timedelta
 from decimal import ROUND_CEILING, ROUND_FLOOR, ROUND_HALF_UP, Decimal
 
 from cafeops.domain.types import (
@@ -52,26 +82,34 @@ from cafeops.domain.types import (
     OrderSuggestion,
     PackChoice,
     ParSpec,
+    SeasonSpec,
+    ShelfLifeSpec,
     SuggestedLine,
     SupplierSpec,
+    SupplierTerms,
     Tier,
     Unit,
 )
 from cafeops.domain.units import convert
 
 __all__ = [
+    "DEFAULT_FREE_DELIVERY_TOP_UP_MULTIPLE",
+    "CoverPlan",
     "OrderCandidate",
     "OrderingError",
     "SizingOutcome",
     "SizingPlan",
     "build_suggestion",
+    "cover_plan",
     "cover_window",
+    "cutoff_slip_days",
     "next_delivery_after",
     "next_delivery_on_or_after",
     "pounds",
     "remaining_cover_days",
     "size_line",
     "target_delivery_date",
+    "terms_of",
 ]
 
 _ZERO = Decimal("0")
@@ -79,6 +117,15 @@ _DISPLAY = Decimal("0.001")
 #: A full pass over the top-up pool that adds nothing ends the loop, so this is a
 #: belt-and-braces stop rather than the real terminator.
 _MAX_TOP_UP_PASSES = 50
+
+#: How far past a free-delivery threshold it is worth buying stock to save the fee.
+#: An INTERPRETATION, stated out loud on every order it affects: spec 5.4 says to top
+#: up below the threshold but not at what price, and "spend £30 on cups to save a
+#: £5.95 fee" is not a saving, it is a fee paid in stock plus £24. The rule applied
+#: here is that the shortfall must be worth at most three times the fee -- close
+#: enough that the top-up is bringing forward a purchase already coming, rather than
+#: inventing one. The owner can overrule it; she cannot fail to see it.
+DEFAULT_FREE_DELIVERY_TOP_UP_MULTIPLE = Decimal("3")
 
 
 class OrderingError(ValueError):
@@ -146,15 +193,116 @@ def next_delivery_after(day: date, delivery_weekdays: Sequence[int]) -> date:
     return next_delivery_on_or_after(day + timedelta(days=1), delivery_weekdays)
 
 
-def target_delivery_date(*, order_date: date, supplier: SupplierSpec) -> date:
-    """Earliest slot that respects the lead time. Walk-in suppliers deliver today."""
+def cutoff_slip_days(*, order_time: time | None = None, cutoff_time: time | None = None) -> int:
+    """1 when the order is placed after the supplier's cutoff, else 0.
+
+    The whole of spec 4.4's `cutoff_time`. Both arguments are LOCAL times, because a
+    cutoff is a fact about the supplier's warehouse day and not about UTC. Either one
+    missing means the question cannot be asked -- no cutoff recorded, or no time of day
+    supplied by the caller -- and the honest answer is then 0 rather than a guess in
+    either direction.
+
+    Exactly ON the cutoff still makes it: a 12:00 cutoff accepts an order placed at
+    12:00:00. Ten minutes later it does not, and that is the entire point of the
+    function -- 12:10 does not mean a late delivery, it means the next cycle.
+    """
+    if order_time is None or cutoff_time is None:
+        return 0
+    return 1 if order_time > cutoff_time else 0
+
+
+def target_delivery_date(
+    *,
+    order_date: date,
+    supplier: SupplierSpec,
+    order_time: time | None = None,
+    cutoff_time: time | None = None,
+) -> date:
+    """Earliest slot that respects the lead time. Walk-in suppliers deliver today.
+
+    A missed cutoff (`order_time` after `cutoff_time`) pushes the whole calculation to
+    tomorrow: the lead time starts when the order is *accepted*, not when it is typed.
+    """
     if supplier.lead_time_days < 0:
         raise OrderingError(
             f"{supplier.name}: lead_time_days is {supplier.lead_time_days}; "
             "a negative lead time has no meaning"
         )
-    earliest = order_date + timedelta(days=supplier.lead_time_days)
+    slip = cutoff_slip_days(order_time=order_time, cutoff_time=cutoff_time)
+    earliest = order_date + timedelta(days=supplier.lead_time_days + slip)
     return next_delivery_on_or_after(earliest, supplier.delivery_weekdays)
+
+
+@dataclass(frozen=True, slots=True)
+class CoverPlan:
+    """A cover window plus the calendar reasoning that produced it.
+
+    `CoverWindow` is integrator-owned and has nowhere to record a missed cutoff, so
+    that fact lives here instead of being absorbed into `lead_time_days` where nobody
+    could see it. `window.lead_time_days` DOES include the slip, because the shelf
+    genuinely has to cover the extra day -- `cutoff_missed` is how a renderer explains
+    why the number is one higher than the supplier's stated lead time.
+    """
+
+    window: CoverWindow
+    target_delivery_date: date
+    cutoff_missed: bool = False
+    slip_days: int = 0
+    notes: tuple[str, ...] = ()
+
+
+def cover_plan(
+    *,
+    order_date: date,
+    supplier: SupplierSpec,
+    safety_days: Decimal,
+    reorder_cadence_days: int | None = None,
+    order_time: time | None = None,
+    cutoff_time: time | None = None,
+) -> CoverPlan:
+    """`cover_window`, plus the target date and what a missed cutoff cost."""
+    missed = bool(cutoff_slip_days(order_time=order_time, cutoff_time=cutoff_time))
+    target = target_delivery_date(
+        order_date=order_date,
+        supplier=supplier,
+        order_time=order_time,
+        cutoff_time=cutoff_time,
+    )
+    on_time = target_delivery_date(order_date=order_date, supplier=supplier)
+    slip = (target - on_time).days
+    window = cover_window(
+        order_date=order_date,
+        supplier=supplier,
+        safety_days=safety_days,
+        reorder_cadence_days=reorder_cadence_days,
+        order_time=order_time,
+        cutoff_time=cutoff_time,
+    )
+    notes: list[str] = []
+    if missed and slip > 0:
+        notes.append(
+            f"{supplier.name}: CUTOFF MISSED, and it cost {slip} day(s). Ordering at "
+            f"{order_time} is past the {cutoff_time} cutoff, so the lead time starts "
+            f"tomorrow -- which lands past this supplier's next delivery day, moving "
+            f"delivery from {on_time} to {target}. The cover window is {slip} day(s) "
+            "longer to pay for it, so every quantity on this order is larger than it "
+            "needed to be. Ten minutes earlier and this order would have been on the "
+            "earlier van; a run of these is what a Tesco trip is made of."
+        )
+    elif missed:
+        notes.append(
+            f"{supplier.name}: cutoff missed ({order_time} against a {cutoff_time} "
+            f"cutoff) but it cost nothing -- the next delivery day is {target} either "
+            "way, so the extra day is absorbed by the schedule rather than by the shelf. "
+            "Worth knowing, not worth ordering for."
+        )
+    return CoverPlan(
+        window=window,
+        target_delivery_date=target,
+        cutoff_missed=missed,
+        slip_days=slip,
+        notes=tuple(notes),
+    )
 
 
 def cover_window(
@@ -163,6 +311,8 @@ def cover_window(
     supplier: SupplierSpec,
     safety_days: Decimal,
     reorder_cadence_days: int | None = None,
+    order_time: time | None = None,
+    cutoff_time: time | None = None,
 ) -> CoverWindow:
     """`lead_time_days + days_to_next_delivery_after(target) + safety_days`, as days.
 
@@ -194,7 +344,19 @@ def cover_window(
             "spec reading (next available slot) rather than zero"
         )
 
-    target = target_delivery_date(order_date=order_date, supplier=supplier)
+    target = target_delivery_date(
+        order_date=order_date,
+        supplier=supplier,
+        order_time=order_time,
+        cutoff_time=cutoff_time,
+    )
+    # What the missed cutoff ACTUALLY cost, in delivery days rather than in calendar
+    # days. A cutoff missed the night before a Mon/Wed/Fri supplier's Wednesday van
+    # often costs nothing: the next slot absorbs the extra day. Charging the cover
+    # window a day anyway would inflate every late-afternoon order in the week for a
+    # delay that did not happen.
+    on_time_target = target_delivery_date(order_date=order_date, supplier=supplier)
+    slip = (target - on_time_target).days
     if reorder_cadence_days is None:
         following = next_delivery_after(target, supplier.delivery_weekdays)
     else:
@@ -202,13 +364,37 @@ def cover_window(
             target + timedelta(days=reorder_cadence_days), supplier.delivery_weekdays
         )
     gap_days = max((following - target).days, 1)
-    total = Decimal(supplier.lead_time_days) + Decimal(gap_days) + safety_days
+    # The slip is added to the lead-time term rather than the gap: a missed cutoff
+    # delays the ARRIVAL, which is exactly what lead time means. See `cover_plan` for
+    # how it is reported -- absorbing it silently is what this comment exists to stop.
+    effective_lead = supplier.lead_time_days + slip
+    total = Decimal(effective_lead) + Decimal(gap_days) + safety_days
     length = max(int(total.to_integral_value(rounding=ROUND_CEILING)), 1)
     return CoverWindow(
         days=tuple(order_date + timedelta(days=offset) for offset in range(length)),
-        lead_time_days=supplier.lead_time_days,
+        lead_time_days=effective_lead,
         days_until_next_delivery=gap_days,
         safety_days=safety_days,
+    )
+
+
+def terms_of(supplier: SupplierSpec) -> SupplierTerms:
+    """A `SupplierTerms` carrying only what a `SupplierSpec` knows.
+
+    `SupplierSpec` predates spec 4.4's cutoff, delivery fee and free-delivery
+    threshold, and both types are integrator-owned. Rather than have every caller
+    write this conversion -- and get `terms_are_placeholders` wrong by defaulting it to
+    False when it is unknown -- sizing accepts either and fills the gaps here. The
+    fields that cannot be recovered are absent, not invented: no cutoff, no fee, no
+    threshold.
+    """
+    return SupplierTerms(
+        supplier_id=supplier.id,
+        name=supplier.name,
+        lead_time_days=supplier.lead_time_days,
+        delivery_weekdays=supplier.delivery_weekdays,
+        min_order_pence=supplier.min_order_pence,
+        order_channel=supplier.order_channel,
     )
 
 
@@ -236,6 +422,12 @@ class OrderCandidate:
     on_open_pos_qty: Decimal
     cover: CoverWindow
     forecast: ForecastResult
+    #: Spec 5.4's shelf-life cap and invariant 5's perishable test. `None` means the
+    #: shelf life was never read -- which is NOT the same as "does not expire", and is
+    #: treated as unknown: no cap, and barred from being a top-up.
+    shelf_life: ShelfLifeSpec | None = None
+    #: The season this ingredient belongs to, if any (spec 4.3).
+    season: SeasonSpec | None = None
 
     def pack_qty(self) -> Decimal:
         """Pack size in the ingredient's own stocking unit.
@@ -245,9 +437,99 @@ class OrderCandidate:
         """
         return convert(self.pack.pack_size, self.pack.pack_unit, self.unit)
 
+    # --- shelf life and season: the caps (spec 5.4, invariant 4) -------------
+
+    @property
+    def is_perishable(self) -> bool:
+        """True only when a shelf life is KNOWN and finite (invariant 5)."""
+        return self.shelf_life is not None and self.shelf_life.is_perishable
+
+    @property
+    def shelf_life_unknown(self) -> bool:
+        """No shelf-life record at all -- neither a life nor a statement that it keeps.
+
+        Reported separately from `is_perishable` (`ARCHITECTURE.md` 8F.1): a missing cap
+        silently permits the waste the cap exists to prevent, so it must not be allowed
+        to read as "does not expire".
+        """
+        return self.shelf_life is None
+
+    @property
+    def shelf_life_cap_days(self) -> int | None:
+        """`shelf_life_days - transit_buffer_days`, or None when nothing perishes."""
+        return None if self.shelf_life is None else self.shelf_life.usable_days
+
+    @property
+    def season_cap_days(self) -> int | None:
+        """Days left in the season at the START of the cover window.
+
+        `0` when the ingredient is seasonal and the season is NOT running: an
+        out-of-season item is not ordered at all, and zero is how that is expressed so
+        the same `min()` handles both cases.
+        """
+        if self.season is None:
+            return None
+        remaining = self.season.days_remaining(self.cover.days[0])
+        return 0 if remaining is None else remaining
+
+    @property
+    def out_of_season(self) -> bool:
+        return self.season is not None and not self.season.contains(self.cover.days[0])
+
+    @property
+    def effective_cover_days(self) -> int:
+        """`min(cover_days, usable shelf life, days left in season)`. Spec 5.4."""
+        caps = [self.cover.length]
+        for cap in (self.shelf_life_cap_days, self.season_cap_days):
+            if cap is not None:
+                caps.append(cap)
+        return max(min(caps), 0)
+
+    @property
+    def is_capped(self) -> bool:
+        return self.effective_cover_days < self.cover.length
+
+    @property
+    def cap_reason(self) -> str | None:
+        """The short sentence that goes on the line. None when nothing capped it.
+
+        Deliberately short -- `po_line.cap_reason` is 80 characters, and this is the
+        phrase a person reads next to a quantity they are about to confirm. The full
+        arithmetic goes in `SizingOutcome.note`.
+        """
+        if not self.is_capped:
+            return None
+        days = self.effective_cover_days
+        season_cap = self.season_cap_days
+        shelf_cap = self.shelf_life_cap_days
+        if self.season is not None and season_cap == days:
+            if self.out_of_season:
+                return f"not ordered -- {self.season.name} is out of season"
+            return f"capped at {days} days -- {self.season.name} ends"
+        if shelf_cap == days:
+            return f"capped at {days} days -- {self.ingredient_name} shelf life"
+        return f"capped at {days} days"
+
+    # --- quantities ---------------------------------------------------------
+
+    @property
+    def full_forecast_qty(self) -> Decimal:
+        """What the uncapped cover window forecast -- kept so the cap can be shown."""
+        return self.forecast.total
+
     @property
     def forecast_qty(self) -> Decimal:
-        return self.forecast.total
+        """Forecast over the EFFECTIVE cover window.
+
+        The forecast points are one per day of `cover.days`, in order, so truncating
+        the window is a slice rather than a re-scaling: it is the same forecast read
+        over fewer days, which is what makes "10 days asked for 55 L, 5 days asks for
+        27 L" an arithmetic a person can check.
+        """
+        days = self.effective_cover_days
+        if days >= len(self.forecast.points):
+            return self.forecast.total
+        return sum((p.qty for p in self.forecast.points[:days]), _ZERO)
 
     @property
     def available_qty(self) -> Decimal:
@@ -285,6 +567,10 @@ class SizingOutcome:
     #: The clamp that reduced a real, forecast-driven need to nothing. `"max_qty"` here
     #: means the par ceiling, not the forecast, decided not to order.
     clamp_blocked: str | None = None
+    #: The shelf-life or season cap shortened this line's window (spec 5.4).
+    capped: bool = False
+    #: Seasonal, and the season is not running. Nothing was ordered, on purpose.
+    out_of_season: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -293,6 +579,12 @@ class SizingPlan:
 
     suggestion: OrderSuggestion
     outcomes: tuple[SizingOutcome, ...]
+    #: Notes the caller supplied rather than sizing deriving -- a missed cutoff, a
+    #: what-if override, ingredients skipped for want of a par level. Kept separately so
+    #: a re-size (the sourcing pass moving a line to another supplier) can carry them
+    #: forward: they are facts about the RUN, and a rebuilt suggestion cannot rediscover
+    #: them. Losing them is how a cover window silently grows a day with no explanation.
+    extra_notes: tuple[str, ...] = ()
 
     @property
     def ordered(self) -> tuple[SizingOutcome, ...]:
@@ -312,7 +604,58 @@ def forecast_text(candidate: OrderCandidate) -> str:
         return f"forecast withheld -- {reasons}"
     return (
         f"forecast {_shown(candidate.forecast_qty)} {candidate.unit.value} over "
-        f"{candidate.cover.length} day(s), need {_shown(candidate.need_qty)}"
+        f"{candidate.effective_cover_days} day(s), need {_shown(candidate.need_qty)}"
+    )
+
+
+def cap_note(candidate: OrderCandidate) -> str | None:
+    """The full arithmetic behind a shelf-life or season cap. Spec 5.4.
+
+    `SuggestedLine.cap_reason` is the phrase; this is the working. Both exist because
+    the short phrase fits next to a quantity and the working answers the question the
+    phrase provokes -- "by how much, and what was it before?" -- which is the question
+    that decides whether the owner overrides the cap.
+    """
+    if not candidate.is_capped:
+        return None
+    name = candidate.ingredient_name
+    unit = candidate.unit.value
+    days = candidate.effective_cover_days
+    full = candidate.cover.length
+    if candidate.out_of_season and candidate.season is not None:
+        return (
+            f"{name}: NOT ORDERED -- {candidate.season.name} is not running on "
+            f"{candidate.cover.days[0]} (spec 4.3). A seasonal line ordered out of "
+            "season is stock bought for a drink that is not on the menu."
+        )
+    shelf = candidate.shelf_life
+    if candidate.season is not None and candidate.season_cap_days == days:
+        head = (
+            f"{name}: SEASON CAP. {candidate.season.name} has {days} day(s) left, "
+            f"against a {full}-day cover window"
+        )
+    elif shelf is not None and shelf.shelf_life_days is not None:
+        head = (
+            f"{name}: SHELF-LIFE CAP (invariant 4). {shelf.shelf_life_days}-day life "
+            f"less a {shelf.transit_buffer_days}-day transit buffer leaves {days} "
+            f"usable day(s), against a {full}-day cover window"
+        )
+    else:
+        head = f"{name}: cover window cut from {full} to {days} day(s)"
+    if candidate.forecast.low_confidence:
+        # Invariant 7: no figures for a withheld forecast, not even the one the cap
+        # removed -- the difference of two withheld numbers is still the number.
+        return (
+            f"{head}. The order is sized on the shorter window, and the forecast figures "
+            "are withheld (low confidence)."
+        )
+    removed = candidate.full_forecast_qty - candidate.forecast_qty
+    return (
+        f"{head}. Forecast over {full} days was {_shown(candidate.full_forecast_qty)} "
+        f"{unit}; over {days} usable day(s) it is {_shown(candidate.forecast_qty)} {unit}, "
+        f"so {_shown(removed)} {unit} was deliberately NOT ordered. This under-order is "
+        "on purpose: the difference would have spoiled before it could be used. Raising "
+        "it recreates exactly the waste the cap prevents -- order again sooner instead."
     )
 
 
@@ -330,6 +673,12 @@ def size_line(candidate: OrderCandidate) -> SizingOutcome:
     owner's money on stock she never asked for and does not sell. Spec 5.4 forbids
     silently inflating an order, and a par floor breached by an ingredient that is not
     moving is a par level to fix, not a purchase to make.
+
+    The **shelf-life and season caps** (spec 5.4, invariant 4) are applied before any of
+    that, by `OrderCandidate.forecast_qty` reading the forecast over the effective cover
+    window instead of the full one. `cap_reason` then travels on the line to
+    `po_line.cap_reason` and into the Telegram message, because a deliberate under-order
+    the user cannot see the reason for is one they will override.
     """
     name = candidate.ingredient_name
     par = candidate.par
@@ -346,6 +695,10 @@ def size_line(candidate: OrderCandidate) -> SizingOutcome:
     need = candidate.need_qty
     notes: list[str] = []
     data_error: str | None = None
+    capped = candidate.is_capped
+    capped_note = cap_note(candidate)
+    if capped_note is not None:
+        notes.append(capped_note)
     if par.min_qty > par.max_qty:
         data_error = (
             f"{name}: par min_qty {_shown(par.min_qty)} exceeds max_qty "
@@ -361,13 +714,26 @@ def size_line(candidate: OrderCandidate) -> SizingOutcome:
 
     floor_packs = max(_ceil_packs(par.min_qty - available, pack_qty), 0)
     if packs >= 1 and floor_packs > packs:
-        clamped = "min_qty"
-        notes.append(
-            f"{name}: raised from {packs} to {floor_packs} pack(s) so on-hand reaches "
-            f"the par floor min_qty {_shown(par.min_qty)} {candidate.unit.value} "
-            f"({forecast_text(candidate)})"
-        )
-        packs = floor_packs
+        if capped:
+            # INVARIANT 4 outranks the par floor. The floor says "keep this much on the
+            # shelf"; the cap says "this much is all that will keep". Obeying the floor
+            # here would buy the spoilage the cap exists to prevent, so the floor loses
+            # and says why -- a floor above the usable window is a par level to fix.
+            notes.append(
+                f"{name}: par floor min_qty {_shown(par.min_qty)} {candidate.unit.value} "
+                f"would need {floor_packs} pack(s), but only {packs} fit inside the "
+                f"{candidate.effective_cover_days}-day usable window. NOT raised -- "
+                "invariant 4 outranks a par floor, and a floor above what will keep is a "
+                "par level to fix, not stock to buy."
+            )
+        else:
+            clamped = "min_qty"
+            notes.append(
+                f"{name}: raised from {packs} to {floor_packs} pack(s) so on-hand reaches "
+                f"the par floor min_qty {_shown(par.min_qty)} {candidate.unit.value} "
+                f"({forecast_text(candidate)})"
+            )
+            packs = floor_packs
 
     cap_packs = _floor_packs(par.max_qty - available, pack_qty)
     if cap_packs < packs:
@@ -386,14 +752,19 @@ def size_line(candidate: OrderCandidate) -> SizingOutcome:
             # stockout. Worth saying before she confirms it, not after she runs out.
             note += (
                 f". WARNING: that leaves {_shown(capped_result)} against forecast demand "
-                f"{_shown(candidate.forecast_qty)} over the next {candidate.cover.length} "
-                f"day(s) -- max_qty is below one cover window of demand, so this par level "
-                "guarantees a shortfall no matter what the forecast says"
+                f"{_shown(candidate.forecast_qty)} over the next "
+                f"{candidate.effective_cover_days} day(s) -- max_qty is below one cover "
+                "window of demand, so this par level guarantees a shortfall no matter "
+                "what the forecast says"
             )
         notes.append(note)
 
     if packs <= 0:
-        if below_par_floor and forecast_driven == 0:
+        if candidate.out_of_season:
+            # The cap note already says it. Adding "nothing needed" on top would read
+            # as though the forecast decided this, when the calendar did.
+            pass
+        elif below_par_floor and forecast_driven == 0:
             notes.append(
                 f"{name}: on-hand {_shown(candidate.on_hand_qty)} "
                 f"{candidate.unit.value} is under the par floor min_qty "
@@ -401,7 +772,7 @@ def size_line(candidate: OrderCandidate) -> SizingOutcome:
                 f"({forecast_text(candidate)}). NOT ordered -- either the par floor is "
                 "wrong or this ingredient is not selling. A human decides, not a clamp."
             )
-        elif not notes:
+        elif clamped is None:
             notes.append(
                 f"{name}: nothing needed -- {forecast_text(candidate)} is already "
                 f"covered by on-hand {_shown(candidate.on_hand_qty)} + open POs "
@@ -414,6 +785,8 @@ def size_line(candidate: OrderCandidate) -> SizingOutcome:
             below_par_floor=below_par_floor and forecast_driven == 0,
             data_error=data_error,
             clamp_blocked=clamped if forecast_driven > 0 else None,
+            capped=capped,
+            out_of_season=candidate.out_of_season,
         )
 
     if clamped is None and forecast_driven != packs:
@@ -435,18 +808,36 @@ def size_line(candidate: OrderCandidate) -> SizingOutcome:
         clamped=clamped,
         low_confidence=candidate.forecast.low_confidence,
         confidence_reasons=candidate.forecast.confidence_reasons,
+        cover_days=candidate.effective_cover_days,
+        cap_reason=candidate.cap_reason,
+        below_par_floor=below_par_floor,
     )
     return SizingOutcome(
         candidate,
         line,
         " | ".join(notes) if notes else None,
         data_error=data_error,
+        capped=capped,
     )
 
 
 # ==========================================================================
-# Minimum-order top-up
+# The two top-up decisions: a minimum, and a price break (spec 5.4)
 # ==========================================================================
+#
+# `min_order_pence` and `free_delivery_threshold_pence` are NOT the same decision and
+# are handled separately here:
+#
+# * A **minimum** is a condition on ordering at all. Below it the supplier will not
+#   ship, so the choice is "add stock or get nothing" -- and getting nothing is a
+#   stockout in whatever the order was for.
+# * A **threshold** is a price break. Below it the order still ships, it just costs
+#   the delivery fee. So the choice is "add stock or pay the fee", and adding £30 of
+#   stock to save £5.95 is not a saving.
+#
+# Both may only use **non-perishable** items (invariant 5). Buying milk to clear a
+# minimum is buying waste, and doing it to save a delivery fee is buying waste to save
+# £5.95. Every top-up line says which of the two decisions produced it.
 
 
 def remaining_cover_days(candidate: OrderCandidate) -> Decimal | None:
@@ -462,19 +853,47 @@ def remaining_cover_days(candidate: OrderCandidate) -> Decimal | None:
     return candidate.available_qty / base_daily
 
 
-def _top_up_pool(
-    candidates: Iterable[OrderCandidate], ordered_ids: frozenset[int]
-) -> tuple[list[tuple[Decimal, OrderCandidate]], list[OrderCandidate]]:
-    """Tier B candidates not already on the order, ranked by shortest remaining cover.
+@dataclass(frozen=True, slots=True)
+class TopUpPool:
+    """Who may be used to top up an order, and who was refused for what reason."""
 
-    Tier A is excluded because spec 5.4 says tier B; items already on the order are
-    excluded because inflating a line the owner will read as "this is what I need"
-    hides the top-up inside it. A top-up is always its own line.
+    eligible: tuple[tuple[Decimal, OrderCandidate], ...] = ()
+    no_velocity: tuple[OrderCandidate, ...] = ()
+    #: INVARIANT 5. Perishable, so never a top-up however short its cover.
+    perishable: tuple[OrderCandidate, ...] = ()
+    #: No shelf-life record at all. Excluded for the same reason, one step weaker:
+    #: unknown is not "keeps forever" (`ARCHITECTURE.md` 8F.1).
+    shelf_life_unknown: tuple[OrderCandidate, ...] = ()
+
+
+def top_up_pool(candidates: Iterable[OrderCandidate], ordered_ids: frozenset[int]) -> TopUpPool:
+    """Non-perishable tier B candidates not on the order, shortest remaining cover first.
+
+    Four exclusions, in order of how much they matter:
+
+    1. **Perishables (invariant 5).** The test is `ShelfLifeSpec.is_perishable`. This is
+       not a heuristic and not overridable: a perishable top-up is buying stock whose
+       reason for existing is a supplier's minimum rather than a customer's order, and
+       it will be thrown away.
+    2. **Unknown shelf life.** No record is not the same fact as "does not expire", and
+       the safe reading of an unknown is that it might perish.
+    3. **Tier A**, because spec 5.4 says tier B -- tier A is the auto-ordered core and
+       its quantities should come from the forecast, not from a supplier's minimum.
+    4. **Items already on the order**, because inflating a line the owner reads as
+       "this is what I need" hides the top-up inside it. A top-up is always its own line.
     """
     eligible: list[tuple[Decimal, OrderCandidate]] = []
     no_velocity: list[OrderCandidate] = []
+    perishable: list[OrderCandidate] = []
+    unknown: list[OrderCandidate] = []
     for candidate in candidates:
         if candidate.tier is not Tier.B or candidate.ingredient_id in ordered_ids:
+            continue
+        if candidate.is_perishable:
+            perishable.append(candidate)
+            continue
+        if candidate.shelf_life_unknown:
+            unknown.append(candidate)
             continue
         cover = remaining_cover_days(candidate)
         if cover is None:
@@ -482,46 +901,51 @@ def _top_up_pool(
         else:
             eligible.append((cover, candidate))
     eligible.sort(key=lambda pair: (pair[0], pair[1].ingredient_name))
-    return eligible, no_velocity
+    return TopUpPool(
+        eligible=tuple(eligible),
+        no_velocity=tuple(no_velocity),
+        perishable=tuple(perishable),
+        shelf_life_unknown=tuple(unknown),
+    )
 
 
 def _top_up(
     *,
-    supplier: SupplierSpec,
+    terms: SupplierTerms,
     lines: Sequence[SuggestedLine],
     candidates: Sequence[OrderCandidate],
+    target_pence: int,
+    objective: str,
+    rationale: str,
 ) -> tuple[tuple[SuggestedLine, ...], bool, tuple[str, ...]]:
-    """Add tier B lines, shortest remaining cover first, until the minimum is met.
+    """Add non-perishable tier B lines, shortest cover first, until `target_pence`.
 
     Every added pack is stock the owner did not ask for, so the constraints are tight:
-    tier B only (a human reviews it anyway), only items that demonstrably move, never
-    past the item's own `max_qty`, always as its own `is_top_up` line, always with the
-    reason in `notes`. If the minimum still cannot be met, the shortfall is reported
-    rather than padded.
+    tier B only (a human reviews it anyway), non-perishable only (invariant 5), only
+    items that demonstrably move, never past the item's own `max_qty`, always as its own
+    `is_top_up` line, always with the reason -- and with WHICH target it was chasing --
+    in the notes. If the target still cannot be met, the shortfall is reported rather
+    than padded.
 
     Packs are added **one per item per pass**, walking the ranking from the shortest
-    remaining cover downward and stopping the instant the minimum is met. The strict
+    remaining cover downward and stopping the instant the target is met. The strict
     alternative -- fill the shortest-cover item to its `max_qty` before looking at the
     next -- follows spec 5.4's wording more literally but concentrates the whole
-    shortfall on one product, which for milk with a shelf life means throwing away what
-    was bought to satisfy a supplier. One pass at a time still serves the
-    shortest-cover item first, and spreads the rest. This is an interpretation, and it
-    is the kind of choice the owner should get to overrule.
+    shortfall on one product. One pass at a time still serves the shortest-cover item
+    first, and spreads the rest. This is an interpretation, and it is the kind of choice
+    the owner should get to overrule.
     """
     subtotal = sum(line.line_total_pence for line in lines)
-    minimum = supplier.min_order_pence
-    eligible, no_velocity = _top_up_pool(
-        candidates, frozenset(line.ingredient_id for line in lines)
-    )
+    pool = top_up_pool(candidates, frozenset(line.ingredient_id for line in lines))
 
     added: dict[int, tuple[OrderCandidate, int]] = {}
     total = subtotal
     for _ in range(_MAX_TOP_UP_PASSES):
-        if total >= minimum:
+        if total >= target_pence:
             break
         progressed = False
-        for _cover, candidate in eligible:
-            if total >= minimum:
+        for _cover, candidate in pool.eligible:
+            if total >= target_pence:
                 break
             pack_qty = candidate.pack_qty()
             if pack_qty <= _ZERO:
@@ -538,10 +962,11 @@ def _top_up(
 
     if not added:
         notes = [
-            f"{supplier.name}: order total {pounds(subtotal)} is below the "
-            f"{pounds(minimum)} minimum and no tier-B item could be added"
+            f"{terms.name}: order total {pounds(subtotal)} is below the "
+            f"{pounds(target_pence)} {objective} and no eligible item could be added. "
+            f"{rationale}"
         ]
-        notes.extend(_pool_notes(eligible, no_velocity))
+        notes.extend(_pool_notes(pool))
         return tuple(lines), False, tuple(notes)
 
     top_up_lines: list[SuggestedLine] = []
@@ -563,6 +988,8 @@ def _top_up(
                 is_top_up=True,
                 low_confidence=candidate.forecast.low_confidence,
                 confidence_reasons=candidate.forecast.confidence_reasons,
+                cover_days=candidate.effective_cover_days,
+                cap_reason=f"top-up to reach the {objective}",
             )
         )
         cover = remaining_cover_days(candidate)
@@ -573,37 +1000,52 @@ def _top_up(
         )
 
     notes = [
-        f"{supplier.name}: MINIMUM-ORDER TOP-UP. The forecast asked for "
-        f"{pounds(subtotal)}, below the {pounds(minimum)} minimum, so "
-        f"{len(top_up_lines)} tier-B item(s) were added -- shortest remaining cover "
-        f"first: {'; '.join(described)}. None of this was forecast as needed; it is "
-        "stock bought early to reach the minimum, and it is the one part of this "
-        "order that exists for the supplier's benefit rather than the cafe's.",
+        f"{terms.name}: TOP-UP TO REACH THE {objective.upper()}. The forecast asked for "
+        f"{pounds(subtotal)}, below {pounds(target_pence)}, so {len(top_up_lines)} "
+        f"non-perishable tier-B item(s) were added -- shortest remaining cover first: "
+        f"{'; '.join(described)}. {rationale} None of this was forecast as needed; it is "
+        "stock bought early, and it is the one part of this order that exists for the "
+        "supplier's benefit rather than the cafe's.",
     ]
-    if total < minimum:
+    if total < target_pence:
         notes.append(
-            f"{supplier.name}: still {pounds(minimum - total)} short of the "
-            f"{pounds(minimum)} minimum after topping up -- every remaining tier-B item "
-            "is already at its par max_qty. Do not pad this further; either the "
-            "minimum, the par levels or the supplier needs a human decision."
+            f"{terms.name}: still {pounds(target_pence - total)} short of the "
+            f"{pounds(target_pence)} {objective} after topping up -- every eligible item "
+            "is already at its par max_qty. Do not pad this further; either the target, "
+            "the par levels or the supplier needs a human decision."
         )
-    notes.extend(_pool_notes(eligible, no_velocity))
+    notes.extend(_pool_notes(pool))
     return (*lines, *top_up_lines), True, tuple(notes)
 
 
-def _pool_notes(
-    eligible: Sequence[tuple[Decimal, OrderCandidate]], no_velocity: Sequence[OrderCandidate]
-) -> list[str]:
+def _pool_notes(pool: TopUpPool) -> list[str]:
     notes: list[str] = []
-    if no_velocity:
-        names = ", ".join(sorted(c.ingredient_name for c in no_velocity))
+    if pool.perishable:
+        names = ", ".join(sorted(c.ingredient_name for c in pool.perishable))
         notes.append(
-            f"{len(no_velocity)} tier-B item(s) were not used as top-up because nothing "
-            f"has been recorded moving: {names}. Buying stock that does not sell to "
-            "reach a supplier minimum is not a saving."
+            f"INVARIANT 5: {len(pool.perishable)} tier-B item(s) were NOT used as top-up "
+            f"because they are perishable: {names}. Buying something that spoils in order "
+            "to clear a supplier's minimum or save a delivery fee is buying waste, so "
+            "these are excluded however short their cover is."
         )
-    if not eligible:
-        notes.append("no tier-B item with measured consumption was available to top up with.")
+    if pool.shelf_life_unknown:
+        names = ", ".join(sorted(c.ingredient_name for c in pool.shelf_life_unknown))
+        notes.append(
+            f"{len(pool.shelf_life_unknown)} tier-B item(s) were not used as top-up "
+            f"because no shelf life is recorded for them: {names}. An unknown shelf life "
+            "is not 'does not expire', and the top-up is not the place to find out which."
+        )
+    if pool.no_velocity:
+        names = ", ".join(sorted(c.ingredient_name for c in pool.no_velocity))
+        notes.append(
+            f"{len(pool.no_velocity)} tier-B item(s) were not used as top-up because "
+            f"nothing has been recorded moving: {names}. Buying stock that does not sell "
+            "to reach a supplier minimum is not a saving."
+        )
+    if not pool.eligible:
+        notes.append(
+            "no non-perishable tier-B item with measured consumption was available to top up with."
+        )
     return notes
 
 
@@ -618,15 +1060,23 @@ def build_suggestion(
     target_delivery_date: date,
     cover_window: CoverWindow,
     candidates: Sequence[OrderCandidate],
+    terms: SupplierTerms | None = None,
+    free_delivery_top_up_multiple: Decimal = DEFAULT_FREE_DELIVERY_TOP_UP_MULTIPLE,
+    extra_notes: Sequence[str] = (),
 ) -> SizingPlan:
-    """Size every candidate, then top up to the supplier minimum if one is set.
+    """Size every candidate, then consider the two top-ups. Spec 5.4.
 
-    The returned `OrderSuggestion` carries a single `cover_window`, but `safety_days`
-    is per par level so the real window is per line. What is reported here is the
-    **widest** of them; each candidate's own window is in `SizingPlan.outcomes`. That
-    `SuggestedLine` has nowhere to record its own window is a gap in the
-    integrator-owned contract, raised rather than worked around.
+    `terms` carries spec 4.4's delivery fee, free-delivery threshold and
+    `terms_are_placeholders`, none of which fit on the integrator-owned `SupplierSpec`.
+    Omit it and only the minimum is considered -- `terms_of(supplier)` is what fills in,
+    and it invents nothing.
+
+    The returned `OrderSuggestion` carries a single `cover_window`, but `safety_days` is
+    per par level and the shelf-life cap is per ingredient, so the real window is per
+    line. What is reported here is the **widest** of them; each line carries its own
+    `cover_days` and each candidate's full window is in `SizingPlan.outcomes`.
     """
+    resolved = terms or terms_of(supplier)
     outcomes = [size_line(candidate) for candidate in candidates]
     lines = tuple(o.line for o in outcomes if o.line is not None)
 
@@ -635,13 +1085,15 @@ def build_suggestion(
     # approve belongs there, forty "nothing needed" lines do not.
     notes = [o.note for o in outcomes if o.line is not None and o.note is not None]
     notes.extend(o.data_error for o in outcomes if o.data_error is not None and o.line is None)
-    # A clamp that suppressed a real need belongs in front of whoever confirms this
-    # order: the absence of a line is the dangerous part, and an absent line cannot
+    # A clamp or a cap that suppressed a real need belongs in front of whoever confirms
+    # this order: the absence of a line is the dangerous part, and an absent line cannot
     # carry its own explanation.
     notes.extend(
         o.note
         for o in outcomes
-        if o.clamp_blocked is not None and o.line is None and o.note is not None
+        if (o.clamp_blocked is not None or o.out_of_season)
+        and o.line is None
+        and o.note is not None
     )
     below_floor = [o.candidate.ingredient_name for o in outcomes if o.below_par_floor]
     if below_floor:
@@ -651,21 +1103,63 @@ def build_suggestion(
             "Either the par floor or the tier is wrong. Ordering against a floor that "
             "nothing is consuming would be spending money on a data error."
         )
+    capped = [o for o in outcomes if o.capped and o.line is not None]
+    if capped:
+        notes.append(
+            f"SHELF LIFE / SEASON CAP (invariant 4): {len(capped)} line(s) are "
+            "deliberately SMALLER than the forecast asked for, because the rest would "
+            "spoil or fall outside the season before it could be used: "
+            + "; ".join(
+                f"{o.line.ingredient_name} -- {o.line.cap_reason}"
+                for o in capped
+                if o.line is not None and o.line.cap_reason is not None
+            )
+            + ". Ordering more often is the fix, not ordering more."
+        )
 
     topped_up = False
-    if supplier.min_order_pence > 0:
+    if lines:
         subtotal = sum(line.line_total_pence for line in lines)
-        if lines and subtotal < supplier.min_order_pence:
+        if resolved.min_order_pence > 0 and subtotal < resolved.min_order_pence:
             lines, topped_up, top_up_notes = _top_up(
-                supplier=supplier, lines=lines, candidates=candidates
+                terms=resolved,
+                lines=lines,
+                candidates=candidates,
+                target_pence=resolved.min_order_pence,
+                objective="minimum order",
+                rationale=(
+                    "A MINIMUM is a condition on ordering at all: below it this supplier "
+                    "ships nothing, so the alternative to topping up is not a smaller "
+                    "order, it is no order and a stockout."
+                ),
             )
             notes.extend(top_up_notes)
-        elif not lines:
-            notes.append(
-                f"{supplier.name}: nothing is needed, so the {pounds(supplier.min_order_pence)} "
-                "minimum does not apply -- a minimum is a condition on placing an order, "
-                "not a reason to place one."
-            )
+        lines, fee_topped_up, fee_notes = _consider_free_delivery(
+            terms=resolved,
+            lines=lines,
+            candidates=candidates,
+            multiple=free_delivery_top_up_multiple,
+        )
+        topped_up = topped_up or fee_topped_up
+        notes.extend(fee_notes)
+    elif resolved.min_order_pence > 0:
+        notes.append(
+            f"{resolved.name}: nothing is needed, so the "
+            f"{pounds(resolved.min_order_pence)} minimum does not apply -- a minimum is a "
+            "condition on placing an order, not a reason to place one."
+        )
+
+    if resolved.terms_are_placeholders:
+        notes.append(
+            f"{resolved.name}: THESE TERMS ARE INVENTED PLACEHOLDERS. Lead time "
+            f"{resolved.lead_time_days}d, delivery days, cutoff "
+            f"{resolved.cutoff_time or 'unknown'}, minimum "
+            f"{pounds(resolved.min_order_pence)} and the free-delivery threshold were "
+            "never confirmed with this supplier (ARCHITECTURE.md 8F.4). The cover window "
+            "above -- and therefore every quantity on this order -- is only as good as "
+            "they are. Confirm them before trusting the numbers."
+        )
+    notes.extend(extra_notes)
 
     by_id = {line.ingredient_id: line for line in lines}
     final_outcomes = tuple(
@@ -681,4 +1175,73 @@ def build_suggestion(
         min_order_topped_up=topped_up,
         notes=tuple(notes),
     )
-    return SizingPlan(suggestion=suggestion, outcomes=final_outcomes)
+    return SizingPlan(
+        suggestion=suggestion, outcomes=final_outcomes, extra_notes=tuple(extra_notes)
+    )
+
+
+def _consider_free_delivery(
+    *,
+    terms: SupplierTerms,
+    lines: tuple[SuggestedLine, ...],
+    candidates: Sequence[OrderCandidate],
+    multiple: Decimal,
+) -> tuple[tuple[SuggestedLine, ...], bool, tuple[str, ...]]:
+    """The price-break decision, kept apart from the minimum on purpose (spec 5.4).
+
+    Three outcomes, all of them spoken aloud:
+
+    * Already above the threshold, or no threshold / no fee -> nothing to decide.
+    * Close enough that the shortfall is worth at most `multiple` x the fee -> top up,
+      and say that the FEE, not a minimum, drove it.
+    * Further away than that -> pay the fee, and say what topping up would have cost.
+      Spending £30 to save £5.95 is not a saving, and an order that silently did it
+      would look like a forecast when it was a fee dressed up as one.
+    """
+    if terms.free_delivery_threshold_pence is None or terms.delivery_fee_pence <= 0:
+        return lines, False, ()
+    threshold = terms.free_delivery_threshold_pence
+    subtotal = sum(line.line_total_pence for line in lines)
+    if subtotal >= threshold:
+        return (
+            lines,
+            False,
+            (
+                f"{terms.name}: {pounds(subtotal)} clears the {pounds(threshold)} "
+                f"free-delivery threshold, so the {pounds(terms.delivery_fee_pence)} "
+                "delivery fee is waived. Nothing was added to achieve that.",
+            ),
+        )
+    shortfall = threshold - subtotal
+    budget = int(
+        (Decimal(terms.delivery_fee_pence) * multiple).to_integral_value(rounding=ROUND_FLOOR)
+    )
+    if shortfall > budget:
+        return (
+            lines,
+            False,
+            (
+                f"{terms.name}: PAYING THE {pounds(terms.delivery_fee_pence)} DELIVERY "
+                f"FEE. The order is {pounds(subtotal)} and free delivery starts at "
+                f"{pounds(threshold)}, so clearing it would mean buying "
+                f"{pounds(shortfall)} of stock nobody asked for to save "
+                f"{pounds(terms.delivery_fee_pence)}. That is not a saving, so the fee is "
+                "paid. (A free-delivery threshold is a price break, not a minimum -- this "
+                "order ships either way.)",
+            ),
+        )
+    lines, added, notes = _top_up(
+        terms=terms,
+        lines=lines,
+        candidates=candidates,
+        target_pence=threshold,
+        objective="free-delivery threshold",
+        rationale=(
+            f"This is the FEE decision, not the minimum: the order ships either way, and "
+            f"topping up {pounds(shortfall)} to save the "
+            f"{pounds(terms.delivery_fee_pence)} delivery fee is only worth it because "
+            f"the shortfall is within {multiple}x the fee -- an interpretation of spec "
+            "5.4, which says to top up below the threshold but not at what price."
+        ),
+    )
+    return lines, added, notes

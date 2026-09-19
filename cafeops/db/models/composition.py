@@ -59,6 +59,12 @@ class DrinkTemplate(Base):
     prep_seconds_by_size: Mapped[dict[str, int]] = mapped_column(
         JSON, nullable=False, default=dict, server_default=text("'{}'")
     )
+    # Three states, and all three are needed. NULL: no prep time recorded at all.
+    # True: an estimate, the same treatment prices and shelf lives get (invariant 8) --
+    # every prep time in the system today is a plausible guess, and a
+    # margin-per-minute ranking built on guesses must say so on the screen that shows
+    # it. False: somebody stood at the machine with a stopwatch.
+    prep_seconds_is_estimate: Mapped[bool | None] = mapped_column(Boolean)
 
     sizes: Mapped[list[SizeProfile]] = relationship(
         back_populates="template",
