@@ -493,11 +493,20 @@ def _top_up(
 ) -> tuple[tuple[SuggestedLine, ...], bool, tuple[str, ...]]:
     """Add tier B lines, shortest remaining cover first, until the minimum is met.
 
-    Every added pack is stock the owner did not ask for, so: it is tier B (reviewed
-    by a human anyway), it is something that demonstrably moves, it respects the same
-    `max_qty` ceiling as a normal line, and it arrives as its own `is_top_up` line
-    with the reason in `notes`. If the minimum still cannot be met the shortfall is
-    reported rather than padded.
+    Every added pack is stock the owner did not ask for, so the constraints are tight:
+    tier B only (a human reviews it anyway), only items that demonstrably move, never
+    past the item's own `max_qty`, always as its own `is_top_up` line, always with the
+    reason in `notes`. If the minimum still cannot be met, the shortfall is reported
+    rather than padded.
+
+    Packs are added **one per item per pass**, walking the ranking from the shortest
+    remaining cover downward and stopping the instant the minimum is met. The strict
+    alternative -- fill the shortest-cover item to its `max_qty` before looking at the
+    next -- follows spec 5.4's wording more literally but concentrates the whole
+    shortfall on one product, which for milk with a shelf life means throwing away what
+    was bought to satisfy a supplier. One pass at a time still serves the
+    shortest-cover item first, and spreads the rest. This is an interpretation, and it
+    is the kind of choice the owner should get to overrule.
     """
     subtotal = sum(line.line_total_pence for line in lines)
     minimum = supplier.min_order_pence

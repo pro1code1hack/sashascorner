@@ -431,6 +431,81 @@ database, and the ordering path depends on them.
 
 ---
 
+## 8B. Two Phase 0 importer bugs, found by Agent B and fixed
+
+Both were mine, both silent, and both would have produced a system that looked
+configured and behaved as if empty.
+
+### 8B.1 The importer wrote no `manual_recipe_line` rows at all
+
+Every imported item starts `manual_recipe=True` (spec §6: template assignment waits
+for a human to confirm a proposal), and spec §4.3 rule 6 says a manual item resolves
+through `manual_recipe_line`. Phase 0 staged all 1,577 recipe lines into
+`legacy_staged_recipe` and then **never turned them into recipe rows**.
+
+Consequence: 278 of 320 menu items had no resolvable recipe. They cost nothing and
+depleted nothing. Nothing errored — the items existed, had prices, and returned an
+empty recipe. This is exactly the failure mode the spec warns about, dressed as
+success.
+
+Fixed in `seed/legacy.py::_write_manual_recipe_lines`. Duplicate (item, ingredient)
+pairs within one recipe are **summed** (two milk rows in one drink are additive);
+cross-recipe duplicates cannot reach it because pass 2 already ignores redundant
+recipe numbers. Items already driven by a template are skipped rather than given
+manual lines, which would double-count.
+
+### 8B.2 Prices were effective-dated at import time
+
+All 113 `ingredient_price` rows carried `effective_from = now`, so **any cost lookup
+before today returned `None`** — breaking historical costing, back-dated P&L, and
+any rollup at a past date. Since expansion resolves each sale at its own `sold_at`,
+this quietly made the entire 60-day history uncostable.
+
+Fixed: `LEGACY_EFFECTIVE_FROM = 2025-11-01`, the café's opening (spec §1). The
+workbook describes what was true for the whole trading history we have, so that is
+the date it gets. `import_legacy` now takes an `effective_from` override and refuses
+a future date.
+
+### 8B.3 The fix validates the whole cost pipeline
+
+With both fixed, **all 314 comparable menu items reproduce the workbook's own
+"Cost price (£)" column to within 0.01p:**
+
+```
+vs workbook Cost price column, 314 comparable items:
+  exact  (<0.01p): 314
+  close  (<1p)   : 0
+  off    (>=1p)  : 0
+```
+
+This is the strongest end-to-end check available without a test suite. It exercises
+unit parsing, cross-unit conversion (ml→L, g→kg), price import and per-unit
+division, manual recipe line construction, and `resolve_recipe`'s cost breakdown —
+and agrees with a figure computed independently in Excel by a different person. A
+single wrong conversion factor anywhere would show up here.
+
+Coverage afterwards: **312 of 314 items cost and deplete**; the 2 that do not are
+`'card' (£3.00)` and `Syrup Gift Set`, both already on §8's data-quality list, and
+both genuinely recipe-less.
+
+### 8B.4 `MenuItemCost.cost_pence` made nullable — endorsed
+
+Agent B made `cost_pence` and `cost_source` nullable (migration `6e170c2a69ab`).
+`NOT NULL` forced the rollup to either invent a partial sum or write no row, and
+invariant 6 forbids both: a missing cost must stay *visibly* missing rather than
+becoming zero or vanishing. The downgrade deletes unknown-cost rows rather than
+zero-filling them, which is the right direction.
+
+### 8B.5 Still open: the one-off items' costs are the workbook's, not derived
+
+The 43 one-off groups now have manual recipe lines imported from the workbook, so
+they cost correctly. But a "recipe" for a bought-in cake is one line naming the cake
+itself — the cost is a purchase price, not a composition. That is correct modelling,
+not a gap, but it means **margin on those items is only as good as the workbook's
+price**, and 42 of 113 prices are estimates.
+
+---
+
 ## 9. Module layout deviations
 
 | Spec | Actual | Why |

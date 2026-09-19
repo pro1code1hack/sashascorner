@@ -32,6 +32,7 @@ from cafeops.db.models import (
     Ingredient,
     IngredientPrice,
     LegacyStagedRecipe,
+    ManualRecipeLine,
     MenuItem,
     PriceSource,
     SizeCode,
@@ -115,6 +116,7 @@ class LegacyImportReport:
     ingredients: int = 0
     prices: int = 0
     staged_lines: int = 0
+    manual_recipe_lines: int = 0
     menu_items: int = 0
     manual_items: int = 0
     proposals: list[TemplateProposal] = field(default_factory=list)
@@ -137,7 +139,8 @@ class LegacyImportReport:
         return (
             f"{self.ingredients} ingredients ({tiers}), {self.prices} price rows "
             f"({self.estimated_cost_count} ESTIMATE), {self.staged_lines} staged recipe "
-            f"lines, {self.menu_items} menu items, {len(self.patterns)} patterns proposed, "
+            f"lines -> {self.manual_recipe_lines} manual recipe lines, "
+            f"{self.menu_items} menu items, {len(self.patterns)} patterns proposed, "
             f"{len(self.singletons)} one-offs"
         )
 
@@ -189,12 +192,31 @@ def _size_code(raw: str | None) -> SizeCode | None:
 # ==========================================================================
 
 
+#: Legacy prices and recipes are effective from the café's opening, NOT from import
+#: time. Spec §1: "Opened November 2025". Dating them at import instead makes every
+#: cost lookup before today return None, which silently breaks historical costing,
+#: back-dated P&L, and any rollup at a past date. The workbook describes what was
+#: true for the whole trading history we have, so that is the date it gets.
+LEGACY_EFFECTIVE_FROM: datetime = datetime(2025, 11, 1, tzinfo=UTC)
+
+
 def import_legacy(
-    session: Session, path: Path, *, dry_run: bool = False, now: datetime | None = None
+    session: Session,
+    path: Path,
+    *,
+    dry_run: bool = False,
+    now: datetime | None = None,
+    effective_from: datetime | None = None,
 ) -> LegacyImportReport:
     """Run all three passes. With dry_run=True nothing is committed by the caller."""
     report = LegacyImportReport(dry_run=dry_run)
-    effective_from = now or datetime.now(UTC)
+    imported_at = now or datetime.now(UTC)
+    effective_from = effective_from or LEGACY_EFFECTIVE_FROM
+    if effective_from > imported_at:
+        raise ValueError(
+            f"effective_from {effective_from.isoformat()} is in the future relative to "
+            f"{imported_at.isoformat()}"
+        )
     wb = load_workbook(path, data_only=True, read_only=False)
 
     ingredients = _pass1_ingredients(session, wb, report, effective_from)
@@ -516,6 +538,14 @@ def _pass2_stage_recipes(
             )
         )
 
+    # --- manual recipe lines ---------------------------------------------
+    # Every imported item starts manual (spec §6: template assignment waits for a
+    # human to confirm a proposal). A manual item resolves through
+    # manual_recipe_line, so without these rows all 278 of them cost nothing and
+    # deplete nothing -- they would look configured and behave as if empty.
+    # Materialising a proposal later closes these lines and re-points the item.
+    report.manual_recipe_lines = _write_manual_recipe_lines(session, staged, report, effective_from)
+
     if missing_ingredients:
         report.warnings.append(
             f"{len(missing_ingredients)} recipe ingredient name(s) absent from the "
@@ -532,6 +562,77 @@ def _pass2_stage_recipes(
             f"so any template using them needs review: {sorted(unresolved_roles)[:8]}"
         )
     return staged
+
+
+def _write_manual_recipe_lines(
+    session: Session,
+    staged: list[StagedLine],
+    report: LegacyImportReport,
+    effective_from: datetime,
+) -> int:
+    """Turn staged legacy lines into effective-dated manual_recipe_line rows.
+
+    Quantities in `staged` are already normalised to each ingredient's stocking
+    unit by pass 2, so nothing is re-parsed here.
+
+    Duplicate (item, ingredient) pairs within one recipe are SUMMED rather than
+    dropped: two "milk" rows in one drink are additive. Cross-recipe duplicates
+    cannot reach here -- pass 2 already ignores redundant recipe numbers.
+    """
+    # (item name, size) -> ingredient id -> summed qty
+    wanted: dict[tuple[str, str | None], dict[int, Decimal]] = {}
+    unresolved = 0
+    for line in staged:
+        ingredient = session.scalar(
+            select(Ingredient).where(Ingredient.name == line.ingredient_name)
+        )
+        if ingredient is None:
+            unresolved += 1
+            continue
+        key = (line.item_name, line.size_code)
+        bucket = wanted.setdefault(key, {})
+        bucket[ingredient.id] = bucket.get(ingredient.id, Decimal("0")) + line.qty
+
+    written = 0
+    for (name, size), by_ingredient in wanted.items():
+        item = session.scalar(
+            select(MenuItem).where(MenuItem.name == name, MenuItem.size_code == _size_code(size))
+        )
+        if item is None:
+            continue
+        # Do not touch an item already driven by a template: its components begin
+        # at their own effective date, and adding manual lines would double-count.
+        if not item.manual_recipe:
+            continue
+        for ingredient_id, qty in by_ingredient.items():
+            if qty == 0:
+                continue
+            existing = session.scalar(
+                select(ManualRecipeLine).where(
+                    ManualRecipeLine.menu_item_id == item.id,
+                    ManualRecipeLine.ingredient_id == ingredient_id,
+                    ManualRecipeLine.effective_to.is_(None),
+                )
+            )
+            if existing is not None:
+                existing.qty = qty
+                continue
+            session.add(
+                ManualRecipeLine(
+                    menu_item_id=item.id,
+                    ingredient_id=ingredient_id,
+                    qty=qty,
+                    effective_from=effective_from,
+                )
+            )
+            written += 1
+
+    if unresolved:
+        report.warnings.append(
+            f"{unresolved} staged line(s) had no matching ingredient, so they are "
+            "absent from manual recipes"
+        )
+    return written
 
 
 def _count_item_kinds(report: LegacyImportReport) -> None:
