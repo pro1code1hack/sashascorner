@@ -356,6 +356,81 @@ exclude them from aggregates rather than quietly including them.
 
 ---
 
+## 8A. The drift gate: one interpretation decided, one gap queued
+
+### 8A.1 A count in the 10–15% band REVOKES an existing grant — endorsed
+
+Spec §5.2's table says `10–15% → propose a waste_factor adjustment, stay manual`.
+That is unambiguous for an ingredient that is *not* yet auto-ordering. It is
+ambiguous for one that already is: does "stay manual" mean "remains ineligible", or
+"becomes manual"?
+
+Agent C implemented **revoke**, and that is the right reading. The spec's own
+stronger sentence is *"An ingredient never enters auto-ordering without two
+consecutive counts under 10%."* A 12% count breaks the streak, so the condition that
+justified the grant no longer holds. Leaving auto-ordering on would mean the system
+is auto-ordering against evidence it no longer has — which is precisely the failure
+the gate exists to prevent, and exactly how you end up with £200 of milk nobody
+needed.
+
+The cost is friction: a recovered ingredient needs two fresh clean counts rather
+than one. That is the correct direction to be wrong in.
+
+Verified independently against nine cases, including three the agent did not claim:
+
+| Recent drift % (newest first) | Currently on | Action | Alert |
+|---|---|---|---|
+| `[4.2]` | no | HOLD | – |
+| `[4.2, 4.2]` | no | **GRANT** | – |
+| `[13.9]` | no | HOLD | – |
+| `[13.9, 4.2]` | **yes** | **REVOKE** | no |
+| `[23.8]` | no | HOLD (refused) | **yes** |
+| `[25.0, 4.2]` | yes | **REVOKE** | **yes** |
+| `[4.2, 23.8]` | no | HOLD | – |
+| `[-4.2, -4.2]` | no | GRANT (absolute drift) | – |
+| `[4.2, 4.2]` tier **B** | no | HOLD (tier B is never auto-ordered) | – |
+
+### 8A.2 Invariant 2 is structurally enforced, not documented
+
+`SqlParLevelRepository.set_auto_order(..., True)` **raises
+`AutoOrderGrantRefused`**. Enabling is reachable only via
+`domain/tiers.evaluate_gate` → `apply_gate_decision`, and a hand-built
+`GateDecision` carrying no gate authorisation is also refused. Revoking is allowed
+from anywhere, because that is the safe direction. Verified.
+
+This is the same move as the purchase-order `CHECK` constraint (§5): with no test
+suite, the way to protect an invariant is to make violating it unrepresentable
+rather than merely forbidden.
+
+### 8A.3 Gap queued for Phase 2: a silent revocation
+
+A revoke in the 10–15% band currently carries `alert=False`, because spec §5.2 only
+demands an alert above 15%. But a revocation is a **material change in system
+behaviour** — orders that were being drafted automatically stop being drafted. The
+owner should be told, even at a lower severity than the >15% "your stock figures are
+untrustworthy" alarm.
+
+Not fixed now: `domain/tiers.py` may still be read by a running agent, and `alert`
+is consumed by the bot, which has not been built. Phase 2 change.
+
+### 8A.4 Operational lesson: agents must not share a database
+
+One agent rebuilt the shared `cafeops.db` mid-run while another was verifying
+against it. The second agent committed a count against an intermediate state
+(opening anchors, no movements yet) and read a nonsense **+138%** drift before
+noticing, cleaning up the stray row, and re-running in isolation.
+
+No lasting damage, and the agent caught it itself — but the cause was my
+instruction, not its mistake: the briefs said "set up your working database" without
+saying *whose*. Any future fan-out that touches the database must isolate via
+`CAFEOPS_DATABASE_URL`, and `docs/phase1/README.md` should say so.
+
+One consequence to remember: **`uv run cafeops drift --backfill` must be re-run
+after any reseed.** Drift observations are derived from counts and are wiped with the
+database, and the ordering path depends on them.
+
+---
+
 ## 9. Module layout deviations
 
 | Spec | Actual | Why |
@@ -411,11 +486,57 @@ Three deliberate choices:
 
 1. **CakeSmiths and Cups Direct terms** — lead time, delivery weekdays, minimum
    order. Currently invented (§8.2). Blocks trustworthy order sizing.
-2. **Do K-Series sale lines carry modifiers?** (spec §13.2, answered "unknown").
-   Decides whether oat milk can leave tier B. Assigned to Agent A.
-3. **Does K-Series expose ingredient-level recipes?** If so, composition becomes a
-   cache of POS data rather than the source of truth. Assigned to Agent A to report.
-4. **Lightspeed product mapping** — 314 menu items have no `lightspeed_id`.
+2. **ANSWERED — Do K-Series sale lines carry modifiers? Only on the wrong
+   endpoints.** Agent A's research (api-docs.lsk.lightspeed.app,
+   api-portal.lsk.lightspeed.app, k-series-support) found a split:
+
+   - The **financial/reporting** endpoints a nightly date-range sync would
+     naturally use — `Get Sales`, `Get business day sales`, `Get Receipt by
+     External Reference`, the `Transaction Details` webhook — carry **no modifier
+     data** in their documented schemas.
+   - Modifiers appear only on the **real-time operational** surfaces: `Get All Open
+     Checks` and the online-ordering `Order notification`, as
+     `modifiers: [{name, quantity}]` — with **no modifier id and no price**.
+
+   Three consequences:
+
+   - **The oat milk hold stays.** A batch sync over `Get Sales` would silently miss
+     every modifier — the worst failure mode available, because it looks exactly
+     like success. Oat milk reaching tier A requires the integration to *also*
+     consume the checks/order-notification stream, which is a separate, stateful,
+     real-time concern rather than a nightly job.
+   - **Matching must be by modifier NAME, not id.** No endpoint supplies a stable
+     `lightspeed_modifier_id`. `modifier.lightspeed_modifier_id` stays in the schema
+     (it costs nothing and a future API may populate it) but nothing may depend on
+     it. Agent A built the mapper name-matching-first for this reason.
+   - This is a genuine product limitation, not an implementation gap. It should be
+     stated to the owner plainly: alt-milk consumption cannot be tracked from
+     end-of-day sales data alone.
+
+3. **ANSWERED — K-Series does NOT expose ingredient-level recipes.** It has a
+   UI-only Recipes feature (Inventory app → Produce → Recipes) with no public REST
+   surface. Quoted verbatim from the API portal's inventory-management guide:
+   *"Inventory levels are not currently available via the APIs. The only way to
+   maintain accurate inventory levels is to monitor the sales data..."* Third-party
+   tools (e.g. Apicbase) own recipe/BOM data separately and exchange only sales and
+   stock totals with K-Series.
+
+   **This settles the central design question in our favour:** composition is the
+   source of truth, not a cache of POS data, and the legacy workbook import is the
+   right way to seed it. Spec §13.1's "propose reading them instead of duplicating"
+   is moot — there is nothing to read.
+
+   Two caveats Agent A flagged: the OAuth2 token URL in `client.py` is a
+   best-effort default (the published tutorial only shows the sandbox realm
+   `auth.lsk-demo.app`) and is marked unconfirmed for production; and no published
+   K-Series rate limit was found, so the client relies on
+   `settings.lightspeed_rate_limit_per_second` plus generic backoff.
+4. **Lightspeed product mapping** — mostly solved. Agent A's matcher resolves
+   316 of 320 menu items on name+size. The 4 it refuses to guess at are
+   `'card' (£3.00)`, `Syrup Gift Set`, `Strawberry bliss` (a probable typo) and
+   `Blue Honey Matcha [M]` — three of which §8's data-quality list already names.
+   Refusing to guess is correct: a wrongly-matched item depletes the wrong
+   ingredient forever.
 5. **Two workbook defects** (§8.1) need fixing in the spreadsheet, not in code.
 6. **Waste factors are initial guesses**: 0.10 milks, 0.05 beans, 0.03 powders, 0.01
    packaging and sundries. §5.1 says they are tuned from observed drift. Nothing

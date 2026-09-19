@@ -9,6 +9,7 @@ remembering to filter.
 from __future__ import annotations
 
 from collections.abc import Sequence
+from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
 
@@ -16,6 +17,8 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from cafeops.db.models import (
+    DrinkTemplate,
+    Ingredient,
     ManualRecipeLine,
     MenuItem,
     Modifier,
@@ -24,12 +27,33 @@ from cafeops.db.models import (
     VariantOption,
 )
 from cafeops.domain.types import (
+    ComponentRole,
     ComponentSpec,
     MenuItemSpec,
     ModifierSpec,
     SizeCode,
+    Unit,
     VariantOptionSpec,
 )
+
+
+@dataclass(frozen=True, slots=True)
+class LiveComponent:
+    """One template slot as the editor sees it: which ingredient, how much per size.
+
+    A read model, not an ORM row -- see `live_components`.
+    """
+
+    component_id: int
+    template_id: int
+    role: ComponentRole
+    ingredient_id: int | None
+    ingredient_name: str | None
+    unit: Unit | None
+    qty_by_size: dict[str, str]
+    is_substitutable: bool
+    is_required: bool
+    effective_from: datetime
 
 
 def _qty_for_size(qty_by_size: dict[str, str] | None, size: SizeCode | None) -> Decimal | None:
@@ -270,3 +294,99 @@ class SqlCompositionRepository:
         old.effective_to = effective_from
         old.superseded_by_id = new.id
         return new.id
+
+    # -- reverse lookups added for the cost cascade (Agent B) ---------------
+
+    def menu_item_ids_using_ingredient_manually(self, ingredient_id: int) -> list[int]:
+        """Manual-recipe items whose recipe names this ingredient.
+
+        Deliberately NOT effective-dated: this drives a recost, and an item whose
+        recipe used the ingredient last month still has a cached cost that was
+        computed from its price. Narrowing to today would leave that row stale.
+        """
+        return sorted(
+            set(
+                self.session.scalars(
+                    select(ManualRecipeLine.menu_item_id).where(
+                        ManualRecipeLine.ingredient_id == ingredient_id
+                    )
+                )
+            )
+        )
+
+    def menu_item_ids_for_component(self, component_id: int) -> list[int]:
+        """Every item that resolves through the template this component belongs to."""
+        component = self.session.get(TemplateComponent, component_id)
+        if component is None:
+            raise LookupError(f"template_component {component_id} not found")
+        return self.menu_item_ids_for_template(component.template_id)
+
+    def all_menu_item_ids(self, *, active_only: bool = True) -> list[int]:
+        stmt = select(MenuItem.id).order_by(MenuItem.id)
+        if active_only:
+            stmt = stmt.where(MenuItem.active.is_(True))
+        return list(self.session.scalars(stmt))
+
+    def template_id_by_name(self, name: str) -> int | None:
+        return self.session.scalar(select(DrinkTemplate.id).where(DrinkTemplate.name == name))
+
+    def live_component(self, component_id: int) -> LiveComponent | None:
+        """One component row, open or closed, as a read model.
+
+        Returns the row itself rather than filtering by date: the editor works on a
+        component BY ID, and `close_and_open_component` is what refuses to touch a
+        row that is already closed.
+        """
+        row = self.session.execute(
+            select(TemplateComponent, Ingredient.name, Ingredient.unit)
+            .outerjoin(Ingredient, Ingredient.id == TemplateComponent.ingredient_id)
+            .where(TemplateComponent.id == component_id)
+        ).first()
+        if row is None:
+            return None
+        component, name, unit = row
+        return LiveComponent(
+            component_id=component.id,
+            template_id=component.template_id,
+            role=component.role,
+            ingredient_id=component.ingredient_id,
+            ingredient_name=name,
+            unit=unit,
+            qty_by_size=dict(component.qty_by_size or {}),
+            is_substitutable=component.is_substitutable,
+            is_required=component.is_required,
+            effective_from=component.effective_from,
+        )
+
+    def live_components(self, template_id: int, at: datetime) -> list[LiveComponent]:
+        """The editable component rows of one template, as of `at`.
+
+        Returned as dataclasses rather than ORM rows: the composition editor and the
+        CLI need a component's id, role, ingredient name and per-size quantities,
+        and handing out live ORM objects invites an in-place update -- which is
+        exactly what invariant 3 forbids.
+        """
+        rows = self.session.execute(
+            select(TemplateComponent, Ingredient.name, Ingredient.unit)
+            .outerjoin(Ingredient, Ingredient.id == TemplateComponent.ingredient_id)
+            .where(
+                TemplateComponent.template_id == template_id,
+                *self._live(TemplateComponent, at),
+            )
+            .order_by(TemplateComponent.role, TemplateComponent.id)
+        ).all()
+        return [
+            LiveComponent(
+                component_id=component.id,
+                template_id=component.template_id,
+                role=component.role,
+                ingredient_id=component.ingredient_id,
+                ingredient_name=name,
+                unit=unit,
+                qty_by_size=dict(component.qty_by_size or {}),
+                is_substitutable=component.is_substitutable,
+                is_required=component.is_required,
+                effective_from=component.effective_from,
+            )
+            for component, name, unit in rows
+        ]

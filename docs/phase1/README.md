@@ -30,13 +30,22 @@ and its own brief.
 9. Respect the nine invariants in `CLAUDE.md` §12. They are the product, not
    decoration.
 
-## Working database
+## Working database — USE YOUR OWN
+
+Agents must NOT rebuild the shared `cafeops.db`. One agent did, mid-run, while
+another was verifying against it; the second read a nonsense +138% drift from an
+intermediate state before noticing. Reading the shared DB is fine; rebuilding it is
+not.
 
 ```bash
-rm -f cafeops.db && uv run alembic upgrade head
+export CAFEOPS_DATABASE_URL="sqlite+pysqlite:///$PWD/agentX.db"
+rm -f agentX.db; uv run alembic upgrade head
 uv run cafeops seed --demo          # reads ./sashas_corner_finance__LEGACY_.xlsx via .env
+uv run cafeops drift --backfill     # REQUIRED after any reseed; the ordering path needs it
 uv run cafeops stock --as-of today --tier A
 uv run cafeops import-legacy --dry-run
+# when finished:
+rm -f agentX.db agentX.db-wal agentX.db-shm
 ```
 
 Deterministic. 113 ingredients (A=11, B=43, C=59), 113 price rows (42 ESTIMATE),

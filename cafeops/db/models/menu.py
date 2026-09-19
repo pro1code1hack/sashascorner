@@ -102,6 +102,13 @@ class MenuItemCost(Base):
     estimated ingredient makes the whole item's cost an estimate. Invariant 6 --
     estimates stay flagged through every rollup and aggregate, so the margin
     screen can exclude them from totals instead of silently defaulting to zero.
+
+    `cost_pence` and `cost_source` are NULLABLE, and that is the whole point: an
+    item with an unpriced ingredient is cached as a row whose cost is NULL, not as
+    a row whose cost is a partial sum. Invariant 6 says a missing cost is `None`,
+    never zero, and a NOT NULL column would have forced this cache to invent a
+    number that no downstream reader could tell from a real one. The row still
+    exists so the item is *shown and flagged* rather than silently absent.
     """
 
     __tablename__ = "menu_item_cost"
@@ -111,8 +118,9 @@ class MenuItemCost(Base):
         ForeignKey("menu_item.id", ondelete="CASCADE"), unique=True, nullable=False
     )
     # Recipe cost. Excludes waste_factor by design -- invariant 5.
-    cost_pence: Mapped[Decimal] = mapped_column(Qty(), nullable=False)
-    cost_source: Mapped[PriceSource] = mapped_column(enum_col(PriceSource), nullable=False)
+    # NULL means "we do not know what this costs", never "it costs nothing".
+    cost_pence: Mapped[Decimal | None] = mapped_column(Qty())
+    cost_source: Mapped[PriceSource | None] = mapped_column(enum_col(PriceSource))
     # True when any ingredient had no price at all. Such items are shown,
     # flagged, and excluded from aggregates -- never defaulted to zero.
     has_missing_cost: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
@@ -124,6 +132,6 @@ class MenuItemCost(Base):
     menu_item: Mapped[MenuItem] = relationship()
 
     def __repr__(self) -> str:
-        return (
-            f"<MenuItemCost item={self.menu_item_id} {self.cost_pence}p {self.cost_source.value}>"
-        )
+        cost = "unknown" if self.cost_pence is None else f"{self.cost_pence}p"
+        source = self.cost_source.value if self.cost_source else "MISSING"
+        return f"<MenuItemCost item={self.menu_item_id} {cost} {source}>"

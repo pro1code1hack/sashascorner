@@ -1,0 +1,120 @@
+{
+  "receipts": [
+    {
+      "id": "LSK-R2001",
+      "closedAt": "2026-09-16T08:32:00Z",
+      "channel": "EPOS",
+      "voidReason": null,
+      "lines": [
+        {
+          "id": "LSK-R2001-L1",
+          "itemId": "LSK-ITEM-0316",
+          "sku": "SKU-0316",
+          "name": "Vanilla Latte",
+          "size": "M",
+          "quantity": "1",
+          "totalAmountPence": 360,
+          "voidReason": null,
+          "isRefund": false,
+          "modifiers": []
+        },
+        {
+          "id": "LSK-R2001-L2",
+          "itemId": "LSK-ITEM-0007",
+          "sku": "SKU-0007",
+          "name": "Black Americano",
+          "size": "M",
+          "quantity": "1",
+          "totalAmountPence": 310,
+          "voidReason": null,
+          "isRefund": false,
+          "modifiers": []
+        }
+      ]
+    },
+    {
+      "id": "LSK-R2002",
+      "closedAt": "2026-09-16T09:05:00Z",
+      "channel": "EPOS",
+      "voidReason": null,
+      "lines": [
+        {
+          "id": "LSK-R2002-L1",
+          "itemId": "LSK-ITEM-0316",
+          "sku": "SKU-0316",
+          "name": "Vanilla Latte",
+          "size": "M",
+          "quantity": "1",
+          "totalAmountPence": 400,
+          "voidReason": null,
+          "isRefund": false,
+          "modifiers": [
+            {"name": "Oat milk", "quantity": 1}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "LSK-R2003",
+      "closedAt": "2026-09-17T10:12:00Z",
+      "channel": "EPOS",
+      "voidReason": "User Mistake",
+      "lines": [
+        {
+          "id": "LSK-R2003-L1",
+          "itemId": "LSK-ITEM-0002",
+          "sku": "SKU-0002",
+          "name": "Banana Milkshake",
+          "size": "S",
+          "quantity": "1",
+          "totalAmountPence": 420,
+          "voidReason": "User Mistake",
+          "isRefund": false,
+          "modifiers": []
+        }
+      ]
+    },
+    {
+      "id": "LSK-R2004",
+      "closedAt": "2026-09-17T15:47:00Z",
+      "channel": "EPOS",
+      "voidReason": null,
+      "lines": [
+        {
+          "id": "LSK-R2004-L1",
+          "itemId": "LSK-ITEM-0206",
+          "sku": "SKU-0206",
+          "name": "Pistachio Latte",
+          "size": "XL",
+          "quantity": "-1",
+          "totalAmountPence": -430,
+          "voidReason": null,
+          "isRefund": true,
+          "modifiers": []
+        }
+      ]
+    },
+    {
+      "id": "LSK-R2005",
+      "closedAt": "2026-09-18T11:20:00Z",
+      "channel": "EPOS",
+      "voidReason": null,
+      "lines": [
+        {
+          "id": "LSK-R2005-L1",
+          "itemId": "LSK-ITEM-0007",
+          "sku": "SKU-0007",
+          "name": "Black Americano",
+          "size": "M",
+          "quantity": "1",
+          "totalAmountPence": 310,
+          "voidReason": null,
+          "isRefund": false,
+          "modifiers": [
+            {"name": "Extra shot", "quantity": 1}
+          ]
+        }
+      ]
+    }
+  ]
+}

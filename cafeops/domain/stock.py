@@ -1,9 +1,17 @@
-"""Theoretical on-hand. Spec 5.1.
+"""Theoretical on-hand and the ledger entries that move it. Spec 5.1.
 
-PHASE 0 SCOPE NOTE: this module belongs to Agent C (stock engine). Phase 0
-implements only 5.1's formula, because `cafeops stock --as-of today` in the first
-deliverable cannot exist without it. Drift (5.2) belongs in domain/drift.py and
-tier gating in domain/tiers.py -- both Agent C's, both deliberately absent here.
+Phase 1 added the correction path (`reversal_movements`) alongside Phase 0's formula.
+Drift lives in `domain/drift.py` and the auto-order gate in `domain/tiers.py`.
+
+Two things this module deliberately does NOT do:
+
+- **It writes no movement for a physical count.** A count is the source of truth and
+  spec 5.1 re-anchors on it: the formula reads the latest count and sums only what
+  happened after it, so a `COUNT_RESET` movement would be counted twice -- once as the
+  new anchor and once as a delta on top of it. `MovementType.COUNT_RESET` exists for
+  an explicit opening balance, not for reconciling a count.
+- **It never amends a movement.** Invariant 9: the ledger is append-only, so undoing
+  an expansion means appending equal-and-opposite `ADJUSTMENT` rows.
 
 Pure: dataclasses in, dataclasses out. No SQLAlchemy, no I/O.
 """
@@ -25,6 +33,7 @@ from cafeops.domain.types import (
 __all__ = [
     "apply_waste",
     "depletion_movements",
+    "reversal_movements",
     "theoretical_on_hand",
     "waste_factors_from",
 ]
@@ -111,6 +120,41 @@ def depletion_movements(
             )
         )
     return tuple(movements)
+
+
+def reversal_movements(
+    originals: Sequence[MovementSpec],
+    *,
+    occurred_at: datetime,
+    note: str,
+    ref_type: str = "reversal",
+) -> tuple[MovementSpec, ...]:
+    """Equal-and-opposite `ADJUSTMENT` rows that undo `originals`.
+
+    INVARIANT 9: the ledger is append-only. A receipt voided after it was expanded, a
+    double-expanded window, a recipe that was wrong when the sale resolved -- none of
+    them may update or delete the rows already written. They append the inverse, and
+    the sum comes out right while the history stays readable.
+
+    One reversal per original rather than one per ingredient, so the correction can be
+    traced back to the exact row it answers. `ref_id` is carried over from the original
+    and `ref_type` is retyped (`sale` -> `sale_reversal` by convention at the call
+    site) so a later run can tell a reversal from the thing it reversed and never
+    reverse it twice.
+    """
+    return tuple(
+        MovementSpec(
+            ingredient_id=original.ingredient_id,
+            type=MovementType.ADJUSTMENT,
+            qty=-original.qty,
+            occurred_at=occurred_at,
+            ref_type=ref_type,
+            ref_id=original.ref_id,
+            note=note,
+        )
+        for original in originals
+        if original.qty != 0
+    )
 
 
 def waste_factors_from(snapshots: Iterable[IngredientSnapshot]) -> dict[int, Decimal]:
