@@ -44,6 +44,13 @@ class PurchaseOrder(Base):
     # inflate an order.
     min_order_topped_up: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     notes: Mapped[str | None] = mapped_column(Text)
+    #: Why this order exists at this supplier -- spec 4.4/5.5. For a Tesco MANUAL
+    #: order this is the panic-buy reason, and it is the input to the report that
+    #: argues for fixing the ordering cadence.
+    routing_reason: Mapped[str | None] = mapped_column(Text)
+    delivery_fee_pence: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
     # Invariant 7: low-confidence forecasts say so IN PLACE OF the number. This
     # carries the reason through to the Telegram message.
     confidence_notes: Mapped[str | None] = mapped_column(Text)
@@ -87,11 +94,18 @@ class POLine(Base):
     final_packs: Mapped[int] = mapped_column(Integer, nullable=False)
     unit_price_pence: Mapped[int] = mapped_column(Integer, nullable=False)
     received_qty: Mapped[Decimal | None] = mapped_column(Qty())
+    #: Entered at delivery receipt. Creates the stock_batch's expires_at, which is
+    #: what makes FIFO and the expiry sweep possible at all.
+    received_expires_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
 
     # Why this line is here: the computed need, and whether it only appeared to
     # satisfy the supplier minimum.
     need_qty: Mapped[Decimal | None] = mapped_column(Qty())
     is_top_up: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    #: Set when effective_cover < cover_days (spec 5.4). The user must know the
+    #: system chose to under-order deliberately, or they will override it and create
+    #: exactly the waste the cap was preventing.
+    cap_reason: Mapped[str | None] = mapped_column(String(80))
 
     po: Mapped[PurchaseOrder] = relationship(back_populates="lines")
     ingredient: Mapped[Ingredient] = relationship()

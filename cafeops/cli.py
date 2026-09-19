@@ -164,6 +164,18 @@ def seed(
     # sales have been expanded. A pack-multiple ceiling put 8 of 17 moving
     # ingredients below one cover window of demand, so the clamp -- not the
     # forecast -- was sizing the orders.
+    # Batches are built by replaying the finished ledger chronologically: a batch
+    # cannot be allocated before it is received, and deliveries interleave with 60
+    # days of sales. See services/rebuild_batches for why a replay rather than
+    # allocating during expansion.
+    from cafeops.services.rebuild_batches import rebuild_batches
+
+    with session_scope() as session:
+        console.print("[bold]Rebuilding[/bold] batches from the ledger (FIFO + expiry)")
+        rebuild = rebuild_batches(session)
+        console.print(f"  {rebuild.summary()}")
+        demo_report.batches = rebuild.batches_created
+
     with session_scope() as session:
         console.print("[bold]Sizing[/bold] par levels from observed consumption")
         resized, skipped = size_par_levels(session)
@@ -192,8 +204,11 @@ def stock(
     all_ingredients: Annotated[
         bool, typer.Option("--all", help="Include untracked (tier C) ingredients.")
     ] = False,
+    batches: Annotated[
+        bool, typer.Option("--batches/--no-batches", help="Show open batches and expiry.")
+    ] = True,
 ) -> None:
-    """Print THEORETICAL on-hand per ingredient."""
+    """Print THEORETICAL on-hand per ingredient, with open batches and expiry."""
     from cafeops.services.read_stock import read_on_hand
 
     at = _parse_as_of(as_of)
@@ -222,10 +237,13 @@ def stock(
     table.add_column("Last count", justify="right")
     table.add_column("Counted at")
     table.add_column("Mv", justify="right")
+    table.add_column("Expires in", justify="right", no_wrap=True)
     table.add_column("Basis")
 
     unanchored = 0
     negative = 0
+    short_dated: list[tuple[str, int]] = []
+    unbatched: list[tuple[str, Decimal, object]] = []
     for reading in readings:
         on_hand = reading.on_hand
         ingredient = reading.ingredient
@@ -246,6 +264,26 @@ def stock(
             basis = "[yellow]ledger only - NO COUNT[/yellow]"
             count_text, counted_at = "-", "-"
 
+        # Spec 10.8: short-dated stock must be visible before it is too late to
+        # sell through. Colour is reserved for a crossed threshold, not decoration.
+        days_left = reading.soonest_expiry_days
+        if days_left is None:
+            expiry_text = "[dim]never[/dim]"
+        elif days_left < 0:
+            expiry_text = f"[red]{days_left}d OVERDUE[/red]"
+            short_dated.append((ingredient.name, days_left))
+        elif days_left <= 3:
+            expiry_text = f"[red]{days_left}d[/red]"
+            short_dated.append((ingredient.name, days_left))
+        elif days_left <= 7:
+            expiry_text = f"[yellow]{days_left}d[/yellow]"
+        else:
+            expiry_text = f"{days_left}d"
+
+        gap = reading.batch_coverage_gap
+        if reading.batches and abs(gap) > Decimal("0.001"):
+            unbatched.append((ingredient.name, gap, ingredient.unit))
+
         table.add_row(
             ingredient.tier.value,
             ingredient.name,
@@ -253,6 +291,7 @@ def stock(
             count_text,
             counted_at,
             str(on_hand.movement_count),
+            expiry_text,
             basis,
         )
 
@@ -272,6 +311,67 @@ def stock(
             f"[red]{negative} ingredient(s) are negative -- the ledger has consumed "
             "more than the last count recorded. Count them.[/red]"
         )
+
+    if short_dated:
+        console.print(
+            f"\n[red]{len(short_dated)} ingredient(s) have stock expiring within "
+            f"3 days:[/red] "
+            + ", ".join(f"{name} ({d}d)" for name, d in sorted(short_dated, key=lambda x: x[1]))
+        )
+    if unbatched:
+        console.print(
+            f"\n[yellow]{len(unbatched)} ingredient(s) hold stock no batch accounts "
+            "for. FIFO and the expiry sweep can only see batched stock, so this "
+            "quantity can never expire or be counted as waste:[/yellow]"
+        )
+        for name, gap, unit in unbatched[:6]:
+            console.print(f"  {name}: {format_qty(gap, unit)} unbatched")  # type: ignore[arg-type]
+
+    if batches:
+        detail = Table(title="Open batches, soonest expiry first", title_style="bold")
+        detail.add_column("Ingredient", no_wrap=True)
+        detail.add_column("Batch", justify="right")
+        detail.add_column("Remaining", justify="right", no_wrap=True)
+        detail.add_column("Received")
+        detail.add_column("Expires")
+        detail.add_column("Days", justify="right")
+        detail.add_column("Value", justify="right")
+        shown = 0
+        for reading in readings:
+            for spec in reading.batches:
+                if shown >= 30:
+                    break
+                expiry = spec.effective_expiry(reading.open_life_days)
+                days = spec.days_left(at, reading.open_life_days)
+                value = (
+                    None
+                    if spec.unit_cost_pence is None
+                    else spec.qty_remaining * spec.unit_cost_pence / 100
+                )
+                detail.add_row(
+                    reading.ingredient.name,
+                    str(spec.batch_id),
+                    format_qty(spec.qty_remaining, reading.ingredient.unit),
+                    spec.received_at.astimezone(settings.tz).strftime("%Y-%m-%d"),
+                    "-" if expiry is None else expiry.astimezone(settings.tz).strftime("%Y-%m-%d"),
+                    "-" if days is None else str(days),
+                    "-" if value is None else f"GBP {value:.2f}",
+                )
+                shown += 1
+            if shown >= 30:
+                break
+        total_batches = sum(len(r.batches) for r in readings)
+        if shown:
+            console.print()
+            console.print(detail)
+            if total_batches > shown:
+                console.print(f"[dim]... {total_batches - shown} more open batches[/dim]")
+        else:
+            console.print(
+                "\n[yellow]No open batches. FIFO depletion and the expiry sweep have "
+                "nothing to work with -- run `cafeops seed --demo` or receive a "
+                "delivery.[/yellow]"
+            )
 
 
 # --------------------------------------------------------------------------

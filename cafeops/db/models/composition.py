@@ -29,6 +29,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import JSON
@@ -51,6 +52,13 @@ class DrinkTemplate(Base):
     category: Mapped[str | None] = mapped_column(String(80))
     description: Mapped[str | None] = mapped_column(Text)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    # Spec 4.2: prep seconds per size, e.g. {"S": 45, "M": 50, "XL": 60}. Earns its
+    # place three ways -- true margin including labour, throughput at the peak hour,
+    # and finding items that are margin-positive but time-negative during a rush.
+    # A menu_item may override it.
+    prep_seconds_by_size: Mapped[dict[str, int]] = mapped_column(
+        JSON, nullable=False, default=dict, server_default=text("'{}'")
+    )
 
     sizes: Mapped[list[SizeProfile]] = relationship(
         back_populates="template",
@@ -187,6 +195,9 @@ class VariantOption(Base):
     # Overrides the slot's qty_by_size when present. Null means inherit the slot.
     qty_by_size: Mapped[dict[str, str] | None] = mapped_column(JSON)
     price_delta_pence: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    # Spec 4.3: Pistachio is spring-only. A season on the option, not on 21 derived
+    # menu items, so adding a seasonal flavour stays one row.
+    season_id: Mapped[int | None] = mapped_column(ForeignKey("season.id"))
 
     effective_from: Mapped[datetime] = mapped_column(UTCDateTime, nullable=False)
     effective_to: Mapped[datetime | None] = mapped_column(UTCDateTime)

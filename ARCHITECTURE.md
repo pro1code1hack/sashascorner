@@ -3,8 +3,13 @@
 Decisions taken during Phase 0 that **differ from or extend** `CLAUDE.md`, and why.
 If a choice here is wrong, this is the file to argue with.
 
-Status: **Phase 0 complete and committed.** Phase 1 agents A–D running; Agent E
-(bot & jobs) held until their contracts settle.
+Status: **v2 Phase 0 complete.** v1 Phase 1 (agents A–D) is merged; the v2 model
+extension — batches, shelf life, seasons, multi-supplier sourcing, prep time,
+channels, agent log — has landed on top of it. v2 Phase 1 (six agents) not yet started.
+
+The spec has been revised twice. Where this file says "spec §N", it means the CURRENT
+`CLAUDE.md`. Sections 8A–8D record findings from v1's fan-out that still hold; 8E–8F
+are v2.
 
 ---
 
@@ -20,6 +25,16 @@ Spec §13's six questions, resolved with the owner before any code:
 | §13.4 Supplier | Tesco (walk-in), CakeSmiths (wholesale), Cups Direct (web shop, no API). | A channel abstraction plus a new `BROWSER_AGENT` channel. See §4. |
 | §13.5 Tier A | **12 items** (napkins included — they are the single most-used ingredient at 265 recipe lines). | 11 start at tier A; oat milk is held at B. See §2.1. |
 | §13.6 Dashboard language | **English only for now.** Bot stays Russian. | No i18n layer. `domain/` is locale-free; Russian lives only in `bot/formatters.py`. |
+
+v2 added five more questions (spec §15). Answered with the owner:
+
+| Question | Answer | Consequence |
+|---|---|---|
+| §15.3 Shelf lives | **Seed my defaults, flagged ESTIMATE** | 100 of 113 ingredients perishable. Milk's usable window is 5 days. See §8F.1. |
+| §15.4 Supplier terms | **Placeholders, loudly flagged** | 6 of 8 suppliers carry `terms_are_placeholders`. See §8F.4. |
+| §15.5 Nataly | **UNANSWERED** | Modelled MANUAL, 5-day lead, so it cannot win a sourcing decision. Open question 1. |
+| §15.7 Loaded hourly rate | **£14.50/hr** | Labour costing and `margin_per_minute` live. See §8F.5. |
+| §15.6 Deliveroo / Just Eat | **Portal login, manual export** | CSV `ChannelSource` first, browser agent second, behind one protocol. |
 
 ### The workbook
 
@@ -616,6 +631,180 @@ the only thing standing in for reality.
 
 ---
 
+## 8E. v2: the Qty storage bug — the most important thing in this file
+
+**`Qty` stored exact Decimals as TEXT on SQLite. Every SQL comparison against a
+quantity column was silently wrong.**
+
+SQLite's type ordering places TEXT above all numbers, unconditionally:
+
+```sql
+SELECT '0.0000' > 0;   -->   1
+```
+
+So `WHERE qty_remaining > 0` matched **every fully depleted batch**. The symptom that
+exposed it was absurd on its face — `cafeops stock` reporting milk 54 days overdue
+while listing batches containing nothing — but the cause was invisible, because:
+
+- Python-side comparisons on loaded `Decimal`s were always correct, so domain logic,
+  every hand-check and every agent's verification script agreed with each other.
+- It only misfires in SQL, only on some values (`'0'` compared correctly, `'0.0000'`
+  did not), and it never raises.
+
+Exactly one line in the codebase hit it (`services/read_stock.py`). That is luck, not
+design: six Phase 1 agents are about to write repository code, and `WHERE qty > 0` is
+the most natural thing any of them could type.
+
+### The fix
+
+`Qty` now stores a **scaled integer** on SQLite — the value times `10**6` — and a real
+`NUMERIC` elsewhere. Exact *and* correctly ordered, so `WHERE qty > 0` means what it
+says. Verified: `0`, `0.0000`, `-4.5`, `0.000001`, `123456.789012` and `1.005` all
+round-trip identically, and SQL and Python now return the same rows for both `> 0`
+and `< 0`.
+
+Two consequences worth stating:
+
+1. **The declared scale is now a real contract.** A value carrying more than 6 decimal
+   places is rounded half-up on the way in. That is what "Decimal with explicit scale"
+   (spec 4) already meant; it is simply now enforced rather than assumed. Re-verified
+   afterwards: 311 of 314 menu items still reproduce the workbook's cost column to
+   within 0.01p, and the 3 that do not are the Pistachio Lattes deliberately
+   re-pointed to the seeded template.
+2. **Postgres and SQLite now hold different representations**, so moving between them
+   is a *converting* Alembic branch rather than a dump-and-load. That is the right
+   trade: a migration is a one-off with a human watching, whereas a silently wrong
+   comparison is forever.
+
+### The general lesson, for whoever reads this next
+
+The first `Qty` implementation was chosen to protect exactness, and it did. It simply
+traded an obvious failure (floats losing pennies) for an invisible one (comparisons
+lying). When a custom column type changes the storage representation, the thing to
+check is not only "does the value come back intact" but "does every operator still
+mean what it means".
+
+---
+
+## 8F. v2 additions and the decisions inside them
+
+### 8F.1 Shelf life is seeded as ESTIMATE, and milk is the one that bites
+
+Not in the workbook (spec 15 q3). The owner chose defaults over blocking, so all 113
+ingredients get industry norms written with `shelf_life_source = ESTIMATE` and
+surfaced on the data-quality screen — the same treatment prices get, for the same
+reason (invariant 8). 100 of 113 are perishable.
+
+The consequential one is milk: **7 days less a 2-day transit buffer is a 5-day usable
+window**, which caps a 9-day cover down to 5. Milk will be ordered more often and in
+smaller quantities than the forecast alone asks for. That is invariant 4 working, and
+it is the single most valuable thing shelf life does here.
+
+`NULL` shelf life means "does not expire" (cups, lids, napkins) — a *statement*, not a
+gap. An unknown shelf life on a perishable is a different thing and is reported
+separately, because a missing cap silently permits the waste the cap exists to prevent.
+
+### 8F.2 Batches are rebuilt by replaying the ledger, not allocated during expansion
+
+`services/rebuild_batches.py`. Deliveries and sales interleave across 60 days and a
+batch cannot be allocated before it is received, but expansion runs over the whole
+queue at once — so a single chronological replay is the only way to reach a state that
+was actually reachable. It is also idempotent and inspectable.
+
+Marked `PHASE 0 SCOPE NOTE` for Agent C with an explicit keep/replace list: keep FIFO
+by effective expiry, the sweep-before-allocate ordering, and shortfall-as-data; replace
+the replay itself with `receive_delivery` + allocation at sale time.
+
+Three decisions inside it:
+
+- **Sweep before allocating.** Allocating first would quietly sell expired stock and
+  the loss would never appear. Ordering is what makes the waste figure honest.
+- **A physical count re-anchors the batches too.** A count re-anchors theoretical
+  on-hand (spec 5.1), so leaving batches at their pre-count quantities makes the two
+  numbers disagree permanently — the demo showed batches holding 200 cups against a
+  counted 105. A surplus is removed oldest-expiring first; a deficit becomes a new
+  batch. No movement is written, because the count is already the re-anchor and an
+  `ADJUSTMENT` would double-count it.
+- **One movement keeps one `batch_id`.** A consumption spanning several lots is
+  attributed to the lot that supplied the most. Remaining quantities are exact either
+  way; splitting one sale into several ledger rows would misrepresent one event as
+  several.
+
+Result on the seeded data: 122 batches, ~17,000 FIFO allocations, and **8 expiry
+write-offs worth £190.27** — a waste figure that did not previously exist anywhere.
+
+### 8F.3 FIFO is by expiry, not receipt date
+
+A short-dated delivery goes out before older stock with a longer date, which is what a
+person standing at the fridge does. A batch with no expiry sorts *last*: cups should
+be consumed only after anything that can spoil. Verified, including the subtle case
+where an opened 270-day carton with a 3-day open life is consumed before a sealed
+10-day one.
+
+### 8F.4 Eight suppliers, six of them with invented terms
+
+Spec 4.4's real set. Only **Tesco and Amazon** have terms I can state truthfully.
+Cakesmiths, Brakes, Booker, Cups Direct, Monolith and Nataly carry
+`terms_are_placeholders = True`, which is a column rather than a comment precisely so
+every order built from them can say so on its face.
+
+**Nataly is unanswered** (spec 15 q5): what it supplies and through what channel is
+unknown. Modelled `MANUAL` with a deliberately long 5-day lead so it cannot silently
+win a sourcing decision.
+
+Six alternate sources exist so multi-sourcing has a real decision to make, including
+two deliberately *worse* options (Monolith beans, Amazon cups) — the sourcing code
+needs a case where the alternate loses, not only cases where it wins.
+
+### 8F.5 Labour: £14.50/hr loaded, and the ranking genuinely inverts
+
+Confirmed with the owner. Verified that `margin_per_minute` reorders the menu exactly
+as spec 5.6 predicts: a £4.00 drink at 85% margin taking 3 minutes yields 113p/min,
+while one at 70% taking 40 seconds yields **420p/min**. The two views disagree, and
+the disagreement is the finding.
+
+All labour figures are `None` when prep time or the rate is unset. A labour cost
+derived from a guessed rate is a guess wearing a number's clothes.
+
+### 8F.6 Seasons handle a year-wrapping window
+
+`SeasonSpec.contains` and `days_remaining` handle a recurring season that crosses the
+new year (a Nov 15 – Feb 28 winter season correctly contains January 10 and computes
+49 days remaining). Getting this wrong would either exclude half a season's history
+from forecasting or cap an order at a negative number of days.
+
+### 8F.7 Migrations: three real bugs fixed, then squashed
+
+Three separate problems, all found by trying to run the thing:
+
+1. **`NOT NULL` without a DDL default** — SQLite refuses to add such a column to a
+   populated table. Every new non-nullable column now carries `server_default`.
+2. **`PRAGMA foreign_keys` is silently ignored inside a transaction**, so it cannot be
+   turned off from within a migration. Batch mode rebuilds tables by copy-and-drop,
+   which FK enforcement blocks. `create_db_engine(..., enforce_foreign_keys=False)`
+   now exists for Alembic, and a fresh FK-enforcing connection runs
+   `PRAGMA foreign_key_check` afterwards so a rebuild that left a dangling reference
+   fails loudly.
+3. **`alembic downgrade` exited 0 having changed nothing.** SQLite reports
+   non-transactional DDL, so Alembic does not commit and SQLAlchemy 2.0 rolls back on
+   close. `connection.commit()` is now explicit.
+
+A **naming convention** is set on `Base.metadata`. Not cosmetic: batch mode refuses to
+move a constraint it cannot name, so without it any future migration altering a table
+with an unnamed constraint fails with "Constraint must have a name".
+
+Migrations are then **squashed to one**, because nothing is deployed. From first
+deployment onward they are additive only. The round-trip is verified: 29 tables →
+`downgrade base` → 1 → `upgrade head` → 29, zero FK violations.
+
+### 8F.8 No load balancer
+
+Spec 3 is right and worth restating: 40 transactions a day, two users, one SQLite file
+that permits a single writer. A second app instance would contend on the same file and
+make things worse. Reverse proxy yes, load balancer no.
+
+---
+
 ## 9. Module layout deviations
 
 | Spec | Actual | Why |
@@ -669,8 +858,16 @@ Three deliberate choices:
 
 ## 11. Open questions
 
-1. **CakeSmiths and Cups Direct terms** — lead time, delivery weekdays, minimum
-   order. Currently invented (§8.2). Blocks trustworthy order sizing.
+0. **What does "Nataly (custom)" supply, and through what channel?** (spec §15 q5,
+   unanswered.) Currently a MANUAL supplier with an invented 5-day lead.
+1. **Six suppliers' terms are invented** — Cakesmiths, Brakes, Booker, Cups Direct,
+   Monolith, Nataly: lead time, delivery weekdays, cutoff, minimum, free-delivery
+   threshold (§8F.4). This is now the largest single blocker to trusting any order
+   quantity, because v2 builds one order per supplier and each one's cover window
+   depends entirely on its lead time.
+1b. **Shelf lives are ESTIMATE defaults, not measurements** (§8F.1). They cap order
+   size (invariant 4), so a wrong one either wastes stock or causes a stockout. The
+   ~15 perishables that actually move are worth confirming first.
 2. **ANSWERED — Do K-Series sale lines carry modifiers? Only on the wrong
    endpoints.** Agent A's research (api-docs.lsk.lightspeed.app,
    api-portal.lsk.lightspeed.app, k-series-support) found a split:

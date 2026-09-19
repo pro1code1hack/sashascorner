@@ -30,11 +30,14 @@ from cafeops.db.models import (
     Modifier,
     ModifierAction,
     MovementType,
+    OrderChannel,
     ParLevel,
     Sale,
     SaleChannel,
+    Season,
     SizeCode,
     SizeProfile,
+    StockBatch,
     StockCount,
     StockMovement,
     Supplier,
@@ -44,6 +47,12 @@ from cafeops.db.models import (
     Unit,
     VariantAxis,
     VariantOption,
+)
+from cafeops.seed.suppliers import (
+    ALTERNATE_SOURCES,
+    CATEGORY_TO_SUPPLIER,
+    DEFAULT_SUPPLIER,
+    SUPPLIERS,
 )
 
 TEMPLATE_NAME = "Flavoured Latte"
@@ -125,39 +134,7 @@ COUNT_DRIFT: dict[str, Decimal] = {
 }
 DEFAULT_DRIFT = Decimal("0.05")
 
-SUPPLIER_DEFS: tuple[dict[str, object], ...] = (
-    {
-        "name": "Tesco",
-        "lead_time_days": 0,
-        "delivery_weekdays": [],  # walk-in: any day
-        "min_order_pence": 0,
-        "order_channel": "MANUAL",
-        "contact": "Walk-in, Dundee",
-    },
-    {
-        "name": "CakeSmiths",
-        "lead_time_days": 2,
-        "delivery_weekdays": [2, 5],  # PLACEHOLDER -- confirm with supplier
-        "min_order_pence": 5000,
-        "order_channel": "EMAIL",
-        "contact": "orders@cakesmiths.example",
-    },
-    {
-        "name": "Cups Direct",
-        "lead_time_days": 3,
-        "delivery_weekdays": [1, 2, 3, 4, 5],  # PLACEHOLDER
-        "min_order_pence": 3000,
-        "order_channel": "BROWSER_AGENT",
-        "contact": "https://www.cupsdirect.example",
-    },
-)
-SUPPLIER_BY_CATEGORY: dict[str, str] = {
-    "Packaging": "Cups Direct",
-    "Sundries": "Cups Direct",
-    "Cake": "CakeSmiths",
-    "Cake (CakeSmiths)": "CakeSmiths",
-}
-DEFAULT_SUPPLIER = "Tesco"
+# Suppliers, category routing and alternate sources live in seed/suppliers.py.
 
 
 @dataclass
@@ -167,6 +144,9 @@ class DemoReport:
     modifiers: int = 0
     suppliers: int = 0
     supplier_products: int = 0
+    alternate_sources: int = 0
+    batches: int = 0
+    seasons: int = 0
     par_levels: int = 0
     days: int = 0
     receipts: int = 0
@@ -189,8 +169,9 @@ class DemoReport:
             f"template {TEMPLATE_NAME!r}: "
             f"{'created' if self.template_created else 'already present'}, "
             f"{self.menu_items} sellable items, {self.modifiers} modifiers",
-            f"suppliers: {self.suppliers}, products: {self.supplier_products}, "
-            f"par levels: {self.par_levels}",
+            f"suppliers: {self.suppliers}, products: {self.supplier_products} "
+            f"(+{self.alternate_sources} alternate sources), par levels: {self.par_levels}",
+            f"batches: {self.batches}, seasons: {self.seasons}",
             f"sales: {self.days} days ({span}), {self.receipts} receipts, "
             f"{self.sale_lines} lines, {self.modifiers_applied} with an alt milk",
             f"ledger: {self.opening_counts} opening counts, {self.deliveries} deliveries, "
@@ -206,6 +187,7 @@ def seed_demo(session: Session, *, days: int = 60, seed: int = 20260919) -> Demo
     template = _build_latte_template(session, report)
     _build_modifiers(session, report)
     session.flush()
+    seed_seasons(session, report)
     if template is None:
         report.warnings.append("latte template not built -- no sales generated")
         return report
@@ -374,42 +356,49 @@ def _build_modifiers(session: Session, report: DemoReport) -> None:
 
 
 def _suppliers_and_pars(session: Session, report: DemoReport) -> None:
-    from cafeops.db.models.enums import OrderChannel
-
+    """Create the eight real suppliers, their products, alternates and par levels."""
     suppliers: dict[str, Supplier] = {}
-    for spec in SUPPLIER_DEFS:
-        name = str(spec["name"])
-        existing = session.scalar(select(Supplier).where(Supplier.name == name))
+    placeholder_names: list[str] = []
+
+    for spec in SUPPLIERS:
+        existing = session.scalar(select(Supplier).where(Supplier.name == spec.name))
         if existing is None:
-            existing = Supplier(
-                name=name,
-                lead_time_days=int(spec["lead_time_days"]),  # type: ignore[call-overload]
-                delivery_weekdays=spec["delivery_weekdays"],
-                min_order_pence=int(spec["min_order_pence"]),  # type: ignore[call-overload]
-                order_channel=OrderChannel(str(spec["order_channel"])),
-                contact=str(spec["contact"]),
-                order_url=(
-                    str(spec["contact"]) if spec["order_channel"] == "BROWSER_AGENT" else None
-                ),
-                agent_instructions=(
-                    "Log in with the saved account, add each SKU to the basket, then "
-                    "STOP at the basket. Do not complete checkout."
-                    if spec["order_channel"] == "BROWSER_AGENT"
-                    else None
-                ),
-                channel_config={},
-            )
+            existing = Supplier(name=spec.name)
             session.add(existing)
             report.suppliers += 1
-        suppliers[name] = existing
+        existing.lead_time_days = spec.lead_time_days
+        existing.delivery_weekdays = list(spec.delivery_weekdays)
+        existing.min_order_pence = spec.min_order_pence
+        existing.order_channel = spec.order_channel
+        existing.contact = spec.contact
+        existing.cutoff_time = spec.cutoff_time
+        existing.delivery_fee_pence = spec.delivery_fee_pence
+        existing.free_delivery_threshold_pence = spec.free_delivery_threshold_pence
+        existing.terms_are_placeholders = spec.terms_are_placeholders
+        existing.order_url = spec.order_url
+        existing.agent_instructions = (
+            "Log in with the saved account, add each SKU to the basket, then STOP at "
+            "the basket. Do not complete checkout."
+            if spec.order_channel is OrderChannel.PORTAL
+            else None
+        )
+        existing.channel_config = {}
+        suppliers[spec.name] = existing
+        if spec.terms_are_placeholders:
+            placeholder_names.append(spec.name)
     session.flush()
+
     report.warnings.append(
-        "CakeSmiths and Cups Direct lead times, delivery weekdays and minimum orders "
-        "are PLACEHOLDERS -- confirm before trusting any order size."
+        f"{len(placeholder_names)} supplier(s) have INVENTED terms -- lead time, "
+        f"delivery days, cutoff, minimum, threshold: {', '.join(placeholder_names)}. "
+        "Every order built from them is only as good as those guesses."
+    )
+    report.warnings.append(
+        "'Nataly (custom)' is unspecified (spec 15 q5): what it supplies and through "
+        "what channel is unknown, so it is modelled MANUAL with a 5-day lead."
     )
 
-    # Supplier products from the imported price rows: one buyable pack per
-    # ingredient, at the supplier its category implies.
+    # --- primary supplier product per ingredient, from the imported price -----
     for ingredient in session.scalars(select(Ingredient)):
         price = session.scalar(
             select(IngredientPrice)
@@ -422,7 +411,7 @@ def _suppliers_and_pars(session: Session, report: DemoReport) -> None:
         if price is None or price.pack_size <= 0:
             continue
         supplier = suppliers[
-            SUPPLIER_BY_CATEGORY.get((ingredient.category or "").strip(), DEFAULT_SUPPLIER)
+            CATEGORY_TO_SUPPLIER.get((ingredient.category or "").strip(), DEFAULT_SUPPLIER)
         ]
         existing_product = session.scalar(
             select(SupplierProduct).where(
@@ -441,31 +430,75 @@ def _suppliers_and_pars(session: Session, report: DemoReport) -> None:
                     pack_unit=price.pack_unit,
                     price_pence=price.pack_cost_pence,
                     is_preferred=True,
+                    moq_packs=1,
                 )
             )
             report.supplier_products += 1
+        # Attribute the imported price to the supplier now that we have one.
+        if price.supplier_id is None:
+            price.supplier_id = supplier.id
+    session.flush()
 
-        if not ingredient.tracking_enabled:
+    # --- alternate sources, so sourcing has a real decision to make ----------
+    for ing_name, sup_name, pack_size_text, pack_pence in ALTERNATE_SOURCES:
+        ingredient = _ing(session, ing_name)
+        supplier = suppliers.get(sup_name)
+        if ingredient is None or supplier is None:
+            report.warnings.append(
+                f"alternate source skipped: {ing_name!r} at {sup_name!r} not found"
+            )
             continue
+        sku = f"ALT-{sup_name[:3].upper()}"
+        if session.scalar(
+            select(SupplierProduct).where(
+                SupplierProduct.supplier_id == supplier.id,
+                SupplierProduct.ingredient_id == ingredient.id,
+                SupplierProduct.sku == sku,
+            )
+        ):
+            continue
+        session.add(
+            SupplierProduct(
+                supplier_id=supplier.id,
+                ingredient_id=ingredient.id,
+                sku=sku,
+                pack_size=Decimal(pack_size_text),
+                pack_unit=ingredient.unit,
+                price_pence=pack_pence,
+                is_preferred=False,
+                moq_packs=1,
+            )
+        )
+        report.alternate_sources += 1
+    session.flush()
+
+    # --- par levels ----------------------------------------------------------
+    for ingredient in session.scalars(
+        select(Ingredient).where(Ingredient.tracking_enabled.is_(True))
+    ):
         if session.scalar(select(ParLevel).where(ParLevel.ingredient_id == ingredient.id)):
             continue
+        product = session.scalar(
+            select(SupplierProduct)
+            .where(
+                SupplierProduct.ingredient_id == ingredient.id,
+                SupplierProduct.is_preferred.is_(True),
+            )
+            .limit(1)
+        )
+        pack = product.pack_size if product is not None else Decimal("1")
         session.add(
             ParLevel(
                 ingredient_id=ingredient.id,
                 safety_days=Decimal("2") if ingredient.tier is Tier.A else Decimal("3"),
-                min_qty=price.pack_size * Decimal("0.25"),
-                max_qty=price.pack_size * Decimal("3"),
+                min_qty=pack * Decimal("0.25"),
+                max_qty=pack * Decimal("3"),
                 auto_order_enabled=False,
                 auto_order_reason="seeded; auto-order must be earned via the drift gate",
             )
         )
         report.par_levels += 1
     session.flush()
-
-
-# --------------------------------------------------------------------------
-# Sales
-# --------------------------------------------------------------------------
 
 
 def _generate_sales(
@@ -773,3 +806,129 @@ def _daily_sale_consumption(
         day = occurred_at.astimezone(tz).date()  # type: ignore[arg-type]
         out[day] = out.get(day, Decimal("0")) + (-qty)
     return out
+
+
+# --------------------------------------------------------------------------
+# Seasons and batches
+# --------------------------------------------------------------------------
+
+#: A recurring spring season so the seasonal paths (spec 4.3) have real data: a
+#: forecast that must exclude out-of-season history, and an order that must be capped
+#: at remaining season days rather than the full cover window.
+SEASONS: tuple[tuple[str, date, date, bool], ...] = (
+    ("Spring seasonal drinks", date(2026, 3, 1), date(2026, 5, 31), True),
+    ("Pumpkin season", date(2026, 9, 15), date(2026, 11, 30), True),
+)
+
+#: Which seeded flavour belongs to which season. Pistachio is spring-only (spec 4.3).
+SEASONAL_OPTIONS: dict[str, str] = {"Pistachio": "Spring seasonal drinks"}
+
+
+def seed_seasons(session: Session, report: DemoReport) -> None:
+    """Create seasons and attach the seasonal flavour option."""
+    by_name: dict[str, Season] = {}
+    for name, starts, ends, recurring in SEASONS:
+        existing = session.scalar(select(Season).where(Season.name == name))
+        if existing is None:
+            existing = Season(
+                name=name,
+                starts_on=starts,
+                ends_on=ends,
+                is_recurring_annually=recurring,
+                note="seeded demo season",
+            )
+            session.add(existing)
+            report.seasons += 1
+        by_name[name] = existing
+    session.flush()
+
+    for option_name, season_name in SEASONAL_OPTIONS.items():
+        season = by_name.get(season_name)
+        option = session.scalar(select(VariantOption).where(VariantOption.name == option_name))
+        if season is None or option is None:
+            continue
+        option.season_id = season.id
+    session.flush()
+
+
+def seed_batches(session: Session, report: DemoReport) -> None:
+    """Create stock_batch rows for existing stock. Spec 4.1, spec 16.
+
+    Two sources, both needed for the demo to be honest:
+
+    1. **Opening counts** -- stock that was already there. Received at the count
+       instant, expiring per the ingredient's shelf life. A count is not a purchase,
+       so these batches have no `po_line_id`, which is exactly why that column is
+       nullable.
+    2. **DELIVERY movements** -- each synthetic restock becomes a batch, so FIFO has
+       several lots per ingredient with different dates to choose between.
+
+    Runs after restocking, because it reads the delivery ledger.
+    """
+    shelf_by_ing: dict[int, Ingredient] = {i.id: i for i in session.scalars(select(Ingredient))}
+
+    def expiry_for(ingredient: Ingredient, received_at: datetime) -> datetime | None:
+        if ingredient.shelf_life_days is None:
+            return None
+        return received_at + timedelta(days=ingredient.shelf_life_days)
+
+    # --- from opening counts -------------------------------------------------
+    first_counts: dict[int, StockCount] = {}
+    for count in session.scalars(select(StockCount).order_by(StockCount.counted_at)):
+        first_counts.setdefault(count.ingredient_id, count)
+
+    for ingredient_id, count in first_counts.items():
+        ingredient = shelf_by_ing.get(ingredient_id)
+        if ingredient is None or count.counted_qty <= 0:
+            continue
+        if session.scalar(
+            select(func.count(StockBatch.id)).where(
+                StockBatch.ingredient_id == ingredient_id,
+                StockBatch.po_line_id.is_(None),
+                StockBatch.note == "opening stock",
+            )
+        ):
+            continue
+        price = ingredient.current_cost_pence_per_unit or Decimal("0")
+        session.add(
+            StockBatch(
+                ingredient_id=ingredient_id,
+                qty_received=count.counted_qty,
+                qty_remaining=count.counted_qty,
+                received_at=count.counted_at,
+                expires_at=expiry_for(ingredient, count.counted_at),
+                unit_cost_pence=price,
+                note="opening stock",
+            )
+        )
+        report.batches += 1
+    session.flush()
+
+    # --- from DELIVERY movements --------------------------------------------
+    deliveries = session.scalars(
+        select(StockMovement)
+        .where(StockMovement.type == MovementType.DELIVERY)
+        .order_by(StockMovement.occurred_at)
+    )
+    for movement in deliveries:
+        ingredient = shelf_by_ing.get(movement.ingredient_id)
+        if ingredient is None or movement.qty <= 0:
+            continue
+        if movement.batch_id is not None:
+            continue
+        price = ingredient.current_cost_pence_per_unit or Decimal("0")
+        batch = StockBatch(
+            ingredient_id=movement.ingredient_id,
+            qty_received=movement.qty,
+            qty_remaining=movement.qty,
+            received_at=movement.occurred_at,
+            expires_at=expiry_for(ingredient, movement.occurred_at),
+            unit_cost_pence=price,
+            note="synthetic delivery",
+        )
+        session.add(batch)
+        session.flush()
+        # Link the ledger row to the batch it created, so provenance is walkable.
+        movement.batch_id = batch.id
+        report.batches += 1
+    session.flush()

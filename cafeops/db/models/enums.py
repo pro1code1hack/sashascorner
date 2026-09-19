@@ -66,6 +66,10 @@ class MovementType(enum.Enum):
     ADJUSTMENT = "ADJUSTMENT"
     STAFF = "STAFF"
     COUNT_RESET = "COUNT_RESET"
+    #: A batch reached expires_at with stock left. This is the honest waste figure
+    #: the P&L needs and nobody currently has -- and it is what distinguishes
+    #: "the recipe is wrong" from "we are over-ordering" in a drift report.
+    EXPIRED = "EXPIRED"
 
 
 class PriceSource(enum.Enum):
@@ -89,15 +93,17 @@ class ModifierAction(enum.Enum):
 
 
 class OrderChannel(enum.Enum):
-    """How an order reaches a supplier.
+    """How an order reaches a supplier. Spec 4.4.
 
-    BROWSER_AGENT extends the spec's EMAIL|PORTAL|MANUAL. Sasha buys from Tesco
-    (walk-in), CakeSmiths (wholesale) and Cups Direct (web shop, no API), so
-    "drive a browser to a filled basket and stop" is a real channel here.
+    BROWSER_AGENT is retained alongside the spec's PORTAL: spec 9 puts browser
+    automation behind a bounded tool interface, and a PORTAL supplier with no API
+    is reached that way in practice. Keeping them distinct records whether we have
+    a real integration or are driving a browser.
     """
 
-    EMAIL = "EMAIL"
     PORTAL = "PORTAL"
+    EMAIL = "EMAIL"
+    EDI = "EDI"
     MANUAL = "MANUAL"
     BROWSER_AGENT = "BROWSER_AGENT"
 
@@ -123,3 +129,41 @@ class SaleChannel(enum.Enum):
     DELIVEROO = "DELIVEROO"
     JUST_EAT = "JUST_EAT"
     OTHER = "OTHER"
+
+
+class Storage(enum.Enum):
+    """Storage regime. Drives the transit buffer and the plausibility of a shelf life."""
+
+    AMBIENT = "AMBIENT"
+    CHILLED = "CHILLED"
+    FROZEN = "FROZEN"
+
+
+class SalesChannelName(enum.Enum):
+    """Third-party marketplaces that are also ad platforms. Spec 4.6."""
+
+    DELIVEROO = "DELIVEROO"
+    JUST_EAT = "JUST_EAT"
+
+
+class ChannelSourceKind(enum.Enum):
+    """How a channel_metric row got here.
+
+    Spec 4.6: partner APIs are gated to certified POS integrators, so assume we
+    never get in. CSV is the path that works today from the owner's own portal
+    exports; BROWSER_AGENT is the fallback and it will break.
+    """
+
+    CSV_UPLOAD = "CSV_UPLOAD"
+    BROWSER_AGENT = "BROWSER_AGENT"
+    PARTNER_API = "PARTNER_API"
+    MANUAL = "MANUAL"
+
+
+class AgentToolOutcome(enum.Enum):
+    """Spec 9: every agent action is logged with inputs, output and the tool called."""
+
+    OK = "OK"
+    REFUSED = "REFUSED"
+    FAILED = "FAILED"
+    AWAITING_HUMAN = "AWAITING_HUMAN"

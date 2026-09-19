@@ -19,20 +19,29 @@ Pure: dataclasses in, dataclasses out. No SQLAlchemy, no I/O.
 from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
 from cafeops.domain.types import (
+    BatchSpec,
+    DepletionAllocation,
+    ExpiryLoss,
     IngredientSnapshot,
     MovementSpec,
     MovementType,
     OnHand,
     ResolvedLine,
+    ShelfLifeSpec,
 )
 
 __all__ = [
+    "allocate_fifo",
     "apply_waste",
+    "batch_expiry_for",
     "depletion_movements",
+    "drift_attribution",
+    "expiry_movements",
+    "find_expiry_losses",
     "reversal_movements",
     "theoretical_on_hand",
     "waste_factors_from",
@@ -159,3 +168,143 @@ def reversal_movements(
 
 def waste_factors_from(snapshots: Iterable[IngredientSnapshot]) -> dict[int, Decimal]:
     return {s.id: s.waste_factor for s in snapshots}
+
+
+# ==========================================================================
+# FIFO batch depletion and expiry (spec 4.1, 5.1)
+# ==========================================================================
+
+
+def allocate_fifo(
+    *,
+    qty: Decimal,
+    batches: Sequence[BatchSpec],
+    open_life_days: int | None = None,
+    at: datetime | None = None,
+) -> tuple[tuple[DepletionAllocation, ...], Decimal]:
+    """Take `qty` from `batches`, soonest-expiring first.
+
+    Returns (allocations, shortfall). A shortfall means the batch records could not
+    account for stock that demonstrably left the building.
+
+    FIFO is by **effective expiry**, not receipt date: a short-dated delivery goes out
+    before older stock with a longer date, which is what a person at the fridge
+    actually does. A batch with no expiry sorts last -- cups and napkins should be
+    consumed only after anything that can spoil.
+
+    The shortfall is returned rather than raised. A sale happened; refusing to record
+    it would lose real consumption, and the gap is itself the signal that a count is
+    wrong or a delivery was never entered.
+    """
+    if qty <= 0:
+        return (), Decimal("0")
+
+    at = at or datetime.now(UTC)
+
+    def sort_key(batch: BatchSpec) -> tuple[int, float, int]:
+        expiry = batch.effective_expiry(open_life_days)
+        if expiry is None:
+            # No expiry: consume last, but still oldest-received first among them.
+            return (1, batch.received_at.timestamp(), batch.batch_id)
+        return (0, expiry.timestamp(), batch.batch_id)
+
+    remaining = qty
+    allocations: list[DepletionAllocation] = []
+    for batch in sorted(batches, key=sort_key):
+        if remaining <= 0:
+            break
+        available = batch.qty_remaining
+        if available <= 0:
+            continue
+        take = available if available < remaining else remaining
+        allocations.append(DepletionAllocation(batch_id=batch.batch_id, qty=take))
+        remaining -= take
+
+    if remaining > 0:
+        # Record the unaccounted part explicitly rather than silently dropping it.
+        allocations.append(DepletionAllocation(batch_id=None, qty=remaining))
+
+    return tuple(allocations), max(remaining, Decimal("0"))
+
+
+def find_expiry_losses(
+    *,
+    batches: Sequence[BatchSpec],
+    at: datetime,
+    open_life_days: int | None = None,
+) -> tuple[ExpiryLoss, ...]:
+    """Batches past their effective expiry with stock left.
+
+    This is the honest waste figure the P&L needs and nobody currently has. It is
+    also what lets a drift report separate "the recipe is wrong" from "we are
+    over-ordering" -- two problems with opposite fixes.
+    """
+    losses: list[ExpiryLoss] = []
+    for batch in batches:
+        if batch.qty_remaining <= 0:
+            continue
+        expiry = batch.effective_expiry(open_life_days)
+        if expiry is None or expiry > at:
+            continue
+        losses.append(
+            ExpiryLoss(
+                batch_id=batch.batch_id,
+                ingredient_id=batch.ingredient_id,
+                qty=batch.qty_remaining,
+                expired_at=expiry,
+                unit_cost_pence=batch.unit_cost_pence,
+            )
+        )
+    return tuple(losses)
+
+
+def expiry_movements(losses: Sequence[ExpiryLoss]) -> tuple[MovementSpec, ...]:
+    """Turn expiry losses into EXPIRED ledger entries. Negative: the stock is gone."""
+    return tuple(
+        MovementSpec(
+            ingredient_id=loss.ingredient_id,
+            type=MovementType.EXPIRED,
+            qty=-loss.qty,
+            occurred_at=loss.expired_at,
+            ref_type="stock_batch",
+            ref_id=loss.batch_id,
+            note="expired with stock remaining",
+        )
+        for loss in losses
+        if loss.qty > 0
+    )
+
+
+def batch_expiry_for(
+    *,
+    received_at: datetime,
+    shelf_life: ShelfLifeSpec | None,
+) -> datetime | None:
+    """The expiry to stamp on a newly received batch.
+
+    None when the ingredient does not expire. Note this uses the FULL shelf life:
+    the transit buffer belongs to the *ordering* decision (spec 5.4's cover cap), not
+    to the date on the carton. Subtracting it here would double-count the caution and
+    write off stock that is still good.
+    """
+    if shelf_life is None or shelf_life.shelf_life_days is None:
+        return None
+    return received_at + timedelta(days=shelf_life.shelf_life_days)
+
+
+def drift_attribution(
+    *,
+    total_gap: Decimal,
+    expired_qty: Decimal,
+) -> tuple[Decimal, Decimal]:
+    """Split a drift gap into (measurement, expiry) magnitudes. Spec 5.2.
+
+    If write-offs explain most of the gap, the fix is to order less. If they explain
+    little, the fix is the recipe or the waste factor. Reporting one undifferentiated
+    number tells the owner to do the wrong thing roughly half the time.
+    """
+    gap = abs(total_gap)
+    expired = abs(expired_qty)
+    if expired >= gap:
+        return Decimal("0"), gap
+    return gap - expired, expired

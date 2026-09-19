@@ -52,6 +52,11 @@ class MenuItem(Base):
     price_pence: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     manual_recipe: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    # Overrides the template's prep_seconds_by_size for this item (spec 4.2).
+    prep_seconds: Mapped[int | None] = mapped_column(Integer)
+    # Spec 4.3: a seasonal item is excluded from out-of-season forecasting and
+    # capped by its remaining season days when ordering.
+    season_id: Mapped[int | None] = mapped_column(ForeignKey("season.id"))
 
     # Surfaced on the data-quality screen (spec 6, 8.6). Set for things like the
     # item literally named "'card' (£3.00)" with zero cost.
@@ -125,6 +130,20 @@ class MenuItemCost(Base):
     # flagged, and excluded from aggregates -- never defaulted to zero.
     has_missing_cost: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     ingredient_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+    # --- labour (spec 5.6) ----------------------------------------------------
+    # `margin_per_minute` is the number that matters at the peak hour, and it
+    # reorders the menu ranking against plain margin %: a drink at 85% margin taking
+    # three minutes loses to one at 70% taking forty seconds when there is a queue.
+    # Both are NULL when prep time or the loaded hourly rate is unset -- the same
+    # rule as cost_pence, because a labour figure derived from a guessed rate is a
+    # guess wearing a number's clothes.
+    labour_cost_pence: Mapped[Decimal | None] = mapped_column(Qty())
+    prep_seconds: Mapped[int | None] = mapped_column(Integer)
+    #: Loaded hourly rate in force when this was computed, so a rate change is
+    #: auditable rather than retroactively rewriting history.
+    loaded_hourly_rate_pence: Mapped[int | None] = mapped_column(Integer)
+
     computed_at: Mapped[datetime] = mapped_column(UTCDateTime, nullable=False)
     # The recipe date this cost was resolved at, so a stale cache is detectable.
     resolved_at: Mapped[datetime] = mapped_column(UTCDateTime, nullable=False)

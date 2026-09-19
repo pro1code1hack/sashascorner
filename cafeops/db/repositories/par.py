@@ -86,6 +86,16 @@ class SqlParLevelRepository:
             )
         self._write(ingredient_id, enabled=False, reason=reason, at=at)
 
+    def revoke_auto_order(self, ingredient_id: int, *, reason: str, at: datetime) -> None:
+        """Turn auto-ordering OFF. The named form of the only safe direction.
+
+        The protocol exposes this rather than a symmetric enable/disable pair,
+        because a boolean parameter that *can* mean "grant" is an invitation to take
+        the shortcut invariant 2 forbids. `set_auto_order` is kept for existing
+        callers and refuses `True` just as loudly.
+        """
+        self._write(ingredient_id, enabled=False, reason=reason, at=at)
+
     def apply_gate_decision(self, decision: GateDecision, *, at: datetime) -> bool:
         """Write the gate's verdict. Returns True when the stored flag changed.
 

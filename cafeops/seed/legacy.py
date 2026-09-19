@@ -42,6 +42,7 @@ from cafeops.db.models import (
 from cafeops.domain.units import UnknownUnitError, convert, parse_unit
 from cafeops.seed.patterns import StagedLine, TemplateProposal, propose_templates
 from cafeops.seed.roles import infer_role, is_standalone
+from cafeops.seed.shelf_life import default_for
 
 # --------------------------------------------------------------------------
 # Decisions that are not in the workbook
@@ -122,6 +123,8 @@ class LegacyImportReport:
     proposals: list[TemplateProposal] = field(default_factory=list)
     tier_counts: dict[str, int] = field(default_factory=dict)
     estimated_cost_count: int = 0
+    perishables: int = 0
+    unknown_shelf_life: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
     data_quality: list[str] = field(default_factory=list)
     dry_run: bool = False
@@ -140,7 +143,8 @@ class LegacyImportReport:
             f"{self.ingredients} ingredients ({tiers}), {self.prices} price rows "
             f"({self.estimated_cost_count} ESTIMATE), {self.staged_lines} staged recipe "
             f"lines -> {self.manual_recipe_lines} manual recipe lines, "
-            f"{self.menu_items} menu items, {len(self.patterns)} patterns proposed, "
+            f"{self.menu_items} menu items, {self.perishables} perishables, "
+            f"{len(self.patterns)} patterns proposed, "
             f"{len(self.singletons)} one-offs"
         )
 
@@ -283,6 +287,22 @@ def _pass1_ingredients(
         ingredient.tracking_enabled = tier in (Tier.A, Tier.B)
         ingredient.waste_factor = _waste_for(name, role)
         ingredient.source_note = note
+
+        # --- shelf life (spec 4.1) -----------------------------------------
+        # Not in the workbook. Seeded from industry defaults and flagged ESTIMATE so
+        # it stays visible until a human confirms it, exactly like prices. Without
+        # these, spec 5.4's cap is inert and the system will happily order 9 days of
+        # milk onto a 7-day life.
+        shelf, known = default_for(name, category)
+        ingredient.storage = shelf.storage
+        ingredient.shelf_life_days = shelf.shelf_life_days
+        ingredient.open_life_days = shelf.open_life_days
+        ingredient.transit_buffer_days = shelf.transit_buffer_days
+        ingredient.shelf_life_source = PriceSource.ESTIMATE
+        if not known:
+            report.unknown_shelf_life.append(name)
+        elif shelf.shelf_life_days is not None:
+            report.perishables += 1
         out[name] = ingredient
         report.tier_counts[tier.value] = report.tier_counts.get(tier.value, 0) + 1
 
@@ -346,6 +366,18 @@ def _pass1_ingredients(
         # invariant 6 survives into aggregates built on this column.
         ingredient.current_cost_pence_per_unit = price.cost_per_unit_pence
         ingredient.current_cost_source = source
+
+    if report.unknown_shelf_life:
+        report.data_quality.append(
+            f"{len(report.unknown_shelf_life)} ingredient(s) have no shelf-life default, "
+            f"so their orders are not capped by spoilage: "
+            f"{sorted(report.unknown_shelf_life)[:8]}"
+        )
+    report.warnings.append(
+        f"All shelf lives are ESTIMATE defaults, not measurements ({report.perishables} "
+        "perishables). They cap order size (invariant 4), so a wrong one either wastes "
+        "stock or causes a stockout. Confirm the perishables before trusting an order."
+    )
 
     absent = sorted(TIER_A_NAMES - set(out))
     if absent:

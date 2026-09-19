@@ -18,8 +18,11 @@ from decimal import Decimal
 from typing import Protocol, runtime_checkable
 
 from cafeops.domain.types import (
+    BatchSpec,
     ChecklistStatus,
     ConsumptionPoint,
+    DepletionAllocation,
+    ExpiryLoss,
     IngredientSnapshot,
     MenuItemSpec,
     ModifierSpec,
@@ -30,7 +33,11 @@ from cafeops.domain.types import (
     PriceSource,
     ResolvedRecipe,
     SaleLine,
+    SeasonSpec,
+    ShelfLifeSpec,
+    SourcingOption,
     SupplierSpec,
+    SupplierTerms,
     Tier,
 )
 
@@ -107,8 +114,19 @@ class CompositionRepository(Protocol):
 
 @runtime_checkable
 class MenuCostRepository(Protocol):
-    def get(self, menu_item_id: int) -> tuple[Decimal, PriceSource, bool] | None:
-        """(cost_pence, source, has_missing_cost) from the materialised cache."""
+    def get(self, menu_item_id: int) -> tuple[Decimal | None, PriceSource | None, bool] | None:
+        """(cost_pence, source, has_missing_cost), or None when no row exists.
+
+        The cost and source are themselves OPTIONAL inside the tuple. "A row exists
+        and we know this item's cost is unknown" is a different fact from "no row
+        has been computed", and invariant 8 depends on being able to say which.
+        """
+        ...
+
+    def units_sold_bulk(
+        self, menu_item_ids: Sequence[int], *, since: date, until: date
+    ) -> dict[int, Decimal]:
+        """One query for a batch -- the impact preview needs 300 of these."""
         ...
 
     def upsert(self, menu_item_id: int, recipe: ResolvedRecipe, computed_at: datetime) -> None: ...
@@ -141,6 +159,37 @@ class StockRepository(Protocol):
         self, ingredient_id: int, *, after: datetime | None, until: datetime
     ) -> tuple[Decimal, int]:
         """Signed sum and row count over (after, until]."""
+        ...
+
+    def consumption_between(
+        self,
+        ingredient_id: int,
+        *,
+        after: datetime | None,
+        until: datetime,
+        movement_types: Sequence[MovementType] = (MovementType.SALE,),
+    ) -> Decimal:
+        """Positive consumption magnitude over an INSTANT window (after, until].
+
+        Distinct from `daily_consumption`, which buckets by local calendar day.
+        Waste-factor tuning needs count-to-count, and a calendar-day series cannot
+        express "between 21:04 on Tuesday and 20:58 three Tuesdays later".
+        """
+        ...
+
+    def movements_for(self, ref_type: str, ref_id: int) -> list[MovementSpec]:
+        """Every movement written for one source row. Used to reverse an expansion."""
+        ...
+
+    def expired_qty_between(
+        self, ingredient_id: int, *, after: datetime | None, until: datetime
+    ) -> Decimal:
+        """EXPIRED magnitude in the window.
+
+        Spec 5.2's second diagnostic: if write-offs explain most of a drift gap, the
+        problem is over-ordering, not a bad recipe. The two fixes are opposite, so
+        one undifferentiated number tells the owner to do the wrong thing.
+        """
         ...
 
     def append_movements(self, movements: Iterable[MovementSpec]) -> int: ...
@@ -189,15 +238,39 @@ class DriftRepository(Protocol):
         """Most recent first. The auto-order gate reads this."""
         ...
 
+    def history(self, ingredient_id: int, *, limit: int = 20) -> list[object]:
+        """Recent DriftObservation rows, newest first, for the rolling view."""
+        ...
+
+    def counts_missing_observations(self, *, limit: int | None = None) -> list[int]:
+        """stock_count ids with no drift observation -- the backfill work queue."""
+        ...
+
 
 @runtime_checkable
 class ParLevelRepository(Protocol):
     def get(self, ingredient_id: int) -> ParSpec | None: ...
 
-    def set_auto_order(
-        self, ingredient_id: int, enabled: bool, *, reason: str, at: datetime
-    ) -> None:
-        """Only domain/tiers.py drives this. Never a manual shortcut (invariant 2)."""
+    def revoke_auto_order(self, ingredient_id: int, *, reason: str, at: datetime) -> None:
+        """Turn auto-ordering OFF. Callable from anywhere -- the safe direction.
+
+        There is deliberately NO symmetric `enable`. Invariant 2 says eligibility is
+        earned through drift history, and a protocol method that can grant it is an
+        invitation to take the shortcut. Granting goes through
+        `apply_gate_decision` with a decision the gate actually produced.
+        """
+        ...
+
+    def apply_gate_decision(self, decision: object, *, at: datetime) -> bool:
+        """Apply a GateDecision from domain/tiers. The ONLY path that can enable.
+
+        Returns True when the stored flag changed. Implementations must refuse a
+        decision that did not come from the gate.
+        """
+        ...
+
+    def audit(self, ingredient_id: int) -> tuple[datetime | None, datetime | None, str | None]:
+        """(granted_at, revoked_at, reason) -- who turned this on, on what evidence."""
         ...
 
 
@@ -240,3 +313,131 @@ class ChecklistRepository(Protocol):
     ) -> int: ...
 
     def latest_low(self, *, since: datetime) -> list[int]: ...
+
+
+@runtime_checkable
+class BatchRepository(Protocol):
+    """Batches, FIFO and expiry. Spec 4.1."""
+
+    def open_batches(self, ingredient_id: int, *, at: datetime) -> list[BatchSpec]:
+        """Batches with stock left, ORDERED BY effective expiry, soonest first.
+
+        The ordering is the contract, not an implementation detail: depletion is FIFO
+        by expiry rather than by receipt, because a short-dated delivery must go out
+        before older stock with a longer date.
+        """
+        ...
+
+    def create_batch(
+        self,
+        ingredient_id: int,
+        *,
+        qty: Decimal,
+        received_at: datetime,
+        expires_at: datetime | None,
+        unit_cost_pence: Decimal,
+        po_line_id: int | None = None,
+        note: str | None = None,
+    ) -> int: ...
+
+    def apply_allocations(
+        self, allocations: Sequence[DepletionAllocation], *, at: datetime
+    ) -> None:
+        """Decrement `qty_remaining` for each allocation. Never below zero."""
+        ...
+
+    def due_for_expiry(self, *, at: datetime) -> list[BatchSpec]:
+        """Batches past their effective expiry with stock left and not yet written off."""
+        ...
+
+    def mark_expired(self, losses: Sequence[ExpiryLoss], *, at: datetime) -> int:
+        """Write off expired batches. Must be idempotent -- a late sweep must not
+        double-count a loss."""
+        ...
+
+    def shelf_life(self, ingredient_id: int) -> ShelfLifeSpec | None: ...
+
+
+@runtime_checkable
+class SeasonRepository(Protocol):
+    def get(self, season_id: int) -> SeasonSpec | None: ...
+
+    def active_on(self, day: date) -> list[SeasonSpec]: ...
+
+    def for_menu_item(self, menu_item_id: int) -> SeasonSpec | None: ...
+
+    def for_ingredient(self, ingredient_id: int) -> SeasonSpec | None:
+        """The season of any variant option that uses this ingredient, if any.
+
+        Spec 4.3: a seasonal syrup must not be ordered on a cover window longer than
+        its remaining season.
+        """
+        ...
+
+
+@runtime_checkable
+class SourcingRepository(Protocol):
+    """Multi-supplier sourcing. Spec 4.4."""
+
+    def options_for(self, ingredient_id: int) -> list[SourcingOption]:
+        """Every way to buy this ingredient, preferred first."""
+        ...
+
+    def terms(self, supplier_id: int) -> SupplierTerms | None: ...
+
+    def all_terms(self) -> list[SupplierTerms]: ...
+
+    def record_emergency_routing(
+        self,
+        ingredient_id: int,
+        *,
+        reason: str,
+        at: datetime,
+        retail_unit_price_pence: int | None = None,
+        preferred_unit_price_pence: int | None = None,
+        would_be_supplier_id: int | None = None,
+        po_line_id: int | None = None,
+    ) -> int:
+        """Log a Tesco run. The accumulated log is the argument for fixing the
+        ordering cadence (spec 4.4), so it is data, not a note."""
+        ...
+
+
+@runtime_checkable
+class ChannelRepository(Protocol):
+    """Deliveroo / Just Eat metrics. Spec 4.6."""
+
+    def upsert_day(self, rows: Iterable[object]) -> tuple[int, int]:
+        """Idempotent on (channel, metric_date). Returns (inserted, updated)."""
+        ...
+
+    def upsert_item_day(self, rows: Iterable[object]) -> tuple[int, int]: ...
+
+    def range(self, *, since: date, until: date) -> list[object]: ...
+
+    def latest_metric_date(self, channel: object) -> date | None: ...
+
+
+@runtime_checkable
+class AgentLogRepository(Protocol):
+    """Spec 9: every agent action logged with inputs, output and the tool called."""
+
+    def log(
+        self,
+        *,
+        run_id: str,
+        tool_name: str,
+        inputs: dict[str, object],
+        outcome: object,
+        output: str | None = None,
+        purpose: str | None = None,
+        refusal_reason: str | None = None,
+        proposal_ref: str | None = None,
+        model: str | None = None,
+    ) -> int: ...
+
+    def for_run(self, run_id: str) -> list[object]: ...
+
+    def refusals(self, *, since: datetime) -> list[object]:
+        """Actions the whitelist blocked. The interesting rows."""
+        ...

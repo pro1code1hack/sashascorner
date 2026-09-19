@@ -35,18 +35,36 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    engine = create_db_engine(_url())
+    # foreign_keys is OFF on this connection: Alembic's SQLite batch mode rebuilds
+    # tables by copy-and-drop, which FK enforcement blocks, and the pragma cannot be
+    # changed from inside a transaction. Constraints are still recreated in the new
+    # table; `PRAGMA foreign_key_check` below proves nothing was left dangling.
+    engine = create_db_engine(_url(), enforce_foreign_keys=False)
     with engine.connect() as connection:
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
             compare_type=True,
-            # SQLite cannot ALTER most things. Batch mode makes future migrations
-            # portable without sqlite-specific SQL in a version file.
             render_as_batch=True,
         )
         with context.begin_transaction():
             context.run_migrations()
+        # SQLite reports non-transactional DDL, so Alembic does not commit for us and
+        # SQLAlchemy 2.0 rolls back on close. Without this, `alembic downgrade` exits
+        # 0 having changed nothing at all.
+        connection.commit()
+
+    # Verify on a fresh, FK-enforcing connection: a rebuild that left a dangling
+    # reference is a broken migration and must not pass silently.
+    verifier = create_db_engine(_url())
+    with verifier.connect() as connection:
+        if connection.dialect.name == "sqlite":
+            violations = connection.exec_driver_sql("PRAGMA foreign_key_check").fetchall()
+            if violations:
+                raise RuntimeError(
+                    f"migration left {len(violations)} foreign-key violation(s): {violations[:5]}"
+                )
+    verifier.dispose()
     engine.dispose()
 
 

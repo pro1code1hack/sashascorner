@@ -45,6 +45,10 @@ class StockMovement(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     ingredient_id: Mapped[int] = mapped_column(ForeignKey("ingredient.id"), nullable=False)
+    # Which batch this movement drew from or added to (spec 4.1). Nullable: an
+    # ADJUSTMENT or a COUNT_RESET is about the ingredient as a whole, not one lot,
+    # and forcing a batch there would invent provenance.
+    batch_id: Mapped[int | None] = mapped_column(ForeignKey("stock_batch.id"))
     type: Mapped[MovementType] = mapped_column(enum_col(MovementType), nullable=False)
     # Signed: consumption negative, delivery positive.
     qty: Mapped[Decimal] = mapped_column(Qty(), nullable=False)
@@ -59,6 +63,10 @@ class StockMovement(Base):
 
     __table_args__ = (
         Index("ix_stock_movement_ing_at", "ingredient_id", "occurred_at"),
+        Index("ix_stock_movement_batch", "batch_id"),
+        # The expiry-vs-measurement drift split (spec 5.2) filters by type over a
+        # window, so the type needs to be indexed alongside the date.
+        Index("ix_stock_movement_ing_type_at", "ingredient_id", "type", "occurred_at"),
         Index("ix_stock_movement_ref", "ref_type", "ref_id"),
     )
 
@@ -86,6 +94,11 @@ class DriftObservation(Base):
     drift_pct: Mapped[float] = mapped_column(Float, nullable=False)
     # The waste_factor in force at measurement time, so a later retune is auditable.
     waste_factor_at_count: Mapped[Decimal] = mapped_column(Qty(), nullable=False)
+    # Spec 5.2's second diagnostic: how much of the gap is expiry write-off rather
+    # than measurement error. The two have OPPOSITE fixes -- one is a recipe
+    # correction, the other is ordering less -- so reporting a single
+    # undifferentiated number tells the owner to do the wrong thing half the time.
+    expired_qty_in_window: Mapped[Decimal | None] = mapped_column(Qty())
     observed_at: Mapped[datetime] = mapped_column(UTCDateTime, nullable=False)
 
     ingredient: Mapped[Ingredient] = relationship()

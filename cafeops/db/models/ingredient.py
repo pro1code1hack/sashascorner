@@ -11,9 +11,10 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from cafeops.db.base import Base
 from cafeops.db.models._common import Qty, TimestampedMixin, UTCDateTime, enum_col
-from cafeops.db.models.enums import PriceSource, Tier, Unit
+from cafeops.db.models.enums import PriceSource, Storage, Tier, Unit
 
 if TYPE_CHECKING:
+    from cafeops.db.models.batch import StockBatch
     from cafeops.db.models.par import ParLevel
 
 
@@ -39,6 +40,33 @@ class Ingredient(Base, TimestampedMixin):
     # this column can still tell an invoice from a guess.
     current_cost_source: Mapped[PriceSource | None] = mapped_column(enum_col(PriceSource))
 
+    # --- shelf life (spec 4.1) ------------------------------------------------
+    # NOT in the legacy workbook. Seeded from defaults flagged ESTIMATE, exactly
+    # like prices, and surfaced on the data-quality screen until a human confirms
+    # them. These cap order size (spec 5.4, invariant 4): milk on a 7-day life must
+    # never be ordered against a 9-day cover window however good the forecast is.
+    storage: Mapped[Storage] = mapped_column(
+        enum_col(Storage), nullable=False, default=Storage.AMBIENT, server_default="AMBIENT"
+    )
+    #: Unopened life. NULL means "does not expire" -- cups, lids, napkins. NULL is
+    #: not "unknown": an unknown shelf life on a perishable is a data-quality flag,
+    #: because a missing cap silently permits the waste the cap exists to prevent.
+    shelf_life_days: Mapped[int | None] = mapped_column(Integer)
+    #: Life after opening, which for oat milk is 5 days against 270 unopened.
+    open_life_days: Mapped[int | None] = mapped_column(Integer)
+    #: Days subtracted from shelf life to allow for transit and the fact that a
+    #: delivery does not arrive fresh off the line.
+    transit_buffer_days: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    #: How the shelf-life figures got here, so an estimate stays visible.
+    shelf_life_source: Mapped[PriceSource | None] = mapped_column(enum_col(PriceSource))
+
+    #: Spec 5.4: perishables must never be used for a min-order top-up (invariant 5).
+    @property
+    def is_perishable(self) -> bool:
+        return self.shelf_life_days is not None
+
     # Provenance from the legacy workbook, kept so a human can see where a number
     # came from.
     source_note: Mapped[str | None] = mapped_column(String(400))
@@ -49,6 +77,9 @@ class Ingredient(Base, TimestampedMixin):
         order_by="IngredientPrice.effective_from",
     )
     par_level: Mapped[ParLevel | None] = relationship(back_populates="ingredient", uselist=False)
+    batches: Mapped[list[StockBatch]] = relationship(
+        back_populates="ingredient", cascade="all, delete-orphan"
+    )
 
     def __repr__(self) -> str:
         return f"<Ingredient {self.id} {self.name!r} {self.tier.value}/{self.unit.value}>"
@@ -67,6 +98,11 @@ class IngredientPrice(Base):
     ingredient_id: Mapped[int] = mapped_column(
         ForeignKey("ingredient.id", ondelete="CASCADE"), nullable=False
     )
+    # Spec 4.1: a price belongs to a supplier. The same ingredient genuinely costs
+    # different amounts from Booker and Tesco, and collapsing that loses the whole
+    # point of multi-sourcing (spec 4.4). Nullable for legacy rows imported before
+    # any supplier was known.
+    supplier_id: Mapped[int | None] = mapped_column(ForeignKey("supplier.id"))
     pack_size: Mapped[Decimal] = mapped_column(Qty(), nullable=False)
     pack_unit: Mapped[Unit] = mapped_column(enum_col(Unit), nullable=False)
     pack_cost_pence: Mapped[int] = mapped_column(Integer, nullable=False)
