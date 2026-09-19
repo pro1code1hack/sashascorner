@@ -93,7 +93,12 @@ SUPPLIERS: tuple[SupplierSeed, ...] = (
         lead_time_days=3,
         delivery_weekdays=(1, 2, 3, 4, 5),
         min_order_pence=3000,
-        order_channel=OrderChannel.PORTAL,
+        # BROWSER_AGENT, not PORTAL. The distinction is whether we have a real
+        # integration or are driving a browser: spec 4.4 describes Cups Direct as a
+        # web shop with no API, so the honest channel is the one that fills a basket
+        # and stops. Marking it PORTAL sent order dispatch to the
+        # "not configured yet" adapter instead of the one that actually works.
+        order_channel=OrderChannel.BROWSER_AGENT,
         contact="https://cupsdirect.example",
         cutoff_time=time(15, 0),
         delivery_fee_pence=595,

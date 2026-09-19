@@ -43,6 +43,7 @@ from cafeops.db.repositories.stock import SqlStockRepository
 from cafeops.db.repositories.supplier import SqlSupplierRepository
 from cafeops.domain.forecast import forecast_consumption, seasonal_forecast
 from cafeops.domain.ordering import (
+    DEFAULT_FREE_DELIVERY_TOP_UP_MULTIPLE,
     CoverPlan,
     OrderCandidate,
     SizingPlan,
@@ -323,6 +324,7 @@ def build_order_plan(
     tz: ZoneInfo | None = None,
     order_time: time | None = None,
     respect_cutoff: bool = True,
+    free_delivery_top_up_multiple: Decimal = DEFAULT_FREE_DELIVERY_TOP_UP_MULTIPLE,
 ) -> SizingPlan:
     """Size an order for one supplier as it would have looked on `order_date`.
 
@@ -454,6 +456,7 @@ def build_order_plan(
         cover_window=window,
         candidates=candidates,
         terms=terms,
+        free_delivery_top_up_multiple=free_delivery_top_up_multiple,
         extra_notes=(*plan_for_supplier.notes, *skipped),
     )
     return plan
@@ -628,6 +631,7 @@ def build_split(
     retail_supplier_name: str = RETAIL_SUPPLIER_NAME,
     policy: SourcingPolicy = DEFAULT_POLICY,
     min_order_pence: int | None = None,
+    free_delivery_top_up_multiple: Decimal = DEFAULT_FREE_DELIVERY_TOP_UP_MULTIPLE,
 ) -> SplitResult:
     """One ordering run: N draft orders, the sourcing choices, and the Tesco lines.
 
@@ -683,6 +687,7 @@ def build_split(
             tz=tz,
             order_time=order_time,
             respect_cutoff=respect_cutoff,
+            free_delivery_top_up_multiple=free_delivery_top_up_multiple,
         )
         if min_order_pence is not None:
             plan = _resize_with_minimum(plan, min_order_pence=min_order_pence)
@@ -703,6 +708,7 @@ def build_split(
         choices=choices,
         terms=terms_by_id,
         min_order_pence=min_order_pence,
+        free_delivery_top_up_multiple=free_delivery_top_up_multiple,
     )
     emergency_requests, would_be = _emergency_requests(
         plans,
@@ -769,6 +775,7 @@ def _apply_sourcing(
     choices: Sequence[Any],
     terms: dict[int, SupplierTerms],
     min_order_pence: int | None,
+    free_delivery_top_up_multiple: Decimal = DEFAULT_FREE_DELIVERY_TOP_UP_MULTIPLE,
 ) -> list[SizingPlan]:
     """Pass two: each ingredient stays only in the order of the supplier that won it.
 
@@ -828,6 +835,7 @@ def _apply_sourcing(
             cover_window=plan.suggestion.cover_window,
             candidates=tuple(keep),
             terms=terms.get(supplier.id) if min_order_pence is None else None,
+            free_delivery_top_up_multiple=free_delivery_top_up_multiple,
             # The run's own notes first -- a missed cutoff or a skipped ingredient is a
             # fact about this run, and a rebuilt suggestion cannot rediscover it.
             extra_notes=(*plan.extra_notes, *notes),
@@ -883,6 +891,9 @@ def record_emergency_lines(
                 preferred_unit_price_pence=_int_or_none(line.preferred_unit_price_pence),
                 would_be_supplier_id=result.would_be_supplier.get(line.ingredient_id),
                 qty=line.qty,
+                # The exact premium, rounded once. See the repository for why deriving it
+                # from the two integer unit-price columns is a penny out per routing.
+                premium_pence=_int_or_none(line.premium_pence),
             )
         )
     return written

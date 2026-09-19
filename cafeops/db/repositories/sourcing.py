@@ -144,6 +144,7 @@ class SqlSourcingRepository:
         would_be_supplier_id: int | None = None,
         po_line_id: int | None = None,
         qty: Decimal | None = None,
+        premium_pence: int | None = None,
     ) -> int:
         """Log one retail run, with the premium it cost. Spec 4.4.
 
@@ -156,9 +157,20 @@ class SqlSourcingRepository:
         missing price would be the retail price wearing a premium's name (invariant 8).
         `qty` is what turns unit prices into money; without it the premium is reported
         per unit, which is stated in the reason rather than silently assumed to be 1.
+
+        Pass `premium_pence` when the caller has the **unrounded** figure, which
+        `EmergencyLine.premium_pence` does. The two unit-price columns are integers, so
+        deriving the premium from them rounds twice before multiplying: 82.5p against
+        69.71p over 4 L is 51p, but 83 - 70 over 4 L is 52p. A penny does not matter on
+        one routing and does on a quarter of them, and the whole point of this table is
+        the total.
         """
-        premium: int | None = None
-        if retail_unit_price_pence is not None and preferred_unit_price_pence is not None:
+        premium = premium_pence
+        if (
+            premium is None
+            and retail_unit_price_pence is not None
+            and preferred_unit_price_pence is not None
+        ):
             per_unit = retail_unit_price_pence - preferred_unit_price_pence
             multiplier = qty if qty is not None else Decimal("1")
             premium = int((Decimal(per_unit) * multiplier).to_integral_value())

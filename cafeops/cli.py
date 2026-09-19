@@ -2106,6 +2106,18 @@ def simulate(
             ),
         ),
     ] = None,
+    free_delivery_multiple: Annotated[
+        float,
+        typer.Option(
+            "--free-delivery-multiple",
+            help=(
+                "How far below a free-delivery threshold it is worth buying stock to save "
+                "the fee, as a multiple of the fee. An INTERPRETATION of spec 5.4, which "
+                "says to top up below the threshold but not at what price. 0 never tops up "
+                "for a fee."
+            ),
+        ),
+    ] = 3.0,
     require_auto_order: Annotated[
         bool,
         typer.Option(
@@ -2248,6 +2260,8 @@ def simulate(
                 supplier_ids=[s.id for s in suppliers] if supplier else None,
                 min_order_pence=min_order_pence,
                 order_time=placed_at,
+                # Through `str` so no float reaches a money calculation (invariant 11).
+                free_delivery_top_up_multiple=Decimal(str(free_delivery_multiple)),
             )
             for plan in result.plans:
                 suggestion = plan.suggestion
