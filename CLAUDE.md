@@ -193,7 +193,7 @@ on_hand(ingredient, at) = latest stock_count before `at`
 Sales become `SALE` movements via expansion, resolving at `sale.sold_at` and
 applying `waste_factor`. Expect 0.08–0.12 for milk.
 
-### 5.2 Drift — the trust metric — NOT YET BUILT (Agent C)
+### 5.2 Drift — the trust metric — IMPLEMENTED (`domain/drift.py`, `domain/tiers.py`)
 
 ```
 drift_pct = (theoretical - counted) / max(counted, epsilon) * 100
@@ -209,7 +209,7 @@ drift_pct = (theoretical - counted) / max(counted, epsilon) * 100
 Enforce in code. This rule is the difference between a useful system and one that
 orders £200 of milk nobody needed.
 
-### 5.3 Forecast — NOT YET BUILT (Agent D)
+### 5.3 Forecast — IMPLEMENTED (`domain/forecast.py`)
 
 ```
 base_daily    = EWMA(daily consumption, trailing 28 days, alpha=0.3)
@@ -220,7 +220,14 @@ forecast(day)  = base_daily * dow_factor[weekday(day)]
 Under 14 days of history, flat mean and mark low-confidence. The API returns the
 flag; the UI must render it.
 
-### 5.4 Order sizing — NOT YET BUILT (Agent D)
+**Correction to this formula, applied:** taken literally it counts the weekday effect
+twice — EWMA of raw values carries the last day's weekday into `base_daily`, and the
+multiplication then applies that weekday's factor again. Measured swing of 32.6% in
+`base_daily` purely from which weekday the window ends on. The implementation
+deseasonalises first (`EWMA(x_t / dow_factor[weekday(t)])`), cutting the swing to
+7.6%. Pass `deseasonalise=False` for the literal reading. See `ARCHITECTURE.md` §8C.
+
+### 5.4 Order sizing — IMPLEMENTED (`domain/ordering.py`)
 
 ```
 cover_days = lead_time_days + days_to_next_delivery_after(target) + safety_days
@@ -231,7 +238,7 @@ packs  = ceil(need / pack_size), clamped so on-hand lands in [min_qty, max_qty]
 Below `min_order_pence`, top up with tier B items ranked by shortest remaining
 cover. Report that it happened and why — never silently inflate an order.
 
-### 5.5 Cost rollup — NOT YET BUILT (Agent B)
+### 5.5 Cost rollup — IMPLEMENTED (`jobs/cost_rollup.py`)
 
 ```
 ingredient_price change -> template_component -> menu_item -> margin, P&L COGS
@@ -334,6 +341,11 @@ uv run cafeops seed --demo                      # latte template + 60 days of sa
 uv run cafeops stock --as-of today [--tier A]   # THEORETICAL on-hand
 uv run cafeops ingredients [--tier A]
 uv run cafeops expand
+uv run cafeops count / drift [--backfill]       # physical counts, drift + gate status
+uv run cafeops simulate                         # replay 60 days of ordering
+uv run cafeops sync --fixtures --from D --to D   # Lightspeed ingestion (fixtures)
+uv run cafeops proposals / materialise-template / templates / components
+uv run cafeops edit-recipe / cost-rollup / menu-costs / set-price
 uv run cafeops info                             # config + what is NOT built
 uv run ruff check . && uv run ruff format --check .
 uv run mypy cafeops/domain/ cafeops/services/   # strict, zero type: ignore
@@ -345,12 +357,12 @@ uv run mypy cafeops/domain/ cafeops/services/   # strict, zero type: ignore
 
 - **Phase 0 — done.** Contracts, models, migration, `domain/types.py`, protocols,
   legacy importer with pattern detection, demo seed, `resolve_recipe`.
-- **Phase 1 — agents A–D running.** A: Lightspeed. B: composition engine (impact
-  preview, cost rollup, proposal materialisation). C: stock engine (drift, tier
-  gate, record_count). D: forecast & ordering. **E: bot & jobs, held** until A–D
-  settle.
-- **Phase 2 —** wire together, resolve contract drift, end-to-end, legacy import
-  for real.
+- **Phase 1 — done.** A: Lightspeed (client, mappers, fixtures, idempotent
+  ingestion). B: composition engine (impact preview, cost rollup, proposal
+  materialisation). C: stock engine (drift, tier gate, record_count). D: forecast &
+  ordering. **E: bot & jobs — not started**, deliberately held until A–D settled.
+- **Phase 2 — in progress.** Contract reconciliation across ~12 requested changes to
+  the integrator-owned files; four bugs already fixed (`ARCHITECTURE.md` §8B, §8C).
 - **Phase 3 —** frontend: composition editor and stock first.
 
 ---

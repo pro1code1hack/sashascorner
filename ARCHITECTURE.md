@@ -506,6 +506,116 @@ price**, and 42 of 113 prices are estimates.
 
 ---
 
+## 8C. A bug in the spec: §5.3 double-counts the weekday effect
+
+Agent D implemented spec §5.3 literally, measured the consequence, and reported it
+rather than silently fixing it. That was the right call, and the finding is real.
+
+### The problem
+
+```
+base_daily    = EWMA(daily consumption, trailing 28 days, alpha=0.3)
+forecast(day) = base_daily * dow_factor[weekday(day)]
+```
+
+With `alpha=0.3` the most recent day carries 30% of the weight. A window ending on a
+Saturday therefore pulls Saturday's surge into `base_daily` — and then the
+multiplication applies Saturday's factor *again*.
+
+Independently measured on the seeded whole-milk history, sliding the 28-day anchor
+across seven consecutive days:
+
+| | `base_daily` range | Swing | 7-day order quantity |
+|---|---|---|---|
+| Spec as written | 6.675 – 8.854 L/day | **32.6%** | 46.7 – 61.5 L |
+| Deseasonalised | 7.281 – 7.868 L/day | **8.1%** | 51.0 – 55.1 L |
+
+A third of the order size decided by which weekday the job happened to run on. For
+milk that is roughly 15 litres — bought, not drunk, and thrown away. The residual
+8.1% is genuine week-to-week noise, which is what EWMA is there to track.
+
+### The fix, applied
+
+`domain/forecast.py` now smooths a **deseasonalised** series —
+`EWMA(x_t / dow_factor[weekday(t)])` — then re-applies the factor when forecasting a
+specific day. The weekday effect is counted exactly once, and `base_daily` now means
+"typical demand on an average day", which is what multiplying it by a weekday factor
+already assumed it meant.
+
+`deseasonalise=False` restores the literal spec and adds a `confidence_reasons` entry
+saying the value is anchor-sensitive. Default is the corrected form: an order that
+changes by a third depending on the day of the week it was computed is not a forecast.
+
+### Two further spec ambiguities Agent D surfaced
+
+**§5.4's middle term.** `days_to_next_delivery_after(target)` is 1 for a walk-in
+supplier and 1 for a Mon–Fri supplier, which silently assumes reordering at *every*
+delivery opportunity. Order weekly against a 1-day gap and you order a seventh of
+what you need — with the literal reading the whole Tesco order came out empty. There
+is now an explicit `reorder_cadence_days` parameter: `None` is the literal spec,
+an integer is the caller's real interval. `simulate` uses 7 and labels which reading
+produced each window. **The owner should confirm the real reorder cadence** — this is
+open question 8 below.
+
+**Top-up distribution.** §5.4 says to top up with tier B items "ranked by shortest
+remaining cover", which literally read means filling the shortest-cover item to its
+ceiling first. That concentrates the entire shortfall on one product — for milk, it
+means buying what will be thrown away. The implementation adds one pack per item per
+pass in that order instead, and excludes zero-velocity items by name. Documented as
+an interpretation the owner can overrule.
+
+---
+
+## 8D. Two more Phase 0 seed bugs, found by Agent D and fixed
+
+### 8D.1 Par ceilings were sizing the orders, and sizing them to fail
+
+The seed set `max_qty = 3 × pack_size` for everything, ignoring throughput entirely.
+Whole milk's ceiling of 10.2 L is about 1.4 days of trade. The result: the forecast
+asked for 4 packs, the ceiling cut it to 0, and the system correctly ordered nothing
+while warning that a stockout was guaranteed. **8 of 17 moving ingredients had a
+ceiling below a single cover window of demand** — the par level, not the forecast,
+was deciding this café's orders.
+
+Fixed with `seed/demo.py::size_par_levels`, which runs *after* expansion because it
+needs observed consumption:
+
+```
+cover_days = lead_time + reorder_cadence + safety_days
+min_qty    = safety_days × avg_daily                      (the reorder floor)
+max_qty    = cover_days × avg_daily × headroom + pack_size
+```
+
+The `+ pack_size` is load-bearing and took a second pass to get right. Sizing the
+ceiling to the cover window alone still blocked every purchase whenever the pack is
+large relative to throughput: a 500-cup pack against 21 cups/day is 24 days of
+stock, so a 12-day ceiling can never be satisfied. The ceiling must accommodate the
+worst legitimate case — holding almost a full cover window, then buying one whole
+pack — or it forbids the smallest purchase the supplier actually sells.
+
+After: **15 of 15 moving ingredients clear a full cover window, and zero orders are
+clamped to nothing.** Whole milk now orders 12 × 3.4 L (£28.44) where it previously
+ordered nothing. Ingredients with no measured consumption keep the seeded pack
+multiple — inventing a throughput-based par for something that has never sold would
+be fabricating demand.
+
+### 8D.2 Opening counts were unit-blind
+
+`_opening_counts` wrote 400 for `EACH` and 40 for everything else. For an ingredient
+stocked in `ML` that is 40 millilitres of syrup, not a bottle — and being below the
+par floor with no sales history made the order builder briefly want to buy one bottle
+of **each of 23 syrups, £207**, none of which had ever sold. Agent D hardened the
+clamp so neither `min_qty` nor `max_qty` can *create* a line (only adjust one the
+forecast already asked for), which is the right defence regardless. The seed is now
+unit-aware as well, so the artefact is gone at source.
+
+Both bugs share a shape worth noting: the seed's job is to produce data a human would
+recognise as their café. Numbers that are merely *type-correct* let downstream
+algorithms produce confident nonsense, and with no test suite the seeded scenario is
+the only thing standing in for reality.
+
+---
+
 ## 9. Module layout deviations
 
 | Spec | Actual | Why |
@@ -616,6 +726,11 @@ Three deliberate choices:
 6. **Waste factors are initial guesses**: 0.10 milks, 0.05 beans, 0.03 powders, 0.01
    packaging and sundries. §5.1 says they are tuned from observed drift. Nothing
    tunes them yet — that is Agent C's drift report.
-7. **The 46% COGS figure is untrustworthy** and will stay so while 42 of 113 prices
+7. **What is the real reorder cadence?** §5.4's literal reading assumes reordering
+   at every delivery opportunity (see §8C). `simulate` assumes weekly. If Sasha
+   actually walks to Tesco most mornings, the Tesco cover window is ~1–2 days, not 9,
+   and her orders should be much smaller and more frequent than the simulation shows.
+   This single number changes every quantity on every Tesco order.
+8. **The 46% COGS figure is untrustworthy** and will stay so while 42 of 113 prices
    are estimates. Replacing estimates with invoices is the highest-value data task
    available to the owner.

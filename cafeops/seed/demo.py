@@ -547,7 +547,7 @@ def _opening_counts(session: Session, *, at: datetime) -> int:
             select(func.count(StockCount.id)).where(StockCount.ingredient_id == ingredient.id)
         ):
             continue
-        qty = Decimal("400") if ingredient.unit is Unit.EACH else Decimal("40")
+        qty = OPENING_COUNT_BY_UNIT[ingredient.unit]
         session.add(
             StockCount(
                 ingredient_id=ingredient.id,
@@ -575,6 +575,18 @@ def _random_instant(rng: random.Random, day: date, tz: object) -> datetime:
 # --------------------------------------------------------------------------
 # Restocking and periodic counts -- must run AFTER expansion
 # --------------------------------------------------------------------------
+
+#: Plausible opening stock per stocking unit. A flat number is wrong here: 40 of
+#: something measured in ML is 40 millilitres of syrup, which is not a bottle --
+#: and an opening count below the par floor made the order builder briefly want to
+#: buy one bottle of each of 23 syrups that had never sold.
+OPENING_COUNT_BY_UNIT: dict[Unit, Decimal] = {
+    Unit.EACH: Decimal("400"),
+    Unit.L: Decimal("40"),
+    Unit.KG: Decimal("5"),
+    Unit.ML: Decimal("2000"),  # ~2 L of syrup
+    Unit.G: Decimal("2000"),  # ~2 kg
+}
 
 RESTOCK_TRIGGER_DAYS = Decimal("3")
 RESTOCK_TARGET_DAYS = Decimal("8")
@@ -665,6 +677,82 @@ def simulate_restocking(session: Session, report: DemoReport | None = None) -> t
     if report is not None:
         report.deliveries, report.counts = deliveries, counts
     return (deliveries, counts)
+
+
+def size_par_levels(
+    session: Session,
+    *,
+    assumed_cadence_days: int = 7,
+    headroom: Decimal = Decimal("1.5"),
+) -> tuple[int, int]:
+    """Re-size par levels from OBSERVED consumption. Run after expansion.
+
+    The seed originally set `max_qty = 3 * pack_size` for everything, which ignores
+    throughput entirely. On this data that put 8 of 17 moving ingredients' ceilings
+    BELOW a single cover window of demand -- whole milk's 10.2 L is about 1.4 days of
+    trade. The forecast would ask for 4 packs, the clamp would cut it to 0, and the
+    system would correctly order nothing while warning that a stockout was
+    guaranteed. In other words the par ceiling, not the forecast, was sizing the
+    orders, and it was sizing them to fail.
+
+    New shape, per ingredient with measured consumption:
+
+        cover_days = supplier lead time + reorder cadence + safety_days
+        min_qty    = safety_days * avg_daily        (the reorder floor)
+        max_qty    = min_qty + cover_days * avg_daily * headroom, rounded up to
+                     whole packs and never below one pack
+
+    Returns (resized, skipped_no_consumption).
+    """
+    tz = settings.tz
+    bounds = session.execute(select(func.min(Sale.sold_at), func.max(Sale.sold_at))).first()
+    if bounds is None or bounds[0] is None:
+        return (0, 0)
+    first_day = bounds[0].astimezone(tz).date()
+    last_day = bounds[1].astimezone(tz).date()
+    span = Decimal((last_day - first_day).days + 1)
+
+    resized = skipped = 0
+    for par in session.scalars(select(ParLevel)):
+        ingredient = session.get(Ingredient, par.ingredient_id)
+        if ingredient is None:
+            continue
+        consumption = _daily_sale_consumption(session, ingredient.id, first_day, last_day, tz)
+        total = sum(consumption.values(), Decimal("0"))
+        if total <= 0:
+            # No measured movement: leave the seeded pack-multiple ceiling alone.
+            # Inventing a throughput-based par for something that never sells would
+            # be fabricating demand.
+            skipped += 1
+            continue
+        avg_daily = total / span
+
+        product = session.scalar(
+            select(SupplierProduct).where(SupplierProduct.ingredient_id == ingredient.id).limit(1)
+        )
+        pack = product.pack_size if product is not None and product.pack_size > 0 else Decimal("1")
+        lead = 0
+        if product is not None:
+            supplier = session.get(Supplier, product.supplier_id)
+            lead = supplier.lead_time_days if supplier is not None else 0
+
+        cover_days = Decimal(lead) + Decimal(assumed_cadence_days) + par.safety_days
+        cover_demand = cover_days * avg_daily
+        min_qty = (par.safety_days * avg_daily).quantize(Decimal("0.001"))
+        # The ceiling has to accommodate the worst legitimate case: holding almost a
+        # full cover window and then buying one whole pack. Sizing it to the cover
+        # window alone blocks that purchase whenever the pack is large relative to
+        # throughput -- a 500-cup pack against 21 cups/day is 24 days of stock, so a
+        # 12-day ceiling can never be satisfied and every order is clamped to zero.
+        # Hence `+ pack`: the ceiling stops runaway stock without forbidding the
+        # smallest purchase the supplier actually sells.
+        target = cover_demand * headroom + pack
+        par.min_qty = min_qty
+        par.max_qty = target.quantize(Decimal("0.001"))
+        resized += 1
+
+    session.flush()
+    return (resized, skipped)
 
 
 def _daily_sale_consumption(

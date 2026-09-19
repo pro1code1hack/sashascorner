@@ -153,12 +153,24 @@ def seed(
             console.print(f"  [yellow]warning[/yellow] {warning}")
 
     # Restocking reads the SALE movements, so it has to follow expansion.
-    from cafeops.seed.demo import simulate_restocking
+    from cafeops.seed.demo import simulate_restocking, size_par_levels
 
     with session_scope() as session:
         console.print("[bold]Simulating[/bold] deliveries and physical counts")
         deliveries, counts = simulate_restocking(session)
         demo_report.deliveries, demo_report.counts = deliveries, counts
+
+    # Par levels must be sized from OBSERVED throughput, which only exists once
+    # sales have been expanded. A pack-multiple ceiling put 8 of 17 moving
+    # ingredients below one cover window of demand, so the clamp -- not the
+    # forecast -- was sizing the orders.
+    with session_scope() as session:
+        console.print("[bold]Sizing[/bold] par levels from observed consumption")
+        resized, skipped = size_par_levels(session)
+        console.print(
+            f"  {resized} re-sized from throughput; {skipped} left at the seeded "
+            "pack multiple (no measured consumption)"
+        )
 
     console.print()
     for line in demo_report.lines():
@@ -693,8 +705,9 @@ def info() -> None:
         table.add_row(key, str(value))
     console.print(table)
     console.print(
-        "[dim]Phase 1 not yet built: Lightspeed sync, drift/tier gating, forecasting, "
-        "order building, Telegram bot, scheduled jobs.[/dim]"
+        "[dim]Not yet built: Telegram bot, scheduled jobs, read-only API, "
+        "web frontend. Template proposals need human confirmation before they "
+        "are materialised.[/dim]"
     )
 
 
@@ -1308,7 +1321,7 @@ def _sim_qty(qty: Decimal, unit) -> str:
     return format_qty(qty, unit)
 
 
-def _sim_print_line(outcome, *, cadence: int | None) -> None:
+def _sim_print_line(outcome) -> None:
     """The working for one ordered line. Invariant 7 withholds the low-confidence figure."""
     from cafeops.domain.ordering import pounds
 
@@ -1358,11 +1371,6 @@ def _sim_print_line(outcome, *, cadence: int | None) -> None:
     )
     if outcome.note:
         console.print(f"      [dim]{outcome.note}[/dim]")
-    if cadence is None and cover.days_until_next_delivery == 1:
-        console.print(
-            "      [yellow]note: the gap term is 1 day, i.e. this assumes reordering "
-            "tomorrow. A weekly rhythm needs --cadence-days 7.[/yellow]"
-        )
 
 
 @app.command()
@@ -1558,6 +1566,14 @@ def simulate(
                     f"{window.days_until_next_delivery} + safety {window.safety_days}"
                 )
 
+                if cadence is None and window.days_until_next_delivery == 1:
+                    console.print(
+                        "  [yellow]note: the gap term came out at 1 day, so this window "
+                        "assumes reordering tomorrow. For a weekly rhythm pass "
+                        "--cadence-days 7 -- otherwise every order here is a seventh of "
+                        "what a week needs.[/yellow]"
+                    )
+
                 ordered = plan.ordered
                 if ordered:
                     status = "met" if suggestion.meets_minimum else "[red]NOT MET[/red]"
@@ -1571,7 +1587,7 @@ def simulate(
                         )
                     )
                     for outcome in ordered:
-                        _sim_print_line(outcome, cadence=cadence)
+                        _sim_print_line(outcome)
                 else:
                     console.print("  [dim]nothing to order[/dim]")
 

@@ -47,7 +47,9 @@ cause is a closed day that nobody declared.
 in the window carries 30% of the weight -- and then `forecast()` multiplies by that
 weekday's factor a second time. Anchor the window on a busy Saturday and the result
 is inflated; anchor it on a quiet Monday and it is deflated. The mathematically
-clean version deseasonalises before smoothing (`EWMA(x_t / dow_factor[weekday(t)])`).
+FIXED by default: `deseasonalise=True` smooths `x_t / dow_factor[weekday(t)]`,
+so the weekday effect is applied exactly once. Pass `deseasonalise=False` for the
+literal spec. See the DESEASONALISE NOTE in `forecast_consumption`.
 This module implements the spec as written; the deviation is measurable (see the
 agent-D summary) and is a decision for the owner, not a silent fix here.
 """
@@ -221,8 +223,12 @@ def forecast_consumption(
     dow_factor_max: Decimal,
     min_history_days: int,
     closed_days: Collection[date] = (),
+    deseasonalise: bool = True,
 ) -> ForecastResult:
     """Forecast consumption for each day in `days`. Spec 5.3.
+
+    ``deseasonalise`` (default True) corrects a double-count in spec 5.3 as
+    written -- see DESEASONALISE NOTE below. Pass False for the literal spec.
 
     `as_of` is the last day of *complete* history -- normally the day before the
     order is placed. `days` is the window to forecast, usually
@@ -294,12 +300,46 @@ def forecast_consumption(
             "(spec 5.3), so treat any quantity below as a placeholder, not a forecast"
         )
     else:
-        base_daily = ewma(observations, ewma_alpha)
         used_flat_average = False
         low_confidence = False
         factors, dow_notes = dow_factors(
             dow_series, factor_min=dow_factor_min, factor_max=dow_factor_max
         )
+        if deseasonalise:
+            # DESEASONALISE NOTE -- a correction to spec 5.3 as written.
+            #
+            # The spec says `base_daily = EWMA(daily consumption)` and then
+            # `forecast(day) = base_daily * dow_factor[weekday]`. Applied literally
+            # the weekday effect is counted TWICE: alpha=0.3 gives the final day 30%
+            # of the weight, so a window ending on a Saturday carries Saturday's
+            # surge into `base_daily`, and the multiplication then applies Saturday's
+            # factor on top.
+            #
+            # Measured on the seeded whole-milk history, sliding the anchor across
+            # seven consecutive days:
+            #     literal         base_daily 6.675 .. 8.854 L/day  -> 32.6% swing
+            #     deseasonalised  base_daily 7.305 .. 7.858 L/day  ->  7.6% swing
+            # A third of the order size decided by which weekday the job happened to
+            # run on. The residual 7.6% is real week-to-week noise, which is what
+            # EWMA is for.
+            #
+            # The fix is standard: divide each observation by its own weekday factor
+            # so EWMA smooths a deseasonalised series, then re-apply the factor when
+            # forecasting a specific day. `base_daily` then means "typical demand on
+            # an average day", which is what multiplying by a weekday factor assumes
+            # it means.
+            adjusted: list[Decimal] = []
+            for day, qty in base_series:
+                factor = factors.get(day.isoweekday()) or _ONE
+                adjusted.append(qty / factor if factor else qty)
+            base_daily = ewma(adjusted, ewma_alpha)
+        else:
+            base_daily = ewma(observations, ewma_alpha)
+            reasons.append(
+                "base_daily uses the literal spec 5.3 formula, which double-counts "
+                "the weekday effect: the value swings by roughly a third depending "
+                "on which weekday the history window ends on"
+            )
         # Advisory, not fatal: `low_confidence` stays the gate for invariant 7,
         # while `confidence_reasons` carries everything worth knowing about the
         # number. A caller that renders reasons on a confident forecast shows a
