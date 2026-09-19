@@ -347,9 +347,7 @@ def _build_latte_template(session: Session, report: DemoReport) -> DrinkTemplate
     # Report the total attached, not just what this run created -- the legacy
     # import may already have created some of these names.
     report.menu_items = int(
-        session.scalar(
-            select(func.count(MenuItem.id)).where(MenuItem.template_id == template.id)
-        )
+        session.scalar(select(func.count(MenuItem.id)).where(MenuItem.template_id == template.id))
         or 0
     )
     return template
