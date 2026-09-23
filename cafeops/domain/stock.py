@@ -19,6 +19,7 @@ Pure: dataclasses in, dataclasses out. No SQLAlchemy, no I/O.
 from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
@@ -35,6 +36,7 @@ from cafeops.domain.types import (
 )
 
 __all__ = [
+    "CountReconciliation",
     "allocate_fifo",
     "apply_waste",
     "batch_expiry_for",
@@ -42,6 +44,7 @@ __all__ = [
     "drift_attribution",
     "expiry_movements",
     "find_expiry_losses",
+    "reconcile_to_count",
     "reversal_movements",
     "theoretical_on_hand",
     "waste_factors_from",
@@ -308,3 +311,82 @@ def drift_attribution(
     if expired >= gap:
         return Decimal("0"), gap
     return gap - expired, expired
+
+
+@dataclass(frozen=True, slots=True)
+class CountReconciliation:
+    """How batches must change to agree with a physical count.
+
+    A count RE-ANCHORS theoretical on-hand (spec 5.1). Leaving the batches at their
+    pre-count quantities makes the two numbers disagree permanently, and because FIFO
+    and the expiry sweep can only see BATCHED stock, an unreconciled surplus can never
+    expire and never be counted as waste. So truing up is not optional bookkeeping:
+    without it `StockReading.batch_coverage_gap` grows with every count.
+
+    `reductions` draw down the soonest-expiring batches first -- that stock is the most
+    likely to have been thrown out unrecorded. `surplus_qty` is stock the count found
+    that no batch explains, and it has to live somewhere, so the caller opens a batch
+    for it.
+
+    No ledger movement belongs with any of this: the count itself is already the
+    re-anchor, and an ADJUSTMENT here would count the same correction twice.
+    """
+
+    reductions: tuple[DepletionAllocation, ...] = ()
+    surplus_qty: Decimal = Decimal("0")
+    batched_before: Decimal = Decimal("0")
+    counted_qty: Decimal = Decimal("0")
+
+    @property
+    def is_noop(self) -> bool:
+        return not self.reductions and self.surplus_qty == 0
+
+    @property
+    def delta(self) -> Decimal:
+        return self.counted_qty - self.batched_before
+
+
+def reconcile_to_count(
+    *,
+    counted_qty: Decimal,
+    batches: Sequence[BatchSpec],
+    open_life_days: int | None = None,
+) -> CountReconciliation:
+    """Decide the batch changes that make the batches match a physical count.
+
+    Pure: returns the plan, applies nothing. Shared by the ledger replay and by
+    `record_count`, because two implementations of "what does a count do to batches"
+    would drift apart and only one of them would be running in production.
+    """
+    batched = sum((b.qty_remaining for b in batches if b.qty_remaining > 0), Decimal("0"))
+    delta = counted_qty - batched
+
+    if delta == 0:
+        return CountReconciliation(batched_before=batched, counted_qty=counted_qty)
+
+    if delta > 0:
+        return CountReconciliation(
+            surplus_qty=delta, batched_before=batched, counted_qty=counted_qty
+        )
+
+    def sort_key(batch: BatchSpec) -> tuple[int, float, int]:
+        expiry = batch.effective_expiry(open_life_days)
+        if expiry is None:
+            return (1, batch.received_at.timestamp(), batch.batch_id)
+        return (0, expiry.timestamp(), batch.batch_id)
+
+    shortfall = -delta
+    reductions: list[DepletionAllocation] = []
+    for batch in sorted(batches, key=sort_key):
+        if shortfall <= 0:
+            break
+        available = batch.qty_remaining
+        if available <= 0:
+            continue
+        take = available if available < shortfall else shortfall
+        reductions.append(DepletionAllocation(batch_id=batch.batch_id, qty=take))
+        shortfall -= take
+
+    return CountReconciliation(
+        reductions=tuple(reductions), batched_before=batched, counted_qty=counted_qty
+    )

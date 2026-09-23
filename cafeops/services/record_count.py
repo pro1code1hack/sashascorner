@@ -42,6 +42,7 @@ from decimal import Decimal
 from sqlalchemy.orm import Session
 
 from cafeops.config import settings
+from cafeops.db.repositories.batch import SqlBatchRepository
 from cafeops.db.repositories.drift import SqlDriftRepository
 from cafeops.db.repositories.ingredient import SqlIngredientRepository
 from cafeops.db.repositories.par import SqlParLevelRepository
@@ -54,7 +55,12 @@ from cafeops.domain.drift import (
     evaluate_drift,
     explain_drift,
 )
-from cafeops.domain.stock import theoretical_on_hand
+from cafeops.domain.stock import (
+    CountReconciliation,
+    batch_expiry_for,
+    reconcile_to_count,
+    theoretical_on_hand,
+)
 from cafeops.domain.tiers import GateDecision, evaluate_gate
 from cafeops.domain.types import DriftResult, DriftVerdict, IngredientSnapshot, OnHand
 
@@ -87,6 +93,11 @@ class CountOutcome:
     explanation: DriftExplanation | None
     decision: GateDecision
     par_level_written: bool
+    #: What the count did to the batch records. A count re-anchors on-hand, so the
+    #: batches are trued up to it (ARCHITECTURE 8F.2). Surfaced rather than discarded
+    #: because a large reconciliation is itself a finding: it means the batch records
+    #: had drifted from reality, and only batched stock can expire or be written off.
+    reconciliation: CountReconciliation | None = None
     notes: tuple[str, ...] = field(default_factory=tuple)
 
     @property
@@ -228,6 +239,18 @@ def record_count(
             consumption_qty=consumption or None,
         )
 
+    # --- 3b. re-anchor the batches -----------------------------------------------
+    # A count re-anchors theoretical on-hand (spec 5.1), and ARCHITECTURE 8F.2 lists
+    # batch re-anchoring as behaviour to keep. Without it the batches keep their
+    # pre-count quantities for ever: StockReading.batch_coverage_gap grows with every
+    # count, and because FIFO and the expiry sweep can only see BATCHED stock, an
+    # unreconciled surplus can never expire and never be counted as waste. Only
+    # `rebuild_batches` repaired that, which meant the production path diverged and the
+    # repair tool was the only thing that agreed with itself.
+    reconciliation = _reanchor_batches(
+        session, ingredient=ingredient, counted_qty=counted_qty, counted_at=counted_at
+    )
+
     # --- 4. the gate -------------------------------------------------------------
     decision, written = run_gate(
         session,
@@ -249,6 +272,7 @@ def record_count(
         explanation=explanation,
         decision=decision,
         par_level_written=written,
+        reconciliation=reconciliation,
         notes=tuple(notes),
     )
 
@@ -568,3 +592,48 @@ def _warn(value: float | None) -> float:
 
 def _required(value: int | None) -> int:
     return settings.drift_consecutive_counts_required if value is None else value
+
+
+def _reanchor_batches(
+    session: Session,
+    *,
+    ingredient: IngredientSnapshot,
+    counted_qty: Decimal,
+    counted_at: datetime,
+) -> CountReconciliation:
+    """Make the batch records agree with what was physically counted.
+
+    Writes no movement: the count IS the re-anchor, and an ADJUSTMENT here would book
+    the same correction twice. A surplus opens a batch, because stock that
+    demonstrably exists has to live somewhere and unbatched stock is invisible to both
+    FIFO and the expiry sweep.
+    """
+    batch_repo = SqlBatchRepository(session)
+    # Shelf life comes from the repository rather than the snapshot: `IngredientSnapshot`
+    # deliberately does not carry it, and one source for "how long does this last" is
+    # what keeps the expiry the sweep enforces and the expiry a count reasons about the
+    # same number.
+    shelf_life = batch_repo.shelf_life(ingredient.id)
+    open_life_days = shelf_life.open_life_days if shelf_life else None
+    open_batches = batch_repo.open_batches(ingredient.id, at=counted_at)
+    plan = reconcile_to_count(
+        counted_qty=counted_qty,
+        batches=open_batches,
+        open_life_days=open_life_days,
+    )
+    if plan.is_noop:
+        return plan
+
+    if plan.reductions:
+        batch_repo.apply_allocations(plan.reductions, at=counted_at)
+    if plan.surplus_qty > 0:
+        batch_repo.create_batch(
+            ingredient.id,
+            qty=plan.surplus_qty,
+            received_at=counted_at,
+            expires_at=batch_expiry_for(received_at=counted_at, shelf_life=shelf_life),
+            # `cost_per_unit_pence` on the snapshot, not the ORM column name.
+            unit_cost_pence=ingredient.cost_per_unit_pence or Decimal("0"),
+            note="count surplus -- stock found that no batch explained",
+        )
+    return plan

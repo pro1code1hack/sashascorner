@@ -21,9 +21,11 @@ from decimal import Decimal
 
 from cafeops.db.models.enums import (
     AgentToolOutcome,
+    CapKind,
     ChannelSourceKind,
     ChecklistStatus,
     ComponentRole,
+    LowConfidenceKind,
     ModifierAction,
     MovementType,
     OrderChannel,
@@ -42,6 +44,7 @@ __all__ = [
     "AgentProposal",
     "AgentToolOutcome",
     "BatchSpec",
+    "CapKind",
     "ChannelSourceKind",
     "ChecklistStatus",
     "ComponentRole",
@@ -60,6 +63,7 @@ __all__ = [
     "ImpactedItem",
     "IngredientSnapshot",
     "LabourCost",
+    "LowConfidenceKind",
     "MenuItemSpec",
     "ModifierAction",
     "ModifierSpec",
@@ -538,6 +542,10 @@ class SuggestedLine:
     #: must know the system chose to under-order deliberately, or they will override
     #: it and create the waste the cap was preventing.
     cap_reason: str | None = None
+    #: The same fact, structured. Branch on this; show `cap_reason` to a human.
+    cap_kind: CapKind | None = None
+    #: Structured companion to `confidence_reasons` (invariant 9).
+    low_confidence_kind: LowConfidenceKind | None = None
     #: Set when stock is under the par floor but nothing is moving, so no line was
     #: created. An absent line cannot explain itself; this lets the caller say why.
     below_par_floor: bool = False

@@ -18,7 +18,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from cafeops.db.base import Base
 from cafeops.db.models._common import Qty, UTCDateTime, enum_col, utcnow
-from cafeops.db.models.enums import ChecklistStatus, POStatus
+from cafeops.db.models.enums import CapKind, ChecklistStatus, LowConfidenceKind, POStatus
 
 if TYPE_CHECKING:
     from cafeops.db.models.ingredient import Ingredient
@@ -105,7 +105,24 @@ class POLine(Base):
     #: Set when effective_cover < cover_days (spec 5.4). The user must know the
     #: system chose to under-order deliberately, or they will override it and create
     #: exactly the waste the cap was preventing.
+    #:
+    #: This is an English SENTENCE, for a human reading a log. Code must branch on
+    #: `cap_kind` instead: the Telegram bot previously recovered the kind by regex over
+    #: this column, so a reword in `domain/ordering.py` silently broke the Russian
+    #: explanation -- and an unexplained cap is the one thing invariant 4 cannot
+    #: survive, because the owner then raises the quantity.
     cap_reason: Mapped[str | None] = mapped_column(String(80))
+    cap_kind: Mapped[CapKind | None] = mapped_column(enum_col(CapKind))
+
+    #: Invariant 9 per line. `purchase_order.confidence_notes` holds one prose blob for
+    #: the whole order, which cannot say WHICH line's number is untrustworthy.
+    low_confidence: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="0"
+    )
+    low_confidence_kind: Mapped[LowConfidenceKind | None] = mapped_column(
+        enum_col(LowConfidenceKind)
+    )
+    confidence_reason: Mapped[str | None] = mapped_column(Text)
 
     po: Mapped[PurchaseOrder] = relationship(back_populates="lines")
     ingredient: Mapped[Ingredient] = relationship()

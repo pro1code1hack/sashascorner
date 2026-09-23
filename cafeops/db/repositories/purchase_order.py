@@ -124,6 +124,17 @@ class SqlPurchaseOrderRepository:
                     need_qty=line.need_qty,
                     is_top_up=line.is_top_up,
                     cap_reason=_capped(line.cap_reason),
+                    # The structured companions. The sentence is for a human reading a
+                    # log; these are what a non-English surface branches on, so a
+                    # reword upstream cannot silently change behaviour (invariants 4, 9).
+                    cap_kind=line.cap_kind,
+                    low_confidence=line.low_confidence,
+                    low_confidence_kind=line.low_confidence_kind,
+                    confidence_reason=(
+                        " | ".join(line.confidence_reasons) or None
+                        if line.confidence_reasons
+                        else None
+                    ),
                 )
             )
         self.session.flush()

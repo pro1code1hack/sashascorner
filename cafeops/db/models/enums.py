@@ -167,3 +167,46 @@ class AgentToolOutcome(enum.Enum):
     REFUSED = "REFUSED"
     FAILED = "FAILED"
     AWAITING_HUMAN = "AWAITING_HUMAN"
+
+
+class CapKind(enum.StrEnum):
+    """Why an order line is smaller than the forecast asked for. Spec 5.4, invariant 4.
+
+    A STRUCTURED companion to `cap_reason`, which is an English sentence. The bot had to
+    recover this by regex over prose that this codebase itself wrote, which meant a
+    reword in `domain/ordering.py` silently broke the Russian output -- and a silently
+    unexplained cap is the one thing invariant 4 cannot survive, because the owner raises
+    the quantity and recreates exactly the waste the cap prevented.
+
+    The sentence stays for humans reading a log. This is what code branches on.
+    """
+
+    SHELF_LIFE = "SHELF_LIFE"
+    SEASON_END = "SEASON_END"
+    OUT_OF_SEASON = "OUT_OF_SEASON"
+    #: The line exists ONLY to clear the supplier's minimum order. Nobody asked for it.
+    TOP_UP_MINIMUM = "TOP_UP_MINIMUM"
+    #: ...or only to clear the free-delivery threshold. A different decision: one is a
+    #: condition on ordering at all, the other is a price break.
+    TOP_UP_FREE_DELIVERY = "TOP_UP_FREE_DELIVERY"
+    #: Capped for a reason not in this enum. The days are still known and shown.
+    OTHER = "OTHER"
+
+
+class LowConfidenceKind(enum.StrEnum):
+    """Why a forecast is not trustworthy. Invariant 9.
+
+    Same reasoning as CapKind: invariant 9 says the reason stands IN PLACE OF the
+    number, so the reason has to be renderable in another language, which means it
+    cannot only exist as an English sentence.
+    """
+
+    #: Fewer than `min_history_days` of history.
+    THIN_HISTORY = "THIN_HISTORY"
+    #: No consumption at all in the window -- "nothing known", not "nothing needed".
+    NO_HISTORY = "NO_HISTORY"
+    #: A seasonal item with no previous occurrence to scale from.
+    NO_PRIOR_SEASON = "NO_PRIOR_SEASON"
+    #: Drift above tolerance, so the on-hand the forecast is netted against is suspect.
+    UNTRUSTWORTHY_STOCK = "UNTRUSTWORTHY_STOCK"
+    OTHER = "OTHER"

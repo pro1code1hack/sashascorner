@@ -77,6 +77,7 @@ from datetime import date, time, timedelta
 from decimal import ROUND_CEILING, ROUND_FLOOR, ROUND_HALF_UP, Decimal
 
 from cafeops.domain.types import (
+    CapKind,
     CoverWindow,
     ForecastResult,
     OrderSuggestion,
@@ -510,6 +511,23 @@ class OrderCandidate:
             return f"capped at {days} days -- {self.ingredient_name} shelf life"
         return f"capped at {days} days"
 
+    @property
+    def cap_kind(self) -> CapKind | None:
+        """The same decision as `cap_reason`, structured.
+
+        Derived from the SAME comparisons rather than parsed back out of the sentence,
+        so a reword cannot change what code sees. `cap_reason` stays for a human
+        reading a log; this is what a non-English surface branches on (invariant 4).
+        """
+        if not self.is_capped:
+            return None
+        days = self.effective_cover_days
+        if self.season is not None and self.season_cap_days == days:
+            return CapKind.OUT_OF_SEASON if self.out_of_season else CapKind.SEASON_END
+        if self.shelf_life_cap_days == days:
+            return CapKind.SHELF_LIFE
+        return CapKind.OTHER
+
     # --- quantities ---------------------------------------------------------
 
     @property
@@ -810,6 +828,7 @@ def size_line(candidate: OrderCandidate) -> SizingOutcome:
         confidence_reasons=candidate.forecast.confidence_reasons,
         cover_days=candidate.effective_cover_days,
         cap_reason=candidate.cap_reason,
+        cap_kind=candidate.cap_kind,
         below_par_floor=below_par_floor,
     )
     return SizingOutcome(
@@ -990,6 +1009,11 @@ def _top_up(
                 confidence_reasons=candidate.forecast.confidence_reasons,
                 cover_days=candidate.effective_cover_days,
                 cap_reason=f"top-up to reach the {objective}",
+                cap_kind=(
+                    CapKind.TOP_UP_FREE_DELIVERY
+                    if "free delivery" in objective
+                    else CapKind.TOP_UP_MINIMUM
+                ),
             )
         )
         cover = remaining_cover_days(candidate)
