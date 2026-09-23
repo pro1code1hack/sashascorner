@@ -19,6 +19,43 @@ if nothing else:
 
 ---
 
+## Start here: `cafeops doctor`
+
+Run this first, before reading anything else in this file.
+
+```
+uv run cafeops doctor            # findings only
+uv run cafeops doctor --verbose  # and what passed
+```
+
+It inspects the live database and reports three severities:
+
+- **FAIL** — the system is producing wrong numbers or will not run. Nothing else matters
+  until these are clear. Exit code 1.
+- **WARN** — a real number is resting on a guess worth replacing. Exit code 0: this is
+  safe from cron and will not page anyone.
+- **INFO** — context, such as running on fixtures because there are no POS credentials.
+
+Each finding carries the command that fixes it.
+
+### What it checks, and why each one is there
+
+| Check | Why it exists |
+|---|---|
+| schema | An unmigrated database is the commonest fresh-install failure. Gates everything after it, because without tables every later check would raise. |
+| legacy import | Without the workbook nothing can be costed, forecast or ordered. |
+| drift history | **`cafeops drift --backfill` must be re-run after any reseed.** Drift observations derive from counts, and without them nothing can earn auto-ordering. |
+| batch coverage | This regressed *silently* once. Unbatched stock is invisible to FIFO and the expiry sweep, so it can never expire and never be counted as waste — it just vanishes from the P&L. |
+| invariant 1 | An order past DRAFT with no named human means a `CHECK` constraint has been bypassed. Investigate; do not clear it by hand. |
+| invariant 8 | A missing cost recorded as `0` flatters every margin and COGS figure it appears in. |
+| invariant 2 | Auto-ordering enabled with no `granted_at` means it was set by hand rather than earned. |
+| supplier terms / shelf life | The two guesses that quietly decide real order quantities. |
+| api password | Unset means the API serves only `/api/health` — **the usual reason a dashboard screen is blank.** |
+
+A check that crashes is reported as a WARN naming the exception, and the remaining
+checks still run: a doctor that dies on its third check tells you less than one that
+says "this check broke" and carries on.
+
 ## 1. What runs, when, and why each is safe to run twice
 
 Five triggers, wired in `cafeops/jobs/scheduler.py` and started as the `scheduler`

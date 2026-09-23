@@ -40,6 +40,20 @@ def _parse_as_of(raw: str) -> datetime:
     if lowered == "yesterday":
         local = datetime.now(tz) - timedelta(days=1)
         return local.replace(hour=23, minute=59, second=59).astimezone(UTC)
+    if "t" in lowered or ":" in lowered:
+        # A full instant, e.g. 2026-09-16T12:00:00Z. Only tried when the string looks
+        # like one: `datetime.fromisoformat` accepts a bare date too, and silently
+        # reading "today" as midnight would invert the end-of-day rule above.
+        try:
+            instant = datetime.fromisoformat(raw.strip().replace("Z", "+00:00"))
+        except ValueError as exc:
+            raise typer.BadParameter(
+                f"{raw!r}: expected 'today', 'yesterday', 'now', YYYY-MM-DD, or a full "
+                "ISO-8601 instant like 2026-09-16T12:00:00Z"
+            ) from exc
+        if instant.tzinfo is None:
+            instant = instant.replace(tzinfo=tz)
+        return instant.astimezone(UTC)
     try:
         parsed = date.fromisoformat(raw)
     except ValueError as exc:
@@ -463,6 +477,22 @@ def ingredients(
     console.print(table)
 
 
+#: Report lines that mean "a human must look at this". Styled so they cannot be
+#: skimmed past, and listed here rather than inline so adding a refusal to
+#: `SyncResult.lines()` does not quietly arrive in plain text.
+_SYNC_ALERT_PREFIXES = (
+    "UNRESOLVED",
+    "AMBIGUOUS",
+    "SUBSTITUTION",
+    "CONFLICTING",
+    "DOUBLE-COUNT",
+    "FUTURE-DATED",
+    "CLOCK SKEW",
+    "DUPLICATE",
+    "PARTIAL",
+)
+
+
 @app.command()
 def sync(
     from_: Annotated[
@@ -476,8 +506,36 @@ def sync(
             help="Ingest recorded fixture payloads (default) instead of calling the live API.",
         ),
     ] = True,
+    dry_run: Annotated[
+        bool,
+        typer.Option(
+            "--dry-run/--commit",
+            help="Do the whole sync and report it, then roll back. Nothing is written.",
+        ),
+    ] = False,
+    fixtures_dir: Annotated[
+        Path | None,
+        typer.Option(
+            "--fixtures-dir",
+            help="Replay a recorded payload directory instead of the shipped one. "
+            "See `cafeops pos scenarios`.",
+        ),
+    ] = None,
+    as_of: Annotated[
+        str | None,
+        typer.Option(
+            "--as-of",
+            help="The instant to judge the window against, e.g. 2026-09-16T12:00:00Z. "
+            "Defaults to now. Needed to demonstrate clock skew from a recorded payload.",
+        ),
+    ] = None,
 ) -> None:
-    """Ingest Lightspeed sales for a date window. Idempotent on lightspeed_line_id."""
+    """Ingest Lightspeed sales for a date window. Idempotent on lightspeed_line_id.
+
+    `--dry-run` runs everything -- the catalog match, the de-duplication, the skew
+    checks, the correction arithmetic -- and then throws the transaction away, so the
+    first run against real credentials can be read before it reaches the ledger.
+    """
     from cafeops.integrations.lightspeed.sync import sync_window
 
     try:
@@ -487,6 +545,8 @@ def sync(
         raise typer.BadParameter(f"expected YYYY-MM-DD: {exc}") from exc
     if since > until:
         raise typer.BadParameter(f"--from {since} is after --to {until}")
+    if fixtures_dir is not None and not fixtures:
+        raise typer.BadParameter("--fixtures-dir only means anything with --fixtures")
 
     if not fixtures and not settings.lightspeed_configured:
         raise typer.BadParameter(
@@ -495,18 +555,34 @@ def sync(
             "(and the refresh token + business id) in .env."
         )
 
+    now = _parse_as_of(as_of) if as_of else datetime.now(UTC)
     with session_scope() as session:
-        result = sync_window(session, since=since, until=until, fixtures=fixtures)
+        result = sync_window(
+            session,
+            since=since,
+            until=until,
+            fixtures=fixtures,
+            fixtures_dir=fixtures_dir,
+            now=now,
+            dry_run=dry_run,
+        )
+        if dry_run:
+            # Rolled back here rather than by never writing: the point of a dry run is
+            # that the code path is the real one, including the upsert's own reads of
+            # rows this transaction created.
+            session.rollback()
 
     console.print(f"[bold]cafeops sync[/bold] {since}..{until}")
     for line in result.lines():
-        style = (
-            "yellow"
-            if line.strip().startswith(("UNRESOLVED", "AMBIGUOUS", "SUBSTITUTION"))
-            else None
-        )
+        style = "yellow" if line.strip().startswith(_SYNC_ALERT_PREFIXES) else None
         console.print(f"  {line}" if style is None else f"  [{style}]{line}[/{style}]")
-    console.print("[green]done[/green]")
+    if dry_run:
+        console.print(
+            "[yellow]DRY RUN: rolled back, nothing written. Re-run with --commit to "
+            "ingest.[/yellow]"
+        )
+    else:
+        console.print("[green]done[/green]")
 
 
 # --------------------------------------------------------------------------
@@ -2667,9 +2743,11 @@ def open_batch_cmd(
 
 from cafeops.agent.commands import app as _agent_app  # noqa: E402
 from cafeops.integrations.channels.commands import app as _channels_app  # noqa: E402
+from cafeops.integrations.lightspeed.commands import app as _pos_app  # noqa: E402
 
 app.add_typer(_channels_app, name="channels")
 app.add_typer(_agent_app, name="agent")
+app.add_typer(_pos_app, name="pos")
 
 
 # --------------------------------------------------------------------------
@@ -2879,6 +2957,57 @@ def api_fixtures(
     console.print("[dim]index.json lists every file with the query behind it.[/dim]")
 
 
+@app.command()
+def doctor(
+    verbose: Annotated[
+        bool, typer.Option("--verbose", help="Show the checks that passed as well.")
+    ] = False,
+) -> None:
+    """Is this install operable? Run this first when something looks wrong.
+
+    Exits non-zero only on FAIL, so it is safe from cron. A WARN means a number is
+    resting on a guess worth replacing; it does not mean the system is broken.
+    """
+    from cafeops.services.doctor import Severity, run_doctor
+
+    with session_scope() as session:
+        report = run_doctor(session)
+
+    style = {
+        Severity.FAIL: "bold red",
+        Severity.WARN: "yellow",
+        Severity.INFO: "dim",
+        Severity.OK: "green",
+    }
+    shown = [c for c in report.checks if verbose or c.severity is not Severity.OK]
+    table = Table(title="cafeops doctor", title_style="bold", show_lines=False)
+    table.add_column("", justify="center", no_wrap=True)
+    table.add_column("Check", no_wrap=True)
+    table.add_column("Detail")
+    for check in shown:
+        table.add_row(
+            f"[{style[check.severity]}]{check.severity.value}[/]",
+            check.name,
+            check.detail + (f"\n[cyan]-> {check.fix}[/cyan]" if check.fix else ""),
+        )
+    if shown:
+        console.print(table)
+
+    passed = sum(1 for c in report.checks if c.severity is Severity.OK)
+    if report.is_operable:
+        console.print(
+            f"[green]Operable.[/green] {passed} check(s) passed, "
+            f"{len(report.warnings)} warning(s)."
+            + ("" if verbose else "  [dim]--verbose shows what passed.[/dim]")
+        )
+    else:
+        console.print(
+            f"[bold red]NOT operable.[/bold red] {len(report.failures)} failure(s) — "
+            "the system is producing wrong numbers or will not run. Fix those first."
+        )
+    raise typer.Exit(report.exit_code())
+
+
 @app.command(name="scheduler-run")
 def scheduler_run() -> None:
     """Run the APScheduler process in the foreground. This is a long-running unit.
@@ -2928,7 +3057,16 @@ def bot_preview_cmd(
     answer: Annotated[
         str, typer.Option("--answer", help="count: the quantity to type for the first item.")
     ] = "12",
-    packs: Annotated[str, typer.Option("--packs", help="delivery: how many packs arrived.")] = "2",
+    packs: Annotated[
+        str,
+        typer.Option(
+            "--packs",
+            help=(
+                "delivery: how many packs arrived. checklist: how many packs to request "
+                "after 'running low' -- 0 presses 'do not order' instead."
+            ),
+        ),
+    ] = "2",
     expiry: Annotated[
         str | None,
         typer.Option(
@@ -2984,7 +3122,12 @@ def bot_preview_cmd(
             elif name == "count":
                 sent = await FLOWS[name](preview, express=not full_count, answer=answer)
             elif name == "checklist":
-                sent = await FLOWS[name](preview, low=not ok)
+                # `--packs 0` presses BTN_CHECKLIST_NO_ORDER instead: marking an item low
+                # without naming a quantity is a real answer, and the flow has to be able
+                # to show it.
+                sent = await FLOWS[name](
+                    preview, low=not ok, packs=None if packs.strip() in ("", "0") else packs
+                )
             elif name == "delivery":
                 sent = await FLOWS[name](preview, packs=packs, expiry=None if no_expiry else expiry)
             else:
