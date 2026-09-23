@@ -12,11 +12,22 @@
 {$CAFEOPS_DOMAIN:http://:80} {
 	encode gzip
 
-	# The API already answers its own CORS preflight; Caddy just forwards. No static
-	# files are served here -- the frontend (web/) is a separate deliverable (Agent H)
-	# and is not deployed by this compose file yet. See docs/OPERATIONS.md.
-	reverse_proxy api:8000 {
-		header_up X-Forwarded-Proto {scheme}
+	# /api/* goes to the app. Everything else is the dashboard, served from the static
+	# bundle baked into this image at build time (see Dockerfile, `web-builder` stage).
+	# The API answers its own CORS preflight; Caddy just forwards.
+	handle /api/* {
+		reverse_proxy api:8000 {
+			header_up X-Forwarded-Proto {scheme}
+		}
+	}
+
+	handle {
+		root * /srv/web
+		# A single-page app owns its own routing, so an unknown path must return
+		# index.html rather than a 404 -- otherwise a deep link, or a refresh on any
+		# screen but the first, breaks.
+		try_files {path} /index.html
+		file_server
 	}
 
 	header {

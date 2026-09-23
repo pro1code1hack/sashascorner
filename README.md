@@ -15,11 +15,11 @@ detail in this README is the whole story. Day-to-day running of a live deploymen
 - **The domain, seed, jobs, bot and read-only API are built and run.** ~25 CLI
   commands, a Telegram bot (Russian — the owner's daily interface), an APScheduler
   process, and a FastAPI read-only API.
-- **No frontend yet.** `web/fixtures/` holds 19 real API responses a React app can be
-  built against, but the app itself has not landed as of this file. Check `web/` —
-  if it now has a `package.json` and a build, another agent has since shipped it and
-  this paragraph is stale; there is nothing here to serve it in Docker/Caddy yet
-  either way (see `docs/OPERATIONS.md`).
+- **The dashboard is served by Caddy at `/`,** built into the Caddy image at image
+  build time (`Dockerfile`, `web-builder` stage) so the box needs no Node at runtime
+  and there is no stale `web/dist` to forget to rebuild. `/api/*` is proxied to the
+  app; every other path falls back to `index.html`, so deep links and refreshes work.
+  `web/fixtures/` holds 19 real API responses for building screens offline.
 - **No Lightspeed credentials.** Every `lightspeed_*` setting is optional and
   `cafeops sync` defaults to `--fixtures`. Nothing has ever touched the live POS.
 - **Six of eight suppliers' terms are invented placeholders** (lead time, delivery

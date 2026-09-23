@@ -80,14 +80,22 @@ services:
     # (Docker's own restart policy here) provides.
 
   caddy:
-    image: caddy:2-alpine
+    # Built here, not pulled: the image carries the dashboard bundle as well as
+    # the Caddyfile, so there is one artefact to ship rather than a config file
+    # plus a hope that web/dist was rebuilt.
+    build:
+      context: .
+      target: caddy
     restart: unless-stopped
     env_file: .env
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # The Caddyfile is baked into the image alongside the dashboard bundle, so it
+      # is deliberately NOT bind-mounted: a stale host copy silently overriding the
+      # built one is how a config you already fixed keeps not taking effect.
+      # Change it, rebuild, redeploy.
       - caddy_data:/data
       - caddy_config:/config
     depends_on:

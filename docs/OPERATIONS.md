@@ -19,6 +19,26 @@ if nothing else:
 
 ---
 
+
+### Deploying a dashboard change
+
+The frontend is **compiled into the Caddy image**, not bind-mounted. So a change to
+`web/` needs an image rebuild, not just a restart:
+
+```
+docker compose build caddy && docker compose up -d caddy
+```
+
+This is deliberate. A bind-mounted `web/dist` means whoever deploys has to remember to
+run `npm run build` first, and a stale or missing bundle serves the previous release — or
+a blank page — with nothing saying so. Baked in, the image is either right or it does not
+build.
+
+Verified behaviour: `/` and any deep link such as `/stock` both return 200 and serve
+`index.html` (single-page apps own their own routing, so an unknown path must not 404);
+`/assets/*` serves the hashed bundle; `/api/*` goes to the app and nothing else does.
+
+
 ## Start here: `cafeops doctor`
 
 Run this first, before reading anything else in this file.

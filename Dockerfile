@@ -75,3 +75,24 @@ EXPOSE 8000
 # port 8000 is Caddy, over the private compose network -- see docker-compose.yml's
 # comment on why `api` publishes no host port of its own.
 CMD ["cafeops", "serve", "--host", "0.0.0.0", "--port", "8000"]
+
+
+# --------------------------------------------------------------------------
+# The dashboard, built here so the box needs no Node at runtime
+# --------------------------------------------------------------------------
+# Built into the Caddy image rather than bind-mounted from the host: a bind mount would
+# mean whoever deploys has to remember to run `npm run build` first, and a stale or
+# missing `web/dist` would serve the previous release -- or a blank page -- with nothing
+# saying so. Baking it in makes the image the single artefact that is either right or
+# does not build.
+FROM node:22-alpine AS web-builder
+WORKDIR /web
+COPY web/package.json web/package-lock.json ./
+RUN npm ci
+COPY web/ ./
+RUN npm run build
+
+
+FROM caddy:2-alpine AS caddy
+COPY Caddyfile /etc/caddy/Caddyfile
+COPY --from=web-builder /web/dist /srv/web
