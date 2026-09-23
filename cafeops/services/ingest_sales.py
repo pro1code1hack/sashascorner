@@ -23,7 +23,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 from sqlalchemy import select
@@ -41,6 +41,14 @@ from cafeops.integrations.lightspeed.mapper import MappedSaleLine
 __all__ = ["IngestReport", "ingest_sale_lines"]
 
 
+#: How far ahead of `now` a `sold_at` may be and still be believed. A till whose
+#: clock is a few minutes fast is ordinary; refusing those sales would drop real
+#: trade. Beyond this the timestamp is not a skew, it is wrong, and a sale dated
+#: into next week would sit in the ledger depleting stock on a day that has not
+#: happened -- invisible to today's drift and to today's order.
+CLOCK_SKEW_TOLERANCE = timedelta(minutes=5)
+
+
 @dataclass
 class IngestReport:
     inserted: int = 0
@@ -48,9 +56,18 @@ class IngestReport:
     corrected_before_expansion: int = 0
     corrected_after_expansion: int = 0
     adjustment_movements: int = 0
+    skew_refused: int = 0
     unresolved_items: list[str] = field(default_factory=list)
     unresolved_modifiers: list[str] = field(default_factory=list)
     substitution_errors: list[str] = field(default_factory=list)
+    #: Lines dated further into the future than `CLOCK_SKEW_TOLERANCE`. Not written.
+    clock_skew_refused: list[str] = field(default_factory=list)
+    #: Lines inside the tolerance. Written, but said out loud once per run: a till
+    #: clock drifting is worth knowing about before it drifts past the tolerance.
+    clock_skew_tolerated: list[str] = field(default_factory=list)
+    #: The same `lightspeed_line_id` twice in ONE call. Collapsed to the first copy
+    #: when identical, refused when not -- see `ingest_sale_lines`.
+    duplicate_line_ids: list[str] = field(default_factory=list)
 
     def summary(self) -> str:
         parts = [
@@ -70,21 +87,61 @@ class IngestReport:
             parts.append(f"{len(self.unresolved_modifiers)} unresolved modifier reference(s)")
         if self.substitution_errors:
             parts.append(f"{len(self.substitution_errors)} substitution error(s)")
+        if self.clock_skew_refused:
+            parts.append(f"{len(self.clock_skew_refused)} future-dated line(s) REFUSED")
+        if self.clock_skew_tolerated:
+            parts.append(f"{len(self.clock_skew_tolerated)} line(s) within clock-skew tolerance")
+        if self.duplicate_line_ids:
+            parts.append(f"{len(self.duplicate_line_ids)} duplicate line id(s) in one payload")
         return "; ".join(parts)
 
 
 def ingest_sale_lines(
-    session: Session, lines: Sequence[MappedSaleLine], *, now: datetime
+    session: Session,
+    lines: Sequence[MappedSaleLine],
+    *,
+    now: datetime,
+    skew_tolerance: timedelta = CLOCK_SKEW_TOLERANCE,
 ) -> IngestReport:
     """Upsert `MappedSaleLine`s into `sale`, keyed on `lightspeed_line_id`.
 
     A line whose `menu_item_id` is None (the matcher could not resolve it) is
     never written -- an unmatched item silently depleting nothing would look
     like success. It is reported instead, loudly.
+
+    Two guards on the payload itself, before anything is written:
+
+    * **a line id twice in one call** -- collapsed when the copies agree (overlapping
+      pages do this), refused when they do not (see `_collapse_duplicate_lines`);
+    * **a `sold_at` in the future** -- tolerated up to `skew_tolerance` and refused
+      beyond it. A till clock minutes fast is ordinary; a sale dated next Tuesday is
+      not, and it would sit in the ledger depleting stock on a day that has not
+      happened, where neither today's drift nor today's order can see it.
     """
     report = IngestReport()
+    lines = _collapse_duplicate_lines(lines, report)
+    horizon = now + skew_tolerance
 
     for line in lines:
+        if line.sold_at > horizon:
+            report.clock_skew_refused.append(
+                f"{line.lightspeed_receipt_id}/{line.lightspeed_line_id}: sold_at "
+                f"{line.sold_at.isoformat()} is {_ahead(line.sold_at, now)} ahead of now "
+                f"({now.isoformat()}), past the {_pretty(skew_tolerance)} tolerance. NOT "
+                "written: a future-dated sale depletes stock on a day that has not happened, "
+                "so it is invisible to today's drift and today's order. Check the till clock, "
+                "then re-run the window -- sync is idempotent."
+            )
+            report.skew_refused += 1
+            continue
+        if line.sold_at > now:
+            report.clock_skew_tolerated.append(
+                f"{line.lightspeed_receipt_id}/{line.lightspeed_line_id}: sold_at is "
+                f"{_ahead(line.sold_at, now)} ahead of now -- inside the "
+                f"{_pretty(skew_tolerance)} tolerance, so it was written. The till clock is "
+                "drifting; it will start losing sales when it passes the tolerance."
+            )
+
         for name in line.unmatched_modifier_names:
             report.unresolved_modifiers.append(
                 f"{line.lightspeed_line_id}: modifier {name!r} has no matching cafeops "
@@ -140,6 +197,59 @@ def ingest_sale_lines(
         report.corrected_after_expansion += 1
 
     return report
+
+
+def _collapse_duplicate_lines(
+    lines: Sequence[MappedSaleLine], report: IngestReport
+) -> list[MappedSaleLine]:
+    """One entry per `lightspeed_line_id` within this call.
+
+    Identical copies are collapsed silently-but-counted: a window whose pages overlap
+    re-delivers lines, and `jobs/daily_sync` re-reads three days on purpose.
+
+    Copies that DISAGREE are dropped entirely. Letting them through would send the
+    same line twice through the upsert, where the second copy looks exactly like a
+    genuine between-runs correction and would emit an `ADJUSTMENT` against a sale
+    whose first version was written moments earlier in the same transaction --
+    polluting an append-only ledger with an adjustment for a change that never
+    happened on the till. The correction path is for a real before and after, across
+    runs, not for a payload that contradicts itself.
+    """
+    first: dict[str, MappedSaleLine] = {}
+    conflicts: set[str] = set()
+    for line in lines:
+        seen = first.get(line.lightspeed_line_id)
+        if seen is None:
+            first[line.lightspeed_line_id] = line
+            continue
+        if seen == line:
+            report.duplicate_line_ids.append(
+                f"{line.lightspeed_receipt_id}/{line.lightspeed_line_id}: identical copy in the "
+                "same payload, collapsed"
+            )
+            continue
+        conflicts.add(line.lightspeed_line_id)
+    for line_id in sorted(conflicts):
+        report.duplicate_line_ids.append(
+            f"{line_id}: two copies in ONE payload that DISAGREE -- both dropped rather than "
+            "reconciled. Page order is not settlement order, so picking one would be a guess."
+        )
+    return [line for line_id, line in first.items() if line_id not in conflicts]
+
+
+def _ahead(later: datetime, earlier: datetime) -> str:
+    return _pretty(later - earlier)
+
+
+def _pretty(delta: timedelta) -> str:
+    total = int(delta.total_seconds())
+    if abs(total) < 120:
+        return f"{total}s"
+    if abs(total) < 7200:
+        return f"{total // 60}m"
+    if abs(total) < 172800:
+        return f"{total // 3600}h"
+    return f"{total // 86400}d"
 
 
 def _apply_correction_fields(existing: Sale, line: MappedSaleLine) -> None:

@@ -1,0 +1,41 @@
+{
+  "receipts": [
+    {
+      "id": "LSK-R3401",
+      "closedAt": "2026-09-16T11:15:00Z",
+      "channel": "EPOS",
+      "voidReason": null,
+      "lines": [
+        {
+          "id": "LSK-R3401-L1",
+          "itemId": "LSK-ITEM-0316",
+          "sku": "SKU-0316",
+          "name": "Vanilla Latte",
+          "size": "M",
+          "quantity": "1",
+          "totalAmountPence": 400,
+          "voidReason": null,
+          "isRefund": false,
+          "modifiers": [
+            {
+              "name": "Oat milk",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "id": "LSK-R3401-L2",
+          "itemId": "LSK-ITEM-0296",
+          "sku": "SKU-0296",
+          "name": "Oat milk (+upcharge)",
+          "size": "M",
+          "quantity": "1",
+          "totalAmountPence": 50,
+          "voidReason": null,
+          "isRefund": false,
+          "modifiers": []
+        }
+      ]
+    }
+  ]
+}

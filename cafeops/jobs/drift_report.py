@@ -28,8 +28,8 @@ system behaviour from a document nobody had read yet.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from dataclasses import dataclass, field, replace
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy.orm import Session
 
@@ -38,14 +38,18 @@ from cafeops.db.repositories.ingredient import SqlIngredientRepository
 from cafeops.db.repositories.par import SqlParLevelRepository
 from cafeops.domain.drift import DriftCause
 from cafeops.domain.tiers import GateAction
-from cafeops.domain.types import Tier
+from cafeops.domain.types import GateAlertLevel, Tier
 from cafeops.services.record_count import (
     backfill_drift_observations,
     explain_drift_history,
     gate_status,
 )
 
-__all__ = ["DriftReport", "run_drift_report"]
+__all__ = ["REVOCATION_WINDOW_DAYS", "DriftReport", "run_drift_report"]
+
+#: How far back this report looks for revocations. A week, because the report is weekly:
+#: every revocation should appear in exactly one of them.
+REVOCATION_WINDOW_DAYS = 7
 
 
 @dataclass
@@ -58,7 +62,19 @@ class DriftReport:
 
     @property
     def alerts(self) -> list[DriftAlertView]:
-        return [row for row in self.rows if row.alert]
+        """Rows where the FIGURES cannot be trusted (>15%). Spec 5.2's alarm.
+
+        Deliberately `ALARM` rather than `row.alert`: a revoke in the 10-15% band now also
+        has to be heard, but it is a statement about BEHAVIOUR, not about the numbers.
+        Folding it in here would put "your stock figures are untrustworthy" next to an
+        ingredient whose gap is still inside the working band.
+        """
+        return [row for row in self.rows if row.alert_level is GateAlertLevel.ALARM]
+
+    @property
+    def notices(self) -> list[DriftAlertView]:
+        """Rows that lost auto-ordering without the figures being in doubt."""
+        return [row for row in self.rows if row.alert_level is GateAlertLevel.NOTICE]
 
     @property
     def revoked(self) -> list[DriftAlertView]:
@@ -97,6 +113,7 @@ def run_drift_report(
     tiers: tuple[Tier, ...] = (Tier.A, Tier.B),
     backfill: bool = True,
     only_interesting: bool = True,
+    revocation_window_days: int = REVOCATION_WINDOW_DAYS,
 ) -> DriftReport:
     """Attribute every tracked ingredient's latest drift, and say which fix applies.
 
@@ -105,6 +122,7 @@ def run_drift_report(
     "in order" is how a weekly report stops being read.
     """
     at = at or datetime.now(UTC)
+    revoked_window = timedelta(days=revocation_window_days)
     report = DriftReport(generated_at=at)
 
     if backfill:
@@ -134,7 +152,16 @@ def run_drift_report(
             required_streak=decision.required_streak,
             cause=None if latest is None else latest.cause,
             expiry_share=None if latest is None else latest.explanation.expiry_share,
+            alert_level=decision.alert_level,
+            revoke_cause=decision.revoke_cause,
         )
+        # The gate is STATELESS: `gate_status` re-derives from today's history, so an
+        # ingredient revoked on Tuesday reports HOLD by Friday and the revocation has
+        # vanished from a weekly report entirely. `par_level` is the only record of the
+        # event, so it is read here as well -- the live decision still wins when it is
+        # itself a revoke, because that is this moment's verdict rather than a memory.
+        if row.gate_action is not GateAction.REVOKE:
+            row = _carry_stored_revocation(par_repo, row, since=at - revoked_window)
         if only_interesting and not _interesting(row):
             continue
         report.rows.append(row)
@@ -150,8 +177,36 @@ def run_drift_report(
     return report
 
 
+def _carry_stored_revocation(
+    par_repo: SqlParLevelRepository, row: DriftAlertView, *, since: datetime
+) -> DriftAlertView:
+    """Fill in a revocation the live gate can no longer see. Returns the row either way.
+
+    Only when auto-ordering is still OFF: a grant clears `auto_order_revoke_cause`, so a
+    stored cause on an enabled ingredient would be a revocation that has since been earned
+    back -- announcing it would be worse than silence.
+    """
+    audit = par_repo.audit(row.ingredient_id)
+    if (
+        audit is None
+        or audit.revoke_cause is None
+        or audit.revoked_at is None
+        or audit.auto_order_enabled
+        or audit.revoked_at < since
+    ):
+        return row
+    return replace(
+        row,
+        revoke_cause=audit.revoke_cause,
+        # Never DOWNGRADE: a >15% gap is an alarm about the figures whatever else is true.
+        alert_level=(
+            row.alert_level if row.alert_level is GateAlertLevel.ALARM else GateAlertLevel.NOTICE
+        ),
+    )
+
+
 def _interesting(row: DriftAlertView) -> bool:
-    if row.alert or row.gate_action is not GateAction.HOLD:
+    if row.alert or row.revoke_cause is not None or row.gate_action is not GateAction.HOLD:
         return True
     if row.cause in (DriftCause.EXPIRY, DriftCause.MIXED):
         return True

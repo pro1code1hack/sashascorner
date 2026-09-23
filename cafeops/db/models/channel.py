@@ -75,14 +75,22 @@ class ChannelMetric(Base):
         Deliberately None rather than a partial subtraction: "we do not know what
         this channel actually contributed" is a different statement from a number,
         and the same rule as invariant 8 applies.
+
+        **ALL THREE** must be present. An earlier version returned None only when
+        commission *and* ad spend were both missing, so a day that reported commission
+        but no ad spend came back as `gross - commission - 0` -- a contribution figure
+        with a whole cost silently left out of it, and flattering by exactly the amount
+        nobody knew. That is the partial subtraction this property exists to refuse,
+        and it mattered more than the absent caller suggests: every docstring in
+        `integrations/channels/` points at this property as the statement of the rule
+        (`base.py`, `csv_source.py`, `analytics.py`, and the CLI's own footnote), so
+        the canonical example of the discipline was the one place breaking it.
+        `analytics.channel_performance` had it right independently -- it drops an
+        incomplete day whole -- which is why nothing downstream was wrong.
         """
-        if self.gross_pence is None:
+        if self.gross_pence is None or self.commission_pence is None or self.ad_spend_pence is None:
             return None
-        commission = self.commission_pence or 0
-        spend = self.ad_spend_pence or 0
-        if self.commission_pence is None and self.ad_spend_pence is None:
-            return None
-        return self.gross_pence - commission - spend
+        return self.gross_pence - self.commission_pence - self.ad_spend_pence
 
     def __repr__(self) -> str:
         return f"<ChannelMetric {self.channel.value} {self.metric_date}>"

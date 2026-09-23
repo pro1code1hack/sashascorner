@@ -1,0 +1,64 @@
+{
+  "receipts": [
+    {
+      "id": "LSK-R3201",
+      "closedAt": "2026-09-16T12:00:00Z",
+      "channel": "EPOS",
+      "voidReason": null,
+      "lines": [
+        {
+          "id": "LSK-R3201-L1",
+          "itemId": "LSK-ITEM-0007",
+          "sku": "SKU-0007",
+          "name": "Black Americano",
+          "size": "M",
+          "quantity": "1",
+          "totalAmountPence": 310,
+          "voidReason": null,
+          "isRefund": false,
+          "modifiers": []
+        }
+      ]
+    },
+    {
+      "id": "LSK-R3202",
+      "closedAt": "2026-09-16T12:03:00Z",
+      "channel": "EPOS",
+      "voidReason": null,
+      "lines": [
+        {
+          "id": "LSK-R3202-L1",
+          "itemId": "LSK-ITEM-0316",
+          "sku": "SKU-0316",
+          "name": "Vanilla Latte",
+          "size": "M",
+          "quantity": "1",
+          "totalAmountPence": 360,
+          "voidReason": null,
+          "isRefund": false,
+          "modifiers": []
+        }
+      ]
+    },
+    {
+      "id": "LSK-R3203",
+      "closedAt": "2026-09-16T16:00:00Z",
+      "channel": "EPOS",
+      "voidReason": null,
+      "lines": [
+        {
+          "id": "LSK-R3203-L1",
+          "itemId": "LSK-ITEM-0316",
+          "sku": "SKU-0316",
+          "name": "Vanilla Latte",
+          "size": "M",
+          "quantity": "1",
+          "totalAmountPence": 360,
+          "voidReason": null,
+          "isRefund": false,
+          "modifiers": []
+        }
+      ]
+    }
+  ]
+}

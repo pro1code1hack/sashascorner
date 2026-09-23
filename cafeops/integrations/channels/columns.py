@@ -34,6 +34,11 @@ _NON_ALNUM = re.compile(r"[^a-z0-9]+")
 _MONEY_STRIP = re.compile(r"[\s,]")
 #: "Pistachio Latte (M)" -> ("Pistachio Latte", "M"). Just Eat folds size into the name.
 _NAME_PAREN_SIZE = re.compile(r"^(?P<name>.+?)\s*\((?P<size>[A-Za-z]{1,3})\)\s*$")
+#: `1.234,56` / `12,50` -- a comma used as the decimal point. See `_reject_decimal_comma`.
+_DECIMAL_COMMA = re.compile(r",\d{2}\s*$")
+#: Dates whose first two components are both <= 12, so DD/MM and MM/DD both parse and
+#: the file cannot tell you which it meant. See `date_order_is_provable`.
+_AMBIGUOUS_SLASH_DATE = re.compile(r"^(0?[1-9]|1[0-2])[/-](0?[1-9]|1[0-2])[/-]\d{2,4}$")
 
 DATE_FORMATS: tuple[str, ...] = ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%d %b %Y", "%d %B %Y")
 
@@ -52,10 +57,29 @@ def _is_blank(raw: str) -> bool:
     return raw.replace("﻿", "").strip().lower() in BLANKS
 
 
+#: Currency marks a real export puts in front of a number. Legitimate in a money
+#: column; in a count column they are the loudest possible sign that the header was
+#: mapped to the wrong field.
+_CURRENCY = "£$€"
+
+
 def parse_int(raw: str) -> int | None:
+    """A count: impressions, views, orders, a rank. Never money.
+
+    A currency symbol here is a **refusal, not a strip**. `orders` reading `£18` means
+    a money column was mapped onto a count, and quietly dropping the `£` would turn a
+    column-mapping mistake into eighteen orders that nobody ever questions.
+    """
     if _is_blank(raw):
         return None
-    text = _MONEY_STRIP.sub("", raw.strip())
+    stripped = raw.strip()
+    if any(mark in stripped for mark in _CURRENCY):
+        raise FieldParseError(
+            f"{raw!r} carries a currency symbol but this column is a count, not money -- "
+            "the header is almost certainly mapped to the wrong field"
+        )
+    text = _MONEY_STRIP.sub("", stripped)
+    _reject_decimal_comma(raw)
     try:
         value = Decimal(text)
     except InvalidOperation as exc:
@@ -63,6 +87,26 @@ def parse_int(raw: str) -> int | None:
     if value != value.to_integral_value():
         raise FieldParseError(f"{raw!r} is not a whole number")
     return int(value)
+
+
+def _reject_decimal_comma(raw: str) -> None:
+    """Refuse `1.234,56` rather than reading it as 1.23456 and rounding it away.
+
+    `_MONEY_STRIP` removes commas because English exports group thousands with them.
+    A European export uses the comma as the *decimal* point and the dot as the
+    grouping mark, so the same removal turns 1 234,56 into 1.23456 -- which
+    `parse_money_pence` would then reject for sub-penny precision, but with a message
+    about precision rather than about locale, sending the reader looking in the wrong
+    place. Detected on the original text -- a comma followed by exactly two digits at
+    the end -- because by the time `_MONEY_STRIP` has run the evidence is gone.
+    """
+    text = raw.strip()
+    if _DECIMAL_COMMA.search(text):
+        raise FieldParseError(
+            f"{raw!r} looks like a European decimal comma (1.234,56). This parser reads "
+            "English exports (1,234.56) -- re-export the file with a dot decimal point "
+            "rather than have the value guessed at"
+        )
 
 
 def parse_money_pence(raw: str) -> int | None:
@@ -75,10 +119,11 @@ def parse_money_pence(raw: str) -> int | None:
     if _is_blank(raw):
         return None
     text = _MONEY_STRIP.sub("", raw.strip())
+    _reject_decimal_comma(raw)
     negative = text.startswith("(") and text.endswith(")")
     if negative:
         text = text[1:-1]
-    text = text.lstrip("£$€")
+    text = text.lstrip(_CURRENCY)
     if text.startswith("-"):
         negative = True
         text = text[1:]
@@ -110,6 +155,13 @@ def parse_bp(raw: str) -> int | None:
 
 
 def parse_date(raw: str) -> date:
+    """A calendar date in any of `DATE_FORMATS`. Mixed formats in one file are fine.
+
+    `%d/%m/%Y` is tried before anything month-first, because the exports are British.
+    A US-style `04/13/2026` therefore matches nothing and is refused with that named
+    as the likely cause -- refusing is right, because reading it as 4 January 2013
+    would put a day's revenue in the wrong year silently.
+    """
     text = raw.replace("﻿", "").strip()
     if not text:
         raise FieldParseError("empty date")
@@ -118,7 +170,42 @@ def parse_date(raw: str) -> date:
             return datetime.strptime(text, fmt).date()  # noqa: DTZ007 -- a calendar date
         except ValueError:
             continue
-    raise FieldParseError(f"{raw!r} matches none of {', '.join(DATE_FORMATS)}")
+    hint = ""
+    if _looks_month_first(text):
+        hint = (
+            " -- the middle number is above 12, so this is probably MM/DD/YYYY. Re-export "
+            "it as DD/MM/YYYY or YYYY-MM-DD; it is not being guessed at"
+        )
+    raise FieldParseError(f"{raw!r} matches none of {', '.join(DATE_FORMATS)}{hint}")
+
+
+def _looks_month_first(text: str) -> bool:
+    parts = re.split(r"[/-]", text)
+    if len(parts) != 3:
+        return False
+    try:
+        first, second = int(parts[0]), int(parts[1])
+    except ValueError:
+        return False
+    return first <= 12 and second > 12
+
+
+def date_order_is_provable(values: Sequence[str]) -> bool:
+    """Does this set of slash-dates prove whether it is day-first or month-first?
+
+    It does as soon as one value has a first component above 12. If every slash-date
+    in a file is `<=12/<=12/YYYY`, both readings parse and the file is silently
+    ambiguous -- a 6 April file read as 4 June, with no error anywhere. That cannot be
+    refused (it would reject a legitimate British export of a quiet fortnight), so it
+    is warned about instead, which is the honest position: the parser is assuming, and
+    it says so.
+    """
+    slashed = [
+        v.strip() for v in values if _AMBIGUOUS_SLASH_DATE.match(v.strip()) or "/" in v.strip()
+    ]
+    if not slashed:
+        return True
+    return any(not _AMBIGUOUS_SLASH_DATE.match(v) for v in slashed)
 
 
 def parse_text(raw: str) -> str | None:

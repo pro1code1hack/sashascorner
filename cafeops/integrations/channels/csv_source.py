@@ -15,11 +15,35 @@ Spec 15 q6: the owner has portal logins and exports by hand. That makes this the
 Duplicate dates inside one file are a refusal rather than a last-one-wins, because
 `channel_metric` is unique on (channel, date) and a duplicated day means the export
 covers two properties, two menus, or two windows stacked together.
+
+Phase 3 hardening (`docs/phase3/agent-k-integrations.md` 3). A hand-made export is
+messier than a fixture, and every item here is a way a real one differs:
+
+* **The delimiter is detected, not assumed.** Excel on a machine with a comma decimal
+  separator writes `;`; a copy out of Google Sheets often arrives tab-separated. The
+  old reader assumed `,` and would have read such a file as a single column named
+  `date_impressions_menu_views_...`, failed to map it, and blamed the columns. See
+  `_sniff_delimiter`: the winner is the one that maps the most headers, and a tie is a
+  refusal.
+* **Row numbers are the file's, not the parser's.** Blank lines and skipped rows used
+  to shift every subsequent number, so "row 14 rejected" pointed at row 12 -- and the
+  brief's whole discipline is naming the column and the row.
+* **A short or long row is rejected, not padded.** `zip(strict=False)` silently turned
+  a truncated row into a row of NULLs, which is invariant 8 broken by accident: "the
+  platform did not report this" and "the line was cut off" became the same thing.
+* **A totals row is recognised.** Every portal puts one at the bottom. It used to land
+  in the rejected pile with an unhelpful message about the date; now it is identified
+  and skipped, so the rejected count means something again.
+* **Day-first dates are assumed, and the assumption is stated.** A file whose slash
+  dates are all `<=12/<=12` cannot prove its own order (`date_order_is_provable`).
+  Refusing would reject a legitimate British export; assuming silently would move a
+  day's revenue by months. So: assume, and warn.
 """
 
 from __future__ import annotations
 
 import csv
+import io
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, replace
 from datetime import date
@@ -37,6 +61,7 @@ from cafeops.integrations.channels.columns import (
     FieldParseError,
     HeaderMapping,
     ReportSchema,
+    date_order_is_provable,
     detect_schema,
     map_headers,
     normalise_header,
@@ -125,14 +150,7 @@ class CsvChannelSource:
         """Read and map one file. Raises `UnmappableReportError` rather than guessing."""
         if not path.exists():
             raise UnmappableReportError(f"{path}: no such file")
-        with path.open(newline="", encoding="utf-8-sig") as handle:
-            reader = csv.reader(handle)
-            try:
-                headers = next(reader)
-            except StopIteration as exc:
-                raise UnmappableReportError(f"{path}: file is empty") from exc
-            body = [row for row in reader if any(cell.strip() for cell in row)]
-
+        headers, body, delimiter = _read_rows(path)
         platform = platform or self.platform
         if platform is None:
             schema = detect_schema(headers, kind=kind)
@@ -141,13 +159,21 @@ class CsvChannelSource:
         mapping = map_headers(schema, headers)
 
         if schema.kind == "daily":
-            day_rows, rejected = self._read_day_rows(path, schema, mapping, headers, body)
+            day_rows, rejected, row_notes = self._read_day_rows(
+                path, schema, mapping, headers, body
+            )
             item_rows: tuple[ChannelItemRow, ...] = ()
         else:
-            item_rows, rejected = self._read_item_rows(path, schema, mapping, headers, body)
+            item_rows, rejected, row_notes = self._read_item_rows(
+                path, schema, mapping, headers, body
+            )
             day_rows = ()
 
-        warnings: list[str] = []
+        warnings: list[str] = list(row_notes)
+        if delimiter != ",":
+            warnings.append(
+                f"{path.name}: delimiter detected as {_delimiter_name(delimiter)}, not a comma"
+            )
         if mapping.unrecognised:
             warnings.append(
                 f"{path.name}: {len(mapping.unrecognised)} column(s) not recognised and ignored: "
@@ -205,24 +231,51 @@ class CsvChannelSource:
         schema: ReportSchema,
         mapping: HeaderMapping,
         headers: Sequence[str],
-        body: Iterable[Sequence[str]],
-    ) -> tuple[tuple[ChannelDayRow, ...], tuple[RejectedRow, ...]]:
+        body: Iterable[_SourceRow],
+    ) -> tuple[tuple[ChannelDayRow, ...], tuple[RejectedRow, ...], tuple[str, ...]]:
         rows: list[ChannelDayRow] = []
         rejected: list[RejectedRow] = []
+        notes: list[str] = []
+        date_cells: list[str] = []
         seen: dict[date, int] = {}
-        for offset, raw_row in enumerate(body, start=2):
-            cells = dict(zip((normalise_header(h) for h in headers), raw_row, strict=False))
+        for source in body:
+            offset, raw_row = source.line_no, source.cells
+            if _is_totals_row(headers, raw_row):
+                notes.append(
+                    f"{path.name} line {offset}: a totals/subtotal row, skipped. It is not a "
+                    "day, and summing an export's own total into the days would double the "
+                    "window."
+                )
+                continue
+            shape = _shape_problem(headers, raw_row)
+            if shape is not None:
+                rejected.append(
+                    RejectedRow(
+                        line_no=offset,
+                        reason=f"{path.name} line {offset}: {shape}",
+                        raw=self._raw(headers, raw_row),
+                    )
+                )
+                continue
+            cells = dict(zip((normalise_header(h) for h in headers), raw_row, strict=True))
             try:
                 values = self._parse_cells(mapping, cells)
             except FieldParseError as exc:
                 rejected.append(
-                    RejectedRow(line_no=offset, reason=str(exc), raw=self._raw(headers, raw_row))
+                    RejectedRow(
+                        line_no=offset,
+                        reason=f"{path.name} line {offset}: {exc}",
+                        raw=self._raw(headers, raw_row),
+                    )
                 )
                 continue
             metric_date = values["metric_date"]
             if not isinstance(metric_date, date):
-                rejected.append(RejectedRow(line_no=offset, reason="no date on the row"))
+                rejected.append(
+                    RejectedRow(line_no=offset, reason=f"{path.name} line {offset}: no date")
+                )
                 continue
+            date_cells.append(_date_cell(mapping, cells))
             if metric_date in seen:
                 raise UnmappableReportError(
                     f"{path.name}: {metric_date} appears on lines {seen[metric_date]} and "
@@ -248,7 +301,8 @@ class CsvChannelSource:
                     rating_bp=_as_int(values.get("rating_bp")),
                 )
             )
-        return tuple(rows), tuple(rejected)
+        notes.extend(_date_order_notes(path, date_cells))
+        return tuple(rows), tuple(rejected), tuple(notes)
 
     def _read_item_rows(
         self,
@@ -256,18 +310,38 @@ class CsvChannelSource:
         schema: ReportSchema,
         mapping: HeaderMapping,
         headers: Sequence[str],
-        body: Iterable[Sequence[str]],
-    ) -> tuple[tuple[ChannelItemRow, ...], tuple[RejectedRow, ...]]:
+        body: Iterable[_SourceRow],
+    ) -> tuple[tuple[ChannelItemRow, ...], tuple[RejectedRow, ...], tuple[str, ...]]:
         rows: list[ChannelItemRow] = []
         rejected: list[RejectedRow] = []
+        notes: list[str] = []
+        date_cells: list[str] = []
         seen: set[tuple[date, str, str | None]] = set()
-        for offset, raw_row in enumerate(body, start=2):
-            cells = dict(zip((normalise_header(h) for h in headers), raw_row, strict=False))
+        for source in body:
+            offset, raw_row = source.line_no, source.cells
+            if _is_totals_row(headers, raw_row):
+                notes.append(f"{path.name} line {offset}: a totals/subtotal row, skipped")
+                continue
+            shape = _shape_problem(headers, raw_row)
+            if shape is not None:
+                rejected.append(
+                    RejectedRow(
+                        line_no=offset,
+                        reason=f"{path.name} line {offset}: {shape}",
+                        raw=self._raw(headers, raw_row),
+                    )
+                )
+                continue
+            cells = dict(zip((normalise_header(h) for h in headers), raw_row, strict=True))
             try:
                 values = self._parse_cells(mapping, cells)
             except FieldParseError as exc:
                 rejected.append(
-                    RejectedRow(line_no=offset, reason=str(exc), raw=self._raw(headers, raw_row))
+                    RejectedRow(
+                        line_no=offset,
+                        reason=f"{path.name} line {offset}: {exc}",
+                        raw=self._raw(headers, raw_row),
+                    )
                 )
                 continue
             metric_date = values["metric_date"]
@@ -276,11 +350,12 @@ class CsvChannelSource:
                 rejected.append(
                     RejectedRow(
                         line_no=offset,
-                        reason="row has no date or no item name",
+                        reason=f"{path.name} line {offset}: no date or no item name",
                         raw=self._raw(headers, raw_row),
                     )
                 )
                 continue
+            date_cells.append(_date_cell(mapping, cells))
             name, size_from_name = split_item_name(raw_name, size_style=schema.size_style)
             size_cell = values.get("size_code")
             size = (size_cell.strip().upper() if isinstance(size_cell, str) else None) or (
@@ -306,7 +381,8 @@ class CsvChannelSource:
                     rank_in_category=_as_int(values.get("rank_in_category")),
                 )
             )
-        return tuple(rows), tuple(rejected)
+        notes.extend(_date_order_notes(path, date_cells))
+        return tuple(rows), tuple(rejected), tuple(notes)
 
     @staticmethod
     def _parse_cells(mapping: HeaderMapping, cells: dict[str, str]) -> dict[str, object]:
@@ -407,6 +483,205 @@ class CsvChannelSource:
         )
         clone.kind = kind
         return clone
+
+
+# ==========================================================================
+# Reading a file somebody exported by hand
+# ==========================================================================
+
+
+@dataclass(frozen=True, slots=True)
+class _SourceRow:
+    """One body row, carrying the line number it actually occupies in the file.
+
+    The number is load-bearing. `enumerate` over a filtered list drifts by one for
+    every blank line above it, and a refusal that names the wrong row is worse than a
+    refusal that names none: somebody opens the file, finds a perfectly good row at
+    line 14, and concludes the parser is broken.
+    """
+
+    line_no: int
+    cells: tuple[str, ...]
+
+
+#: Delimiters a hand-made export actually arrives with. `;` comes from Excel on a
+#: machine whose locale uses the comma as a decimal separator -- the single commonest
+#: way a European-configured spreadsheet writes "CSV". Tab comes from a copy-paste out
+#: of a web table or Google Sheets. `|` is rare but unambiguous when present.
+_DELIMITERS: tuple[str, ...] = (",", ";", "\t", "|")
+
+_DELIMITER_NAMES: dict[str, str] = {",": "comma", ";": "semicolon", "\t": "tab", "|": "pipe"}
+
+#: Words a portal puts in the first column of its summary row.
+_TOTALS_WORDS = frozenset(
+    {"total", "totals", "grand total", "subtotal", "sub total", "sum", "all", "overall", "average"}
+)
+
+
+def _delimiter_name(delimiter: str) -> str:
+    return _DELIMITER_NAMES.get(delimiter, repr(delimiter))
+
+
+def _read_rows(path: Path) -> tuple[tuple[str, ...], list[_SourceRow], str]:
+    """Header, body rows with true line numbers, and the delimiter that was used.
+
+    `utf-8-sig` eats a BOM; `newline=""` hands CRLF to the csv module, which is what
+    it wants. Blank rows are dropped here -- but only after their line number has been
+    recorded on the rows around them.
+    """
+    text = path.read_text(encoding="utf-8-sig")
+    if not text.strip():
+        raise UnmappableReportError(f"{path}: file is empty")
+    delimiter = _sniff_delimiter(path, text)
+    # Read through a StringIO with `newline=""` rather than over `splitlines()`: the csv
+    # module then owns line endings (CRLF included) and, more importantly, keeps a
+    # quoted field that contains a newline as one field. `reader.line_num` is the file's
+    # own line counter, which is the number a refusal must quote. For a record that
+    # spans lines it is the record's LAST line -- close enough to find it, and the only
+    # number csv offers.
+    handle = io.StringIO(text, newline="")
+    reader = csv.reader(handle, delimiter=delimiter)
+    headers: tuple[str, ...] | None = None
+    body: list[_SourceRow] = []
+    for row in reader:
+        cells = tuple(row)
+        if not any(cell.strip() for cell in cells):
+            continue
+        if headers is None:
+            headers = cells
+            continue
+        body.append(_SourceRow(line_no=reader.line_num, cells=cells))
+    if headers is None:
+        raise UnmappableReportError(f"{path}: file has no non-blank row")
+    return headers, body, delimiter
+
+
+def _sniff_delimiter(path: Path, text: str) -> str:
+    """Pick the delimiter that yields the most *recognised* headers, or refuse.
+
+    Deliberately not `csv.Sniffer`: it guesses from character frequency, so a comma
+    file whose values are quoted thousands (`"1,234.56"`) can out-score its own real
+    delimiter. Scoring by how many headers a declared schema actually claims is both
+    stricter and easier to explain -- the file is asked which of our four exports it
+    is, and only a delimiter that makes it look like one of them can win.
+
+    Falls back to the delimiter that produces the most columns when nothing maps,
+    because a file that maps under no delimiter must still reach `map_headers` and be
+    refused *there*, with its column names in the message. Refusing here would report
+    a delimiter problem for what is really an unknown export.
+    """
+    first_line = next((line for line in text.splitlines() if line.strip()), "")
+    scores: list[tuple[int, int, str]] = []
+    for delimiter in _DELIMITERS:
+        headers = next(iter(csv.reader([first_line], delimiter=delimiter)), [])
+        if len(headers) < 2:
+            continue
+        recognised = sum(
+            1
+            for schema in _candidate_schemas()
+            for header in headers
+            if schema.spec_for(normalise_header(header)) is not None
+        )
+        scores.append((recognised, len(headers), delimiter))
+    if not scores:
+        return ","
+    scores.sort(reverse=True)
+    best = scores[0]
+    if best[0] == 0:
+        # Nothing recognised under any delimiter. Take the widest split so the header
+        # names in the eventual refusal are readable, and let `map_headers` say no.
+        return max(scores, key=lambda s: s[1])[2]
+    rivals = [s for s in scores[1:] if s[0] == best[0]]
+    if rivals:
+        names = ", ".join(_delimiter_name(s[2]) for s in (best, *rivals))
+        raise UnmappableReportError(
+            f"{path.name}: the header row maps equally well split by {names}. Refusing to "
+            "choose -- a wrong delimiter silently shifts every value one column left, which "
+            "is exactly how ad spend ends up in the commission column."
+        )
+    return best[2]
+
+
+def _candidate_schemas() -> tuple[ReportSchema, ...]:
+    from cafeops.integrations.channels.columns import SCHEMAS
+
+    return SCHEMAS
+
+
+def _is_totals_row(headers: Sequence[str], row: Sequence[str]) -> bool:
+    """Is this the summary row every portal puts at the bottom?
+
+    Two signatures, and both are needed:
+
+    * a totals word in any of the first two cells ("Total", "Grand total");
+    * a row whose leading cell(s) are blank but which still carries numbers -- how a
+      spreadsheet writes a totals row when the date column simply has nothing in it.
+
+    Recognising it matters because it used to arrive as a rejected row complaining
+    about a date, which made the rejected count mean two different things at once.
+    """
+    filled = [cell.strip() for cell in row]
+    leading = [cell.lower() for cell in filled[:2]]
+    if any(cell in _TOTALS_WORDS for cell in leading):
+        return True
+    if any(cell.lower().startswith(("total", "grand total", "subtotal")) for cell in filled[:2]):
+        return True
+    if len(row) == len(headers) and not filled[0]:
+        # Blank first column, but numbers further along: a summary line, not a day.
+        return any(_looks_numeric(cell) for cell in filled[1:])
+    return False
+
+
+def _looks_numeric(cell: str) -> bool:
+    stripped = cell.strip().lstrip("£$€").replace(",", "").replace(" ", "")
+    if not stripped:
+        return False
+    try:
+        float(stripped)
+    except ValueError:
+        return False
+    return True
+
+
+def _shape_problem(headers: Sequence[str], row: Sequence[str]) -> str | None:
+    """Refuse a row whose cell count does not match the header.
+
+    `zip(..., strict=False)` used to pad a truncated row out with absent keys, which
+    `_parse_cells` then read as blanks and stored as `None` -- so "the platform did not
+    report this" (invariant 8) and "this line was cut off mid-write" became
+    indistinguishable. They are not the same statement and must not share a
+    representation.
+    """
+    if len(row) == len(headers):
+        return None
+    trailing_blanks = len(row) - len(headers)
+    if trailing_blanks > 0 and not any(cell.strip() for cell in row[len(headers) :]):
+        # Trailing empty cells only -- a spreadsheet artefact, not lost data.
+        return None
+    return (
+        f"row has {len(row)} cell(s) against {len(headers)} header(s) "
+        f"({'truncated' if len(row) < len(headers) else 'over-long'}); "
+        "not padded, because a missing cell and an unreported figure are different things"
+    )
+
+
+def _date_cell(mapping: HeaderMapping, cells: dict[str, str]) -> str:
+    for header, spec in mapping.by_header.items():
+        if spec.field == "metric_date":
+            return cells.get(header, "")
+    return ""
+
+
+def _date_order_notes(path: Path, date_cells: Sequence[str]) -> list[str]:
+    """Warn when a file's slash-dates cannot prove their own day/month order."""
+    if not date_cells or date_order_is_provable(date_cells):
+        return []
+    return [
+        f"{path.name}: every slash-separated date in this file has both its first two numbers "
+        "at 12 or below, so the file cannot prove whether it is DD/MM or MM/DD. They were read "
+        "as DD/MM/YYYY (British). If the export is American, these days are wrong by months -- "
+        "re-export as YYYY-MM-DD and this warning goes away."
+    ]
 
 
 def _as_int(value: object) -> int | None:

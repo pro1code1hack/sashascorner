@@ -152,6 +152,7 @@ class DemoReport:
     receipts: int = 0
     sale_lines: int = 0
     modifiers_applied: int = 0
+    modifier_revenue_pence: int = 0
     opening_counts: int = 0
     deliveries: int = 0
     counts: int = 0
@@ -173,7 +174,8 @@ class DemoReport:
             f"(+{self.alternate_sources} alternate sources), par levels: {self.par_levels}",
             f"batches: {self.batches}, seasons: {self.seasons}",
             f"sales: {self.days} days ({span}), {self.receipts} receipts, "
-            f"{self.sale_lines} lines, {self.modifiers_applied} with an alt milk",
+            f"{self.sale_lines} lines, {self.modifiers_applied} with an alt milk "
+            f"(+GBP {self.modifier_revenue_pence / 100:.2f} in upcharges)",
             f"ledger: {self.opening_counts} opening counts, {self.deliveries} deliveries, "
             f"{self.counts} periodic counts",
         ]
@@ -546,16 +548,26 @@ def _generate_sales(
                 item = rng.choices(items, weights=weights, k=1)[0]
                 line_seq += 1
                 applied: list[int] = []
+                # A modifier is charged for, so it belongs in the line's revenue. The
+                # first version wrote the bare item price, understating takings by the
+                # upcharge on every alt-milk drink -- about GBP 236 across 60 seeded
+                # days. That matters beyond tidiness: this figure feeds the channel and
+                # P&L views, so a margin computed against it would look better than the
+                # real one, which is the direction of error nobody questions.
+                gross_pence = item.price_pence
                 if modifiers and rng.random() < ALT_MILK_SHARE:
-                    applied.append(rng.choice(modifiers).id)
+                    chosen = rng.choice(modifiers)
+                    applied.append(chosen.id)
+                    gross_pence += chosen.price_pence
                     report.modifiers_applied += 1
+                    report.modifier_revenue_pence += chosen.price_pence
                 session.add(
                     Sale(
                         lightspeed_receipt_id=receipt_id,
                         lightspeed_line_id=f"DEMO-L{line_seq:07d}",
                         menu_item_id=item.id,
                         qty=Decimal("1"),
-                        gross_pence=item.price_pence,
+                        gross_pence=gross_pence,
                         sold_at=sold_at,
                         channel=SaleChannel.EPOS,
                         applied_modifiers=applied,

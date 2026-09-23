@@ -40,6 +40,7 @@ from cafeops.domain.types import SaleChannel, SizeCode
 
 __all__ = [
     "CatalogRef",
+    "DedupeOutcome",
     "MappedSaleLine",
     "MatchOutcome",
     "MenuItemRef",
@@ -50,6 +51,7 @@ __all__ = [
     "RawReceiptBatch",
     "RawReceiptLine",
     "build_modifier_lookup",
+    "dedupe_receipts",
     "map_receipt_lines",
     "match_menu_items",
     "normalize_text",
@@ -127,6 +129,95 @@ class RawCatalogBatch(BaseModel):
 
     items: list[RawCatalogItem] = Field(default_factory=list)
     next_page: str | None = Field(default=None, alias="nextPage")
+
+
+# ==========================================================================
+# The same receipt, twice in one window
+# ==========================================================================
+
+
+@dataclass(frozen=True, slots=True)
+class DedupeOutcome:
+    """The result of collapsing a window's pages down to one copy per receipt."""
+
+    receipts: tuple[RawReceipt, ...]
+    #: Receipt ids that arrived more than once with IDENTICAL content. Counted, not
+    #: complained about: overlapping pages re-deliver a receipt routinely, and
+    #: `jobs/daily_sync.OVERLAP_DAYS` re-reads three days on purpose.
+    duplicates: tuple[str, ...] = ()
+    #: Receipt ids that arrived more than once with DIFFERENT content inside one
+    #: window. Refused -- see `dedupe_receipts`.
+    conflicts: tuple[str, ...] = ()
+
+
+def _receipt_fingerprint(receipt: RawReceipt) -> tuple[object, ...]:
+    """Everything about a receipt that ingestion would act on, in a comparable form.
+
+    Deliberately not `model_dump()`: a field this system ignores (a till number, a
+    staff name) must not turn a harmless re-delivery into a conflict.
+    """
+    return (
+        receipt.closed_at,
+        receipt.channel,
+        receipt.void_reason,
+        tuple(
+            (
+                line.id,
+                line.item_id,
+                line.sku,
+                line.name_override or line.name,
+                line.size,
+                line.quantity,
+                line.total_amount_pence,
+                line.void_reason,
+                line.is_refund,
+                tuple(sorted((m.name, m.quantity) for m in line.modifiers)),
+            )
+            for line in receipt.lines
+        ),
+    )
+
+
+def dedupe_receipts(receipts: Iterable[RawReceipt]) -> DedupeOutcome:
+    """One copy per receipt id, and a refusal when two copies disagree.
+
+    A receipt arriving twice in one window is normal -- pages overlap, and
+    `daily_sync` re-reads three days deliberately. Collapsing identical copies is
+    therefore silent-but-counted.
+
+    Two copies of one receipt id that **differ** are a different matter, and are
+    dropped from the window entirely rather than resolved. There is no rule for
+    picking between them that is not a guess: page order is not settlement order, and
+    "last one wins" would make the result depend on how the API chose to paginate.
+    Dropping them costs one receipt and a loud line in the report. Guessing costs a
+    wrong ingredient depletion that nothing downstream can detect -- and the
+    correction path (`ingest_sales._emit_correction_adjustment`) exists for a change
+    seen across two *runs*, where there is a real before and after, not for two
+    contradictory versions inside one payload.
+    """
+    first: dict[str, RawReceipt] = {}
+    fingerprints: dict[str, tuple[object, ...]] = {}
+    duplicates: list[str] = []
+    conflicts: list[str] = []
+
+    for receipt in receipts:
+        fingerprint = _receipt_fingerprint(receipt)
+        if receipt.id not in first:
+            first[receipt.id] = receipt
+            fingerprints[receipt.id] = fingerprint
+            continue
+        if fingerprint == fingerprints[receipt.id]:
+            if receipt.id not in duplicates:
+                duplicates.append(receipt.id)
+            continue
+        if receipt.id not in conflicts:
+            conflicts.append(receipt.id)
+
+    return DedupeOutcome(
+        receipts=tuple(r for rid, r in first.items() if rid not in conflicts),
+        duplicates=tuple(duplicates),
+        conflicts=tuple(conflicts),
+    )
 
 
 # ==========================================================================

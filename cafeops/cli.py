@@ -13,7 +13,7 @@ from rich.table import Table
 
 from cafeops.config import settings
 from cafeops.db.base import SessionFactory, session_scope
-from cafeops.domain.types import Tier
+from cafeops.domain.types import GateAlertLevel, Tier
 from cafeops.domain.units import format_qty
 
 app = typer.Typer(
@@ -681,6 +681,8 @@ def _print_outcome(outcome) -> None:
             )
     decision = outcome.decision
     table.add_row("auto-order", f"{decision.action.value}: {decision.reason}")
+    if decision.revoke_cause is not None:
+        table.add_row("revoke cause", f"[yellow]{decision.revoke_cause.value}[/yellow]")
     table.add_row(
         "auto_order_enabled",
         ("[green]True[/green]" if decision.auto_order_enabled else "False")
@@ -691,10 +693,21 @@ def _print_outcome(outcome) -> None:
 
     for text in outcome.notes:
         console.print(f"[dim]note: {text}[/dim]")
-    if outcome.alert:
+    # Two levels, not one flag. A >15% gap is a statement about the FIGURES; a revoke in
+    # the tuning band is a statement about BEHAVIOUR -- orders that were being drafted
+    # automatically have just stopped. Printing the same red sentence for both would say
+    # the stock is untrustworthy when the gap is still inside the working band.
+    if decision.alert_level is GateAlertLevel.ALARM:
         console.print(
             f"[bold red]ALERT[/bold red] {ing.name}: theoretical stock is not "
             "trustworthy. Auto-ordering is OFF and every order for it needs a human."
+        )
+    elif decision.alert_level is GateAlertLevel.NOTICE:
+        console.print(
+            f"[bold yellow]AUTO-ORDERING REVOKED[/bold yellow] {ing.name}: drafts for it "
+            "are no longer built automatically. The figures are still inside the working "
+            "band -- what expired is the evidence the grant rested on, and two consecutive "
+            "counts under the bar earn it back."
         )
     console.print(
         "[dim]The count re-anchors on-hand (spec 5.1). No correcting movement is "

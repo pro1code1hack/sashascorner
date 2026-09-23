@@ -1129,6 +1129,329 @@ looks wrong.
 
 ---
 
+## 8K. v2 Phase 3: the real-time modifier stream — argued, and NOT built
+
+§11 item 2 established *where* modifiers live. This section answers the question it
+left open — **should we go and get them?** — and the answer is **no**, with the cost
+of that no written down, and a cheaper substitute checked rather than assumed.
+
+### 8K.1 The decision: do not build the real-time stream
+
+Four reasons, in descending order of how much they matter.
+
+**1. `Get All Open Checks` returns *open* checks. A counter café's checks are barely
+ever open.** This is the argument that settles it, and it is not about effort. The
+endpoint is the state of the floor right now; a check leaves it when it settles.
+Sasha's Corner is counter service: the dominant transaction is one drink, rung and
+paid in a few seconds. To catch a modifier on such a check you must poll during the
+seconds it exists. No polling interval a single Hetzner box should run does that
+reliably, and the checks it *would* reliably catch — a table that sits, orders, adds
+more — are the minority of the trade. So the stream does not merely cost more than a
+nightly job, it **systematically misses the exact transactions the café does most
+of**, and it misses them silently. Building it would produce alt-milk consumption
+figures that look like data and are a biased sample of the table-service tail.
+(Inference from the endpoint's documented purpose as recorded in §11 item 2, not a
+new source. It is the first thing to test if credentials ever arrive: poll for one
+trading day and compare the checks seen against the day's receipts.)
+
+**2. There is no join key.** The payload is `{name, quantity}` — no id, no price
+(§11 item 2, with sources). Reconciling a check against the receipt that settles it
+therefore has to be done on the item *name* plus line ordering, and the name is free
+text an owner edits in the POS UI with no version history. A join key that is a
+mutable display string is not a join key; the day someone renames "Oat milk" to "Oat"
+the ingredient silently stops depleting, and nothing downstream can tell.
+
+**3. Every design decision in it would be a guess, and the guesses land in an
+append-only ledger.** A check mutates as a table orders more, so the same check id
+yields different line sets over time. Which snapshot is final? How do you diff two
+snapshots when lines have no stable ids? What happens to a check that is split across
+two payments, or voided after settling? There is no live payload to verify any answer
+against, and the ledger cannot be rewritten when the answer turns out wrong
+(invariant 9). §8E is the precedent: code that was correct against fixtures written
+by the same person who wrote the code, wrong against reality, silent about it for
+weeks.
+
+**4. It is a different operational class for one ingredient.** Everything else here
+is a nightly cron plus a CLI. A poller or webhook receiver must be *up during trading
+hours*, on one box with no load balancer (§8F.8), and its failure mode is missing data
+rather than a failed job — the hardest kind to notice. That is a large permanent
+increase in what can break, bought for the alt-milk line of one café.
+
+### 8K.2 What the café gives up by saying no — measured, not asserted
+
+Counted off the demo ledger (60 days, `agentk.db`, 2 782 sale lines):
+
+| | |
+|---|---|
+| Alt milk consumed (oat + almond + soy) | **119.9 L / 60 days ≈ 14 L per week** |
+| of which oat milk | 44.6 L ≈ 5.2 L/week ≈ **£13/week at £2.50/L** |
+| Whole milk consumed | 438.0 L / 60 days |
+
+Three consequences follow, and the third is the one nobody had written down:
+
+1. **Alt milk consumption stays uncalculated**, so oat/almond/soy/coconut milk can
+   never earn tier A (§5.2) and can never be auto-ordered. Oat milk stays at tier B —
+   the hold in §2.1 becomes permanent rather than provisional. Extra-shot bean use is
+   in the same position, and worse: there is no `Extra shot` modifier row in the
+   system at all today, so `cafeops sync` reports the fixture's `Extra shot` modifier
+   as unresolved and applies nothing.
+2. **The alt-milk upcharge is missing from revenue in seeded data.** `seed/demo.py`
+   writes `gross_pence=item.price_pence` and never adds the modifier's 40p, so every
+   alt-milk line under-states by 40p — £236 across the 60 seeded days. A seed defect,
+   not an integration one, but any margin figure read off demo data inherits it.
+3. **Whole milk is over-depleted by 27%, and whole milk is tier A.** If modifiers
+   never arrive, the SUBSTITUTE never fires, so every alt-milk drink still depletes
+   *whole* milk from the base recipe. 119.9 L that was really oat/almond/soy is
+   charged to whole milk on top of its own 438.0 L — **+27.4%**. The drift gate
+   refuses auto-ordering above 15% and revokes an existing grant in the 10–15% band
+   (§8A.1), so the flagship tier-A ingredient loses its grant, for a reason that has
+   nothing to do with whole milk. And the error has a direction: theoretical on-hand
+   comes out *lower* than the shelf really holds, so the system orders whole milk it
+   does not need — about 14 L/week, ~£11/week at Tesco's £1.65/2 L, of a product with
+   a 7-day shelf life. It is bought and thrown away.
+
+So the honest framing is not "we lose oat milk". It is: **not seeing modifiers
+corrupts the ingredient we *do* see.** That is what makes the substitute below worth
+having, and it is a stronger argument for a fix than oat milk's tier ever was.
+
+### 8K.3 The cheaper substitute: CHECKED, and it is already built
+
+§11 item 2's suggestion was the `+upcharge` menu items. Checking what is actually in
+the system, rather than assuming:
+
+- `Oat milk (+upcharge)` and `Coconut milk (+upcharge)` exist as **menu items**
+  (ids 296, 278), they are `manual_recipe`, and `cafeops sync` **already backfills
+  their `lightspeed_id`** off the catalog (`LSK-ITEM-0296`, `LSK-ITEM-0278`).
+- Their manual recipe is not a cost fudge — it is exactly the substitution delta:
+  **+0.2 L oat milk and −0.2 L whole milk**, imported from
+  `sashas_corner_finance__LEGACY_.xlsx` recipe 299, which carries both lines.
+- So **if the till rings the upcharge item as its own line, oat milk consumption is
+  calculated correctly today, through the ordinary financial sales feed, with no new
+  code at all** — and the negative line credits the whole milk back, which fixes
+  §8K.2's third consequence too.
+
+Two limits on the proxy, both recorded rather than hidden:
+
+- **It is size-blind.** The delta is a flat 0.2 L; `Flavoured Latte` uses 0.12 / 0.18
+  / 0.25 L by size. An S alt-milk drink therefore credits back 0.08 L of whole milk
+  that was never poured. Wrong by ~40% on the smallest size — against 100% missing,
+  which is the alternative.
+- **Double counting is real, and now detected.** If the till rings the upcharge item
+  *and* attaches the modifier to the drink, the substitution and the delta both
+  apply: alt milk counted twice, whole milk credited twice. It is visible in the
+  financial feed alone (an upcharge line on the same receipt as a line carrying an
+  alt-milk modifier), so `sync` reports it as `DOUBLE-COUNT RISK` and never
+  reconciles it silently.
+
+### 8K.4 Is the till actually ringing them? Unprovable from what we hold
+
+**Checked, and the answer is "probably not, and we cannot prove it".**
+
+- The only direct evidence in the repository is the owner's own annotation on recipes
+  281 and 299: *"Upcharge: extra cost of alt-milk vs whole milk (**used as modifier,
+  not standalone drink**)"*. That is the owner saying the upcharge item is **not** rung
+  as a line. It is one sentence in a spreadsheet, not a sales record, but it is the
+  best evidence available and it points at no.
+- There is **no item-level historical sales data anywhere in this project**. The
+  workbook's `Daily Sales` tab is aggregate takings per day (card, cash, total) — 492
+  rows of money with no items on them. Nothing else records what was rung.
+
+So this is a question for the owner about her till layout, not a question for the
+data — and it is a question with a cheap answer, because the till layout is hers to
+change. The recommendation to put to her, in one sentence: **add the alt-milk
+upcharge as a rung item rather than a modifier, or add it as both and tell us, and
+oat milk can be calculated tomorrow with no new software.**
+
+Meanwhile `cafeops modifier-audit` is the instrument that settles it on the first real
+sync, read-only, from the financial feed alone:
+
+- **Upcharge lines**: how many times an `(+upcharge)` / `(add-on)` item was rung. Non-zero
+  means the proxy works and oat milk can be promoted.
+- **Price residue**: a line whose `gross_pence` exceeds `menu_item.price_pence × qty`
+  by an unexplained amount is the *footprint of a modifier the financial endpoint did
+  not show us* — the money survives even though the modifier does not. Against the
+  fixture receipts it finds exactly one (Vanilla Latte M rung at 400 against a 360
+  list price: the `Oat milk` modifier's 40p).
+- It **must never drive depletion**, and does not: 40p is the alt-milk upcharge *and*
+  the syrup add-on price, so a residue of 40 is genuinely ambiguous between oat milk
+  and an extra pump of vanilla. Reported as evidence, never resolved to an ingredient.
+
+### 8K.5 If the answer ever has to be yes
+
+The order to do it in, so nobody re-derives this: (1) run `modifier-audit` on real
+data for a fortnight — it may show the upcharge items are already rung and the whole
+question is moot; (2) if not, ask for the till change, which costs the owner minutes;
+(3) only if both fail, poll `Get All Open Checks` for **one** trading day and count
+what fraction of that day's settled receipts were ever seen open. If that fraction is
+low — and reason 1 above says it will be — the stream cannot be built to be correct,
+and no amount of engineering changes that.
+
+### 8K.6 The POS edge, hardened against its first real day
+
+Every item below was reproduced from a **recorded** payload — `httpx.MockTransport` for
+the client, JSON directories for ingestion. No live call was made, and none is possible:
+`resilience.py` points at a `.invalid` host with visibly fake credentials.
+
+`cafeops pos probe` runs 12 recorded API scenarios; all 12 pass. What they fixed:
+
+| Failure | What the client did before | What it does now |
+|---|---|---|
+| 401 mid-window | **Aborted the window.** 401 was not retryable, and refresh only happened on *local* expiry — so a token that died earlier than `expires_in` promised lost the run | Clears the token, re-mints **once**, replays that one request. The window is not restarted |
+| 429/5xx on the **token** endpoint | Fatal. One throttle on OAuth killed a whole night | Retried like any other call. A 400 still stops at once — hammering a rejected refresh token locks accounts |
+| `Retry-After: 3600` | Obeyed literally, or ignored if it was an HTTP date | Both forms parsed, capped at 60s. `daily_sync`'s 3-day overlap makes waiting free |
+| A repeating page cursor | **Looped forever**, hammering an API already in trouble | Cursors are remembered; the first repeat raises `LightspeedPaginationError` *after* yielding the good pages, and `_MAX_PAGES` caps it regardless |
+| A 429 on the final attempt | Slept up to 30s, then failed anyway | No sleep when there is no attempt left to sleep before |
+
+Ingestion, replayable via `cafeops sync --fixtures-dir … --as-of …` (see
+`cafeops pos scenarios`):
+
+- **The same receipt twice in one window** — collapsed and counted when identical
+  (overlapping pages do this constantly). Two copies that *disagree* are **dropped
+  whole**: page order is not settlement order, so choosing is guessing. Same rule one
+  level down for a repeated `lightspeed_line_id`, and for a sharper reason — letting a
+  self-contradicting payload through the upsert would emit an `ADJUSTMENT` against a
+  sale written moments earlier in the same transaction, polluting an append-only ledger
+  with a correction for a change that never happened.
+- **A quantity that changed between syncs** — verified end to end for the first time.
+  Line `LSK-R2001-L1` at qty 1 was expanded to 6 `SALE` movements; re-syncing it at qty
+  2 left all 6 untouched and appended 6 `ADJUSTMENT` rows for the delta (invariant 9).
+  Re-running the *same* correction is a no-op — still 6 adjustments, not 12.
+- **Clock skew** — `sold_at` up to 5 minutes ahead of now is written with a warning (a
+  till clock running fast is ordinary); beyond that the line is **refused and named**. A
+  sale dated into the future depletes stock on a day that has not happened, where
+  neither today's drift nor today's order can see it.
+- **`--dry-run`** does the entire run — catalog match, de-duplication, skew checks,
+  correction arithmetic — and rolls back. Verified: 316 `lightspeed_id` backfills and 6
+  sale lines reported, and zero of either in the database afterwards. The code path is
+  the real one deliberately; a dry run down a different path inspects the wrong thing.
+- **`cafeops sync` is still safe to run twice**: first run `inserted 6`, second
+  `inserted 0; unchanged 6`, row count unchanged at 2 782.
+
+### 8K.7 The channel edge, against exports a human actually made
+
+`fixtures/messy/` holds ten hand-broken exports. The rule throughout is the brief's:
+**refuse rather than guess, and name the column and the row.**
+
+- **The delimiter is detected, not assumed.** `;` (Excel on a comma-decimal locale) and
+  tab (a paste out of a web table) both work. Scored by how many headers a declared
+  schema *recognises*, not by `csv.Sniffer`'s character counts — a quoted `"1,234.56"`
+  can out-score a comma file's own delimiter. **A tie is a refusal**: a wrong delimiter
+  shifts every value one column left, which is precisely how ad spend reaches the
+  commission column.
+- BOM, CRLF, `"1,234.56"` → 123456 pence, `£5.38` → 538, a blank rating → `None` not 0 —
+  all verified on one file that does all of it at once.
+- **A trailing totals row is recognised and skipped** with a note. It used to land in
+  the rejected pile complaining about a date, which made the rejected count mean two
+  things at once.
+- **`£` in a count column is a refusal, not a strip.** `orders` reading `£22.14` means a
+  money column was mapped onto a count; dropping the `£` would turn a mapping mistake
+  into 22 orders nobody questions.
+- **`1.234,56` is refused as a European decimal comma**, naming the locale rather than
+  complaining about sub-penny precision and sending the reader to the wrong place.
+- **A truncated row is rejected, not padded.** `zip(strict=False)` silently turned a
+  cut-off row into a row of NULLs — making "the platform did not report this"
+  (invariant 8) and "this line was cut off" the same statement.
+- **Row numbers are the file's own.** They used to drift by one per blank line above, so
+  a refusal pointed at a good row and looked like a parser bug.
+- **`DD/MM/YYYY` and `YYYY-MM-DD` mix freely.** `09/15/2026` is refused *with MM/DD named
+  as the likely cause*. A file whose slash dates are all `≤12/≤12` cannot prove its own
+  order, so it is read as British **and says so** — refusing would reject a legitimate
+  export of a quiet fortnight; assuming silently would move a day's revenue by months.
+- **Reordered and extra columns** are fine (headers are the key); the extra one is named
+  in a warning rather than ignored.
+- **An overlapping re-import stays idempotent on `(channel, date)`**: 14 rows, re-import
+  → `+0/~14`, still 14 rows; a revised re-export of two days updated them in place and
+  recorded the new `source_ref`.
+
+**One real bug found while checking the `net_pence` discipline.**
+`ChannelMetric.net_pence` returned `None` only when commission *and* ad spend were both
+missing — so a day reporting commission but no ad spend came back as
+`gross − commission − 0`: a contribution figure with an entire cost left out,
+flattering by exactly the amount nobody knew. `analytics.channel_performance` had it
+right independently (it drops an incomplete day whole), which is why nothing downstream
+was wrong — but **every docstring in `integrations/channels/` cites this property as the
+statement of the rule**, so the canonical example of the discipline was the one place
+breaking it. Now all three must be present. Verified through the CLI: adding two days
+that omit commission raised gross from £925.39 to £1,061.39 and left contribution at
+£575.44, with "contribution covers 14 of 16 day(s)" on the screen.
+
+---
+
+## 8L. The modifier blind spot corrupts an ingredient we CAN see
+
+§8K argues against building the real-time stream. This is the consequence of that "no"
+that nobody had written down, and it is worse than the obvious one.
+
+The obvious cost is that alt-milk consumption stays uncalculated, so oat milk can never
+earn tier A. That is a gap. **The second cost is an error**, and it lands on the flagship
+ingredient:
+
+With no modifier on a sale line, `resolve_recipe`'s `SUBSTITUTE` never fires, so every
+alt-milk drink depletes **whole milk** instead. Measured on the seeded ledger:
+
+```
+whole milk actually consumed        438.0 L
+alt milks consumed                  119.9 L
+whole milk if modifiers unseen      558.0 L
+over-depletion                        27.4%     against a 15% drift gate
+tier-A auto-order grant             REVOKED
+```
+
+Three things follow, in ascending order of how badly they hurt:
+
+1. Whole milk's theoretical on-hand is wrong by 27%.
+2. That is past the 15% threshold, so **the drift gate revokes whole milk's auto-order
+   grant — for a reason that has nothing to do with whole milk.** The gate is working
+   correctly on a corrupted input, which is the hardest kind of failure to diagnose:
+   every number in the drift report is accurate and the conclusion is still wrong.
+3. The error's *direction* means the system believes it is using more milk than it is, so
+   it orders roughly 14 L/week of **7-day-shelf-life** milk the café does not need. The
+   shelf-life cap (invariant 4) limits the damage per order and cannot prevent it.
+
+So "we cannot see modifiers" is not only a missing feature. **Not seeing them corrupts
+the ingredient we do see**, and it does so silently, in the direction that generates
+waste. That is the honest case for eventually paying for the real-time stream, or for
+changing the till layout so the upcharge items are rung (§8K).
+
+### 8L.1 The `+upcharge` proxy: already built, almost certainly not rung
+
+`Oat milk (+upcharge)` and `Coconut milk (+upcharge)` exist as menu items, `cafeops sync`
+already backfills their `lightspeed_id`, and their manual recipe *is* the substitution
+delta — **+0.2 L oat, −0.2 L whole milk** (workbook recipe 299). If the till rang them,
+oat milk would be calculated today with no new code and whole milk would be credited back.
+
+Rung **0 times** in the data we hold — and that zero proves almost nothing: 2,776 of
+2,780 lines are seeded, and the seed models alt milk exclusively as a modifier, so the
+proxy could not appear. The only real evidence is the owner's own note on recipes 281/299:
+*"used as modifier, not standalone drink"* — i.e. it is not rung.
+
+Two limits recorded rather than hidden: the proxy is **size-blind** (a flat 0.2 L against
+0.12/0.18/0.25 by size), and **double-counting is real** if a receipt ever carries both
+paths — now detected structurally by `cafeops sync` (a menu item with a negative manual
+recipe line) rather than by matching names.
+
+**This is a question about the café's till layout, not about our code**, and it costs the
+owner minutes to answer. It is the cheapest available fix for the largest silent error in
+the system.
+
+### 8L.2 Two bugs this found, one of them in the model
+
+**`ChannelMetric.net_pence` was flattering contribution.** It returned `None` only when
+commission *and* ad spend were **both** unknown — so a day with commission recorded but
+ad spend missing returned `gross − commission − 0`, understating cost by exactly the
+unknown amount. `analytics.channel_performance` independently got it right, so nothing
+downstream was wrong, but every docstring in `integrations/channels/` cites that property
+as *the statement of the rule*. It is the same species as §8E and §8C: a plausible number
+with no error anywhere.
+
+**The seed understated revenue by £236.40.** `gross_pence` was written as the bare item
+price, so the 40p alt-milk upcharge was never counted across 591 of 2,776 lines. That
+figure feeds the channel and P&L views, so any margin computed against it looked better
+than the real one — again the direction of error nobody questions. Fixed; the seed now
+reports the upcharge total so it cannot silently drift again.
+
+---
+
 ## 9. Module layout deviations
 
 | Spec | Actual | Why |
@@ -1218,6 +1541,13 @@ Three deliberate choices:
    - This is a genuine product limitation, not an implementation gap. It should be
      stated to the owner plainly: alt-milk consumption cannot be tracked from
      end-of-day sales data alone.
+
+   **Phase 3 closed the follow-on question: the real-time stream is NOT being built.
+   See §8K for the argument, the measured cost of that decision (whole milk is
+   over-depleted by 27% and loses its tier-A grant, which matters more than oat milk
+   ever did), the `+upcharge` substitute that is already wired end to end, and
+   `cafeops modifier-audit`, the read-only probe that settles on the first real sync
+   whether the substitute arrives.**
 
 3. **ANSWERED — K-Series does NOT expose ingredient-level recipes.** It has a
    UI-only Recipes feature (Inventory app → Produce → Recipes) with no public REST
