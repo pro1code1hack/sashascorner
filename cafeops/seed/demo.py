@@ -625,6 +625,35 @@ RESTOCK_TRIGGER_DAYS = Decimal("3")
 RESTOCK_TARGET_DAYS = Decimal("8")
 COUNT_EVERY_DAYS = 7
 
+#: A deliberate supply disruption, so spec 4.4's emergency path has a real shortfall to
+#: find. Without this, the restock cadence below (trigger at 3 days' cover, top up to 8)
+#: is MORE generous than any real supplier's delivery gap -- Brakes' M/W/F round is at
+#: most a 2-day gap from a Monday order -- so on-hand for a moving ingredient never
+#: drops far enough to run out before the next scheduled delivery, and
+#: `sourcing.route_to_retail` (correctly) never has a case to route.
+#:
+#: This models one real event instead: Brakes' round is disrupted for a few days
+#: (breakdown, missed cutoff -- does not matter which) and only manages a small rushed
+#: top-up each day rather than its usual full delivery, so `Whole milk` genuinely runs
+#: down under the Brakes gap by the next order run. `reduced_packs` (not zero) is
+#: deliberate: a full stockout would be the same finding with a less realistic shape --
+#: a real café is usually left with a thin trickle rather than nothing at all, and it
+#: keeps every figure in the demo non-negative. Keyed by ingredient NAME rather than id:
+#: this file runs before ids are known to any caller and the legacy import assigns them.
+#:
+#: TWO windows for Whole milk, not one: `emergency-report`'s whole point (spec 4.4) is
+#: a PATTERN over time, not a single incident -- a report that can only ever show one
+#: row is not the report the spec describes. Both land the Monday before a scheduled
+#: Brakes delivery, one bad fortnight apart, so the report has a real trend to show.
+RESTOCK_DISRUPTIONS: dict[str, tuple[tuple[date, date, int], ...]] = {
+    # (disruption start, disruption end, packs delivered per trigger instead of the
+    # full target -- a rushed top-up, not the usual restock).
+    "Whole milk": (
+        (date(2026, 8, 20), date(2026, 8, 23), 2),
+        (date(2026, 9, 15), date(2026, 9, 20), 2),
+    ),
+}
+
 
 def simulate_restocking(session: Session, report: DemoReport | None = None) -> tuple[int, int]:
     """Walk the demo window writing DELIVERY movements and periodic counts.
@@ -667,11 +696,18 @@ def simulate_restocking(session: Session, report: DemoReport | None = None) -> t
             continue
         avg_daily = total / Decimal(span)
         drift = COUNT_DRIFT.get(ingredient.name, DEFAULT_DRIFT)
+        windows = RESTOCK_DISRUPTIONS.get(ingredient.name, ())
 
         for offset in range(span):
             day = first_day + timedelta(days=offset)
+            disrupted_window = next((w for w in windows if w[0] <= day <= w[1]), None)
             if running < avg_daily * RESTOCK_TRIGGER_DAYS:
-                packs = max(1, math.ceil((avg_daily * RESTOCK_TARGET_DAYS - running) / pack))
+                if disrupted_window is not None:
+                    packs = disrupted_window[2]
+                    note = f"DISRUPTED delivery, {packs} pack(s) rushed (not the full top-up)"
+                else:
+                    packs = max(1, math.ceil((avg_daily * RESTOCK_TARGET_DAYS - running) / pack))
+                    note = f"synthetic delivery, {packs} pack(s)"
                 delivered = Decimal(packs) * pack
                 session.add(
                     StockMovement(
@@ -682,7 +718,7 @@ def simulate_restocking(session: Session, report: DemoReport | None = None) -> t
                             day, time(hour=7, minute=30), tzinfo=tz
                         ).astimezone(UTC),
                         ref_type="demo_restock",
-                        note=f"synthetic delivery, {packs} pack(s)",
+                        note=note,
                     )
                 )
                 running += delivered

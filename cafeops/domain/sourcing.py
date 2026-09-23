@@ -65,6 +65,7 @@ __all__ = [
     "choose_source",
     "choose_sources",
     "cost_to_cover",
+    "emergency_premium_pence",
     "pack_qty_in",
     "route_to_retail",
     "unit_price_in",
@@ -513,6 +514,27 @@ class EmergencyRequest:
         return self.available_qty / self.daily_rate
 
 
+def emergency_premium_pence(line: EmergencyLine) -> Decimal | None:
+    """`line.premium_pence`, floored at zero. The number spec 4.4's log actually wants.
+
+    `EmergencyLine.premium_pence` (`domain/types.py`, integrator-owned) is a plain
+    `(retail - preferred) * qty` -- honest, but it goes negative whenever the retail
+    alternate happens to be unit-CHEAPER than the scheduled supplier. Oat milk is
+    exactly this case in the seeded data: Tesco at 190p/L against Booker's 250p/L. That
+    is real information, but it is not a premium, and letting it through would let a
+    cheap emergency quietly cancel out an expensive one in the total -- the opposite of
+    invariant 8's "never understate the figure this table exists to make". `route_to_retail`
+    adds a note for the case instead: it is a sourcing finding (make Tesco the
+    preferred supplier for this line), not a cost to log. Every reader of a premium --
+    the plan total, the database write, the CLI -- goes through this floor so none of
+    them can show a negative number by forgetting to apply it.
+    """
+    premium = line.premium_pence
+    if premium is None:
+        return None
+    return premium if premium >= _ZERO else _ZERO
+
+
 @dataclass(frozen=True, slots=True)
 class EmergencyPlan:
     """What must be bought at retail today, and what that decision cost.
@@ -529,13 +551,15 @@ class EmergencyPlan:
         """Sum of the premiums, or None when any line cannot price its own premium.
 
         None rather than a partial sum: a premium total missing two of five lines
-        understates the argument it exists to make (invariant 8's reasoning).
+        understates the argument it exists to make (invariant 8's reasoning). Each
+        line's own premium is floored at zero first (`emergency_premium_pence`) so a
+        retail alternate that happened to be cheaper cannot drag the total down.
         """
         if not self.lines:
             return _ZERO
         total = _ZERO
         for line in self.lines:
-            premium = line.premium_pence
+            premium = emergency_premium_pence(line)
             if premium is None:
                 return None
             total += premium
@@ -608,6 +632,22 @@ def route_to_retail(
             else None
         )
         waiting_for = request.supplier_name or "the scheduled supplier"
+        if (
+            retail_price is not None
+            and preferred_price is not None
+            and retail_price < preferred_price
+        ):
+            # Still routed -- the shelf runs out either way -- but this is not the cost
+            # spec 4.4's log is arguing about. Said here so it is not lost, and floored
+            # to zero everywhere a premium is read (`emergency_premium_pence`).
+            notes.append(
+                f"{request.ingredient_name}: {retail_supplier_name} at "
+                f"{_per_unit(retail_price, request.unit)} is actually CHEAPER than {waiting_for} "
+                f"at {_per_unit(preferred_price, request.unit)} on this line -- routed for the "
+                "shortfall as normal, but that is a SOURCING FINDING (spec 4.4's "
+                "multi-supplier choice), not an emergency premium, and is logged at "
+                "£0.00 rather than as a negative number."
+            )
         lines.append(
             EmergencyLine(
                 ingredient_id=request.ingredient_id,

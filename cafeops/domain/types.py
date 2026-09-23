@@ -842,10 +842,42 @@ class EmergencyLine:
     preferred_unit_price_pence: Decimal | None = None
 
     @property
-    def premium_pence(self) -> Decimal | None:
+    def raw_premium_pence(self) -> Decimal | None:
+        """Retail less scheduled-supplier price, signed. Can be NEGATIVE.
+
+        Negative means retail is genuinely cheaper for this line. That is a sourcing
+        finding worth acting on -- the preferred supplier is the wrong default -- but
+        it is not an emergency premium, and it must never be netted off the cost of
+        panic-buying. Use `premium_pence` for money.
+        """
         if self.retail_unit_price_pence is None or self.preferred_unit_price_pence is None:
             return None
         return (self.retail_unit_price_pence - self.preferred_unit_price_pence) * self.qty
+
+    @property
+    def premium_pence(self) -> Decimal | None:
+        """The extra actually paid by going to retail. Never negative.
+
+        Floored here rather than at each call site. Three separate agents have now
+        reached for a side channel because a shared value did not carry its own rule,
+        and this is the same shape: a raw signed figure that every caller must
+        remember to clamp. One that forgets under-reports the cost of panic-buying,
+        and could even make a week of emergencies look like a saving.
+        """
+        raw = self.raw_premium_pence
+        if raw is None:
+            return None
+        return raw if raw > 0 else Decimal("0")
+
+    @property
+    def retail_is_cheaper(self) -> bool:
+        """True when this line would have been cheaper at retail all along.
+
+        Not a premium -- a sourcing finding. Surfaced separately so it is arguable
+        rather than silently absorbed into a zero.
+        """
+        raw = self.raw_premium_pence
+        return raw is not None and raw < 0
 
 
 # ==========================================================================

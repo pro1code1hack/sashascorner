@@ -2013,9 +2013,18 @@ def _sim_print_emergency(session, result, *, order_date, commit: bool) -> None:
     """The Tesco run: what could not wait, and the premium it cost. Spec 4.4."""
     from datetime import UTC, datetime
     from datetime import time as dtime
+    from decimal import ROUND_HALF_UP
 
     from cafeops.domain.ordering import pounds
+    from cafeops.domain.sourcing import emergency_premium_pence
     from cafeops.services.build_order import record_emergency_lines
+
+    def _pence(value: Decimal) -> int:
+        # ROUND_HALF_UP, not int() truncation: `record_emergency_lines` rounds the same
+        # way before writing `tesco_routing.premium_pence`, and a live figure that
+        # truncates while the logged one rounds would show two different premiums for
+        # the same routing a moment apart (invariant 8 -- the numbers must agree).
+        return int(value.to_integral_value(rounding=ROUND_HALF_UP))
 
     plan = result.emergency
     if not plan.lines and not plan.notes:
@@ -2025,7 +2034,7 @@ def _sim_print_emergency(session, result, *, order_date, commit: bool) -> None:
         console.print(
             f"\n[bold red]Tesco emergency routing[/bold red]  {len(plan.lines)} line(s)"
             + (
-                f", retail premium {pounds(int(premium))} over the scheduled suppliers"
+                f", retail premium {pounds(_pence(premium))} over the scheduled suppliers"
                 if premium is not None
                 else ", premium not computable -- a unit price is missing"
             )
@@ -2044,8 +2053,8 @@ def _sim_print_emergency(session, result, *, order_date, commit: bool) -> None:
                     else ""
                 )
                 + (
-                    f"  = [red]premium {pounds(int(line.premium_pence))}[/red]"
-                    if line.premium_pence is not None
+                    f"  = [red]premium {pounds(_pence(emergency_premium_pence(line)))}[/red]"
+                    if emergency_premium_pence(line) is not None
                     else ""
                 )
             )
@@ -2714,6 +2723,39 @@ def emergency_report(
                 f"[yellow]{count - priced} routing(s) carry no premium because a unit "
                 "price was missing, so the figure above is a FLOOR, not the total.[/yellow]"
             )
+
+        # Frequency and cumulative cost over time -- spec 4.4's actual argument. A list
+        # of routings shows THAT it happened; this shows whether it is getting worse,
+        # which is what turns the report into a case for changing the cadence rather
+        # than a curiosity about one bad week. Bucketed by local ISO week (Mon-start)
+        # because the ordering cadence being argued about is itself weekly.
+        all_rows = repo.emergency_log(since=since)  # newest first
+        buckets: dict[date, list[int]] = {}
+        for row in reversed(all_rows):  # oldest first, so cumulative reads left-to-right
+            local_day = row.occurred_at.astimezone(settings.tz).date()
+            week_of = local_day - td(days=local_day.isoweekday() - 1)
+            bucket = buckets.setdefault(week_of, [0, 0])
+            bucket[0] += 1
+            bucket[1] += row.premium_pence or 0
+        timeline = Table(title="frequency and cumulative cost over time")
+        timeline.add_column("Week of")
+        timeline.add_column("Routings", justify="right")
+        timeline.add_column("Premium", justify="right")
+        timeline.add_column("Cumulative", justify="right")
+        running_total = 0
+        for week_of in sorted(buckets):
+            week_count, week_premium = buckets[week_of]
+            running_total += week_premium
+            timeline.add_row(
+                str(week_of), str(week_count), pounds(week_premium), pounds(running_total)
+            )
+        console.print(timeline)
+        if len(buckets) < 2:
+            console.print(
+                "[dim]Only one week logged so far -- a trend needs more than one point. "
+                "Every future `cafeops simulate --commit` run adds to this table.[/dim]"
+            )
+
         table = Table(title="by ingredient")
         table.add_column("Ingredient")
         table.add_column("Routings", justify="right")
@@ -2740,6 +2782,101 @@ def emergency_report(
             "six of the eight suppliers' lead times are still invented placeholders, so "
             "confirming those is where it starts.[/dim]"
         )
+
+
+# --------------------------------------------------------------------------
+# serve / api-fixtures  --  the read-only API the web app consumes (spec 10)
+# --------------------------------------------------------------------------
+
+
+@app.command()
+def serve(
+    host: Annotated[str, typer.Option("--host", help="Bind address.")] = "127.0.0.1",
+    port: Annotated[int, typer.Option("--port", help="Bind port.")] = 8000,
+    reload: Annotated[
+        bool, typer.Option("--reload/--no-reload", help="Auto-reload on code change.")
+    ] = False,
+) -> None:
+    """Run the read-only back-office API under uvicorn. ONE worker, deliberately.
+
+    Spec 3: one box, one SQLite file, one writer. A second worker would contend on the
+    same file and make things worse, so there is no `--workers` flag to reach for
+    (ARCHITECTURE.md 8F.8). TLS belongs to Caddy in front, not here.
+
+    Binds to loopback by default. The app is behind a reverse proxy in the real
+    deployment, and a back office listening on 0.0.0.0 by default is one firewall rule
+    away from being the whole business on the open internet.
+    """
+    import uvicorn
+
+    from cafeops.api.security import api_password
+
+    if api_password() is None:
+        console.print(
+            "[yellow]CAFEOPS_API_PASSWORD is not set.[/yellow] The server will start, but "
+            "every endpoint except /api/health will answer 503 rather than serve the "
+            "business unauthenticated. Set it in .env and restart.\n"
+            "[dim]Spec 1: a single shared password, no user management.[/dim]"
+        )
+    console.print(
+        f"[bold]cafeops api[/bold] on http://{host}:{port}  "
+        f"docs http://{host}:{port}/api/docs  db {settings.database_url}"
+    )
+    uvicorn.run(
+        "cafeops.api.app:app",
+        host=host,
+        port=port,
+        reload=reload,
+        workers=1,
+        log_level="info",
+    )
+
+
+@app.command(name="api-fixtures")
+def api_fixtures(
+    out: Annotated[
+        Path, typer.Option("--out", help="Directory to write the JSON fixtures into.")
+    ] = Path("web/fixtures"),
+    password: Annotated[
+        str | None,
+        typer.Option(
+            "--password",
+            help="Shared password to present. Defaults to CAFEOPS_API_PASSWORD.",
+        ),
+    ] = None,
+) -> None:
+    """Dump one REAL JSON response per endpoint, so the frontend can build against fixtures.
+
+    Not hand-written samples: the app is driven in-process over ASGI and each file is
+    what the endpoint actually returned. A fixture that is generated by running the code
+    cannot drift from it silently, which a checked-in sample always eventually does.
+
+    Auth is exercised rather than bypassed -- the dump presents the password as a client
+    would, so a 401 in `index.json` means the frontend would get one too.
+    """
+    from cafeops.api.examples import dump_examples
+    from cafeops.api.security import api_password
+
+    secret = password or api_password()
+    if secret is None:
+        console.print(
+            "[yellow]no password: every protected endpoint will dump its 503, which is "
+            "itself worth having as a fixture but is not what you want. Pass --password "
+            "or set CAFEOPS_API_PASSWORD.[/yellow]"
+        )
+    written = dump_examples(out, password=secret)
+    table = Table(title=f"{len(written)} fixture(s) -> {out}", title_style="bold")
+    table.add_column("Endpoint", no_wrap=True)
+    table.add_column("Status", justify="right")
+    table.add_column("Bytes", justify="right")
+    for name, status, size in written:
+        style = "green" if status == 200 else "red"
+        table.add_row(name, f"[{style}]{status}[/{style}]", f"{size:,}")
+    console.print(table)
+    bad = [name for name, status, _ in written if status != 200]
+    if bad:
+        console.print(f"[red]{len(bad)} endpoint(s) did not return 200: {', '.join(bad)}[/red]")
+    console.print("[dim]index.json lists every file with the query behind it.[/dim]")
 
 
 if __name__ == "__main__":

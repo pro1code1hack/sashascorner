@@ -58,6 +58,7 @@ from cafeops.domain.sourcing import (
     SourcingPolicy,
     SourcingRequest,
     choose_sources,
+    emergency_premium_pence,
     route_to_retail,
 )
 from cafeops.domain.stock import theoretical_on_hand
@@ -898,9 +899,12 @@ def record_emergency_lines(
                 preferred_unit_price_pence=_int_or_none(line.preferred_unit_price_pence),
                 would_be_supplier_id=result.would_be_supplier.get(line.ingredient_id),
                 qty=line.qty,
-                # The exact premium, rounded once. See the repository for why deriving it
-                # from the two integer unit-price columns is a penny out per routing.
-                premium_pence=_int_or_none(line.premium_pence),
+                # The exact premium, rounded once, floored at zero. See the repository
+                # for why deriving it from the two integer unit-price columns is a
+                # penny out per routing, and `emergency_premium_pence` for why a retail
+                # alternate that happened to be unit-cheaper must never log a negative
+                # premium -- that is a sourcing finding, not a cost (spec 4.4).
+                premium_pence=_int_or_none(emergency_premium_pence(line)),
             )
         )
     return written

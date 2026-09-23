@@ -54,6 +54,12 @@ ignore = ["B008"]        # typer uses function calls in argument defaults
 
 [tool.ruff.lint.per-file-ignores]
 "migrations/env.py" = ["E501"]
+# The bot is deliberately written in Russian (spec 10.0), so RUF001/2/3 fire on
+# essentially every Cyrillic character that resembles a Latin one -- "с" in "шт",
+# "г" in "кг", and so on. These rules exist to catch a homoglyph smuggled into
+# ASCII text; here the Cyrillic IS the text. Left on everywhere else, because a
+# stray Cyrillic "с" in an English identifier is exactly the bug they are for.
+"cafeops/bot/*" = ["RUF001", "RUF002", "RUF003"]
 
 [tool.mypy]
 python_version = "3.12"
