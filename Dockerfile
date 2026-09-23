@@ -85,6 +85,11 @@ CMD ["cafeops", "serve", "--host", "0.0.0.0", "--port", "8000"]
 # missing `web/dist` would serve the previous release -- or a blank page -- with nothing
 # saying so. Baking it in makes the image the single artefact that is either right or
 # does not build.
+# NOTE: `runtime` above is the application image. These two stages come AFTER it, so
+# the Dockerfile's *default* target is `caddy` -- which is why docker-compose.yml pins
+# `target: runtime` on every app service explicitly. Appending a stage here without that
+# pin silently makes every service build the wrong image, and the failure looks like a
+# missing executable rather than a wrong image.
 FROM node:22-alpine AS web-builder
 WORKDIR /web
 COPY web/package.json web/package-lock.json ./

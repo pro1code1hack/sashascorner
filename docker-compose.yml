@@ -20,7 +20,12 @@
 
 services:
   api:
-    build: .
+    build:
+      context: .
+      # Named explicitly, never left to "the last stage wins": appending the
+      # frontend build stages silently changed the default target and these four
+      # services started building the Caddy image instead of the app.
+      target: runtime
     image: cafeops:latest
     command: ["cafeops", "serve", "--host", "0.0.0.0", "--port", "8000"]
     restart: unless-stopped
@@ -40,7 +45,12 @@ services:
       start_period: 10s
 
   bot:
-    build: .
+    build:
+      context: .
+      # Named explicitly, never left to "the last stage wins": appending the
+      # frontend build stages silently changed the default target and these four
+      # services started building the Caddy image instead of the app.
+      target: runtime
     image: cafeops:latest
     command: ["cafeops", "bot-run"]
     restart: unless-stopped
@@ -59,7 +69,12 @@ services:
     # optional-until-configured service, not a bug in this file.
 
   scheduler:
-    build: .
+    build:
+      context: .
+      # Named explicitly, never left to "the last stage wins": appending the
+      # frontend build stages silently changed the default target and these four
+      # services started building the Caddy image instead of the app.
+      target: runtime
     image: cafeops:latest
     # `cafeops.jobs.scheduler:main` is the documented long-running entry point (see the
     # `cafeops jobs` command's own docstring) but it is not exposed as a CLI subcommand,
@@ -107,7 +122,12 @@ services:
   # See deploy/backup.sh for what "off-box" and "verified" mean here, and
   # docs/OPERATIONS.md for the restore drill that was actually run once, with output.
   backup:
-    build: .
+    build:
+      context: .
+      # Named explicitly, never left to "the last stage wins": appending the
+      # frontend build stages silently changed the default target and these four
+      # services started building the Caddy image instead of the app.
+      target: runtime
     image: cafeops:latest
     entrypoint: ["/app/deploy/backup-loop.sh"]
     restart: unless-stopped
