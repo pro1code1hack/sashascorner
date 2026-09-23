@@ -805,6 +805,142 @@ make things worse. Reverse proxy yes, load balancer no.
 
 ---
 
+## 8G. v2 Phase 1: what the four agents found
+
+All four ran against isolated databases after the shared-database incident in v1
+(§8A.4). One stalled; see §8G.5.
+
+### 8G.1 Two agents hit the same design flaw, from opposite ends
+
+The stock agent needed to write a `batch_id` onto a ledger row; the composition agent
+needed a `season_id` to reach `resolve_recipe`. Neither field existed on the shared
+dataclass, so both did the same thing: passed the value through a **side channel**.
+
+That produces the failure this file already warns about in §7.1 — *every caller must
+remember*. A caller that omits the argument loses the behaviour **silently**: no
+error, no warning, just a batch-less ledger row or a missing out-of-season notice.
+
+Worse, the stock agent's workaround opened a **second writer into `stock_movement`**.
+Two writers into an append-only ledger diverge eventually, and that table is the last
+place it should be allowed to happen.
+
+Both fixed by putting the field where it belongs: `MovementSpec.batch_id` and
+`VariantOptionSpec.season_id` / `MenuItemSpec.season_id`, populated by the repository.
+`SqlStockRepository.append_movements` is the single write path again, and
+`append_linked_movements` now delegates to it. Verified both paths persist an identical
+`batch_id`.
+
+**The general point:** when two independent agents invent the same workaround, the
+contract is wrong, not the agents.
+
+### 8G.2 The stock agent corrected its own first cut
+
+`drift_attribution` operates on the **absolute** gap. That is right for the gate, which
+should distrust drift in either direction. It is wrong for *attribution*: a negative
+gap means the shelf holds **more** than the ledger knows — an unrecorded delivery, not
+waste. Booking it as loss would invent expiry that never happened.
+
+It now separates `unexplained_loss_qty` from `surplus_qty` and reports the surplus as
+its own sentence. Worth recording because the distinction is easy to miss and the
+consequence is a fabricated waste figure.
+
+### 8G.3 `opened_at` is stamped by the first FIFO draw
+
+Open life shortens a batch's effective expiry — a 270-day oat carton lasts 5 days once
+opened — but nothing was setting `opened_at`. The stock agent chose the first FIFO draw,
+reasoning that drawing from a carton *is* opening it, and that this is the only
+mechanism which fires without anyone remembering anything at 06:30.
+
+It explicitly rejected asking at the weekly count: open-life windows are 3–5 days, so
+the date would arrive after the stock it was meant to protect had already expired.
+`cafeops open-batch` covers a carton opened out of FIFO order, and never moves an
+existing `opened_at` — the first opening starts the clock.
+
+### 8G.4 The agent boundary rests on four devices, not a prompt
+
+Spec §9 says the agent must never write to stock, orders or composition. The channels
+agent implemented that as four independent mechanisms rather than an instruction:
+
+1. an explicit tool allowlist — no `getattr`, no dynamic import, no fallback;
+2. no writable object in scope (`ToolContext` carries read-only repositories only);
+3. a connection that **raises** on any non-read statement, catching ORM flush and raw SQL;
+4. an audit writer scoped to the single table it is allowed to append to.
+
+All four demonstrated firing: 9 refusals against 1 success, and after 54 log rows
+`stock_movement` was unchanged, every PO still `DRAFT`, and `waste_factor` untouched.
+
+Its narration guard is the part worth copying. Rather than trusting the model not to
+compute, it **verifies every figure the text contains** against tool-computed values.
+Offered a narration containing an invented "GBP 999", it caught it and marked the whole
+output untrustworthy. It also found a bug in its own guard: stripping `%` let `18%` past
+a small-integer bypass, and a percentage is always a claim, never an incidental count.
+
+### 8G.5 The ordering agent stalled; its work was verified by hand
+
+It died during its final verification script, after the code had landed. Rather than
+trust an unreported agent, each deliverable was re-verified directly:
+
+| Claim | Verified |
+|---|---|
+| Shelf-life cap (invariant 4) | Milk 68.4 L uncapped over 10d → **33.8 L over 5d**, reason on the line and persisted to `po_line.cap_reason` |
+| Perishable-safe top-up (invariant 5) | Two perishables **named and excluded** from a min-order top-up |
+| Sourcing, alternate wins | Oat milk switched to Tesco, **24% cheaper per litre, £3.60** on the line |
+| Sourcing, alternate loses | The deliberately worse alternates (Monolith beans, Amazon cups) correctly kept |
+| Invariant 1 | Every order still `DRAFT` |
+| `cutoff_time` | A 12:10 order against a noon cutoff slips one day |
+
+### 8G.6 A season-opening under-order, found while verifying the above
+
+`seasonal_forecast` computed year-on-year growth as `current / prior`. With **no sales
+yet this season** that is `0 / prior = 0`, which clamped to the `growth_min` floor of
+0.5 and **halved the forecast**.
+
+That fires at exactly the wrong moment: the start of a season, when you are stocking up
+for demand that has not appeared yet. The result is a guaranteed stockout every season
+opening — the one failure the whole system exists to prevent.
+
+The author had already handled the mirror case (`prior <= 0` returns 1.0, with a
+docstring saying *"inventing growth from a division by nothing is worse than admitting
+there is no growth figure"*) and simply missed the symmetry. A zero cannot distinguish
+"the season has not started" from "we dropped this line", so it is not evidence of
+decline.
+
+Fixed: `current <= 0` carries last year's level across unscaled. The same guard now
+covers a ratio read off fewer than `min_growth_days` (14) — which the author's own clamp
+note already called *"noise before it is a trend"*.
+
+Verified the growth maths is otherwise exact on like-for-like data: **1.00x, 1.20x and
+0.50x** for flat, +20% and −50%. An earlier alarming result (a forecast rising while
+demand halved) turned out to be an artefact of the test data, not the code — the prior
+season had only one month populated, so 41 days of current were being compared against
+11 days of prior. Worth recording as a caution: a synthetic scenario that is not
+like-for-like will slander correct code.
+
+### 8G.7 Three defects in Phase 0's own files
+
+Found by agents, not by me:
+
+1. **`integrations/suppliers/__init__.py` was empty**, so `adapter_for()` raised
+   `LookupError` for every channel unless the caller happened to import the `channels`
+   module first — the registry is populated by an import side effect. The package now
+   registers its adapters on import.
+2. **Cups Direct was seeded as `PORTAL`**, which routed dispatch to the "not configured
+   yet" adapter. It is a web shop with no API, so the honest channel is `BROWSER_AGENT`
+   — the one that fills a basket and stops before checkout.
+3. A NULL `expired_qty_in_window` was reported, but had **already been fixed** by
+   another agent landing afterwards. Verified rather than re-fixed, which is the point:
+   in a concurrent fan-out, a report is a snapshot of a moving tree.
+
+### 8G.8 Still not exercised: the retail emergency path
+
+`tesco_routing` has zero rows after a committed simulation, and `emergency-report`
+correctly says so. The logic declines sensibly when Tesco does not stock an item, but
+nothing in the seeded data produces a real retail routing — so spec §4.4's most valuable
+report, *how often and how much extra panic-buying costs*, has never been proven to
+work. Assigned as follow-up work.
+
+---
+
 ## 9. Module layout deviations
 
 | Spec | Actual | Why |
