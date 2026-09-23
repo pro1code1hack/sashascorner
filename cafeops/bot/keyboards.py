@@ -30,17 +30,23 @@ def order_kb(view: OrderView) -> InlineKeyboardMarkup:
         builder.row(
             InlineKeyboardButton(
                 text=f"{line.ingredient_name}: {line.packs}",
-                callback_data=OrderCB(action="reset", po_id=view.po_id, line_id=line.po_line_id).pack(),
+                callback_data=OrderCB(
+                    action="reset", po_id=view.po_id, line_id=line.po_line_id
+                ).pack(),
             )
         )
         builder.row(
             InlineKeyboardButton(
                 text=f.BTN_ORDER_MINUS,
-                callback_data=OrderCB(action="dec", po_id=view.po_id, line_id=line.po_line_id).pack(),
+                callback_data=OrderCB(
+                    action="dec", po_id=view.po_id, line_id=line.po_line_id
+                ).pack(),
             ),
             InlineKeyboardButton(
                 text=f.BTN_ORDER_PLUS,
-                callback_data=OrderCB(action="inc", po_id=view.po_id, line_id=line.po_line_id).pack(),
+                callback_data=OrderCB(
+                    action="inc", po_id=view.po_id, line_id=line.po_line_id
+                ).pack(),
             ),
         )
     builder.row(

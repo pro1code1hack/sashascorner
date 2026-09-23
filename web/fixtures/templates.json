@@ -1,0 +1,23 @@
+[
+  {
+    "id": 1,
+    "name": "Flavoured Latte",
+    "category": "Latte / flavoured latte",
+    "sizes": [
+      "S",
+      "M",
+      "XL"
+    ],
+    "axes": [
+      "Flavour"
+    ],
+    "item_count": 9,
+    "component_count": 10,
+    "prep_seconds_by_size": {
+      "S": 75,
+      "M": 85,
+      "XL": 100
+    },
+    "prep_seconds_is_estimate": true
+  }
+]

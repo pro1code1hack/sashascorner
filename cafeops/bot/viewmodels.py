@@ -275,8 +275,7 @@ class OrderView:
             line
             for line in self.lines
             if line.cap is not None
-            and line.cap.kind
-            not in (CapKind.TOP_UP_MINIMUM, CapKind.TOP_UP_FREE_DELIVERY)
+            and line.cap.kind not in (CapKind.TOP_UP_MINIMUM, CapKind.TOP_UP_FREE_DELIVERY)
         )
 
     @property
@@ -441,6 +440,10 @@ class DigestView:
     count_overdue_days: int
     drift_alerts: tuple[DriftAlertView, ...]
     checklist_due: tuple[ChecklistItemView, ...]
+    #: Tier C items whose MOST RECENT answer was «running low». Without this a
+    #: checklist answer goes nowhere: tier C has no par level and no forecast, so the
+    #: only thing that can act on a LOW is a person reading it next to the orders.
+    checklist_low: tuple[ChecklistItemView, ...]
     telegram_configured: bool
 
 

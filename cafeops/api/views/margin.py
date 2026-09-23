@@ -174,7 +174,7 @@ def margin_view(
         loaded_hourly_rate_pence=loaded_hourly_rate_pence,
     )
     sources: dict[int, PriceSource | None] = dict(
-        session.execute(select(MenuItemCost.menu_item_id, MenuItemCost.cost_source)).all()
+        session.execute(select(MenuItemCost.menu_item_id, MenuItemCost.cost_source)).tuples().all()
     )
 
     ranking = view.ranking

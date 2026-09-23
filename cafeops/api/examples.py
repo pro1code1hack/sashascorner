@@ -54,7 +54,12 @@ EXAMPLES: tuple[Example, ...] = (
         "POST",
         "/api/templates/1/preview",
         body={"component_id": 2, "qty_by_size": {"S": "0.14", "M": "0.20", "XL": "0.30"}},
-        note="Impact preview. Writes nothing.",
+        note=(
+            "Impact preview. Writes nothing. `component_id` 2 is the MILK slot of the freshly "
+            "seeded Flavoured Latte; once that slot has been edited the id has moved on and "
+            "this example returns 409 component_superseded -- which is the right fixture for "
+            "that case. `GET /api/templates/1` lists the live ids."
+        ),
     ),
     Example(
         "stock-tier-a",
@@ -78,6 +83,32 @@ EXAMPLES: tuple[Example, ...] = (
         "/api/orders/draft",
         note=(
             "N drafts by supplier, with cap reasons and the Tesco emergency list. Writes nothing."
+        ),
+    ),
+    Example(
+        "orders-draft-capped",
+        "GET",
+        "/api/orders/draft",
+        params={"order_date": "2026-09-17"},
+        note=(
+            "Invariant 4 on the wire: a Whole milk line capped at 5 days by shelf life, with "
+            "`cap_reason`, `cap_detail` and `capped_out_qty`. A past order_date is used "
+            "because whether the cap produces a LINE depends on the day's stock -- on a day "
+            "when the shortened window is already covered, the cap still applies and the "
+            "candidate appears under `skipped` with `is_capped` instead. Both shapes matter "
+            "and this fixture guarantees the first one exists."
+        ),
+    ),
+    Example(
+        "orders-draft-emergency",
+        "GET",
+        "/api/orders/draft",
+        params={"order_date": "2026-09-21"},
+        note=(
+            "The Tesco emergency list with a real line on it: what could not wait for a "
+            "scheduled delivery, and the retail premium that cost. A past order_date because "
+            "the seeded shortfalls are a disrupted supplier round, not an everyday state -- "
+            "on most days `emergency` is correctly empty, which is the other shape."
         ),
     ),
     Example(

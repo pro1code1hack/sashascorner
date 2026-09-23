@@ -36,6 +36,12 @@ class Settings(BaseSettings):
     lightspeed_rate_limit_per_second: float = 5.0
     lightspeed_max_retries: int = 5
 
+    # --- read-only API ------------------------------------------------------
+    #: Single shared password (spec 10: no user management). The API FAILS CLOSED
+    #: when unset -- every route but /api/health answers 503 rather than serving the
+    #: café's costs and margins to anyone who finds the port.
+    api_password: str | None = None
+
     # --- telegram -----------------------------------------------------------
     telegram_bot_token: str | None = None
     telegram_owner_chat_id: int | None = None

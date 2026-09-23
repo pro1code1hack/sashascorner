@@ -391,7 +391,21 @@ class LabourImpactOut(Out):
 class ImpactPreviewOut(Out):
     affected_item_count: int
     items: tuple[ImpactedItemOut, ...]
-    cost_delta_pence_per_item: str | None
+    cost_delta_pence_per_item: str | None = Field(
+        description=(
+            "One figure only when every affected item agrees. Null when they do not -- an "
+            "average across items that disagree is a number describing nothing."
+        )
+    )
+    cost_delta_pence_range: tuple[str, str] | None = Field(
+        default=None,
+        description=(
+            "The spread, when `cost_delta_pence_per_item` is null. `ImpactPreview` itself "
+            "puts this only in a warning sentence; it is computed here from the per-item "
+            "deltas so a screen can render a range rather than parse prose. See the "
+            "integrator note about `ImpactPreview`."
+        ),
+    )
     monthly_cogs_delta_pence: str | None
     worst_margin_after: ImpactedItemOut | None
     warnings: tuple[str, ...] = ()
@@ -490,6 +504,12 @@ class DriftOut(Out):
     clean_streak: int
     required_streak: int
     gate_action: str | None
+    #: The spec's presentation vocabulary -- "trusted" | "drifting" | "excluded"
+    #: (spec 10.2, 10.9) -- derived from the gate verdict here so every screen reads the
+    #: same word. `verdict` and `gate_action` stay alongside it because the domain
+    #: vocabulary is the more precise one and the drift screen shows it; this exists so
+    #: that mapping is not invented separately in each view that needs a badge.
+    trust_status: str | None = None
     attribution: DriftAttributionOut | None = None
 
 
@@ -686,13 +706,22 @@ class OrderLineOut(Out):
 
 
 class SkippedOut(Out):
-    """A candidate that produced no line, and which of the good reasons applied."""
+    """A candidate that produced no line, and which of the good reasons applied.
+
+    `is_capped` here is not a contradiction. A shelf-life cap can shorten the window far
+    enough that the forecast over it is already covered by stock on hand, so the cap
+    applied and *then* there was nothing to order. That is the cap working, and it is worth
+    saying: without it the reader sees an absent line and cannot tell "not needed" from
+    "the cap decided", which are different answers to "should I add this by hand?".
+    """
 
     ingredient_id: int
     ingredient_name: str
     reason: str
     below_par_floor: bool = False
     out_of_season: bool = False
+    is_capped: bool = False
+    cap_reason: str | None = None
     data_error: str | None = None
     clamp_blocked: str | None = None
 
@@ -748,7 +777,15 @@ class SourcingChoiceOut(Out):
 
 
 class EmergencyLineOut(Out):
-    """A Tesco run: what could not wait, and the retail premium it cost. Spec 4.4."""
+    """A Tesco run: what could not wait, and the retail premium it cost. Spec 4.4.
+
+    Two premium figures, and the difference is load-bearing. `premium_pence` is the extra
+    actually paid and is never negative. `raw_premium_pence` is signed, and when it is
+    negative `retail_is_cheaper` is true: retail would have been cheaper for this line all
+    along, which is a **sourcing finding** about the wrong default supplier, not a saving
+    to net off the cost of panic-buying. A screen that showed only the signed figure could
+    make a week of emergencies look like a discount.
+    """
 
     ingredient_id: int
     ingredient_name: str
@@ -757,7 +794,20 @@ class EmergencyLineOut(Out):
     reason: str
     retail_unit_price_pence: str | None
     preferred_unit_price_pence: str | None
-    premium_pence: str | None
+    premium_pence: str | None = Field(
+        description="Extra actually paid by going to retail. Never negative. Null when unpriced."
+    )
+    raw_premium_pence: str | None = Field(
+        default=None, description="Signed. Negative means retail was cheaper for this line."
+    )
+    retail_is_cheaper: bool = Field(
+        default=False,
+        description=(
+            "A sourcing finding, not a premium: the preferred supplier is the wrong default "
+            "for this ingredient. Surfaced separately so it is arguable rather than absorbed "
+            "into a zero."
+        ),
+    )
 
 
 class DraftOrdersResponse(Out):

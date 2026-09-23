@@ -1,0 +1,519 @@
+{
+  "order_date": "2026-09-17",
+  "computed_at": "2026-09-23T17:01:17.443753Z",
+  "reorder_cadence_days": null,
+  "tiers": [
+    "A",
+    "B"
+  ],
+  "suppliers": [
+    {
+      "supplier": {
+        "supplier_id": 7,
+        "name": "Amazon",
+        "lead_time_days": 2,
+        "delivery_weekdays": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "min_order_pence": 0,
+        "order_channel": "MANUAL",
+        "cutoff_time": null,
+        "delivery_fee_pence": 0,
+        "free_delivery_threshold_pence": null,
+        "terms_are_placeholders": false
+      },
+      "target_delivery_date": "2026-09-19",
+      "cover_window_days": 6,
+      "cover_window_from": "2026-09-17",
+      "cover_window_to": "2026-09-22",
+      "lead_time_days": 2,
+      "days_until_next_delivery": 2,
+      "lines": [],
+      "skipped": [],
+      "subtotal_pence": 0,
+      "delivery_fee_pence": 0,
+      "total_pence": 0,
+      "meets_minimum": true,
+      "min_order_topped_up": false,
+      "capped_line_count": 0,
+      "low_confidence_line_count": 0,
+      "status": "DRAFT",
+      "notes": []
+    },
+    {
+      "supplier": {
+        "supplier_id": 3,
+        "name": "Booker",
+        "lead_time_days": 2,
+        "delivery_weekdays": [
+          2,
+          4
+        ],
+        "min_order_pence": 5000,
+        "order_channel": "PORTAL",
+        "cutoff_time": "12:00:00",
+        "delivery_fee_pence": 0,
+        "free_delivery_threshold_pence": 6000,
+        "terms_are_placeholders": true
+      },
+      "target_delivery_date": "2026-09-22",
+      "cover_window_days": 7,
+      "cover_window_from": "2026-09-17",
+      "cover_window_to": "2026-09-23",
+      "lead_time_days": 2,
+      "days_until_next_delivery": 2,
+      "lines": [
+        {
+          "ingredient_id": 11,
+          "ingredient_name": "Caramel syrup (Monin)",
+          "unit": "ML",
+          "packs": 1,
+          "pack_size": "1000",
+          "pack_unit": "ML",
+          "pack_price_pence": 900,
+          "line_total_pence": 900,
+          "sku": "",
+          "need_qty": "842.800524",
+          "on_hand_qty": "1820",
+          "on_open_pos_qty": "0",
+          "resulting_on_hand_qty": "2820",
+          "forecast": {
+            "qty": "2662.800524",
+            "unit": "ML",
+            "window_days": 7,
+            "is_low_confidence": false,
+            "reasons": [],
+            "used_flat_average": false,
+            "history_days": 28
+          },
+          "cover_days": 7,
+          "full_cover_days": 7,
+          "forecast_full_window_qty": "2662.800524",
+          "capped_out_qty": null,
+          "cap_reason": null,
+          "cap_detail": null,
+          "is_capped": false,
+          "is_top_up": false,
+          "clamped": null
+        }
+      ],
+      "skipped": [
+        {
+          "ingredient_id": 21,
+          "ingredient_name": "Pistachio syrup (Monin)",
+          "reason": "Pistachio syrup (Monin): NOT ORDERED -- Spring seasonal drinks is not running on 2026-09-17 (spec 4.3). A seasonal line ordered out of season is stock bought for a drink that is not on the menu.",
+          "below_par_floor": false,
+          "out_of_season": true,
+          "is_capped": true,
+          "cap_reason": "not ordered -- Spring seasonal drinks is out of season",
+          "data_error": null,
+          "clamp_blocked": null
+        }
+      ],
+      "subtotal_pence": 900,
+      "delivery_fee_pence": 0,
+      "total_pence": 900,
+      "meets_minimum": false,
+      "min_order_topped_up": false,
+      "capped_line_count": 0,
+      "low_confidence_line_count": 0,
+      "status": "DRAFT",
+      "notes": [
+        "Pistachio syrup (Monin): NOT ORDERED -- Spring seasonal drinks is not running on 2026-09-17 (spec 4.3). A seasonal line ordered out of season is stock bought for a drink that is not on the menu.",
+        "Booker: order total £9.00 is below the £50.00 minimum order and no eligible item could be added. A MINIMUM is a condition on ordering at all: below it this supplier ships nothing, so the alternative to topping up is not a smaller order, it is no order and a stockout.",
+        "INVARIANT 5: 34 tier-B item(s) were NOT used as top-up because they are perishable: Almond milk (barista), Apple syrup (Monin), Banana syrup (Monin), Butterfly pea flowers, Butterfly syrup (Monin), Chai concentrate, Cinnamon bun syrup (Monin), Citrus / lime syrup (Monin), Coconut milk (barista), Coconut syrup (Monin), Coffee beans (decaf), Dark chocolate sauce, Decaf coffee pod, Honey, Lavender syrup (Monin), Lemon syrup (Monin), Loose-leaf tea (black), Mango syrup/puree (Monin), Mint syrup (Monin), Oat milk (barista), Orange syrup (Monin), Peach syrup (Monin), Pistachio syrup (Monin), Pumpkin spice syrup (Monin), Raspberry syrup (Monin), Rose syrup (Monin), Salted caramel syrup (Monin), Soy milk (barista), Strawberry syrup (Monin), Tea bag (standard), Toffee nut syrup (Monin), Toffee syrup (Monin), Vanilla syrup (Monin), White chocolate sauce. Buying something that spoils in order to clear a supplier's minimum or save a delivery fee is buying waste, so these are excluded however short their cover is.",
+        "no non-perishable tier-B item with measured consumption was available to top up with.",
+        "Booker: THESE TERMS ARE INVENTED PLACEHOLDERS. Lead time 2d, delivery days, cutoff 12:00:00, minimum £50.00 and the free-delivery threshold were never confirmed with this supplier (ARCHITECTURE.md 8F.4). The cover window above -- and therefore every quantity on this order -- is only as good as they are. Confirm them before trusting the numbers."
+      ]
+    },
+    {
+      "supplier": {
+        "supplier_id": 2,
+        "name": "Brakes",
+        "lead_time_days": 1,
+        "delivery_weekdays": [
+          1,
+          3,
+          5
+        ],
+        "min_order_pence": 7500,
+        "order_channel": "PORTAL",
+        "cutoff_time": "16:00:00",
+        "delivery_fee_pence": 0,
+        "free_delivery_threshold_pence": 10000,
+        "terms_are_placeholders": true
+      },
+      "target_delivery_date": "2026-09-18",
+      "cover_window_days": 7,
+      "cover_window_from": "2026-09-17",
+      "cover_window_to": "2026-09-23",
+      "lead_time_days": 1,
+      "days_until_next_delivery": 3,
+      "lines": [
+        {
+          "ingredient_id": 1,
+          "ingredient_name": "Whole milk",
+          "unit": "L",
+          "packs": 6,
+          "pack_size": "3.4",
+          "pack_unit": "L",
+          "pack_price_pence": 237,
+          "line_total_pence": 1422,
+          "sku": "",
+          "need_qty": "17.891338",
+          "on_hand_qty": "20.046",
+          "on_open_pos_qty": "0",
+          "resulting_on_hand_qty": "40.446",
+          "forecast": {
+            "qty": "37.937338",
+            "unit": "L",
+            "window_days": 5,
+            "is_low_confidence": false,
+            "reasons": [],
+            "used_flat_average": false,
+            "history_days": 28
+          },
+          "cover_days": 5,
+          "full_cover_days": 6,
+          "forecast_full_window_qty": "43.978923",
+          "capped_out_qty": "6.041585",
+          "cap_reason": "capped at 5 days -- Whole milk shelf life",
+          "cap_detail": "Whole milk: SHELF-LIFE CAP (invariant 4). 7-day life less a 2-day transit buffer leaves 5 usable day(s), against a 6-day cover window. Forecast over 6 days was 43.979 L; over 5 usable day(s) it is 37.937 L, so 6.042 L was deliberately NOT ordered. This under-order is on purpose: the difference would have spoiled before it could be used. Raising it recreates exactly the waste the cap prevents -- order again sooner instead.",
+          "is_capped": true,
+          "is_top_up": false,
+          "clamped": null
+        }
+      ],
+      "skipped": [
+        {
+          "ingredient_id": 2,
+          "ingredient_name": "Semi-skimmed milk",
+          "reason": "Semi-skimmed milk: SHELF-LIFE CAP (invariant 4). 7-day life less a 2-day transit buffer leaves 5 usable day(s), against a 7-day cover window. The order is sized on the shorter window, and the forecast figures are withheld (low confidence). | Semi-skimmed milk: on-hand 0 L is under the par floor min_qty 0.85, but nothing is forecast to move it (forecast withheld -- no consumption recorded in the 28 day(s) to 2026-09-16: there is no forecast to give, and a zero here means 'nothing known', not 'nothing needed'). NOT ordered -- either the par floor is wrong or this ingredient is not selling. A human decides, not a clamp.",
+          "below_par_floor": true,
+          "out_of_season": false,
+          "is_capped": true,
+          "cap_reason": "capped at 5 days -- Semi-skimmed milk shelf life",
+          "data_error": null,
+          "clamp_blocked": null
+        },
+        {
+          "ingredient_id": 7,
+          "ingredient_name": "Whipping cream",
+          "reason": "Whipping cream: on-hand 0 L is under the par floor min_qty 0.25, but nothing is forecast to move it (forecast withheld -- no consumption recorded in the 28 day(s) to 2026-09-16: there is no forecast to give, and a zero here means 'nothing known', not 'nothing needed'). NOT ordered -- either the par floor is wrong or this ingredient is not selling. A human decides, not a clamp.",
+          "below_par_floor": true,
+          "out_of_season": false,
+          "is_capped": false,
+          "cap_reason": null,
+          "data_error": null,
+          "clamp_blocked": null
+        }
+      ],
+      "subtotal_pence": 1422,
+      "delivery_fee_pence": 0,
+      "total_pence": 1422,
+      "meets_minimum": false,
+      "min_order_topped_up": false,
+      "capped_line_count": 1,
+      "low_confidence_line_count": 0,
+      "status": "DRAFT",
+      "notes": [
+        "Whole milk: SHELF-LIFE CAP (invariant 4). 7-day life less a 2-day transit buffer leaves 5 usable day(s), against a 6-day cover window. Forecast over 6 days was 43.979 L; over 5 usable day(s) it is 37.937 L, so 6.042 L was deliberately NOT ordered. This under-order is on purpose: the difference would have spoiled before it could be used. Raising it recreates exactly the waste the cap prevents -- order again sooner instead.",
+        "2 item(s) are below their par floor min_qty with nothing forecast to move them, and were NOT ordered: Semi-skimmed milk, Whipping cream. Either the par floor or the tier is wrong. Ordering against a floor that nothing is consuming would be spending money on a data error.",
+        "SHELF LIFE / SEASON CAP (invariant 4): 1 line(s) are deliberately SMALLER than the forecast asked for, because the rest would spoil or fall outside the season before it could be used: Whole milk -- capped at 5 days -- Whole milk shelf life. Ordering more often is the fix, not ordering more.",
+        "Brakes: order total £14.22 is below the £75.00 minimum order and no eligible item could be added. A MINIMUM is a condition on ordering at all: below it this supplier ships nothing, so the alternative to topping up is not a smaller order, it is no order and a stockout.",
+        "INVARIANT 5: 2 tier-B item(s) were NOT used as top-up because they are perishable: Semi-skimmed milk, Whipping cream. Buying something that spoils in order to clear a supplier's minimum or save a delivery fee is buying waste, so these are excluded however short their cover is.",
+        "no non-perishable tier-B item with measured consumption was available to top up with.",
+        "Brakes: THESE TERMS ARE INVENTED PLACEHOLDERS. Lead time 1d, delivery days, cutoff 16:00:00, minimum £75.00 and the free-delivery threshold were never confirmed with this supplier (ARCHITECTURE.md 8F.4). The cover window above -- and therefore every quantity on this order -- is only as good as they are. Confirm them before trusting the numbers."
+      ]
+    },
+    {
+      "supplier": {
+        "supplier_id": 1,
+        "name": "Cakesmiths",
+        "lead_time_days": 2,
+        "delivery_weekdays": [
+          2,
+          5
+        ],
+        "min_order_pence": 5000,
+        "order_channel": "PORTAL",
+        "cutoff_time": "14:00:00",
+        "delivery_fee_pence": 0,
+        "free_delivery_threshold_pence": 7500,
+        "terms_are_placeholders": true
+      },
+      "target_delivery_date": "2026-09-22",
+      "cover_window_days": 5,
+      "cover_window_from": "2026-09-17",
+      "cover_window_to": "2026-09-21",
+      "lead_time_days": 2,
+      "days_until_next_delivery": 3,
+      "lines": [],
+      "skipped": [],
+      "subtotal_pence": 0,
+      "delivery_fee_pence": 0,
+      "total_pence": 0,
+      "meets_minimum": false,
+      "min_order_topped_up": false,
+      "capped_line_count": 0,
+      "low_confidence_line_count": 0,
+      "status": "DRAFT",
+      "notes": [
+        "Cakesmiths: nothing is needed, so the £50.00 minimum does not apply -- a minimum is a condition on placing an order, not a reason to place one.",
+        "Cakesmiths: THESE TERMS ARE INVENTED PLACEHOLDERS. Lead time 2d, delivery days, cutoff 14:00:00, minimum £50.00 and the free-delivery threshold were never confirmed with this supplier (ARCHITECTURE.md 8F.4). The cover window above -- and therefore every quantity on this order -- is only as good as they are. Confirm them before trusting the numbers.",
+        "Cakesmiths stocks 20 product(s) but none is a tracked tier A/B ingredient with a par level, so there is nothing here to calculate. Cakesmiths is the real case: its 20 products are all tier C cake, which is a yes/no checklist (spec 4.5), not a forecast."
+      ]
+    },
+    {
+      "supplier": {
+        "supplier_id": 4,
+        "name": "Cups Direct",
+        "lead_time_days": 3,
+        "delivery_weekdays": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "min_order_pence": 3000,
+        "order_channel": "BROWSER_AGENT",
+        "cutoff_time": "15:00:00",
+        "delivery_fee_pence": 595,
+        "free_delivery_threshold_pence": 7500,
+        "terms_are_placeholders": true
+      },
+      "target_delivery_date": "2026-09-21",
+      "cover_window_days": 7,
+      "cover_window_from": "2026-09-17",
+      "cover_window_to": "2026-09-23",
+      "lead_time_days": 3,
+      "days_until_next_delivery": 1,
+      "lines": [
+        {
+          "ingredient_id": 54,
+          "ingredient_name": "Napkin",
+          "unit": "EACH",
+          "packs": 1,
+          "pack_size": "500",
+          "pack_unit": "EACH",
+          "pack_price_pence": 400,
+          "line_total_pence": 400,
+          "sku": "",
+          "need_qty": "125.799422",
+          "on_hand_qty": "165.31",
+          "on_open_pos_qty": "0",
+          "resulting_on_hand_qty": "665.31",
+          "forecast": {
+            "qty": "291.109422",
+            "unit": "EACH",
+            "window_days": 6,
+            "is_low_confidence": false,
+            "reasons": [],
+            "used_flat_average": false,
+            "history_days": 28
+          },
+          "cover_days": 6,
+          "full_cover_days": 6,
+          "forecast_full_window_qty": "291.109422",
+          "capped_out_qty": null,
+          "cap_reason": null,
+          "cap_detail": null,
+          "is_capped": false,
+          "is_top_up": false,
+          "clamped": null
+        }
+      ],
+      "skipped": [],
+      "subtotal_pence": 400,
+      "delivery_fee_pence": 595,
+      "total_pence": 995,
+      "meets_minimum": false,
+      "min_order_topped_up": false,
+      "capped_line_count": 0,
+      "low_confidence_line_count": 0,
+      "status": "DRAFT",
+      "notes": [
+        "Cups Direct: order total £4.00 is below the £30.00 minimum order and no eligible item could be added. A MINIMUM is a condition on ordering at all: below it this supplier ships nothing, so the alternative to topping up is not a smaller order, it is no order and a stockout.",
+        "2 tier-B item(s) were not used as top-up because nothing has been recorded moving: 4oz / small cup, Takeaway bag. Buying stock that does not sell to reach a supplier minimum is not a saving.",
+        "no non-perishable tier-B item with measured consumption was available to top up with.",
+        "Cups Direct: PAYING THE £5.95 DELIVERY FEE. The order is £4.00 and free delivery starts at £75.00, so clearing it would mean buying £71.00 of stock nobody asked for to save £5.95. That is not a saving, so the fee is paid. (A free-delivery threshold is a price break, not a minimum -- this order ships either way.)",
+        "Cups Direct: THESE TERMS ARE INVENTED PLACEHOLDERS. Lead time 3d, delivery days, cutoff 15:00:00, minimum £30.00 and the free-delivery threshold were never confirmed with this supplier (ARCHITECTURE.md 8F.4). The cover window above -- and therefore every quantity on this order -- is only as good as they are. Confirm them before trusting the numbers."
+      ]
+    },
+    {
+      "supplier": {
+        "supplier_id": 5,
+        "name": "Monolith",
+        "lead_time_days": 3,
+        "delivery_weekdays": [
+          3
+        ],
+        "min_order_pence": 10000,
+        "order_channel": "EMAIL",
+        "cutoff_time": "11:00:00",
+        "delivery_fee_pence": 0,
+        "free_delivery_threshold_pence": null,
+        "terms_are_placeholders": true
+      },
+      "target_delivery_date": "2026-09-23",
+      "cover_window_days": 13,
+      "cover_window_from": "2026-09-17",
+      "cover_window_to": "2026-09-29",
+      "lead_time_days": 3,
+      "days_until_next_delivery": 7,
+      "lines": [],
+      "skipped": [],
+      "subtotal_pence": 0,
+      "delivery_fee_pence": 0,
+      "total_pence": 0,
+      "meets_minimum": false,
+      "min_order_topped_up": false,
+      "capped_line_count": 0,
+      "low_confidence_line_count": 0,
+      "status": "DRAFT",
+      "notes": [
+        "Monolith: nothing is needed, so the £100.00 minimum does not apply -- a minimum is a condition on placing an order, not a reason to place one.",
+        "Monolith: THESE TERMS ARE INVENTED PLACEHOLDERS. Lead time 3d, delivery days, cutoff 11:00:00, minimum £100.00 and the free-delivery threshold were never confirmed with this supplier (ARCHITECTURE.md 8F.4). The cover window above -- and therefore every quantity on this order -- is only as good as they are. Confirm them before trusting the numbers.",
+        "Monolith: SOURCING MOVED 1 line(s) off this order: Coffee beans (house blend) (£126.00) -> Booker. The reason is on each sourcing choice. This order was then re-sized, so its minimum and any top-up were re-decided against what is left.",
+        "Coffee beans (house blend): KEPT Booker (5 KG) at 1900.00p/KG. dearer alternates: Monolith (3 KG) at 2100.00p/KG"
+      ]
+    },
+    {
+      "supplier": {
+        "supplier_id": 8,
+        "name": "Nataly (custom)",
+        "lead_time_days": 5,
+        "delivery_weekdays": [],
+        "min_order_pence": 0,
+        "order_channel": "MANUAL",
+        "cutoff_time": null,
+        "delivery_fee_pence": 0,
+        "free_delivery_threshold_pence": null,
+        "terms_are_placeholders": true
+      },
+      "target_delivery_date": "2026-09-22",
+      "cover_window_days": 6,
+      "cover_window_from": "2026-09-17",
+      "cover_window_to": "2026-09-22",
+      "lead_time_days": 5,
+      "days_until_next_delivery": 1,
+      "lines": [],
+      "skipped": [],
+      "subtotal_pence": 0,
+      "delivery_fee_pence": 0,
+      "total_pence": 0,
+      "meets_minimum": true,
+      "min_order_topped_up": false,
+      "capped_line_count": 0,
+      "low_confidence_line_count": 0,
+      "status": "DRAFT",
+      "notes": [
+        "Nataly (custom): THESE TERMS ARE INVENTED PLACEHOLDERS. Lead time 5d, delivery days, cutoff unknown, minimum £0.00 and the free-delivery threshold were never confirmed with this supplier (ARCHITECTURE.md 8F.4). The cover window above -- and therefore every quantity on this order -- is only as good as they are. Confirm them before trusting the numbers.",
+        "Nataly (custom) has no supplier products on file at all, so nothing can be ordered from it. For Nataly that is spec 15 question 5 still unanswered -- what this supplier covers, and through what channel, is unknown (ARCHITECTURE.md 8F.4)."
+      ]
+    },
+    {
+      "supplier": {
+        "supplier_id": 6,
+        "name": "Tesco",
+        "lead_time_days": 0,
+        "delivery_weekdays": [],
+        "min_order_pence": 0,
+        "order_channel": "MANUAL",
+        "cutoff_time": null,
+        "delivery_fee_pence": 0,
+        "free_delivery_threshold_pence": null,
+        "terms_are_placeholders": false
+      },
+      "target_delivery_date": "2026-09-17",
+      "cover_window_days": 4,
+      "cover_window_from": "2026-09-17",
+      "cover_window_to": "2026-09-20",
+      "lead_time_days": 0,
+      "days_until_next_delivery": 1,
+      "lines": [],
+      "skipped": [
+        {
+          "ingredient_id": 2,
+          "ingredient_name": "Semi-skimmed milk",
+          "reason": "Semi-skimmed milk: on-hand 0 L is under the par floor min_qty 0.85, but nothing is forecast to move it (forecast withheld -- no consumption recorded in the 28 day(s) to 2026-09-16: there is no forecast to give, and a zero here means 'nothing known', not 'nothing needed'). NOT ordered -- either the par floor is wrong or this ingredient is not selling. A human decides, not a clamp.",
+          "below_par_floor": true,
+          "out_of_season": false,
+          "is_capped": false,
+          "cap_reason": null,
+          "data_error": null,
+          "clamp_blocked": null
+        }
+      ],
+      "subtotal_pence": 0,
+      "delivery_fee_pence": 0,
+      "total_pence": 0,
+      "meets_minimum": true,
+      "min_order_topped_up": false,
+      "capped_line_count": 0,
+      "low_confidence_line_count": 0,
+      "status": "DRAFT",
+      "notes": [
+        "1 item(s) are below their par floor min_qty with nothing forecast to move them, and were NOT ordered: Semi-skimmed milk. Either the par floor or the tier is wrong. Ordering against a floor that nothing is consuming would be spending money on a data error.",
+        "Tesco: SOURCING MOVED 1 line(s) off this order: Whole milk (£6.60) -> Brakes. The reason is on each sourcing choice. This order was then re-sized, so its minimum and any top-up were re-decided against what is left.",
+        "Whole milk: KEPT Brakes (3.4 L) at 69.71p/L. dearer alternates: Tesco (2 L) at 82.50p/L"
+      ]
+    }
+  ],
+  "sourcing_choices": [
+    {
+      "ingredient_id": 1,
+      "ingredient_name": "Whole milk",
+      "chosen_supplier_id": 2,
+      "chosen_supplier_name": "Brakes",
+      "chosen_is_preferred": true,
+      "chosen_unit_price_pence": "69.705882",
+      "reason": "Whole milk: KEPT Brakes (3.4 L) at 69.71p/L. dearer alternates: Tesco (2 L) at 82.50p/L",
+      "cheaper_rejected_supplier_id": null,
+      "cheaper_rejected_unit_price_pence": null,
+      "forgone_saving_pence": null,
+      "alternative_count": 1
+    },
+    {
+      "ingredient_id": 8,
+      "ingredient_name": "Coffee beans (house blend)",
+      "chosen_supplier_id": 3,
+      "chosen_supplier_name": "Booker",
+      "chosen_is_preferred": true,
+      "chosen_unit_price_pence": "1900",
+      "reason": "Coffee beans (house blend): KEPT Booker (5 KG) at 1900.00p/KG. dearer alternates: Monolith (3 KG) at 2100.00p/KG",
+      "cheaper_rejected_supplier_id": null,
+      "cheaper_rejected_unit_price_pence": null,
+      "forgone_saving_pence": null,
+      "alternative_count": 1
+    }
+  ],
+  "emergency": [],
+  "emergency_total_premium_pence": "0",
+  "emergency_notes": [
+    "Caramel syrup (Monin): runs out in 4.797 day(s), before the next delivery in 5, and Tesco does not stock it either. Nothing can bridge this gap -- it is a stockout unless the proper supplier can be hurried.",
+    "Napkin: runs out in 3.443 day(s), before the next delivery in 4, and Tesco does not stock it either. Nothing can bridge this gap -- it is a stockout unless the proper supplier can be hurried."
+  ],
+  "total_pence": 3317,
+  "capped_line_count": 1,
+  "placeholder_supplier_names": [
+    "Booker",
+    "Brakes",
+    "Cakesmiths",
+    "Cups Direct",
+    "Monolith",
+    "Nataly (custom)"
+  ],
+  "notes": [
+    "6 of 8 suppliers' terms are INVENTED PLACEHOLDERS: Booker, Brakes, Cakesmiths, Cups Direct, Monolith, Nataly (custom). Lead time, delivery days, cutoff, minimum order and free-delivery threshold were never confirmed with any of them (ARCHITECTURE.md 8F.4), and every cover window below is built on them. Only Tesco and Amazon have terms anybody has checked.",
+    "Caramel syrup (Monin): runs out in 4.797 day(s), before the next delivery in 5, and Tesco does not stock it either. Nothing can bridge this gap -- it is a stockout unless the proper supplier can be hurried.",
+    "Napkin: runs out in 3.443 day(s), before the next delivery in 4, and Tesco does not stock it either. Nothing can bridge this gap -- it is a stockout unless the proper supplier can be hurried."
+  ],
+  "writes_nothing": true
+}

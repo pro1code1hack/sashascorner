@@ -141,6 +141,8 @@ def _skipped(outcome: SizingOutcome) -> SkippedOut:
         reason=outcome.note or "nothing needed over this cover window",
         below_par_floor=outcome.below_par_floor,
         out_of_season=outcome.out_of_season,
+        is_capped=outcome.capped,
+        cap_reason=candidate.cap_reason,
         data_error=outcome.data_error,
         clamp_blocked=outcome.clamp_blocked,
     )
@@ -173,6 +175,9 @@ def _supplier_order(plan: SizingPlan, terms: SupplierTerms | None) -> SupplierOr
             and (
                 outcome.below_par_floor
                 or outcome.out_of_season
+                # A cap that applied and then found nothing to order still explains an
+                # absent line, and an unexplained absence is what gets overridden by hand.
+                or outcome.capped
                 or outcome.data_error is not None
                 or outcome.clamp_blocked is not None
             )
@@ -223,6 +228,8 @@ def _emergency_out(line: EmergencyLine) -> EmergencyLineOut:
         retail_unit_price_pence=as_pence(line.retail_unit_price_pence),
         preferred_unit_price_pence=as_pence(line.preferred_unit_price_pence),
         premium_pence=as_pence(line.premium_pence),
+        raw_premium_pence=as_pence(line.raw_premium_pence),
+        retail_is_cheaper=line.retail_is_cheaper,
     )
 
 

@@ -79,7 +79,6 @@ __all__ = [
     "BTN_ORDER_CONFIRM",
     "BTN_ORDER_MINUS",
     "BTN_ORDER_PLUS",
-    "BTN_ORDER_RESET",
     "adhoc_expiry_prompt",
     "adhoc_not_found",
     "adhoc_qty_prompt",
@@ -101,10 +100,13 @@ __all__ = [
     "digest",
     "err_bad_date",
     "err_bad_number",
+    "err_fractional_count",
     "err_not_adjustable",
-    "err_not_authorised",
     "err_unknown",
     "help_text",
+    "job_drift_report",
+    "job_new_drafts",
+    "job_nothing_to_report",
     "order_card",
     "order_confirmed",
     "order_dispatched",
@@ -165,7 +167,15 @@ def _packs(n: int) -> str:
 
 
 def _num(qty: Decimal, unit: Unit) -> str:
-    """Количество без единицы. Счётное -- целым, объём и вес -- как в журнале."""
+    """Количество без единицы. Счётное -- целым, объём и вес -- как в журнале.
+
+    Счётное округляется до целого, и это безопасно только потому, что дробный
+    ПЕРЕСЧЁТ по счётной позиции бот не принимает (см. `err_fractional_count`). Иначе
+    округление врало бы человеку о том, что записано в журнал: расчётный остаток
+    вполне бывает дробным -- 106.534 стакана -- потому что к расходу применён
+    коэффициент потерь, и вот его округлить можно, это оценка. Записанное число --
+    нельзя.
+    """
     if unit is Unit.EACH:
         return f"{qty.quantize(Decimal('1'))}"
     if unit in (Unit.ML, Unit.G):
@@ -222,7 +232,11 @@ def _basis(line: StockLineView) -> str:
         )
     counted = line.basis_count_qty
     unit = line.unit
-    ago = "" if line.days_since_count is None else f", {_days(line.days_since_count)} назад"
+    ago = ""
+    if line.days_since_count == 0:
+        ago = ", сегодня"
+    elif line.days_since_count is not None:
+        ago = f", {_days(line.days_since_count)} назад"
     figure = "—" if counted is None else _qty(counted, unit)
     return (
         f"опора: пересчёт {figure} от {_d(line.basis_counted_at)}{ago} "
@@ -318,8 +332,7 @@ def _cap(notice: CapNotice) -> str:
     if notice.kind is CapKind.OUT_OF_SEASON:
         subject = notice.subject or "сезон"
         return (
-            f"НЕ ЗАКАЗАНО: сезон «{subject}» не идёт. Это закупка под напиток, "
-            "которого нет в меню."
+            f"НЕ ЗАКАЗАНО: сезон «{subject}» не идёт. Это закупка под напиток, которого нет в меню."
         )
     if notice.kind is CapKind.TOP_UP_MINIMUM:
         return (
@@ -372,7 +385,10 @@ def _order_line(line: OrderLineView, index: int) -> list[str]:
         # Инвариант 9. Потребность тоже не показываем: need = прогноз минус остаток,
         # и назвать её значит вернуть на экран скрытое число.
         rows.append(f"    {_low_confidence(line.low_confidence)}")
-    elif line.need_qty is not None:
+    elif line.need_qty is not None and not line.is_top_up:
+        # У строки добора потребность отрицательная -- запас уже покрыт, её и добавили
+        # не по прогнозу. Показать «-368 шт» значило бы предложить человеку считать
+        # смысл там, где его нет; причину добора он читает строкой ниже.
         rows.append(f"    расчётная потребность {_qty(line.need_qty, line.unit)}")
     if line.cap is not None:
         rows.append(f"    {_cap(line.cap)}")
@@ -418,8 +434,7 @@ def _order_channel_note(view: OrderView) -> list[str]:
     if view.channel is OrderChannel.MANUAL:
         return [
             "",
-            "КАНАЛ: это список покупок. Никуда ничего не отправляется — нужно прийти "
-            "и купить.",
+            "КАНАЛ: это список покупок. Никуда ничего не отправляется — нужно прийти и купить.",
         ]
     return [
         "",
@@ -595,8 +610,7 @@ def count_intro(kind: CountSessionKind, items: Sequence[CountItemView]) -> str:
             "в указанной единице. Не нужно ничего вычитать и прибавлять: "
             "фактический пересчёт и есть источник истины, а расчётный остаток рядом "
             "показан только чтобы вы увидели расхождение.",
-            f"«{BTN_COUNT_SKIP}» — если сейчас не добрались; "
-            f"«{BTN_COUNT_STOP}» — прервать.",
+            f"«{BTN_COUNT_SKIP}» — если сейчас не добрались; «{BTN_COUNT_STOP}» — прервать.",
         ]
     )
 
@@ -637,7 +651,11 @@ _VERDICT: dict[DriftVerdict, str] = {
 }
 
 _CAUSE: dict[DriftCause, str] = {
-    DriftCause.NEGLIGIBLE: "разница незначительна",
+    DriftCause.NEGLIGIBLE: (
+        "разница мала на фоне расхода за период: ни рецепт, ни размер заказа править не "
+        "нужно. Большой процент при маленьком остатке — это про маленькую базу, а не "
+        "про большую потерю"
+    ),
     DriftCause.EXPIRY: (
         "разницу объясняют списания по сроку годности — значит закупается ЛИШНЕЕ, "
         "а не рецепт неверен. Лечится меньшим заказом, но чаще"
@@ -652,7 +670,9 @@ _CAUSE: dict[DriftCause, str] = {
 
 _GATE: dict[GateAction, str] = {
     GateAction.GRANT: "автозаказ ВКЛЮЧЁН — право заработано двумя чистыми пересчётами подряд",
-    GateAction.REVOKE: "автозаказ ВЫКЛЮЧЕН: основание, на котором он был включён, больше не действует",
+    GateAction.REVOKE: (
+        "автозаказ ВЫКЛЮЧЕН: основание, на котором он был включён, больше не действует"
+    ),
     GateAction.HOLD: "автозаказ без изменений",
 }
 
@@ -703,8 +723,7 @@ def count_done(*, counted: int, skipped: int, total: int) -> str:
     rows = [f"Пересчёт закончен: {counted} из {total} записано."]
     if skipped:
         rows.append(
-            f"{skipped} пропущено — по ним остаток остаётся расчётным, без "
-            "физического основания."
+            f"{skipped} пропущено — по ним остаток остаётся расчётным, без физического основания."
         )
     return "\n".join(rows)
 
@@ -720,10 +739,7 @@ BTN_CHECKLIST_SKIP = "Пропустить"
 
 def checklist_intro(items: Sequence[ChecklistItemView]) -> str:
     if not items:
-        return (
-            "Чек-лист категории C пройден: всё отмечено за последнюю неделю, "
-            "спрашивать нечего."
-        )
+        return "Чек-лист категории C пройден: всё отмечено за последнюю неделю, спрашивать нечего."
     return "\n".join(
         [
             f"ЧЕК-ЛИСТ, категория C — {_items(len(items))}.",
@@ -827,11 +843,7 @@ def delivery_expiry_prompt(line: DeliveryLineView, *, packs: int) -> str:
             "если действительно нет."
         )
     else:
-        source = (
-            "и это ОЦЕНКА, а не измерение"
-            if line.shelf_life_is_estimate
-            else "по справочнику"
-        )
+        source = "и это ОЦЕНКА, а не измерение" if line.shelf_life_is_estimate else "по справочнику"
         rows.append(
             f"Если даты нет, подставлю {_days(line.default_shelf_life_days)} от сегодня "
             f"({source}). Именно это число решает, что уйдёт в списание, поэтому "
@@ -928,9 +940,7 @@ def _digest_write_offs(rows: Sequence[WriteOffView]) -> list[str]:
             f"  {len(rows) - len(priced)} из них без цены — в сумму не включены "
             "(неизвестная цена не равна нулю)"
         )
-    out.append(
-        "Эти деньги уже потеряны. Единственный вывод из них — частота и размер заказов."
-    )
+    out.append("Эти деньги уже потеряны. Единственный вывод из них — частота и размер заказов.")
     return out
 
 
@@ -1003,7 +1013,10 @@ def _digest_drift(rows: Sequence[DriftAlertView]) -> list[str]:
 
 def _digest_counts(rows: Sequence[StockLineView], *, overdue_days: int) -> list[str]:
     if not rows:
-        return ["", f"Пересчёты в порядке: ни одной позиции без пересчёта дольше {_days(overdue_days)}."]
+        return [
+            "",
+            f"Пересчёты в порядке: ни одной позиции без пересчёта дольше {_days(overdue_days)}.",
+        ]
     never = [row for row in rows if row.days_since_count is None]
     stale = [row for row in rows if row.days_since_count is not None]
     out = ["", f"ПОРА ПЕРЕСЧИТАТЬ — {_items(len(rows))}:"]
@@ -1055,8 +1068,7 @@ def digest(view: DigestView) -> str:
     rows += _digest_write_offs(view.pending_write_offs)
     if view.already_written_off:
         rows.append(
-            f"(ранее уже списано партий: {view.already_written_off} — повторно они "
-            "не считаются)"
+            f"(ранее уже списано партий: {view.already_written_off} — повторно они не считаются)"
         )
     rows += _digest_short_dated(view.short_dated)
     rows += _digest_orders(view.drafts)
@@ -1064,6 +1076,15 @@ def digest(view: DigestView) -> str:
     rows += _digest_drift(view.drift_alerts)
     rows += _digest_counts(view.counts_due, overdue_days=view.count_overdue_days)
 
+    if view.checklist_low:
+        rows.append("")
+        rows.append(
+            f"ПО ЧЕК-ЛИСТУ ЗАКАНЧИВАЕТСЯ — {_items(len(view.checklist_low))}: "
+            + ", ".join(item.name for item in view.checklist_low[:10])
+            + (" …" if len(view.checklist_low) > 10 else "")
+            + ". Категория C не считается и не прогнозируется, поэтому заказать это "
+            "может только человек — само оно в заказ не попадёт."
+        )
     if view.checklist_due:
         rows.append("")
         rows.append(
@@ -1089,8 +1110,7 @@ def digest(view: DigestView) -> str:
     if not view.telegram_configured:
         rows.append("")
         rows.append(
-            "(Токен Telegram не задан: это сообщение никуда не отправлено, а выведено "
-            "локально.)"
+            "(Токен Telegram не задан: это сообщение никуда не отправлено, а выведено локально.)"
         )
     return "\n".join(rows)
 
@@ -1101,7 +1121,6 @@ def digest(view: DigestView) -> str:
 
 BTN_ORDER_PLUS = "+1"
 BTN_ORDER_MINUS = "−1"
-BTN_ORDER_RESET = "Вернуть предложенное"
 BTN_ORDER_CONFIRM = "Подтвердить заказ"
 BTN_ORDER_CANCEL = "Не сейчас"
 
@@ -1146,10 +1165,6 @@ def help_text() -> str:
     )
 
 
-def err_not_authorised() -> str:
-    return "Этот бот отвечает только владельцу кофейни."
-
-
 def err_bad_number(unit: Unit) -> str:
     return (
         f"Не понял число. Пришлите количество в {_UNITS[unit]}, например 3 или 3.5. "
@@ -1173,10 +1188,7 @@ def err_not_adjustable(po_id: int) -> str:
 
 
 def err_unknown() -> str:
-    return (
-        "Не получилось. Ничего не записано — повторите действие или начните заново "
-        "с /start."
-    )
+    return "Не получилось. Ничего не записано — повторите действие или начните заново с /start."
 
 
 # ==========================================================================
@@ -1219,4 +1231,101 @@ def adhoc_expiry_prompt() -> str:
         "На розничной покупке дата есть почти всегда, и без неё эта партия не сможет "
         "ни просрочиться, ни попасть в списание — то есть убыток по ней окажется "
         "невидимым."
+    )
+
+
+# ==========================================================================
+# Сообщения от расписания (планировщик пишет сам, ответить ему нельзя)
+# ==========================================================================
+
+
+def job_new_drafts(orders: Sequence[OrderView]) -> str:
+    """Черновики, которые собрались по расписанию поставщика."""
+    if not orders:
+        return ""
+    rows = [
+        f"НОВЫЕ ЧЕРНОВИКИ ЗАКАЗА — {_items(len(orders))}. Ничего не заказано: "
+        "каждый ждёт вашего подтверждения.",
+    ]
+    rows += _digest_orders(orders)[1:]
+    return "\n".join(rows)
+
+
+def job_drift_report(
+    rows: Sequence[DriftAlertView], *, backfilled: int = 0, total_checked: int = 0
+) -> str:
+    """Недельный отчёт о расхождениях: не просто процент, а КАКАЯ это проблема."""
+    if not rows:
+        return job_nothing_to_report(total_checked=total_checked)
+    head = [
+        f"РАСХОЖДЕНИЯ ЗА НЕДЕЛЮ — {_items(len(rows))} из {total_checked} проверенных.",
+        "Процент сам по себе ничего не говорит: у двух причин расхождения "
+        "ПРОТИВОПОЛОЖНЫЕ решения, поэтому каждая строка названа по причине.",
+    ]
+    expiry = [row for row in rows if row.cause is DriftCause.EXPIRY]
+    recipe = [row for row in rows if row.cause is DriftCause.MEASUREMENT]
+    other = [row for row in rows if row.cause not in (DriftCause.EXPIRY, DriftCause.MEASUREMENT)]
+
+    body: list[str] = []
+    if expiry:
+        body += ["", f"ЗАКУПАЕТСЯ ЛИШНЕЕ — {_items(len(expiry))}:"]
+        body += [
+            f"  – {row.name}: расхождение {_pct(row.drift_pct)}"
+            + (
+                ""
+                if row.expiry_share is None
+                else f", списаниями по сроку объясняется {row.expiry_share * 100:.0f}%"
+            )
+            for row in expiry
+        ]
+        body.append("Решение — заказывать меньше и чаще. Рецепт здесь менять не нужно.")
+    if recipe:
+        body += ["", f"ДЕЛО В РЕЦЕПТЕ ИЛИ В ПОТЕРЯХ — {_items(len(recipe))}:"]
+        body += [f"  – {row.name}: расхождение {_pct(row.drift_pct)}" for row in recipe]
+        body.append(
+            "Решение — править рецепт или коэффициент потерь. Урезать заказ НЕЛЬЗЯ: "
+            "будет дефицит, а расхождение останется."
+        )
+    if other:
+        body += ["", f"ОСТАЛЬНОЕ — {_items(len(other))}:"]
+        for row in other:
+            line = f"  – {row.name}: расхождение {_pct(row.drift_pct)}"
+            if row.verdict is not None:
+                line += f", {_VERDICT[row.verdict]}"
+            body.append(line)
+            body.append(f"      {_GATE[row.gate_action]}")
+
+    alerts = [row for row in rows if row.alert]
+    if alerts:
+        body += [
+            "",
+            f"ТРЕВОГА — {_items(len(alerts))}: "
+            + ", ".join(row.name for row in alerts)
+            + ". По этим позициям расчётным остаткам доверять нельзя и автозаказ запрещён.",
+        ]
+    if backfilled:
+        body += [
+            "",
+            f"(дополнительно посчитано расхождение по {backfilled} прошлым пересчётам, "
+            "у которых его не было)",
+        ]
+    return "\n".join(head + body)
+
+
+def job_nothing_to_report(*, total_checked: int = 0) -> str:
+    return (
+        f"Расхождения за неделю: ничего, что требует решения (проверено {_items(total_checked)})."
+    )
+
+
+def err_fractional_count(name: str) -> str:
+    """Счётная позиция и дробное число. Отказ, а не округление.
+
+    Округлить 9.5 до 10 значит записать в журнал не то, что человек видел на полке, и
+    потом никто этого не различит. 9.5 стакана -- это опечатка, и правильный ответ на
+    опечатку -- спросить снова.
+    """
+    return (
+        f"«{name}» считается штуками, а 9.5 штуки не бывает. Пришлите целое число.\n"
+        "Округлять за вас я не буду: в журнал попало бы не то, что вы видели на полке."
     )

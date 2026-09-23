@@ -1,0 +1,207 @@
+{
+  "generated_by": "cafeops api-fixtures",
+  "encoding": "Money: integer pence where stored as an integer, an exact decimal STRING of pence where derived. Quantities: strings. A missing cost is null. A low-confidence forecast has qty null and reasons populated.",
+  "examples": [
+    {
+      "name": "health",
+      "file": "health.json",
+      "method": "GET",
+      "path": "/api/health",
+      "params": null,
+      "body": null,
+      "status": 200,
+      "note": "Open, unauthenticated."
+    },
+    {
+      "name": "meta",
+      "file": "meta.json",
+      "method": "GET",
+      "path": "/api/meta",
+      "params": null,
+      "body": null,
+      "status": 200,
+      "note": "Enums and the encoding contract."
+    },
+    {
+      "name": "templates",
+      "file": "templates.json",
+      "method": "GET",
+      "path": "/api/templates",
+      "params": null,
+      "body": null,
+      "status": 200,
+      "note": ""
+    },
+    {
+      "name": "template-detail",
+      "file": "template-detail.json",
+      "method": "GET",
+      "path": "/api/templates/1",
+      "params": null,
+      "body": null,
+      "status": 200,
+      "note": "The composition editor's three panes."
+    },
+    {
+      "name": "template-preview",
+      "file": "template-preview.json",
+      "method": "POST",
+      "path": "/api/templates/1/preview",
+      "params": null,
+      "body": {
+        "component_id": 2,
+        "qty_by_size": {
+          "S": "0.14",
+          "M": "0.20",
+          "XL": "0.30"
+        }
+      },
+      "status": 200,
+      "note": "Impact preview. Writes nothing. `component_id` 2 is the MILK slot of the freshly seeded Flavoured Latte; once that slot has been edited the id has moved on and this example returns 409 component_superseded -- which is the right fixture for that case. `GET /api/templates/1` lists the live ids."
+    },
+    {
+      "name": "stock-tier-a",
+      "file": "stock-tier-a.json",
+      "method": "GET",
+      "path": "/api/stock",
+      "params": {
+        "tier": "A",
+        "as_of": "today"
+      },
+      "body": null,
+      "status": 200,
+      "note": "Theoretical on-hand, batches, drift attribution, projected run-out."
+    },
+    {
+      "name": "stock-no-runout",
+      "file": "stock-no-runout.json",
+      "method": "GET",
+      "path": "/api/stock",
+      "params": {
+        "tier": "A",
+        "run_out": "false"
+      },
+      "body": null,
+      "status": 200,
+      "note": "The fast variant: no forecast per ingredient."
+    },
+    {
+      "name": "stock-detail",
+      "file": "stock-detail.json",
+      "method": "GET",
+      "path": "/api/stock/1",
+      "params": null,
+      "body": null,
+      "status": 200,
+      "note": "One ingredient with drift history."
+    },
+    {
+      "name": "suppliers",
+      "file": "suppliers.json",
+      "method": "GET",
+      "path": "/api/suppliers",
+      "params": null,
+      "body": null,
+      "status": 200,
+      "note": ""
+    },
+    {
+      "name": "orders-draft",
+      "file": "orders-draft.json",
+      "method": "GET",
+      "path": "/api/orders/draft",
+      "params": null,
+      "body": null,
+      "status": 200,
+      "note": "N drafts by supplier, with cap reasons and the Tesco emergency list. Writes nothing."
+    },
+    {
+      "name": "orders-draft-capped",
+      "file": "orders-draft-capped.json",
+      "method": "GET",
+      "path": "/api/orders/draft",
+      "params": {
+        "order_date": "2026-09-17"
+      },
+      "body": null,
+      "status": 200,
+      "note": "Invariant 4 on the wire: a Whole milk line capped at 5 days by shelf life, with `cap_reason`, `cap_detail` and `capped_out_qty`. A past order_date is used because whether the cap produces a LINE depends on the day's stock -- on a day when the shortened window is already covered, the cap still applies and the candidate appears under `skipped` with `is_capped` instead. Both shapes matter and this fixture guarantees the first one exists."
+    },
+    {
+      "name": "orders-draft-emergency",
+      "file": "orders-draft-emergency.json",
+      "method": "GET",
+      "path": "/api/orders/draft",
+      "params": {
+        "order_date": "2026-09-21"
+      },
+      "body": null,
+      "status": 200,
+      "note": "The Tesco emergency list with a real line on it: what could not wait for a scheduled delivery, and the retail premium that cost. A past order_date because the seeded shortfalls are a disrupted supplier round, not an everyday state -- on most days `emergency` is correctly empty, which is the other shape."
+    },
+    {
+      "name": "margin",
+      "file": "margin.json",
+      "method": "GET",
+      "path": "/api/margin",
+      "params": null,
+      "body": null,
+      "status": 200,
+      "note": "Both rankings, the disagreements, and the uncosted items (invariant 8)."
+    },
+    {
+      "name": "margin-one-template",
+      "file": "margin-one-template.json",
+      "method": "GET",
+      "path": "/api/margin",
+      "params": {
+        "template": "Flavoured Latte"
+      },
+      "body": null,
+      "status": 200,
+      "note": "Smaller payload: one template."
+    },
+    {
+      "name": "channels",
+      "file": "channels.json",
+      "method": "GET",
+      "path": "/api/channels",
+      "params": null,
+      "body": null,
+      "status": 200,
+      "note": ""
+    },
+    {
+      "name": "today",
+      "file": "today.json",
+      "method": "GET",
+      "path": "/api/today",
+      "params": null,
+      "body": null,
+      "status": 200,
+      "note": ""
+    },
+    {
+      "name": "today-with-orders",
+      "file": "today-with-orders.json",
+      "method": "GET",
+      "path": "/api/today",
+      "params": {
+        "with_orders": "true"
+      },
+      "body": null,
+      "status": 200,
+      "note": "The slow variant: includes a full ordering run."
+    },
+    {
+      "name": "openapi",
+      "file": "openapi.json",
+      "method": "GET",
+      "path": "/api/openapi.json",
+      "params": null,
+      "body": null,
+      "status": 200,
+      "note": "The schema, for codegen."
+    }
+  ]
+}

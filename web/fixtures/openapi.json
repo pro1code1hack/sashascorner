@@ -1,0 +1,5617 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Cafe Ops",
+    "description": "\nRead-only back-office API for Sasha's Corner.\n\n**Every route is a GET except two**: `POST /api/templates/{id}/preview`, which writes\nnothing, and `POST /api/templates/{id}/apply`, the composition editor's commit. There is\nno route that creates, confirms or sends a purchase order -- invariant 1 says that needs\na human in Telegram.\n\n**Encoding.** Money is integer pence where the database stores an integer, and an exact\ndecimal *string* of pence where the figure is derived and fractional. Quantities are\nalways strings. A missing cost is `null`, never `0`. A low-confidence forecast has\n`qty: null` and its reasons populated -- render the reasons *in place of* the number,\nbecause the number is not in the payload. See `GET /api/meta`.\n\n**Auth.** One shared password (spec 1: no user management). Send it as `X-API-Key` or\n`Authorization: Bearer`. With `CAFEOPS_API_PASSWORD` unset every route but\n`/api/health` answers 503.\n",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/health": {
+      "get": {
+        "tags": [
+          "meta"
+        ],
+        "summary": "Liveness and row counts",
+        "operationId": "health_api_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/meta": {
+      "get": {
+        "tags": [
+          "meta"
+        ],
+        "summary": "Enums and encoding conventions",
+        "operationId": "meta_api_meta_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Meta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/templates": {
+      "get": {
+        "tags": [
+          "composition"
+        ],
+        "summary": "Materialised drink templates",
+        "operationId": "templates_api_templates_get",
+        "parameters": [
+          {
+            "name": "as_of",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "now | today | yesterday | YYYY-MM-DD",
+              "title": "As Of"
+            },
+            "description": "now | today | yesterday | YYYY-MM-DD"
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TemplateSummary"
+                  },
+                  "title": "Response Templates Api Templates Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/templates/{template_id}": {
+      "get": {
+        "tags": [
+          "composition"
+        ],
+        "summary": "One template: slots, axes, modifiers and the items that fall out",
+        "operationId": "template_detail_api_templates__template_id__get",
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Template Id"
+            }
+          },
+          {
+            "name": "as_of",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Which day's recipe to show.",
+              "title": "As Of"
+            },
+            "description": "Which day's recipe to show."
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/templates/{template_id}/preview": {
+      "post": {
+        "tags": [
+          "composition"
+        ],
+        "summary": "What a per-size quantity change would do. WRITES NOTHING.",
+        "operationId": "preview_edit_api_templates__template_id__preview_post",
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Template Id"
+            }
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ComponentQtyChange"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreviewResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/templates/{template_id}/apply": {
+      "post": {
+        "tags": [
+          "composition"
+        ],
+        "summary": "Apply the change from today. The only write in this API.",
+        "operationId": "apply_edit_api_templates__template_id__apply_post",
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Template Id"
+            }
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ComponentQtyApply"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplyResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stock": {
+      "get": {
+        "tags": [
+          "stock"
+        ],
+        "summary": "Theoretical on-hand, batches, drift attribution and projected run-out",
+        "operationId": "stock_api_stock_get",
+        "parameters": [
+          {
+            "name": "as_of",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "now | today | yesterday | YYYY-MM-DD",
+              "title": "As Of"
+            },
+            "description": "now | today | yesterday | YYYY-MM-DD"
+          },
+          {
+            "name": "tier",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Comma-separated: A, B, C.",
+              "title": "Tier"
+            },
+            "description": "Comma-separated: A, B, C."
+          },
+          {
+            "name": "include_untracked",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Include Untracked"
+            }
+          },
+          {
+            "name": "run_out",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Compute the projected run-out date. One forecast per ingredient, so it is the slow part of this endpoint.",
+              "default": true,
+              "title": "Run Out"
+            },
+            "description": "Compute the projected run-out date. One forecast per ingredient, so it is the slow part of this endpoint."
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stock/{ingredient_id}": {
+      "get": {
+        "tags": [
+          "stock"
+        ],
+        "summary": "One ingredient, with its drift history and waste-factor proposal",
+        "operationId": "stock_detail_api_stock__ingredient_id__get",
+        "parameters": [
+          {
+            "name": "ingredient_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Ingredient Id"
+            }
+          },
+          {
+            "name": "as_of",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "As Of"
+            }
+          },
+          {
+            "name": "history",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 12,
+              "title": "History"
+            }
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/suppliers": {
+      "get": {
+        "tags": [
+          "orders"
+        ],
+        "summary": "Supplier terms, and which of them are invented placeholders",
+        "operationId": "suppliers_api_suppliers_get",
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SupplierOut"
+                  },
+                  "title": "Response Suppliers Api Suppliers Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders/draft": {
+      "get": {
+        "tags": [
+          "orders"
+        ],
+        "summary": "One ordering run: N drafts by supplier, cap reasons, the Tesco list. WRITES NOTHING.",
+        "operationId": "draft_orders_api_orders_draft_get",
+        "parameters": [
+          {
+            "name": "order_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Defaults to today, local.",
+              "title": "Order Date"
+            },
+            "description": "Defaults to today, local."
+          },
+          {
+            "name": "tier",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Comma-separated. Default A,B.",
+              "title": "Tier"
+            },
+            "description": "Comma-separated. Default A,B."
+          },
+          {
+            "name": "reorder_cadence_days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 90,
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The real reordering interval. Omit for 'the next slot the supplier offers'. Spec 5.4's middle term: a weekly order sized against a one-day gap under-orders sevenfold.",
+              "title": "Reorder Cadence Days"
+            },
+            "description": "The real reordering interval. Omit for 'the next slot the supplier offers'. Spec 5.4's middle term: a weekly order sized against a one-day gap under-orders sevenfold."
+          },
+          {
+            "name": "require_auto_order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Gate on par_level.auto_order_enabled (invariant 2). False by default because every order here is a DRAFT a human must confirm anyway; true is the unattended path.",
+              "default": false,
+              "title": "Require Auto Order"
+            },
+            "description": "Gate on par_level.auto_order_enabled (invariant 2). False by default because every order here is a DRAFT a human must confirm anyway; true is the unattended path."
+          },
+          {
+            "name": "supplier_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Repeatable.",
+              "title": "Supplier Id"
+            },
+            "description": "Repeatable."
+          },
+          {
+            "name": "min_order_pence",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Override every supplier's minimum, for a what-if.",
+              "title": "Min Order Pence"
+            },
+            "description": "Override every supplier's minimum, for a what-if."
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftOrdersResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/margin": {
+      "get": {
+        "tags": [
+          "margin"
+        ],
+        "summary": "The menu ranked by margin % AND by margin-per-minute. The disagreement is the finding.",
+        "operationId": "margin_api_margin_get",
+        "parameters": [
+          {
+            "name": "template",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Restrict to one template by name.",
+              "title": "Template"
+            },
+            "description": "Restrict to one template by name."
+          },
+          {
+            "name": "window_days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "minimum": 1,
+              "default": 30,
+              "title": "Window Days"
+            }
+          },
+          {
+            "name": "until",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Until"
+            }
+          },
+          {
+            "name": "loaded_hourly_rate_pence",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "What-if rate for the RANKING only. Each row's cached labour keeps the rate that was in force when it was computed -- that is the auditable figure.",
+              "title": "Loaded Hourly Rate Pence"
+            },
+            "description": "What-if rate for the RANKING only. Each row's cached labour keeps the rate that was in force when it was computed -- that is the auditable figure."
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarginResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/channels": {
+      "get": {
+        "tags": [
+          "channels"
+        ],
+        "summary": "ROAS, contribution after commission and ad spend, ranks-well-converts-badly",
+        "operationId": "channels_api_channels_get",
+        "parameters": [
+          {
+            "name": "since",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Since"
+            }
+          },
+          {
+            "name": "until",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Until"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 400,
+              "minimum": 1,
+              "default": 28,
+              "title": "Days"
+            }
+          },
+          {
+            "name": "min_views",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 100,
+              "title": "Min Views"
+            }
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChannelsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/today": {
+      "get": {
+        "tags": [
+          "today"
+        ],
+        "summary": "What would otherwise take four screens to find out",
+        "operationId": "today_api_today_get",
+        "parameters": [
+          {
+            "name": "as_of",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "As Of"
+            }
+          },
+          {
+            "name": "with_orders",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Also compute the draft-order figures. Several seconds.",
+              "default": false,
+              "title": "With Orders"
+            },
+            "description": "Also compute the draft-order figures. Several seconds."
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodayResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ApplyResponse": {
+        "properties": {
+          "template_id": {
+            "type": "integer",
+            "title": "Template Id"
+          },
+          "component_id": {
+            "type": "integer",
+            "title": "Component Id"
+          },
+          "new_component_id": {
+            "type": "integer",
+            "title": "New Component Id"
+          },
+          "effective_from": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Effective From"
+          },
+          "qty_by_size_before": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Qty By Size Before"
+          },
+          "qty_by_size_after": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Qty By Size After"
+          },
+          "preview": {
+            "$ref": "#/components/schemas/ImpactPreviewOut"
+          },
+          "labour": {
+            "$ref": "#/components/schemas/LabourImpactOut"
+          },
+          "rollup_summary": {
+            "type": "string",
+            "title": "Rollup Summary"
+          },
+          "rollup_items_recosted": {
+            "type": "integer",
+            "title": "Rollup Items Recosted"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          }
+        },
+        "type": "object",
+        "required": [
+          "template_id",
+          "component_id",
+          "new_component_id",
+          "effective_from",
+          "qty_by_size_before",
+          "qty_by_size_after",
+          "preview",
+          "labour",
+          "rollup_summary",
+          "rollup_items_recosted",
+          "summary"
+        ],
+        "title": "ApplyResponse",
+        "description": "The edit, applied from today. The old component row is closed, a new one opened.\n\nThere is no retroactive mode (invariant 3). `effective_from` before the start of\nthe local trading day is refused with 409."
+      },
+      "BatchOut": {
+        "properties": {
+          "batch_id": {
+            "type": "integer",
+            "title": "Batch Id"
+          },
+          "qty_remaining": {
+            "type": "string",
+            "title": "Qty Remaining"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "received_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Received At"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          },
+          "opened_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opened At"
+          },
+          "effective_expiry": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective Expiry",
+            "description": "Earlier of the carton date and opened_at + open_life_days."
+          },
+          "days_left": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Days Left",
+            "description": "Null when this ingredient does not expire."
+          },
+          "unit_cost_pence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit Cost Pence"
+          },
+          "value_pence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value Pence"
+          }
+        },
+        "type": "object",
+        "required": [
+          "batch_id",
+          "qty_remaining",
+          "unit",
+          "received_at",
+          "expires_at",
+          "opened_at",
+          "effective_expiry",
+          "days_left",
+          "unit_cost_pence",
+          "value_pence"
+        ],
+        "title": "BatchOut"
+      },
+      "ChannelFinding": {
+        "properties": {
+          "channel": {
+            "type": "string",
+            "title": "Channel"
+          },
+          "benchmark_bp": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Benchmark Bp"
+          },
+          "considered": {
+            "type": "integer",
+            "title": "Considered"
+          },
+          "min_views": {
+            "type": "integer",
+            "title": "Min Views"
+          },
+          "rank_threshold": {
+            "type": "integer",
+            "title": "Rank Threshold"
+          },
+          "gaps": {
+            "items": {
+              "$ref": "#/components/schemas/ConversionGapOut"
+            },
+            "type": "array",
+            "title": "Gaps"
+          },
+          "caveats": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Caveats",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "channel",
+          "benchmark_bp",
+          "considered",
+          "min_views",
+          "rank_threshold",
+          "gaps"
+        ],
+        "title": "ChannelFinding",
+        "description": "Ranks well, converts badly: the cheapest thing on the channel screen to fix."
+      },
+      "ChannelPerformanceOut": {
+        "properties": {
+          "channel": {
+            "type": "string",
+            "title": "Channel"
+          },
+          "since": {
+            "type": "string",
+            "format": "date",
+            "title": "Since"
+          },
+          "until": {
+            "type": "string",
+            "format": "date",
+            "title": "Until"
+          },
+          "days": {
+            "type": "integer",
+            "title": "Days"
+          },
+          "sources": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sources",
+            "description": "Provenance of the rows. A hand export and a scrape are not equally trustworthy."
+          },
+          "gross_pence": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gross Pence"
+          },
+          "commission_pence": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commission Pence"
+          },
+          "ad_spend_pence": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ad Spend Pence"
+          },
+          "attributed_revenue_pence": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attributed Revenue Pence"
+          },
+          "orders": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Orders"
+          },
+          "impressions": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Impressions"
+          },
+          "menu_views": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Menu Views"
+          },
+          "net_pence": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Net Pence",
+            "description": "Contribution after commission AND ad spend, over the days that reported all three. A day missing one is dropped whole rather than part-subtracted."
+          },
+          "net_complete_days": {
+            "type": "integer",
+            "title": "Net Complete Days"
+          },
+          "net_incomplete_days": {
+            "type": "integer",
+            "title": "Net Incomplete Days"
+          },
+          "roas_bp": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roas Bp",
+            "description": "Basis points. 10000 = 1.0x."
+          },
+          "commission_rate_bp": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commission Rate Bp"
+          },
+          "net_margin_bp": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Net Margin Bp"
+          },
+          "conversion_bp": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversion Bp"
+          },
+          "coverage": {
+            "items": {
+              "$ref": "#/components/schemas/FieldCoverageOut"
+            },
+            "type": "array",
+            "title": "Coverage"
+          },
+          "caveats": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Caveats",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "channel",
+          "since",
+          "until",
+          "days",
+          "sources",
+          "gross_pence",
+          "commission_pence",
+          "ad_spend_pence",
+          "attributed_revenue_pence",
+          "orders",
+          "impressions",
+          "menu_views",
+          "net_pence",
+          "net_complete_days",
+          "net_incomplete_days",
+          "roas_bp",
+          "commission_rate_bp",
+          "net_margin_bp",
+          "conversion_bp",
+          "coverage"
+        ],
+        "title": "ChannelPerformanceOut"
+      },
+      "ChannelsResponse": {
+        "properties": {
+          "since": {
+            "type": "string",
+            "format": "date",
+            "title": "Since"
+          },
+          "until": {
+            "type": "string",
+            "format": "date",
+            "title": "Until"
+          },
+          "channels_present": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Channels Present"
+          },
+          "sources_present": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sources Present"
+          },
+          "performance": {
+            "items": {
+              "$ref": "#/components/schemas/ChannelPerformanceOut"
+            },
+            "type": "array",
+            "title": "Performance"
+          },
+          "findings": {
+            "items": {
+              "$ref": "#/components/schemas/ChannelFinding"
+            },
+            "type": "array",
+            "title": "Findings"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Notes",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "since",
+          "until",
+          "channels_present",
+          "sources_present",
+          "performance",
+          "findings"
+        ],
+        "title": "ChannelsResponse"
+      },
+      "ComponentOut": {
+        "properties": {
+          "component_id": {
+            "type": "integer",
+            "title": "Component Id"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "ingredient_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ingredient Id"
+          },
+          "ingredient_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ingredient Name",
+            "description": "Null when the slot is filled by a variant axis."
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          },
+          "qty_by_size": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Qty By Size"
+          },
+          "is_substitutable": {
+            "type": "boolean",
+            "title": "Is Substitutable"
+          },
+          "is_required": {
+            "type": "boolean",
+            "title": "Is Required"
+          },
+          "effective_from": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Effective From"
+          },
+          "ingredient_cost": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Cost"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Cost per unit of the slot's ingredient, if it has one."
+          }
+        },
+        "type": "object",
+        "required": [
+          "component_id",
+          "role",
+          "ingredient_id",
+          "unit",
+          "qty_by_size",
+          "is_substitutable",
+          "is_required",
+          "effective_from"
+        ],
+        "title": "ComponentOut",
+        "description": "One template slot. `qty_by_size` is strings in and strings out (ARCHITECTURE 7.4)."
+      },
+      "ComponentQtyApply": {
+        "properties": {
+          "component_id": {
+            "type": "integer",
+            "title": "Component Id"
+          },
+          "qty_by_size": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Qty By Size",
+            "description": "Per-size quantities as decimal strings, e.g. {\"S\": \"0.12\", \"M\": \"0.18\"}."
+          },
+          "window_days": {
+            "type": "integer",
+            "maximum": 365.0,
+            "minimum": 1.0,
+            "title": "Window Days",
+            "description": "Sales window for the COGS projection.",
+            "default": 30
+          },
+          "actor": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Actor",
+            "description": "Who is applying this. Recorded on the cost rollup's trigger."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "component_id",
+          "qty_by_size",
+          "actor"
+        ],
+        "title": "ComponentQtyApply"
+      },
+      "ComponentQtyChange": {
+        "properties": {
+          "component_id": {
+            "type": "integer",
+            "title": "Component Id"
+          },
+          "qty_by_size": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Qty By Size",
+            "description": "Per-size quantities as decimal strings, e.g. {\"S\": \"0.12\", \"M\": \"0.18\"}."
+          },
+          "window_days": {
+            "type": "integer",
+            "maximum": 365.0,
+            "minimum": 1.0,
+            "title": "Window Days",
+            "description": "Sales window for the COGS projection.",
+            "default": 30
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "component_id",
+          "qty_by_size"
+        ],
+        "title": "ComponentQtyChange",
+        "description": "The body of both `/preview` and `/apply`.\n\nQuantities are **strings**. A float here is refused by the service layer\n(`edit_composition._validated`) and by this schema's type, in that order."
+      },
+      "ConversionGapOut": {
+        "properties": {
+          "menu_item_id": {
+            "type": "integer",
+            "title": "Menu Item Id"
+          },
+          "item_name": {
+            "type": "string",
+            "title": "Item Name"
+          },
+          "best_rank": {
+            "type": "integer",
+            "title": "Best Rank"
+          },
+          "views": {
+            "type": "integer",
+            "title": "Views"
+          },
+          "orders": {
+            "type": "integer",
+            "title": "Orders"
+          },
+          "conversion_bp": {
+            "type": "integer",
+            "title": "Conversion Bp"
+          },
+          "benchmark_bp": {
+            "type": "integer",
+            "title": "Benchmark Bp"
+          },
+          "shortfall_bp": {
+            "type": "integer",
+            "title": "Shortfall Bp"
+          },
+          "relative_shortfall_bp": {
+            "type": "integer",
+            "title": "Relative Shortfall Bp"
+          },
+          "lost_orders": {
+            "type": "integer",
+            "title": "Lost Orders"
+          },
+          "lost_revenue_pence": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lost Revenue Pence"
+          },
+          "days": {
+            "type": "integer",
+            "title": "Days"
+          },
+          "sentence": {
+            "type": "string",
+            "title": "Sentence"
+          }
+        },
+        "type": "object",
+        "required": [
+          "menu_item_id",
+          "item_name",
+          "best_rank",
+          "views",
+          "orders",
+          "conversion_bp",
+          "benchmark_bp",
+          "shortfall_bp",
+          "relative_shortfall_bp",
+          "lost_orders",
+          "lost_revenue_pence",
+          "days",
+          "sentence"
+        ],
+        "title": "ConversionGapOut"
+      },
+      "Cost": {
+        "properties": {
+          "pence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pence",
+            "description": "Exact decimal pence as a string, or null when the cost is unknown."
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source",
+            "description": "Weakest PriceSource among the ingredients behind this figure (INVOICE|ESTIMATE|SUPPLIER_FEED), or null when the cost is unknown."
+          },
+          "is_estimate": {
+            "type": "boolean",
+            "title": "Is Estimate",
+            "description": "True when any ingredient behind this figure is priced ESTIMATE.",
+            "default": false
+          },
+          "is_missing": {
+            "type": "boolean",
+            "title": "Is Missing",
+            "description": "True when at least one ingredient behind it has no price.",
+            "default": false
+          },
+          "excluded_from_aggregates": {
+            "type": "boolean",
+            "title": "Excluded From Aggregates",
+            "description": "True when this figure was left out of the totals on the same response, so the reader is told rather than left to infer it from a total that does not add up.",
+            "default": false
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pence"
+        ],
+        "title": "Cost",
+        "description": "A money figure and how much it is worth trusting. Invariant 8.\n\n`pence` is an exact decimal string of pence, or `null` when unknown. It is never\n`0` for \"unknown\": zero is a real and different claim."
+      },
+      "DraftOrdersResponse": {
+        "properties": {
+          "order_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Order Date"
+          },
+          "computed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Computed At"
+          },
+          "reorder_cadence_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reorder Cadence Days"
+          },
+          "tiers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tiers"
+          },
+          "suppliers": {
+            "items": {
+              "$ref": "#/components/schemas/SupplierOrderOut"
+            },
+            "type": "array",
+            "title": "Suppliers"
+          },
+          "sourcing_choices": {
+            "items": {
+              "$ref": "#/components/schemas/SourcingChoiceOut"
+            },
+            "type": "array",
+            "title": "Sourcing Choices"
+          },
+          "emergency": {
+            "items": {
+              "$ref": "#/components/schemas/EmergencyLineOut"
+            },
+            "type": "array",
+            "title": "Emergency"
+          },
+          "emergency_total_premium_pence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emergency Total Premium Pence",
+            "description": "Null rather than a partial sum when any line cannot price its own premium. A total missing two of five lines understates the argument it exists to make."
+          },
+          "emergency_notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Emergency Notes",
+            "description": "Cases deliberately NOT routed to retail. The half that stops this becoming a licence to shop.",
+            "default": []
+          },
+          "total_pence": {
+            "type": "integer",
+            "title": "Total Pence"
+          },
+          "capped_line_count": {
+            "type": "integer",
+            "title": "Capped Line Count"
+          },
+          "placeholder_supplier_names": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Placeholder Supplier Names"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Notes",
+            "default": []
+          },
+          "writes_nothing": {
+            "type": "boolean",
+            "title": "Writes Nothing",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "order_date",
+          "computed_at",
+          "reorder_cadence_days",
+          "tiers",
+          "suppliers",
+          "sourcing_choices",
+          "emergency",
+          "emergency_total_premium_pence",
+          "total_pence",
+          "capped_line_count",
+          "placeholder_supplier_names"
+        ],
+        "title": "DraftOrdersResponse"
+      },
+      "DriftAttributionOut": {
+        "properties": {
+          "cause": {
+            "type": "string",
+            "title": "Cause"
+          },
+          "headline": {
+            "type": "string",
+            "title": "Headline"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action"
+          },
+          "gap_qty": {
+            "type": "string",
+            "title": "Gap Qty"
+          },
+          "expired_qty": {
+            "type": "string",
+            "title": "Expired Qty"
+          },
+          "measurement_qty": {
+            "type": "string",
+            "title": "Measurement Qty"
+          },
+          "expiry_qty": {
+            "type": "string",
+            "title": "Expiry Qty"
+          },
+          "expiry_share": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expiry Share"
+          },
+          "unexplained_loss_qty": {
+            "type": "string",
+            "title": "Unexplained Loss Qty"
+          },
+          "surplus_qty": {
+            "type": "string",
+            "title": "Surplus Qty"
+          },
+          "surplus_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Surplus Note"
+          },
+          "loss_pct_of_consumption": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Loss Pct Of Consumption"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cause",
+          "headline",
+          "action",
+          "gap_qty",
+          "expired_qty",
+          "measurement_qty",
+          "expiry_qty",
+          "expiry_share",
+          "unexplained_loss_qty",
+          "surplus_qty",
+          "surplus_note",
+          "loss_pct_of_consumption"
+        ],
+        "title": "DriftAttributionOut",
+        "description": "Which problem this is, and therefore what to fix. Spec 5.2's v2 diagnostic.\n\nThe two fixes are opposite -- order less versus change the recipe -- so a single\nundifferentiated percentage sends the reader the wrong way about half the time."
+      },
+      "DriftHistoryRowOut": {
+        "properties": {
+          "observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Observed At"
+          },
+          "theoretical_qty": {
+            "type": "string",
+            "title": "Theoretical Qty"
+          },
+          "counted_qty": {
+            "type": "string",
+            "title": "Counted Qty"
+          },
+          "drift_pct": {
+            "type": "number",
+            "title": "Drift Pct"
+          },
+          "waste_factor_at_count": {
+            "type": "string",
+            "title": "Waste Factor At Count"
+          },
+          "expired_qty_in_window": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expired Qty In Window"
+          }
+        },
+        "type": "object",
+        "required": [
+          "observed_at",
+          "theoretical_qty",
+          "counted_qty",
+          "drift_pct",
+          "waste_factor_at_count",
+          "expired_qty_in_window"
+        ],
+        "title": "DriftHistoryRowOut"
+      },
+      "DriftOut": {
+        "properties": {
+          "has_observation": {
+            "type": "boolean",
+            "title": "Has Observation"
+          },
+          "observed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observed At"
+          },
+          "theoretical_qty": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Theoretical Qty"
+          },
+          "counted_qty": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Counted Qty"
+          },
+          "drift_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drift Pct"
+          },
+          "verdict": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verdict"
+          },
+          "mean_abs_drift_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mean Abs Drift Pct"
+          },
+          "observation_count": {
+            "type": "integer",
+            "title": "Observation Count"
+          },
+          "auto_order_enabled": {
+            "type": "boolean",
+            "title": "Auto Order Enabled"
+          },
+          "auto_order_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auto Order Reason"
+          },
+          "clean_streak": {
+            "type": "integer",
+            "title": "Clean Streak"
+          },
+          "required_streak": {
+            "type": "integer",
+            "title": "Required Streak"
+          },
+          "gate_action": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gate Action"
+          },
+          "trust_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trust Status"
+          },
+          "attribution": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DriftAttributionOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "has_observation",
+          "observed_at",
+          "theoretical_qty",
+          "counted_qty",
+          "drift_pct",
+          "verdict",
+          "mean_abs_drift_pct",
+          "observation_count",
+          "auto_order_enabled",
+          "auto_order_reason",
+          "clean_streak",
+          "required_streak",
+          "gate_action"
+        ],
+        "title": "DriftOut",
+        "description": "The latest observation, the gate's verdict, and the attribution behind both."
+      },
+      "EmergencyLineOut": {
+        "properties": {
+          "ingredient_id": {
+            "type": "integer",
+            "title": "Ingredient Id"
+          },
+          "ingredient_name": {
+            "type": "string",
+            "title": "Ingredient Name"
+          },
+          "qty": {
+            "type": "string",
+            "title": "Qty"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "retail_unit_price_pence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retail Unit Price Pence"
+          },
+          "preferred_unit_price_pence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preferred Unit Price Pence"
+          },
+          "premium_pence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Premium Pence",
+            "description": "Extra actually paid by going to retail. Never negative. Null when unpriced."
+          },
+          "raw_premium_pence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raw Premium Pence",
+            "description": "Signed. Negative means retail was cheaper for this line."
+          },
+          "retail_is_cheaper": {
+            "type": "boolean",
+            "title": "Retail Is Cheaper",
+            "description": "A sourcing finding, not a premium: the preferred supplier is the wrong default for this ingredient. Surfaced separately so it is arguable rather than absorbed into a zero.",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "ingredient_id",
+          "ingredient_name",
+          "qty",
+          "unit",
+          "reason",
+          "retail_unit_price_pence",
+          "preferred_unit_price_pence",
+          "premium_pence"
+        ],
+        "title": "EmergencyLineOut",
+        "description": "A Tesco run: what could not wait, and the retail premium it cost. Spec 4.4.\n\nTwo premium figures, and the difference is load-bearing. `premium_pence` is the extra\nactually paid and is never negative. `raw_premium_pence` is signed, and when it is\nnegative `retail_is_cheaper` is true: retail would have been cheaper for this line all\nalong, which is a **sourcing finding** about the wrong default supplier, not a saving\nto net off the cost of panic-buying. A screen that showed only the signed figure could\nmake a week of emergencies look like a discount."
+      },
+      "FieldCoverageOut": {
+        "properties": {
+          "field_name": {
+            "type": "string",
+            "title": "Field Name"
+          },
+          "reported": {
+            "type": "integer",
+            "title": "Reported"
+          },
+          "missing": {
+            "type": "integer",
+            "title": "Missing"
+          },
+          "complete": {
+            "type": "boolean",
+            "title": "Complete"
+          }
+        },
+        "type": "object",
+        "required": [
+          "field_name",
+          "reported",
+          "missing",
+          "complete"
+        ],
+        "title": "FieldCoverageOut"
+      },
+      "Forecast": {
+        "properties": {
+          "qty": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qty",
+            "description": "Total forecast quantity over the window, or null when low-confidence."
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "window_days": {
+            "type": "integer",
+            "title": "Window Days"
+          },
+          "is_low_confidence": {
+            "type": "boolean",
+            "title": "Is Low Confidence"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reasons",
+            "default": []
+          },
+          "used_flat_average": {
+            "type": "boolean",
+            "title": "Used Flat Average",
+            "default": false
+          },
+          "history_days": {
+            "type": "integer",
+            "title": "History Days",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "qty",
+          "unit",
+          "window_days",
+          "is_low_confidence"
+        ],
+        "title": "Forecast",
+        "description": "A forecast, or the reason there is no number to show. Invariant 9.\n\nWhen `is_low_confidence` is true, `qty` is `null` and `reasons` carries the\nsentence to render **in its place**. The figure is withheld from the payload\ndeliberately; see the module docstring."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "Health": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "database_dialect": {
+            "type": "string",
+            "title": "Database Dialect"
+          },
+          "auth_configured": {
+            "type": "boolean",
+            "title": "Auth Configured"
+          },
+          "ingredients": {
+            "type": "integer",
+            "title": "Ingredients"
+          },
+          "menu_items": {
+            "type": "integer",
+            "title": "Menu Items"
+          },
+          "templates": {
+            "type": "integer",
+            "title": "Templates"
+          },
+          "movements": {
+            "type": "integer",
+            "title": "Movements"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "database_dialect",
+          "auth_configured",
+          "ingredients",
+          "menu_items",
+          "templates",
+          "movements"
+        ],
+        "title": "Health",
+        "description": "Open, unauthenticated. Says whether the door is locked, never what the key is."
+      },
+      "ImpactPreviewOut": {
+        "properties": {
+          "affected_item_count": {
+            "type": "integer",
+            "title": "Affected Item Count"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ImpactedItemOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "cost_delta_pence_per_item": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Delta Pence Per Item",
+            "description": "One figure only when every affected item agrees. Null when they do not -- an average across items that disagree is a number describing nothing."
+          },
+          "cost_delta_pence_range": {
+            "anyOf": [
+              {
+                "prefixItems": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "type": "array",
+                "maxItems": 2,
+                "minItems": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Delta Pence Range",
+            "description": "The spread, when `cost_delta_pence_per_item` is null. `ImpactPreview` itself puts this only in a warning sentence; it is computed here from the per-item deltas so a screen can render a range rather than parse prose. See the integrator note about `ImpactPreview`."
+          },
+          "monthly_cogs_delta_pence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Monthly Cogs Delta Pence"
+          },
+          "worst_margin_after": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ImpactedItemOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "affected_item_count",
+          "items",
+          "cost_delta_pence_per_item",
+          "monthly_cogs_delta_pence",
+          "worst_margin_after"
+        ],
+        "title": "ImpactPreviewOut"
+      },
+      "ImpactedItemOut": {
+        "properties": {
+          "menu_item_id": {
+            "type": "integer",
+            "title": "Menu Item Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "size_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size Code"
+          },
+          "price_pence": {
+            "type": "integer",
+            "title": "Price Pence"
+          },
+          "cost_before": {
+            "$ref": "#/components/schemas/Cost"
+          },
+          "cost_after": {
+            "$ref": "#/components/schemas/Cost"
+          },
+          "cost_delta_pence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Delta Pence"
+          },
+          "margin_pct_before": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Margin Pct Before"
+          },
+          "margin_pct_after": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Margin Pct After"
+          }
+        },
+        "type": "object",
+        "required": [
+          "menu_item_id",
+          "name",
+          "size_code",
+          "price_pence",
+          "cost_before",
+          "cost_after",
+          "cost_delta_pence",
+          "margin_pct_before",
+          "margin_pct_after"
+        ],
+        "title": "ImpactedItemOut"
+      },
+      "LabourImpactOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/LabourItemOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "labour_cost_pence_per_item": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Labour Cost Pence Per Item"
+          },
+          "labour_cost_pence_range": {
+            "anyOf": [
+              {
+                "prefixItems": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "type": "array",
+                "maxItems": 2,
+                "minItems": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Labour Cost Pence Range"
+          },
+          "true_margin_delta_pence_per_item": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "True Margin Delta Pence Per Item"
+          },
+          "true_margin_delta_pence_range": {
+            "anyOf": [
+              {
+                "prefixItems": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "type": "array",
+                "maxItems": 2,
+                "minItems": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "True Margin Delta Pence Range"
+          },
+          "labour_cost_window_pence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Labour Cost Window Pence"
+          },
+          "untimed_count": {
+            "type": "integer",
+            "title": "Untimed Count"
+          },
+          "rank_moves": {
+            "items": {
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "integer"
+                }
+              ],
+              "type": "array",
+              "maxItems": 3,
+              "minItems": 3
+            },
+            "type": "array",
+            "title": "Rank Moves",
+            "description": "(item label, margin-per-minute rank before, rank after) for items the edit moves.",
+            "default": []
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "labour_cost_pence_per_item",
+          "labour_cost_pence_range",
+          "true_margin_delta_pence_per_item",
+          "true_margin_delta_pence_range",
+          "labour_cost_window_pence",
+          "untimed_count"
+        ],
+        "title": "LabourImpactOut",
+        "description": "Spec 5.6's half of the preview.\n\n`labour_cost_pence_per_item` is one figure only when every affected item agrees;\notherwise it is null and `labour_cost_pence_range` carries the spread. An average\nacross items that disagree is a number describing nothing."
+      },
+      "LabourItemOut": {
+        "properties": {
+          "menu_item_id": {
+            "type": "integer",
+            "title": "Menu Item Id"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "prep_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prep Seconds"
+          },
+          "prep_is_estimate": {
+            "type": "boolean",
+            "title": "Prep Is Estimate"
+          },
+          "labour_cost_pence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Labour Cost Pence"
+          },
+          "true_margin_before_pence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "True Margin Before Pence"
+          },
+          "true_margin_after_pence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "True Margin After Pence"
+          },
+          "true_margin_delta_pence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "True Margin Delta Pence"
+          },
+          "margin_per_minute_before_pence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Margin Per Minute Before Pence"
+          },
+          "margin_per_minute_after_pence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Margin Per Minute After Pence"
+          },
+          "margin_per_minute_delta_pence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Margin Per Minute Delta Pence"
+          }
+        },
+        "type": "object",
+        "required": [
+          "menu_item_id",
+          "label",
+          "prep_seconds",
+          "prep_is_estimate",
+          "labour_cost_pence",
+          "true_margin_before_pence",
+          "true_margin_after_pence",
+          "true_margin_delta_pence",
+          "margin_per_minute_before_pence",
+          "margin_per_minute_after_pence",
+          "margin_per_minute_delta_pence"
+        ],
+        "title": "LabourItemOut"
+      },
+      "MarginItemOut": {
+        "properties": {
+          "menu_item_id": {
+            "type": "integer",
+            "title": "Menu Item Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "size_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size Code"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "template_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Id"
+          },
+          "template_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Name"
+          },
+          "price_pence": {
+            "type": "integer",
+            "title": "Price Pence"
+          },
+          "cost": {
+            "$ref": "#/components/schemas/Cost"
+          },
+          "units_sold": {
+            "type": "string",
+            "title": "Units Sold"
+          },
+          "prep_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prep Seconds"
+          },
+          "prep_source": {
+            "type": "string",
+            "title": "Prep Source"
+          },
+          "prep_is_estimate": {
+            "type": "boolean",
+            "title": "Prep Is Estimate"
+          },
+          "labour_cost_pence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Labour Cost Pence"
+          },
+          "margin_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Margin Pct"
+          },
+          "true_margin_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "True Margin Pct"
+          },
+          "true_margin_pence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "True Margin Pence"
+          },
+          "contribution_pence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contribution Pence"
+          },
+          "margin_per_minute_pence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Margin Per Minute Pence"
+          }
+        },
+        "type": "object",
+        "required": [
+          "menu_item_id",
+          "name",
+          "size_code",
+          "label",
+          "template_id",
+          "template_name",
+          "price_pence",
+          "cost",
+          "units_sold",
+          "prep_seconds",
+          "prep_source",
+          "prep_is_estimate",
+          "labour_cost_pence",
+          "margin_pct",
+          "true_margin_pct",
+          "true_margin_pence",
+          "contribution_pence",
+          "margin_per_minute_pence"
+        ],
+        "title": "MarginItemOut"
+      },
+      "MarginResponse": {
+        "properties": {
+          "window_days": {
+            "type": "integer",
+            "title": "Window Days"
+          },
+          "since": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Since"
+          },
+          "until": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Until"
+          },
+          "loaded_hourly_rate_pence": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Loaded Hourly Rate Pence"
+          },
+          "rate_is_set": {
+            "type": "boolean",
+            "title": "Rate Is Set"
+          },
+          "items_costed": {
+            "type": "integer",
+            "title": "Items Costed"
+          },
+          "rankable_count": {
+            "type": "integer",
+            "title": "Rankable Count"
+          },
+          "orderings_agree": {
+            "type": "boolean",
+            "title": "Orderings Agree",
+            "description": "Expected false. True on a real menu means every ranked item takes the same time to make, or the prep times are not real."
+          },
+          "by_margin_pct": {
+            "items": {
+              "$ref": "#/components/schemas/MarginItemOut"
+            },
+            "type": "array",
+            "title": "By Margin Pct"
+          },
+          "by_margin_per_minute": {
+            "items": {
+              "$ref": "#/components/schemas/MarginItemOut"
+            },
+            "type": "array",
+            "title": "By Margin Per Minute"
+          },
+          "ranked": {
+            "items": {
+              "$ref": "#/components/schemas/RankedItemOut"
+            },
+            "type": "array",
+            "title": "Ranked"
+          },
+          "biggest_disagreements": {
+            "items": {
+              "$ref": "#/components/schemas/RankedItemOut"
+            },
+            "type": "array",
+            "title": "Biggest Disagreements"
+          },
+          "excluded": {
+            "items": {
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array",
+              "maxItems": 2,
+              "minItems": 2
+            },
+            "type": "array",
+            "title": "Excluded",
+            "description": "(label, reason) for items that cannot be ranked. Named, never sorted to the bottom as zeroes.",
+            "default": []
+          },
+          "uncosted_items": {
+            "items": {
+              "$ref": "#/components/schemas/UncostedItemOut"
+            },
+            "type": "array",
+            "title": "Uncosted Items",
+            "default": []
+          },
+          "menu": {
+            "$ref": "#/components/schemas/RollupOut"
+          },
+          "by_template": {
+            "items": {
+              "$ref": "#/components/schemas/RollupOut"
+            },
+            "type": "array",
+            "title": "By Template"
+          },
+          "estimated_cost_item_count": {
+            "type": "integer",
+            "title": "Estimated Cost Item Count"
+          },
+          "invoice_cost_item_count": {
+            "type": "integer",
+            "title": "Invoice Cost Item Count"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "window_days",
+          "since",
+          "until",
+          "loaded_hourly_rate_pence",
+          "rate_is_set",
+          "items_costed",
+          "rankable_count",
+          "orderings_agree",
+          "by_margin_pct",
+          "by_margin_per_minute",
+          "ranked",
+          "biggest_disagreements",
+          "menu",
+          "by_template",
+          "estimated_cost_item_count",
+          "invoice_cost_item_count"
+        ],
+        "title": "MarginResponse"
+      },
+      "Meta": {
+        "properties": {
+          "money_encoding": {
+            "type": "string",
+            "title": "Money Encoding"
+          },
+          "quantity_encoding": {
+            "type": "string",
+            "title": "Quantity Encoding"
+          },
+          "timestamp_encoding": {
+            "type": "string",
+            "title": "Timestamp Encoding"
+          },
+          "units": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Units"
+          },
+          "tiers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tiers"
+          },
+          "size_codes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Size Codes"
+          },
+          "component_roles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Component Roles"
+          },
+          "price_sources": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Price Sources"
+          },
+          "storage": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Storage"
+          },
+          "movement_types": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Movement Types"
+          },
+          "drift_verdicts": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Drift Verdicts"
+          },
+          "drift_causes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Drift Causes"
+          },
+          "order_channels": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Order Channels"
+          },
+          "sales_channels": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sales Channels"
+          },
+          "loaded_hourly_rate_pence": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Loaded Hourly Rate Pence"
+          },
+          "local_timezone": {
+            "type": "string",
+            "title": "Local Timezone"
+          },
+          "invariant_notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Invariant Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "money_encoding",
+          "quantity_encoding",
+          "timestamp_encoding",
+          "units",
+          "tiers",
+          "size_codes",
+          "component_roles",
+          "price_sources",
+          "storage",
+          "movement_types",
+          "drift_verdicts",
+          "drift_causes",
+          "order_channels",
+          "sales_channels",
+          "loaded_hourly_rate_pence",
+          "local_timezone",
+          "invariant_notes"
+        ],
+        "title": "Meta",
+        "description": "Conventions and vocabularies, so the frontend does not hard-code enum strings."
+      },
+      "ModifierOut": {
+        "properties": {
+          "modifier_id": {
+            "type": "integer",
+            "title": "Modifier Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action"
+          },
+          "target_role": {
+            "type": "string",
+            "title": "Target Role"
+          },
+          "ingredient_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ingredient Id"
+          },
+          "ingredient_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ingredient Name"
+          },
+          "qty_delta": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qty Delta"
+          },
+          "qty_multiplier": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qty Multiplier"
+          },
+          "price_pence": {
+            "type": "integer",
+            "title": "Price Pence"
+          }
+        },
+        "type": "object",
+        "required": [
+          "modifier_id",
+          "name",
+          "action",
+          "target_role",
+          "ingredient_id",
+          "ingredient_name",
+          "qty_delta",
+          "qty_multiplier",
+          "price_pence"
+        ],
+        "title": "ModifierOut"
+      },
+      "OnHand": {
+        "properties": {
+          "qty": {
+            "type": "string",
+            "title": "Qty"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "as_of": {
+            "type": "string",
+            "format": "date-time",
+            "title": "As Of"
+          },
+          "is_theoretical": {
+            "type": "boolean",
+            "title": "Is Theoretical"
+          },
+          "has_count_basis": {
+            "type": "boolean",
+            "title": "Has Count Basis"
+          },
+          "basis_count_qty": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Basis Count Qty"
+          },
+          "basis_counted_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Basis Counted At"
+          },
+          "movement_sum": {
+            "type": "string",
+            "title": "Movement Sum"
+          },
+          "movement_count": {
+            "type": "integer",
+            "title": "Movement Count"
+          },
+          "basis_label": {
+            "type": "string",
+            "title": "Basis Label",
+            "description": "Human label for the basis: 'counted + ledger' or 'ledger only - NO COUNT'."
+          },
+          "is_negative": {
+            "type": "boolean",
+            "title": "Is Negative",
+            "description": "The ledger has consumed more than the last count recorded. Count it.",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "qty",
+          "unit",
+          "as_of",
+          "is_theoretical",
+          "has_count_basis",
+          "basis_count_qty",
+          "basis_counted_at",
+          "movement_sum",
+          "movement_count",
+          "basis_label"
+        ],
+        "title": "OnHand",
+        "description": "A stock figure that cannot be serialised without saying what kind it is.\n\nInvariant 6. `is_theoretical` is always true -- this is the ledger's number, not a\ncount. `has_count_basis` is the one that matters operationally: false means the\nfigure is a bare movement sum with no physical anchor behind it, which is not good\nenough to order against."
+      },
+      "OrderLineOut": {
+        "properties": {
+          "ingredient_id": {
+            "type": "integer",
+            "title": "Ingredient Id"
+          },
+          "ingredient_name": {
+            "type": "string",
+            "title": "Ingredient Name"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "packs": {
+            "type": "integer",
+            "title": "Packs"
+          },
+          "pack_size": {
+            "type": "string",
+            "title": "Pack Size"
+          },
+          "pack_unit": {
+            "type": "string",
+            "title": "Pack Unit"
+          },
+          "pack_price_pence": {
+            "type": "integer",
+            "title": "Pack Price Pence"
+          },
+          "line_total_pence": {
+            "type": "integer",
+            "title": "Line Total Pence"
+          },
+          "sku": {
+            "type": "string",
+            "title": "Sku"
+          },
+          "need_qty": {
+            "type": "string",
+            "title": "Need Qty"
+          },
+          "on_hand_qty": {
+            "type": "string",
+            "title": "On Hand Qty"
+          },
+          "on_open_pos_qty": {
+            "type": "string",
+            "title": "On Open Pos Qty"
+          },
+          "resulting_on_hand_qty": {
+            "type": "string",
+            "title": "Resulting On Hand Qty"
+          },
+          "forecast": {
+            "$ref": "#/components/schemas/Forecast",
+            "description": "Over the EFFECTIVE cover window -- the one the line was sized on, which a shelf-life or season cap may have shortened."
+          },
+          "cover_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cover Days",
+            "description": "The effective cover window this line was sized on."
+          },
+          "full_cover_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Cover Days",
+            "description": "The uncapped window: lead time + gap to the next delivery + safety days."
+          },
+          "forecast_full_window_qty": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Forecast Full Window Qty",
+            "description": "Forecast over the FULL window. Null when the forecast is withheld (invariant 9) -- the difference of two withheld numbers is still the number."
+          },
+          "capped_out_qty": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capped Out Qty",
+            "description": "Quantity deliberately NOT ordered because of the cap. The answer to 'by how much?', as a number rather than only inside cap_detail's prose."
+          },
+          "cap_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cap Reason",
+            "description": "Invariant 4. Set when shelf life or a season shortened this line's cover window, e.g. 'capped at 5 days -- Whole milk shelf life'. The user must see that the system under-ordered ON PURPOSE, or they will override it and create the waste the cap prevented."
+          },
+          "cap_detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cap Detail",
+            "description": "The arithmetic behind the cap: by how much, and from what."
+          },
+          "is_capped": {
+            "type": "boolean",
+            "title": "Is Capped",
+            "default": false
+          },
+          "is_top_up": {
+            "type": "boolean",
+            "title": "Is Top Up",
+            "description": "Added to clear a minimum or free-delivery threshold. Never a perishable (invariant 5).",
+            "default": false
+          },
+          "clamped": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clamped",
+            "description": "'min_qty' or 'max_qty' when a par clamp moved the number."
+          }
+        },
+        "type": "object",
+        "required": [
+          "ingredient_id",
+          "ingredient_name",
+          "unit",
+          "packs",
+          "pack_size",
+          "pack_unit",
+          "pack_price_pence",
+          "line_total_pence",
+          "sku",
+          "need_qty",
+          "on_hand_qty",
+          "on_open_pos_qty",
+          "resulting_on_hand_qty",
+          "forecast",
+          "cover_days",
+          "cap_reason"
+        ],
+        "title": "OrderLineOut"
+      },
+      "PreviewResponse": {
+        "properties": {
+          "template_id": {
+            "type": "integer",
+            "title": "Template Id"
+          },
+          "component_id": {
+            "type": "integer",
+            "title": "Component Id"
+          },
+          "component_role": {
+            "type": "string",
+            "title": "Component Role"
+          },
+          "ingredient_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ingredient Name"
+          },
+          "qty_by_size_before": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Qty By Size Before"
+          },
+          "qty_by_size_after": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Qty By Size After"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "At"
+          },
+          "window_days": {
+            "type": "integer",
+            "title": "Window Days"
+          },
+          "preview": {
+            "$ref": "#/components/schemas/ImpactPreviewOut"
+          },
+          "labour": {
+            "$ref": "#/components/schemas/LabourImpactOut"
+          },
+          "writes_nothing": {
+            "type": "boolean",
+            "title": "Writes Nothing",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "template_id",
+          "component_id",
+          "component_role",
+          "ingredient_name",
+          "qty_by_size_before",
+          "qty_by_size_after",
+          "at",
+          "window_days",
+          "preview",
+          "labour"
+        ],
+        "title": "PreviewResponse",
+        "description": "What the edit WOULD do. This endpoint writes nothing -- see `views.preview_edit`."
+      },
+      "RankedItemOut": {
+        "properties": {
+          "menu_item_id": {
+            "type": "integer",
+            "title": "Menu Item Id"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "margin_rank": {
+            "type": "integer",
+            "title": "Margin Rank"
+          },
+          "margin_per_minute_rank": {
+            "type": "integer",
+            "title": "Margin Per Minute Rank"
+          },
+          "rank_delta": {
+            "type": "integer",
+            "title": "Rank Delta",
+            "description": "Positive means margin-per-minute rates it HIGHER than margin % does."
+          },
+          "margin_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Margin Pct"
+          },
+          "margin_per_minute_pence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Margin Per Minute Pence"
+          },
+          "prep_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prep Seconds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "menu_item_id",
+          "label",
+          "margin_rank",
+          "margin_per_minute_rank",
+          "rank_delta",
+          "margin_pct",
+          "margin_per_minute_pence",
+          "prep_seconds"
+        ],
+        "title": "RankedItemOut",
+        "description": "One item's position in BOTH orderings. The disagreement is the finding (spec 5.6)."
+      },
+      "RollupOut": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "template_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Id"
+          },
+          "items_total": {
+            "type": "integer",
+            "title": "Items Total"
+          },
+          "items_included": {
+            "type": "integer",
+            "title": "Items Included"
+          },
+          "units_total": {
+            "type": "string",
+            "title": "Units Total"
+          },
+          "staff_hours": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Staff Hours"
+          },
+          "prep_seconds_total": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prep Seconds Total"
+          },
+          "labour_cost_pence_total": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Labour Cost Pence Total"
+          },
+          "ingredient_cost_pence_total": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ingredient Cost Pence Total"
+          },
+          "revenue_pence_total": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revenue Pence Total"
+          },
+          "contribution_pence_total": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contribution Pence Total"
+          },
+          "true_margin_pence_total": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "True Margin Pence Total"
+          },
+          "margin_per_minute_pence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Margin Per Minute Pence"
+          },
+          "labour_share_of_revenue_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Labour Share Of Revenue Pct"
+          },
+          "is_complete": {
+            "type": "boolean",
+            "title": "Is Complete"
+          },
+          "excluded": {
+            "items": {
+              "prefixItems": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "type": "array",
+              "maxItems": 2,
+              "minItems": 2
+            },
+            "type": "array",
+            "title": "Excluded",
+            "default": []
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "template_id",
+          "items_total",
+          "items_included",
+          "units_total",
+          "staff_hours",
+          "prep_seconds_total",
+          "labour_cost_pence_total",
+          "ingredient_cost_pence_total",
+          "revenue_pence_total",
+          "contribution_pence_total",
+          "true_margin_pence_total",
+          "margin_per_minute_pence",
+          "labour_share_of_revenue_pct",
+          "is_complete"
+        ],
+        "title": "RollupOut"
+      },
+      "RunOut": {
+        "properties": {
+          "forecast": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Forecast"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Null only when the caller asked for run_out=false. A WITHHELD forecast is a present Forecast with is_low_confidence=true and qty=null -- a different thing from not having asked."
+          },
+          "daily_rate_qty": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Daily Rate Qty",
+            "description": "Forecast daily consumption, or null when withheld."
+          },
+          "days": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Days",
+            "description": "Days of cover left, as a decimal string."
+          },
+          "on": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "On",
+            "description": "Projected local date stock reaches zero."
+          },
+          "is_out_of_stock": {
+            "type": "boolean",
+            "title": "Is Out Of Stock",
+            "default": false
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "title": "RunOut",
+        "description": "Projected run-out, or the reason there is no date to show.\n\nInvariant 9 governs this the same way it governs an order quantity: when the\nforecast behind the date is low-confidence, `days` and `on` are null and\n`forecast.reasons` is what the screen shows instead. A run-out date is the most\nactionable number on the stock screen and therefore the worst one to guess at."
+      },
+      "ShelfLifeOut": {
+        "properties": {
+          "storage": {
+            "type": "string",
+            "title": "Storage"
+          },
+          "shelf_life_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shelf Life Days",
+            "description": "Null means DOES NOT EXPIRE -- a statement, not a gap (ARCHITECTURE 8F.1)."
+          },
+          "open_life_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Open Life Days"
+          },
+          "transit_buffer_days": {
+            "type": "integer",
+            "title": "Transit Buffer Days"
+          },
+          "usable_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usable Days",
+            "description": "Shelf life less transit buffer. The real cap on a cover window."
+          },
+          "is_perishable": {
+            "type": "boolean",
+            "title": "Is Perishable"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source",
+            "description": "All 113 are seeded ESTIMATE (ARCHITECTURE 8F.1)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "storage",
+          "shelf_life_days",
+          "open_life_days",
+          "transit_buffer_days",
+          "usable_days",
+          "is_perishable"
+        ],
+        "title": "ShelfLifeOut"
+      },
+      "SkippedOut": {
+        "properties": {
+          "ingredient_id": {
+            "type": "integer",
+            "title": "Ingredient Id"
+          },
+          "ingredient_name": {
+            "type": "string",
+            "title": "Ingredient Name"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "below_par_floor": {
+            "type": "boolean",
+            "title": "Below Par Floor",
+            "default": false
+          },
+          "out_of_season": {
+            "type": "boolean",
+            "title": "Out Of Season",
+            "default": false
+          },
+          "is_capped": {
+            "type": "boolean",
+            "title": "Is Capped",
+            "default": false
+          },
+          "cap_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cap Reason"
+          },
+          "data_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Error"
+          },
+          "clamp_blocked": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clamp Blocked"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ingredient_id",
+          "ingredient_name",
+          "reason"
+        ],
+        "title": "SkippedOut",
+        "description": "A candidate that produced no line, and which of the good reasons applied.\n\n`is_capped` here is not a contradiction. A shelf-life cap can shorten the window far\nenough that the forecast over it is already covered by stock on hand, so the cap\napplied and *then* there was nothing to order. That is the cap working, and it is worth\nsaying: without it the reader sees an absent line and cannot tell \"not needed\" from\n\"the cap decided\", which are different answers to \"should I add this by hand?\"."
+      },
+      "SourcingChoiceOut": {
+        "properties": {
+          "ingredient_id": {
+            "type": "integer",
+            "title": "Ingredient Id"
+          },
+          "ingredient_name": {
+            "type": "string",
+            "title": "Ingredient Name"
+          },
+          "chosen_supplier_id": {
+            "type": "integer",
+            "title": "Chosen Supplier Id"
+          },
+          "chosen_supplier_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chosen Supplier Name"
+          },
+          "chosen_is_preferred": {
+            "type": "boolean",
+            "title": "Chosen Is Preferred"
+          },
+          "chosen_unit_price_pence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chosen Unit Price Pence"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "cheaper_rejected_supplier_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cheaper Rejected Supplier Id"
+          },
+          "cheaper_rejected_unit_price_pence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cheaper Rejected Unit Price Pence"
+          },
+          "forgone_saving_pence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Forgone Saving Pence"
+          },
+          "alternative_count": {
+            "type": "integer",
+            "title": "Alternative Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ingredient_id",
+          "ingredient_name",
+          "chosen_supplier_id",
+          "chosen_supplier_name",
+          "chosen_is_preferred",
+          "chosen_unit_price_pence",
+          "reason",
+          "cheaper_rejected_supplier_id",
+          "cheaper_rejected_unit_price_pence",
+          "forgone_saving_pence",
+          "alternative_count"
+        ],
+        "title": "SourcingChoiceOut",
+        "description": "Which supplier won an ingredient and what choosing it cost. Spec 4.4.\n\n`forgone_saving_pence` is the trade-off surfaced rather than resolved silently: a\ncheaper option existed and was not taken, either because the saving was too small\nto be worth a second invoice or because taking it would have pushed another\nsupplier's order below its minimum."
+      },
+      "StockDetail": {
+        "properties": {
+          "row": {
+            "$ref": "#/components/schemas/StockRow"
+          },
+          "drift_history": {
+            "items": {
+              "$ref": "#/components/schemas/DriftHistoryRowOut"
+            },
+            "type": "array",
+            "title": "Drift History"
+          },
+          "suggested_waste_factor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggested Waste Factor"
+          },
+          "templates_using": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Templates Using",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "row",
+          "drift_history",
+          "suggested_waste_factor"
+        ],
+        "title": "StockDetail"
+      },
+      "StockResponse": {
+        "properties": {
+          "as_of": {
+            "type": "string",
+            "format": "date-time",
+            "title": "As Of"
+          },
+          "basis": {
+            "type": "string",
+            "title": "Basis",
+            "description": "Every qty on this response is theoretical. Counts are the source of truth.",
+            "default": "THEORETICAL"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/StockSummary"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/StockRow"
+            },
+            "type": "array",
+            "title": "Rows"
+          }
+        },
+        "type": "object",
+        "required": [
+          "as_of",
+          "summary",
+          "rows"
+        ],
+        "title": "StockResponse"
+      },
+      "StockRow": {
+        "properties": {
+          "ingredient_id": {
+            "type": "integer",
+            "title": "Ingredient Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "tier": {
+            "type": "string",
+            "title": "Tier"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "tracking_enabled": {
+            "type": "boolean",
+            "title": "Tracking Enabled"
+          },
+          "waste_factor": {
+            "type": "string",
+            "title": "Waste Factor"
+          },
+          "unit_cost": {
+            "$ref": "#/components/schemas/Cost"
+          },
+          "on_hand": {
+            "$ref": "#/components/schemas/OnHand"
+          },
+          "shelf_life": {
+            "$ref": "#/components/schemas/ShelfLifeOut"
+          },
+          "batches": {
+            "items": {
+              "$ref": "#/components/schemas/BatchOut"
+            },
+            "type": "array",
+            "title": "Batches"
+          },
+          "batch_qty": {
+            "type": "string",
+            "title": "Batch Qty"
+          },
+          "batch_coverage_gap": {
+            "type": "string",
+            "title": "Batch Coverage Gap",
+            "description": "Theoretical on-hand less what the batches account for. A positive gap is stock FIFO and the expiry sweep cannot see, so it can never expire or be counted as waste."
+          },
+          "soonest_expiry_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Soonest Expiry Days"
+          },
+          "is_short_dated": {
+            "type": "boolean",
+            "title": "Is Short Dated"
+          },
+          "drift": {
+            "$ref": "#/components/schemas/DriftOut"
+          },
+          "run_out": {
+            "$ref": "#/components/schemas/RunOut"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ingredient_id",
+          "name",
+          "tier",
+          "unit",
+          "tracking_enabled",
+          "waste_factor",
+          "unit_cost",
+          "on_hand",
+          "shelf_life",
+          "batches",
+          "batch_qty",
+          "batch_coverage_gap",
+          "soonest_expiry_days",
+          "is_short_dated",
+          "drift",
+          "run_out"
+        ],
+        "title": "StockRow"
+      },
+      "StockSummary": {
+        "properties": {
+          "ingredients": {
+            "type": "integer",
+            "title": "Ingredients"
+          },
+          "unanchored": {
+            "type": "integer",
+            "title": "Unanchored",
+            "description": "No physical count behind the figure. Weak."
+          },
+          "negative": {
+            "type": "integer",
+            "title": "Negative"
+          },
+          "short_dated": {
+            "type": "integer",
+            "title": "Short Dated"
+          },
+          "unbatched": {
+            "type": "integer",
+            "title": "Unbatched"
+          },
+          "auto_order_enabled": {
+            "type": "integer",
+            "title": "Auto Order Enabled"
+          },
+          "forced_manual": {
+            "type": "integer",
+            "title": "Forced Manual"
+          },
+          "expiring_value_pence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expiring Value Pence"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Notes",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "ingredients",
+          "unanchored",
+          "negative",
+          "short_dated",
+          "unbatched",
+          "auto_order_enabled",
+          "forced_manual",
+          "expiring_value_pence"
+        ],
+        "title": "StockSummary"
+      },
+      "SupplierOrderOut": {
+        "properties": {
+          "supplier": {
+            "$ref": "#/components/schemas/SupplierOut"
+          },
+          "target_delivery_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Target Delivery Date"
+          },
+          "cover_window_days": {
+            "type": "integer",
+            "title": "Cover Window Days"
+          },
+          "cover_window_from": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cover Window From"
+          },
+          "cover_window_to": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cover Window To"
+          },
+          "lead_time_days": {
+            "type": "integer",
+            "title": "Lead Time Days"
+          },
+          "days_until_next_delivery": {
+            "type": "integer",
+            "title": "Days Until Next Delivery"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/OrderLineOut"
+            },
+            "type": "array",
+            "title": "Lines"
+          },
+          "skipped": {
+            "items": {
+              "$ref": "#/components/schemas/SkippedOut"
+            },
+            "type": "array",
+            "title": "Skipped"
+          },
+          "subtotal_pence": {
+            "type": "integer",
+            "title": "Subtotal Pence"
+          },
+          "delivery_fee_pence": {
+            "type": "integer",
+            "title": "Delivery Fee Pence"
+          },
+          "total_pence": {
+            "type": "integer",
+            "title": "Total Pence"
+          },
+          "meets_minimum": {
+            "type": "boolean",
+            "title": "Meets Minimum"
+          },
+          "min_order_topped_up": {
+            "type": "boolean",
+            "title": "Min Order Topped Up"
+          },
+          "capped_line_count": {
+            "type": "integer",
+            "title": "Capped Line Count"
+          },
+          "low_confidence_line_count": {
+            "type": "integer",
+            "title": "Low Confidence Line Count"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Always DRAFT and nothing here can change it. Invariant 1: nothing is ordered without human confirmation, and confirmation happens in Telegram. This API has no endpoint that creates, confirms or sends a purchase order.",
+            "default": "DRAFT"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Notes",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "supplier",
+          "target_delivery_date",
+          "cover_window_days",
+          "cover_window_from",
+          "cover_window_to",
+          "lead_time_days",
+          "days_until_next_delivery",
+          "lines",
+          "skipped",
+          "subtotal_pence",
+          "delivery_fee_pence",
+          "total_pence",
+          "meets_minimum",
+          "min_order_topped_up",
+          "capped_line_count",
+          "low_confidence_line_count"
+        ],
+        "title": "SupplierOrderOut"
+      },
+      "SupplierOut": {
+        "properties": {
+          "supplier_id": {
+            "type": "integer",
+            "title": "Supplier Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "lead_time_days": {
+            "type": "integer",
+            "title": "Lead Time Days"
+          },
+          "delivery_weekdays": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Delivery Weekdays",
+            "description": "ISO 1..7. EMPTY means any day (walk-in retail)."
+          },
+          "min_order_pence": {
+            "type": "integer",
+            "title": "Min Order Pence"
+          },
+          "order_channel": {
+            "type": "string",
+            "title": "Order Channel"
+          },
+          "cutoff_time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cutoff Time"
+          },
+          "delivery_fee_pence": {
+            "type": "integer",
+            "title": "Delivery Fee Pence"
+          },
+          "free_delivery_threshold_pence": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Free Delivery Threshold Pence"
+          },
+          "terms_are_placeholders": {
+            "type": "boolean",
+            "title": "Terms Are Placeholders",
+            "description": "Six of eight suppliers' terms are INVENTED (ARCHITECTURE 8F.4). Every cover window built on them is only as good as the guess. This must reach the screen."
+          }
+        },
+        "type": "object",
+        "required": [
+          "supplier_id",
+          "name",
+          "lead_time_days",
+          "delivery_weekdays",
+          "min_order_pence",
+          "order_channel",
+          "cutoff_time",
+          "delivery_fee_pence",
+          "free_delivery_threshold_pence",
+          "terms_are_placeholders"
+        ],
+        "title": "SupplierOut"
+      },
+      "TemplateDetail": {
+        "properties": {
+          "template": {
+            "$ref": "#/components/schemas/TemplateSummary"
+          },
+          "as_of": {
+            "type": "string",
+            "format": "date-time",
+            "title": "As Of"
+          },
+          "components": {
+            "items": {
+              "$ref": "#/components/schemas/ComponentOut"
+            },
+            "type": "array",
+            "title": "Components"
+          },
+          "axes": {
+            "items": {
+              "$ref": "#/components/schemas/VariantAxisOut"
+            },
+            "type": "array",
+            "title": "Axes"
+          },
+          "modifiers": {
+            "items": {
+              "$ref": "#/components/schemas/ModifierOut"
+            },
+            "type": "array",
+            "title": "Modifiers"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TemplateItemOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "template",
+          "as_of",
+          "components",
+          "axes",
+          "modifiers",
+          "items"
+        ],
+        "title": "TemplateDetail",
+        "description": "Everything the three-pane composition editor renders for one template."
+      },
+      "TemplateItemOut": {
+        "properties": {
+          "menu_item_id": {
+            "type": "integer",
+            "title": "Menu Item Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "size_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size Code"
+          },
+          "price_pence": {
+            "type": "integer",
+            "title": "Price Pence"
+          },
+          "cost": {
+            "$ref": "#/components/schemas/Cost"
+          },
+          "margin_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Margin Pct"
+          },
+          "true_margin_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "True Margin Pct"
+          },
+          "margin_per_minute_pence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Margin Per Minute Pence"
+          },
+          "prep_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prep Seconds"
+          },
+          "prep_source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prep Source"
+          },
+          "prep_is_estimate": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prep Is Estimate"
+          },
+          "is_available_today": {
+            "type": "boolean",
+            "title": "Is Available Today"
+          },
+          "availability": {
+            "type": "string",
+            "title": "Availability"
+          },
+          "availability_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Availability Reasons",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "menu_item_id",
+          "name",
+          "size_code",
+          "price_pence",
+          "cost",
+          "margin_pct",
+          "true_margin_pct",
+          "margin_per_minute_pence",
+          "prep_seconds",
+          "prep_source",
+          "prep_is_estimate",
+          "is_available_today",
+          "availability"
+        ],
+        "title": "TemplateItemOut",
+        "description": "A sellable leaf of the template, with its cached cost and both margins."
+      },
+      "TemplateSummary": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "sizes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sizes"
+          },
+          "axes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Axes"
+          },
+          "item_count": {
+            "type": "integer",
+            "title": "Item Count"
+          },
+          "component_count": {
+            "type": "integer",
+            "title": "Component Count"
+          },
+          "prep_seconds_by_size": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Prep Seconds By Size"
+          },
+          "prep_seconds_is_estimate": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prep Seconds Is Estimate"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "category",
+          "sizes",
+          "axes",
+          "item_count",
+          "component_count"
+        ],
+        "title": "TemplateSummary"
+      },
+      "TodayAlert": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "severity": {
+            "type": "string",
+            "title": "Severity",
+            "description": "'info' | 'watch' | 'act'. Colour is only for a crossed threshold."
+          },
+          "subject": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "severity",
+          "subject",
+          "message"
+        ],
+        "title": "TodayAlert"
+      },
+      "TodayResponse": {
+        "properties": {
+          "as_of": {
+            "type": "string",
+            "format": "date-time",
+            "title": "As Of"
+          },
+          "local_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Local Date"
+          },
+          "stock": {
+            "$ref": "#/components/schemas/StockSummary"
+          },
+          "short_dated": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Short Dated"
+          },
+          "expiry_write_offs_due": {
+            "type": "integer",
+            "title": "Expiry Write Offs Due"
+          },
+          "expiry_write_offs_value_pence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expiry Write Offs Value Pence"
+          },
+          "drift_forced_manual": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Drift Forced Manual"
+          },
+          "drift_tuning_band": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Drift Tuning Band"
+          },
+          "auto_order_enabled_count": {
+            "type": "integer",
+            "title": "Auto Order Enabled Count"
+          },
+          "draft_order_total_pence": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Order Total Pence"
+          },
+          "draft_order_supplier_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Order Supplier Count"
+          },
+          "capped_line_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capped Line Count"
+          },
+          "emergency_line_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emergency Line Count"
+          },
+          "unavailable_menu_items": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Unavailable Menu Items"
+          },
+          "data_quality": {
+            "items": {
+              "$ref": "#/components/schemas/TodayAlert"
+            },
+            "type": "array",
+            "title": "Data Quality"
+          },
+          "alerts": {
+            "items": {
+              "$ref": "#/components/schemas/TodayAlert"
+            },
+            "type": "array",
+            "title": "Alerts"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Notes",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "as_of",
+          "local_date",
+          "stock",
+          "short_dated",
+          "expiry_write_offs_due",
+          "expiry_write_offs_value_pence",
+          "drift_forced_manual",
+          "drift_tuning_band",
+          "auto_order_enabled_count",
+          "draft_order_total_pence",
+          "draft_order_supplier_count",
+          "capped_line_count",
+          "emergency_line_count",
+          "unavailable_menu_items",
+          "data_quality",
+          "alerts"
+        ],
+        "title": "TodayResponse"
+      },
+      "UncostedItemOut": {
+        "properties": {
+          "menu_item_id": {
+            "type": "integer",
+            "title": "Menu Item Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "size_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size Code"
+          },
+          "price_pence": {
+            "type": "integer",
+            "title": "Price Pence"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "cost": {
+            "$ref": "#/components/schemas/Cost"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "menu_item_id",
+          "name",
+          "size_code",
+          "price_pence",
+          "active",
+          "cost",
+          "reason"
+        ],
+        "title": "UncostedItemOut",
+        "description": "A menu item with NO cached cost at all. Invariant 8, the strongest form.\n\nThese are not in `menu_item_cost` because their recipe does not resolve -- in the\nseeded workbook, `'card' (£3.00)` and `Syrup Gift Set`, both on the known\ndata-quality list (ARCHITECTURE 8, 8.1). They are returned here rather than\nsilently absent: an item missing from the margin screen is indistinguishable from\nan item nobody sells, and the honest answer is \"we cannot say what this costs\"."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "VariantAxisOut": {
+        "properties": {
+          "axis_id": {
+            "type": "integer",
+            "title": "Axis Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          },
+          "is_required": {
+            "type": "boolean",
+            "title": "Is Required"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/VariantOptionOut"
+            },
+            "type": "array",
+            "title": "Options"
+          }
+        },
+        "type": "object",
+        "required": [
+          "axis_id",
+          "name",
+          "role",
+          "is_required",
+          "options"
+        ],
+        "title": "VariantAxisOut"
+      },
+      "VariantOptionOut": {
+        "properties": {
+          "option_id": {
+            "type": "integer",
+            "title": "Option Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "ingredient_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ingredient Id"
+          },
+          "ingredient_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ingredient Name"
+          },
+          "qty_override": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qty Override"
+          },
+          "price_delta_pence": {
+            "type": "integer",
+            "title": "Price Delta Pence"
+          },
+          "season_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Season Id"
+          },
+          "season_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Season Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "option_id",
+          "name",
+          "role",
+          "ingredient_id",
+          "ingredient_name",
+          "qty_override",
+          "price_delta_pence",
+          "season_id",
+          "season_name"
+        ],
+        "title": "VariantOptionOut"
+      }
+    }
+  }
+}

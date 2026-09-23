@@ -1,0 +1,67 @@
+{
+  "as_of": "2026-09-23T17:01:18.216139Z",
+  "local_date": "2026-09-23",
+  "stock": {
+    "ingredients": 54,
+    "unanchored": 0,
+    "negative": 0,
+    "short_dated": 0,
+    "unbatched": 0,
+    "auto_order_enabled": 6,
+    "forced_manual": 1,
+    "expiring_value_pence": "0",
+    "notes": []
+  },
+  "short_dated": [],
+  "expiry_write_offs_due": 0,
+  "expiry_write_offs_value_pence": "0",
+  "drift_forced_manual": [
+    "16oz paper cup"
+  ],
+  "drift_tuning_band": [
+    "Napkin",
+    "Whole milk"
+  ],
+  "auto_order_enabled_count": 6,
+  "draft_order_total_pence": null,
+  "draft_order_supplier_count": null,
+  "capped_line_count": null,
+  "emergency_line_count": null,
+  "unavailable_menu_items": [
+    "Pistachio Latte M",
+    "Pistachio Latte S",
+    "Pistachio Latte XL"
+  ],
+  "data_quality": [
+    {
+      "kind": "data_quality",
+      "severity": "watch",
+      "subject": null,
+      "message": "42 of 113 ingredient prices are ESTIMATE and all 113 shelf lives are ESTIMATE defaults. Prices make every margin an estimate; shelf lives cap order size, so a wrong one either wastes stock or causes a stockout. The ~15 perishables that actually move are worth confirming first (ARCHITECTURE 8F.1, 11.1b)."
+    }
+  ],
+  "alerts": [
+    {
+      "kind": "drift",
+      "severity": "act",
+      "subject": "16oz paper cup",
+      "message": "1 ingredient(s) are over 15% drift, so auto-ordering is forced off and every quantity sized from their on-hand is wrong from now (spec 5.2). Count them, then read the attribution on the stock screen: over-ordering and a bad recipe have opposite fixes."
+    },
+    {
+      "kind": "drift",
+      "severity": "watch",
+      "subject": "Napkin, Whole milk",
+      "message": "2 ingredient(s) are in the 10-15% tuning band: a waste_factor change is proposed and they stay manual until two consecutive counts come in under 10% (invariant 2)."
+    },
+    {
+      "kind": "menu",
+      "severity": "info",
+      "subject": "Pistachio Latte M, Pistachio Latte S, Pistachio Latte XL",
+      "message": "3 menu item(s) should not be offered today -- out of season. Their recipes still resolve and past sales still depleted what they depleted; only today's menu is in question."
+    }
+  ],
+  "notes": [
+    "Every stock figure on this response is THEORETICAL (invariant 6). Physical counts are the source of truth.",
+    "Draft-order figures are omitted: pass with_orders=true to compute them. A full ordering run forecasts every tracked ingredient across eight suppliers, which is seconds rather than milliseconds."
+  ]
+}

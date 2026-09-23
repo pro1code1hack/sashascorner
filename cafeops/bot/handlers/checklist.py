@@ -67,7 +67,9 @@ async def checklist(message: Message, state: FSMContext, run_sync: Any) -> None:
     await _ask(message, state, run_sync)
 
 
-@router.callback_query(ChecklistCB.filter(F.action.in_({"ok", "low"})), ChecklistFlow.awaiting_answer)
+@router.callback_query(
+    ChecklistCB.filter(F.action.in_({"ok", "low"})), ChecklistFlow.awaiting_answer
+)
 async def answer(
     query: CallbackQuery, callback_data: ChecklistCB, state: FSMContext, run_sync: Any
 ) -> None:

@@ -1,5 +1,9 @@
 """Drive the real bot locally, with no Telegram and no token. `cafeops bot-preview`.
 
+Button labels are taken from `formatters.BTN_*`, never written here. A preview that
+matched a hard-coded Russian caption would quietly stop pressing the button the day
+somebody reworded it, and the flow would "pass" having done nothing.
+
 There is no bot token and none is coming in this phase, so "it works" cannot mean "a
 message arrived". This is what it means instead: the **real** `Dispatcher` with the
 **real** routers, filters, FSM storage, callback factories and keyboards, fed real
@@ -19,6 +23,7 @@ message a real café.
 from __future__ import annotations
 
 import asyncio
+import itertools
 from collections.abc import AsyncGenerator, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -34,10 +39,10 @@ from aiogram.methods.send_message import SendMessage
 from aiogram.types import CallbackQuery, Chat, InlineKeyboardMarkup, Message, Update, User
 from sqlalchemy.orm import Session, sessionmaker
 
-from cafeops.config import settings
-
+from cafeops.bot import formatters as fmt
 from cafeops.bot.app import build_dispatcher
 from cafeops.bot.deps import run_sync_factory
+from cafeops.config import settings
 
 __all__ = ["Preview", "Sent", "run_flow"]
 
@@ -136,13 +141,29 @@ def _owner(chat_id: int) -> Any:
         settings.telegram_owner_chat_id = previous
 
 
+#: One dispatcher per process, reused. aiogram refuses to attach a `Router` to a second
+#: parent ("Router is already attached"), and the handler routers are module-level
+#: singletons -- the idiomatic aiogram layout. So `bot-preview all` builds the dispatcher
+#: once and each flow gets its own chat id instead, which also keeps each flow's FSM state
+#: separate: the storage key is (bot id, chat id, user id).
+_DISPATCHER: Dispatcher | None = None
+_CHATS = itertools.count()
+
+
+def _shared_dispatcher(factory: sessionmaker[Session] | None) -> Dispatcher:
+    global _DISPATCHER
+    if _DISPATCHER is None:
+        _DISPATCHER = build_dispatcher(run=run_sync_factory(factory))
+    return _DISPATCHER
+
+
 @dataclass
 class Preview:
     """A conversation with the real dispatcher."""
 
     factory: sessionmaker[Session] | None = None
-    chat_id: int = _PREVIEW_CHAT_ID
-    user_id: int = _PREVIEW_CHAT_ID
+    chat_id: int = field(default_factory=lambda: _PREVIEW_CHAT_ID + next(_CHATS))
+    user_id: int = 0
     username: str = "sasha"
     _update_id: int = field(default=0, init=False)
     session: RecordingSession = field(default_factory=RecordingSession, init=False)
@@ -150,8 +171,10 @@ class Preview:
     dispatcher: Dispatcher = field(init=False)
 
     def __post_init__(self) -> None:
+        if not self.user_id:
+            self.user_id = self.chat_id
         self.bot = Bot(token=_FAKE_TOKEN, session=self.session)
-        self.dispatcher = build_dispatcher(run=run_sync_factory(self.factory))
+        self.dispatcher = _shared_dispatcher(self.factory)
 
     def _next(self) -> int:
         self._update_id += 1
@@ -173,7 +196,9 @@ class Preview:
         """Send a text message as the owner and return what came back."""
         before = len(self.session.sent)
         with _owner(self.chat_id):
-            await self.dispatcher.feed_update(self.bot, Update(update_id=self._next(), message=self._message(text)))
+            await self.dispatcher.feed_update(
+                self.bot, Update(update_id=self._next(), message=self._message(text))
+            )
         return self.session.sent[before:]
 
     async def tap(self, callback_data: str) -> list[Sent]:
@@ -189,7 +214,7 @@ class Preview:
                 date=datetime.now(UTC),
                 chat=Chat(id=self.chat_id, type="private"),
                 from_user=User(id=1, is_bot=True, first_name="bot"),
-                text="(предыдущее сообщение)",
+                text="(the message this button is attached to)",
             ),
         )
         with _owner(self.chat_id):
@@ -214,7 +239,7 @@ def render(sent: Sequence[Sent], *, show_buttons: bool = True) -> str:
     """The captured conversation, as it would look on the phone."""
     blocks: list[str] = []
     for item in sent:
-        head = "--- сообщение ---" if item.kind == "send" else "--- сообщение изменено ---"
+        head = "--- sent ---" if item.kind == "send" else "--- edited in place ---"
         block = [head, item.text]
         if show_buttons and item.buttons:
             block.append("")
@@ -226,3 +251,111 @@ def render(sent: Sequence[Sent], *, show_buttons: bool = True) -> str:
 
 def run_flow(coro: Any) -> Any:
     return asyncio.run(coro)
+
+
+# ==========================================================================
+# Scripted flows -- what `cafeops bot-preview <flow>` runs
+# ==========================================================================
+
+
+async def flow_digest(preview: Preview) -> list[Sent]:
+    return await preview.say("/digest")
+
+
+async def flow_start(preview: Preview) -> list[Sent]:
+    return [*await preview.say("/start"), *await preview.say("/help")]
+
+
+async def flow_orders(
+    preview: Preview,
+    *,
+    supplier: str | None = None,
+    adjust: bool = True,
+    confirm: bool = True,
+) -> list[Sent]:
+    """Show the cards, press +1 on the first line, then Confirm.
+
+    The adjustment and the confirmation are pressed by their real callback payloads, taken
+    off the keyboard the handler built -- so the preview exercises the callback factory and
+    the router filter, not a shortcut into the view.
+    """
+    out = await preview.say("/orders")
+    cards = (
+        [item for item in out if item.buttons]
+        if supplier is None
+        else [item for item in out if item.buttons and supplier.lower() in item.text.lower()]
+    )
+    if not cards:
+        return out
+    card = cards[0]
+    shown: list[Sent] = [card]
+    if adjust:
+        plus = next(
+            (data for label, data in card.flat_buttons if label == fmt.BTN_ORDER_PLUS), None
+        )
+        if plus:
+            shown += await preview.tap(plus)
+    if confirm:
+        latest = shown[-1]
+        approve = preview.find_button([latest, card], fmt.BTN_ORDER_CONFIRM)
+        if approve:
+            shown += await preview.tap(approve)
+    return shown
+
+
+async def flow_count(preview: Preview, *, express: bool = True, answer: str = "12") -> list[Sent]:
+    out = await preview.say("/count_a" if express else "/count")
+    out += await preview.say(answer)
+    stop = preview.find_button(out, fmt.BTN_COUNT_STOP)
+    if stop:
+        out += await preview.tap(stop)
+    return out
+
+
+async def flow_checklist(preview: Preview, *, low: bool = True) -> list[Sent]:
+    out = await preview.say("/checklist")
+    label = fmt.BTN_CHECKLIST_LOW if low else fmt.BTN_CHECKLIST_OK
+    button = preview.find_button(out, label)
+    if button:
+        out += await preview.tap(button)
+    return out
+
+
+async def flow_delivery(
+    preview: Preview, *, packs: str = "2", expiry: str | None = "30.09"
+) -> list[Sent]:
+    """Receive one line. `expiry=None` presses the "no date on the pack" button instead.
+
+    Both paths matter: the typed date is the one that makes the expiry sweep honest, and
+    the button is the one that produces an `EXPIRY ASSUMED` batch -- and the message has to
+    say which happened.
+    """
+    out = await preview.say("/delivery")
+    out += await preview.say(packs)
+    if expiry is None:
+        button = preview.find_button(out, fmt.BTN_DELIVERY_NO_DATE)
+        if button:
+            out += await preview.tap(button)
+    else:
+        out += await preview.say(expiry)
+    return out
+
+
+async def flow_stranger(preview: Preview) -> list[Sent]:
+    """The owner gate, exercised. A different id gets nothing at all."""
+    preview.user_id = preview.chat_id + 1
+    try:
+        return await preview.say("/digest")
+    finally:
+        preview.user_id = preview.chat_id
+
+
+FLOWS = {
+    "start": flow_start,
+    "digest": flow_digest,
+    "orders": flow_orders,
+    "count": flow_count,
+    "checklist": flow_checklist,
+    "delivery": flow_delivery,
+    "stranger": flow_stranger,
+}

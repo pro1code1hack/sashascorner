@@ -22,6 +22,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from cafeops.api.encoding import as_pence, as_qty, pct
+from cafeops.api.errors import ComponentSupersededError
 from cafeops.api.schemas import (
     ApplyResponse,
     ComponentOut,
@@ -46,6 +47,7 @@ from cafeops.db.models import (
     DrinkTemplate,
     Ingredient,
     MenuItem,
+    MenuItemCost,
     Modifier,
     Season,
     SizeProfile,
@@ -56,8 +58,9 @@ from cafeops.db.models import (
 from cafeops.db.repositories.composition import LiveComponent, SqlCompositionRepository
 from cafeops.db.repositories.ingredient import SqlIngredientRepository
 from cafeops.db.repositories.menu_cost import SqlMenuCostRepository
-from cafeops.domain.composition import ImpactPreview, LabourImpact, LabourImpactedItem
-from cafeops.domain.types import ImpactedItem
+from cafeops.domain.composition import LabourImpact, LabourImpactedItem
+from cafeops.domain.labour import UNTIMED
+from cafeops.domain.types import ImpactedItem, ImpactPreview, PriceSource
 from cafeops.services.edit_composition import (
     apply_component_qty_change,
     preview_component_qty_change_with_labour,
@@ -166,7 +169,9 @@ def _decimal(value: str | None) -> Decimal:
 
 
 def _axes(session: Session, template_id: int, at: datetime) -> tuple[VariantAxisOut, ...]:
-    season_names = dict(session.execute(select(Season.id, Season.name)).all())
+    season_names: dict[int, str] = dict(
+        session.execute(select(Season.id, Season.name)).tuples().all()
+    )
     axes = session.scalars(
         select(VariantAxis)
         .where(VariantAxis.template_id == template_id)
@@ -269,6 +274,11 @@ def _items(session: Session, template_id: int, at: datetime) -> tuple[TemplateIt
         .order_by(MenuItem.name, MenuItem.size_code)
     ).all()
     ids = [row.id for row in rows]
+    # LIVE prep times, not the cached ones. Provenance is what the editor needs: a number
+    # set on the item and a per-size template default are edited in two different screens,
+    # and `UNSET` is the reason a labour figure is missing. `CachedCost` carries the
+    # seconds but not where they came from.
+    prep_times = SqlCompositionRepository(session).prep_times(ids)
     availability = {
         answer.menu_item_id: answer
         for answer in menu_availability(
@@ -279,6 +289,7 @@ def _items(session: Session, template_id: int, at: datetime) -> tuple[TemplateIt
     for item in rows:
         cached = costs.get_detail(item.id)
         answer = availability.get(item.id)
+        prep = prep_times.get(item.id, UNTIMED)
         cost = (
             cost_from_cached(cached)
             if cached is not None
@@ -300,13 +311,9 @@ def _items(session: Session, template_id: int, at: datetime) -> tuple[TemplateIt
                 margin_per_minute_pence=(
                     as_pence(cached.margin_per_minute_pence) if cached is not None else None
                 ),
-                prep_seconds=cached.prep_seconds if cached is not None else item.prep_seconds,
-                prep_source=None,
-                prep_is_estimate=(
-                    cached.prep_seconds_is_estimate
-                    if cached is not None
-                    else item.prep_seconds_is_estimate
-                ),
+                prep_seconds=prep.seconds,
+                prep_source=prep.source.value,
+                prep_is_estimate=prep.is_estimate,
                 is_available_today=answer.is_available if answer is not None else item.active,
                 availability=answer.availability.value if answer is not None else "UNKNOWN",
                 availability_reasons=tuple(answer.reasons) if answer is not None else (),
@@ -358,21 +365,28 @@ def template_detail_view(
 # --------------------------------------------------------------------------
 
 
-def _impacted(item: ImpactedItem) -> ImpactedItemOut:
+def _impacted(item: ImpactedItem, sources: dict[int, PriceSource | None]) -> ImpactedItemOut:
+    # INVARIANT 8: an estimated cost stays flagged through every rollup and aggregate, and
+    # a preview is an aggregate. `ImpactedItem` is integrator-owned and carries only the
+    # two pence figures, so the source is read from the cost cache for the same menu item.
+    # Valid here because a QUANTITY change does not change which ingredients are involved,
+    # and therefore cannot change the weakest source among them. It would NOT be valid for
+    # an edit that swapped an ingredient -- see the integrator note.
+    source = sources.get(item.menu_item_id)
     return ImpactedItemOut(
         menu_item_id=item.menu_item_id,
         name=item.name,
         size_code=item.size_code.value if item.size_code is not None else None,
         price_pence=item.price_pence,
-        cost_before=_impact_cost(item.cost_before_pence),
-        cost_after=_impact_cost(item.cost_after_pence),
+        cost_before=_impact_cost(item.cost_before_pence, source),
+        cost_after=_impact_cost(item.cost_after_pence, source),
         cost_delta_pence=as_pence(item.cost_delta_pence),
         margin_pct_before=pct(item.margin_pct(item.cost_before_pence)),
         margin_pct_after=pct(item.margin_pct(item.cost_after_pence)),
     )
 
 
-def _impact_cost(value: Decimal | None) -> Cost:
+def _impact_cost(value: Decimal | None, source: PriceSource | None) -> Cost:
     if value is None:
         return Cost(
             pence=None,
@@ -384,21 +398,48 @@ def _impact_cost(value: Decimal | None) -> Cost:
                 "(invariant 8)."
             ),
         )
-    return Cost(pence=as_pence(value))
+    return Cost(
+        pence=as_pence(value),
+        source=source.value if source is not None else None,
+        is_estimate=source is PriceSource.ESTIMATE,
+    )
 
 
-def _preview_out(preview: ImpactPreview) -> ImpactPreviewOut:
+def _preview_out(
+    preview: ImpactPreview, sources: dict[int, PriceSource | None]
+) -> ImpactPreviewOut:
+    deltas = [item.cost_delta_pence for item in preview.items if item.cost_delta_pence is not None]
+    spread: tuple[str, str] | None = None
+    if preview.cost_delta_pence_per_item is None and deltas:
+        low, high = min(deltas), max(deltas)
+        if low != high:
+            spread = (as_pence(low) or "0", as_pence(high) or "0")
     return ImpactPreviewOut(
         affected_item_count=preview.affected_item_count,
-        items=tuple(_impacted(item) for item in preview.items),
+        items=tuple(_impacted(item, sources) for item in preview.items),
         cost_delta_pence_per_item=as_pence(preview.cost_delta_pence_per_item),
+        cost_delta_pence_range=spread,
         monthly_cogs_delta_pence=as_pence(preview.monthly_cogs_delta_pence),
         worst_margin_after=(
-            _impacted(preview.worst_margin_after)
+            _impacted(preview.worst_margin_after, sources)
             if preview.worst_margin_after is not None
             else None
         ),
         warnings=tuple(preview.warnings),
+    )
+
+
+def _cost_sources(session: Session, menu_item_ids: list[int]) -> dict[int, PriceSource | None]:
+    if not menu_item_ids:
+        return {}
+    return dict(
+        session.execute(
+            select(MenuItemCost.menu_item_id, MenuItemCost.cost_source).where(
+                MenuItemCost.menu_item_id.in_(menu_item_ids)
+            )
+        )
+        .tuples()
+        .all()
     )
 
 
@@ -439,14 +480,34 @@ def _range(value: tuple[Decimal, Decimal] | None) -> tuple[str, str] | None:
     return (as_pence(low) or "0", as_pence(high) or "0")
 
 
-def _component_or_raise(session: Session, *, template_id: int, component_id: int) -> LiveComponent:
-    component = SqlCompositionRepository(session).live_component(component_id)
+def _component_or_raise(
+    session: Session, *, template_id: int, component_id: int, at: datetime
+) -> LiveComponent:
+    """The component, refusing anything that is not the live row for its slot.
+
+    The liveness check is the important half -- see `api/errors.py`. Without it a
+    preview of a superseded component answers "0 items affected" with no warning,
+    because the recipe it compares against no longer contains that id. That reads as
+    "this edit is harmless", and it is the one wrong answer this endpoint must not give.
+    """
+    repo = SqlCompositionRepository(session)
+    component = repo.live_component(component_id)
     if component is None:
-        raise LookupError(f"template_component {component_id} not found, or already closed")
+        raise LookupError(f"template_component {component_id} not found")
     if component.template_id != template_id:
         raise LookupError(
             f"template_component {component_id} belongs to template "
             f"{component.template_id}, not {template_id}"
+        )
+    live = repo.live_components(template_id, at)
+    if component_id not in {row.component_id for row in live}:
+        current = sorted(row.component_id for row in live if row.role is component.role)
+        raise ComponentSupersededError(
+            f"template_component {component_id} ({component.role.value}) is no longer the "
+            "live row for its slot -- a later edit closed it and opened a successor. "
+            "Editing it would change nothing and report nothing, which reads as 'this edit "
+            "is harmless'. Reload the template and edit the current row"
+            + (f" ({', '.join(str(i) for i in current)})." if current else ".")
         )
     return component
 
@@ -460,10 +521,10 @@ def preview_edit_view(
     `apply` uses, so a reviewer cannot be shown one set of affected items and have a
     different set committed.
     """
-    component = _component_or_raise(
-        session, template_id=template_id, component_id=body.component_id
-    )
     at = datetime.now(UTC)
+    component = _component_or_raise(
+        session, template_id=template_id, component_id=body.component_id, at=at
+    )
     labour = preview_component_qty_change_with_labour(
         session,
         body.component_id,
@@ -471,6 +532,7 @@ def preview_edit_view(
         at=at,
         window_days=body.window_days,
     )
+    ids = [item.menu_item_id for item in labour.preview.items]
     return PreviewResponse(
         template_id=template_id,
         component_id=body.component_id,
@@ -484,7 +546,7 @@ def preview_edit_view(
         },
         at=at,
         window_days=body.window_days,
-        preview=_preview_out(labour.preview),
+        preview=_preview_out(labour.preview, _cost_sources(session, ids)),
         labour=_labour_out(labour),
     )
 
@@ -500,7 +562,12 @@ def apply_edit_view(
     calls it through `runtime.in_session`, whose `session_scope` commit is then a no-op
     on an already-committed session.
     """
-    _component_or_raise(session, template_id=template_id, component_id=body.component_id)
+    _component_or_raise(
+        session,
+        template_id=template_id,
+        component_id=body.component_id,
+        at=datetime.now(UTC),
+    )
     result = apply_component_qty_change(
         session,
         body.component_id,
@@ -516,7 +583,9 @@ def apply_edit_view(
         effective_from=result.effective_from,
         qty_by_size_before=result.qty_by_size_before,
         qty_by_size_after=result.qty_by_size_after,
-        preview=_preview_out(result.preview),
+        preview=_preview_out(
+            result.preview, _cost_sources(session, [i.menu_item_id for i in result.preview.items])
+        ),
         labour=(
             _labour_out(labour)
             if labour is not None

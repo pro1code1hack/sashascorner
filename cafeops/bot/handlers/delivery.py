@@ -28,8 +28,6 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
-from cafeops.domain.types import Unit
-
 from cafeops.bot import formatters as fmt
 from cafeops.bot.callbacks import DeliveryCB
 from cafeops.bot.deps import owner_name, parse_expiry, parse_qty
@@ -42,15 +40,14 @@ from cafeops.bot.views import (
     receive_adhoc_delivery,
     receive_line,
 )
+from cafeops.domain.types import Unit
 
 router = Router(name="delivery")
 
 
 async def _lines(run_sync: Any) -> dict[int, DeliveryLineView]:
     orders: list[DeliveryOrderView] = await run_sync(build_delivery_orders)
-    return {
-        line.po_line_id: line for order in orders for line in order.outstanding_lines
-    }
+    return {line.po_line_id: line for order in orders for line in order.outstanding_lines}
 
 
 async def _ask(message: Message, state: FSMContext, run_sync: Any) -> None:

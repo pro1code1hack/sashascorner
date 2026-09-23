@@ -58,7 +58,9 @@ class DailySyncReport:
         return "; ".join(parts)
 
 
-def sync_window_for(session: Session, *, today: date, overlap_days: int = OVERLAP_DAYS) -> tuple[date, date]:
+def sync_window_for(
+    session: Session, *, today: date, overlap_days: int = OVERLAP_DAYS
+) -> tuple[date, date]:
     """The window to read: `overlap_days` before the last stored sale, up to yesterday.
 
     Yesterday, not today: the trading day is not over, and a partial day would be

@@ -22,11 +22,10 @@ log is not a mitigation.
 Comparison is `secrets.compare_digest`, so a wrong password takes the same time to
 reject however much of it is right.
 
-Read through a private `BaseSettings` rather than `config.settings` on purpose: this
-is the only new setting the API needs, `config.py` is shared with five other agents
-mid-run, and `os.environ` alone would miss a password written in `.env`. See the
-integrator note in the final summary -- this belongs in `config.Settings` as
-`api_password` once the merge is done.
+The password is declared once, on the shared `config.Settings`, and a fresh
+`Settings()` is constructed per call so a changed `.env` is noticed without a restart.
+Two declarations of one secret is how a password set in `.env` ends up honoured by half
+the process and ignored by the other half.
 """
 
 from __future__ import annotations
@@ -35,7 +34,6 @@ import secrets
 from typing import Annotated
 
 from fastapi import Depends, Header, HTTPException, status
-from pydantic_settings import BaseSettings, SettingsConfigDict
 
 __all__ = ["ApiAuth", "api_password", "require_password"]
 
@@ -46,14 +44,6 @@ _UNSET_MESSAGE = (
 )
 
 
-class _ApiSettings(BaseSettings):
-    model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", extra="ignore", env_prefix="CAFEOPS_"
-    )
-
-    api_password: str | None = None
-
-
 def api_password() -> str | None:
     """Read fresh each call so a restart is not needed to notice a changed `.env`.
 
@@ -61,7 +51,9 @@ def api_password() -> str | None:
     nothing, and the benefit is that "it is not picking up my password" is never the
     answer to why a screen is blank.
     """
-    return _ApiSettings().api_password or None
+    from cafeops.config import Settings
+
+    return Settings().api_password or None
 
 
 def require_password(

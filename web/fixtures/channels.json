@@ -1,0 +1,11 @@
+{
+  "since": "2026-08-27",
+  "until": "2026-09-23",
+  "channels_present": [],
+  "sources_present": [],
+  "performance": [],
+  "findings": [],
+  "notes": [
+    "no channel metrics between 2026-08-27 and 2026-09-23. The demo seed writes none -- run `cafeops channels import deliveroo --commit` (and just-eat) to load the shipped fixtures, or point CAFEOPS_CHANNEL_CSV_DIR at real portal exports. Partner APIs are gated to certified POS integrators, so a hand export is the path that works today (ARCHITECTURE 11.2)."
+  ]
+}

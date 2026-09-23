@@ -55,19 +55,26 @@ from cafeops.domain.drift import (
     evaluate_drift,
     mean_abs_drift_pct,
 )
-from cafeops.domain.types import ForecastResult, IngredientSnapshot, SeasonSpec, ShelfLifeSpec, Tier
+from cafeops.domain.types import (
+    DriftVerdict,
+    ForecastResult,
+    IngredientSnapshot,
+    SeasonSpec,
+    ShelfLifeSpec,
+    Tier,
+)
 
-# `_forecast_for` is Agent D's private helper in `services/build_order.py`. It is
+# `forecast_for` in `services/build_order.py` holds the EWMA-vs-seasonal choice. It is
 # imported rather than reimplemented on purpose: it holds the choice between the
 # ordinary EWMA path and the seasonal one, and a second copy of that choice would mean
 # the stock screen's run-out date and the order screen's quantity could be built on
 # different forecasts of the same ingredient -- two screens disagreeing about one
 # number, which is the failure this reuse prevents. INTEGRATOR NOTE: it should be
-# promoted to a public `forecast_for` in `build_order.__all__`; that is Agent D's file
-# and this agent does not edit it.
+# shared deliberately: the stock screen's run-out date and the order screen's
+# quantity must not be built on different forecasts of the same ingredient.
 from cafeops.services.build_order import (
     ForecastKnobs,
-    _forecast_for,
+    forecast_for,
     shelf_life_specs,
 )
 from cafeops.services.read_stock import StockReading, read_on_hand
@@ -154,6 +161,26 @@ def _shelf_life(reading: StockReading, spec: ShelfLifeSpec | None) -> ShelfLifeO
 # --------------------------------------------------------------------------
 
 
+def _trust_status(verdict: DriftVerdict | None, has_observation: bool) -> str | None:
+    """Map the gate verdict onto the spec's three presentation words.
+
+    `ELIGIBLE -> trusted`, `TUNE_WASTE_FACTOR -> drifting`, `FORCE_MANUAL -> excluded`.
+    Trivial, which is exactly why it belongs in one place: the same badge appears on the
+    stock list, the ingredient detail and the digest, and three independent mappings
+    will not stay in step.
+
+    None when there is no observation at all -- that is a fourth state ("never counted")
+    and calling it "trusted" would assert confidence nothing has earned.
+    """
+    if verdict is None or not has_observation:
+        return None
+    return {
+        DriftVerdict.ELIGIBLE: "trusted",
+        DriftVerdict.TUNE_WASTE_FACTOR: "drifting",
+        DriftVerdict.FORCE_MANUAL: "excluded",
+    }.get(verdict)
+
+
 def _drift(session: Session, ingredient: IngredientSnapshot, *, history: int = 6) -> DriftOut:
     drift_repo = SqlDriftRepository(session)
     par_repo = SqlParLevelRepository(session)
@@ -183,6 +210,7 @@ def _drift(session: Session, ingredient: IngredientSnapshot, *, history: int = 6
         clean_streak=decision.clean_streak,
         required_streak=decision.required_streak,
         gate_action=decision.action.value,
+        trust_status=_trust_status(decision.verdict, latest is not None),
         attribution=attribution,
     )
 
@@ -291,7 +319,7 @@ def _row(
     local_today = at.astimezone(settings.tz).date()
     if with_run_out:
         horizon = [local_today + timedelta(days=n) for n in range(RUN_OUT_HORIZON_DAYS)]
-        forecast = _forecast_for(
+        forecast = forecast_for(
             ingredient=ingredient,
             season=season,
             days=horizon,

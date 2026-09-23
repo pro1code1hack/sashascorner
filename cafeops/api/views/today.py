@@ -199,18 +199,22 @@ def today_view(
             )
         )
 
-    quality: list[TodayAlert] = [
-        TodayAlert(
-            kind="data_quality",
-            severity="watch",
-            subject=None,
-            message=(
-                f"{stock.summary.unanchored} tracked ingredient(s) have no physical count "
-                "behind their on-hand figure. That number is a bare movement sum with no "
-                "anchor and is not good enough to order against (invariant 6)."
-            ),
+    quality: list[TodayAlert] = []
+    if stock.summary.unanchored:
+        # Only when there are some. "0 ingredients have no count" is noise, and a screen
+        # of satisfied warnings is how the real ones stop being read.
+        quality.append(
+            TodayAlert(
+                kind="data_quality",
+                severity="watch",
+                subject=None,
+                message=(
+                    f"{stock.summary.unanchored} tracked ingredient(s) have no physical "
+                    "count behind their on-hand figure. That number is a bare movement sum "
+                    "with no anchor and is not good enough to order against (invariant 6)."
+                ),
+            )
         )
-    ]
     quality.append(
         TodayAlert(
             kind="data_quality",

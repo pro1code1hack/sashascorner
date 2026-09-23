@@ -114,6 +114,11 @@ __all__ = [
     "submit_count",
 ]
 
+#: How far ahead the digest looks for deliveries. Today and tomorrow: the digest's job
+#: here is "be ready to receive this", and a delivery six days out is not actionable at
+#: 07:30 -- it would be noise in the one message that has to stay worth reading.
+DIGEST_DELIVERY_HORIZON_DAYS = 1
+
 #: A tier A ingredient uncounted for this long is due. The weekly full count and the
 #: twice-weekly express count both aim at keeping this at zero.
 COUNT_OVERDUE_DAYS = 7
@@ -140,7 +145,9 @@ class OrderNotAdjustable(ValueError):
 #: `domain/ordering.OrderCandidate.cap_reason` and `_top_up` produce exactly these five
 #: shapes. Matched here rather than translated, because the *kind* is what the sentence
 #: needs and the names are read from the database instead of out of the string.
-_CAP_CAPPED = re.compile(r"^capped at (\d+) days?(?: -- (?P<subject>.+?)(?P<tail> shelf life| ends))?")
+_CAP_CAPPED = re.compile(
+    r"^capped at (\d+) days?(?: -- (?P<subject>.+?)(?P<tail> shelf life| ends))?"
+)
 _CAP_OUT_OF_SEASON = re.compile(r"^not ordered -- (?P<season>.+?) is out of season")
 _CAP_TOP_UP_MINIMUM = "top-up to reach the minimum order"
 _CAP_TOP_UP_FREE_DELIVERY = "top-up to reach the free-delivery threshold"
@@ -181,7 +188,9 @@ def _classify_confidence(reason: str) -> LowConfidenceNotice:
     text = reason.strip()
     none_yet = _LC_NO_HISTORY.match(text)
     if none_yet:
-        return LowConfidenceNotice(kind=LowConfidenceKind.NO_HISTORY, needed_days=int(none_yet.group(1)))
+        return LowConfidenceNotice(
+            kind=LowConfidenceKind.NO_HISTORY, needed_days=int(none_yet.group(1))
+        )
     short = _LC_SHORT_HISTORY.match(text)
     if short:
         return LowConfidenceNotice(
@@ -268,10 +277,14 @@ def _order_view(session: Session, order: PurchaseOrder) -> OrderView:
     ingredients = {
         row.id: row
         for row in session.scalars(
-            select(Ingredient).where(Ingredient.id.in_([line.ingredient_id for line in lines] or [0]))
+            select(Ingredient).where(
+                Ingredient.id.in_([line.ingredient_id for line in lines] or [0])
+            )
         )
     }
-    names = [ingredients[line.ingredient_id].name for line in lines if line.ingredient_id in ingredients]
+    names = [
+        ingredients[line.ingredient_id].name for line in lines if line.ingredient_id in ingredients
+    ]
     confidence = _confidence_by_name(order.confidence_notes, names)
 
     line_views: list[OrderLineView] = []
@@ -336,7 +349,9 @@ def list_draft_orders(session: Session, *, supplier_id: int | None = None) -> li
     stmt = select(PurchaseOrder).where(PurchaseOrder.status.in_(list(_CONFIRMABLE)))
     if supplier_id is not None:
         stmt = stmt.where(PurchaseOrder.supplier_id == supplier_id)
-    orders = list(session.scalars(stmt.order_by(PurchaseOrder.target_delivery_date, PurchaseOrder.id)))
+    orders = list(
+        session.scalars(stmt.order_by(PurchaseOrder.target_delivery_date, PurchaseOrder.id))
+    )
     return [_order_view(session, order) for order in orders]
 
 
@@ -467,7 +482,11 @@ def build_count_session(
     items: list[CountItemView] = []
     for reading in sorted(readings, key=lambda r: (r.ingredient.tier.value, r.ingredient.name)):
         stock = _stock_line(reading, as_of=as_of)
-        if only_due and stock.days_since_count is not None and stock.days_since_count < overdue_days:
+        if (
+            only_due
+            and stock.days_since_count is not None
+            and stock.days_since_count < overdue_days
+        ):
             continue
         items.append(
             CountItemView(
@@ -596,10 +615,15 @@ def build_delivery_orders(
     """
     stmt = select(PurchaseOrder).where(PurchaseOrder.status.in_(list(_AWAITING_DELIVERY)))
     if po_id is not None:
-        stmt = select(PurchaseOrder).where(PurchaseOrder.id == po_id)
+        # Narrowed, not replaced: a DRAFT named by id is still not receivable, and
+        # offering it would build a flow whose only outcome is `receive_po_line`
+        # refusing (invariant 1 -- an order nobody confirmed was never placed).
+        stmt = stmt.where(PurchaseOrder.id == po_id)
     elif up_to is not None:
         stmt = stmt.where(PurchaseOrder.target_delivery_date <= up_to)
-    orders = list(session.scalars(stmt.order_by(PurchaseOrder.target_delivery_date, PurchaseOrder.id)))
+    orders = list(
+        session.scalars(stmt.order_by(PurchaseOrder.target_delivery_date, PurchaseOrder.id))
+    )
 
     batches = SqlBatchRepository(session)
     out: list[DeliveryOrderView] = []
@@ -764,7 +788,9 @@ def build_digest(
     sweep = sweep_expiry(session, at=as_of, short_dated_days=short_dated_days, dry_run=True)
 
     drafts = list_draft_orders(session)
-    deliveries = build_delivery_orders(session, up_to=local_date + timedelta(days=1))
+    deliveries = build_delivery_orders(
+        session, up_to=local_date + timedelta(days=DIGEST_DELIVERY_HORIZON_DAYS)
+    )
 
     counts_due = [
         line
@@ -787,11 +813,7 @@ def build_digest(
                 ingredient_id=snapshot.id,
                 name=snapshot.name,
                 unit=snapshot.unit,
-                drift_pct=(
-                    None if latest is None else float(decision.considered_pcts[0])
-                    if decision.considered_pcts
-                    else None
-                ),
+                drift_pct=(decision.considered_pcts[0] if decision.considered_pcts else None),
                 verdict=decision.verdict,
                 gate_action=decision.action,
                 auto_order_enabled=bool(par and par.auto_order_enabled),
@@ -846,6 +868,11 @@ def build_digest(
         count_overdue_days=overdue_days,
         drift_alerts=tuple(alerts),
         checklist_due=tuple(build_checklist(session, at=as_of)),
+        checklist_low=tuple(
+            item
+            for item in build_checklist(session, at=as_of, only_stale=False)
+            if item.last_was_low
+        ),
         telegram_configured=bool(settings.telegram_bot_token),
     )
 

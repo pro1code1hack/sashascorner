@@ -941,6 +941,119 @@ work. Assigned as follow-up work.
 
 ---
 
+## 8H. The API shapes differ from the spec, and why
+
+### 8H.1 An integrator error first
+
+The v2 brief contained an **"API shapes"** block — `GET /api/templates/:id`,
+`POST /api/templates/:id/preview`, `GET /api/stock`, `GET /api/orders/draft`,
+`GET /api/channels`. When I condensed the brief into `CLAUDE.md` I **dropped that
+block**, and then told the API agent that §10 "contains the exact API shapes to design
+against".
+
+It checked, found no `/api/` string anywhere in the repo's specs, reported the premise
+as false, designed the shapes itself from the domain types and the invariants, and told
+me to treat them as a proposal rather than a match. That is the right response to a
+brief that does not match the repository, and it is worth recording because the failure
+was mine: **summarising a spec lost normative content, and I then cited the summary as
+authority.** The block is restored as `CLAUDE.md` §10.9 with a pointer here, and §10.9
+now carries a warning that condensing has already lost content once.
+
+### 8H.2 Keeping the divergent shapes, deliberately
+
+Nothing was lost in substance — every spec field has a home, and the implementation
+carries considerably more. The structural difference is that it **nests** what the spec
+flattened:
+
+| Spec field | Actual location |
+|---|---|
+| `items[]` | `rows[]` |
+| `id` | `ingredient_id` |
+| `theoretical_qty` | `on_hand.qty` |
+| `last_count_qty` | `on_hand.basis_count_qty` |
+| `last_counted_at` | `on_hand.basis_counted_at` |
+| `drift_pct` | `drift.drift_pct` |
+| `drift_attribution: {measurement_pct, expiry_pct}` | `drift.attribution` — richer: names the CAUSE and the ACTION, not only the split |
+| `status: trusted\|drifting\|excluded` | `drift.verdict` + `drift.gate_action` (domain vocabulary) |
+| `projected_runout_date` | `run_out.on`, alongside `days`, `daily_rate_qty` and the forecast that produced them |
+| `batches[{id,qty_remaining,expires_at,days_left}]` | same, plus `effective_expiry` and `value_pence` |
+
+**The nesting is the reason three invariants cannot be dropped by a careless view.**
+The agent built three schema types that carry their own rules:
+
+- `Cost` — `pence: null` and never `0`, plus `is_estimate`, `is_missing`,
+  `excluded_from_aggregates` (invariant 8);
+- `Forecast` — when low-confidence, `qty` is **absent from the payload**, so a frontend
+  cannot render a number it was never sent (invariant 9);
+- `OnHand` — `is_theoretical` and `has_count_basis` are required, not optional
+  (invariant 6).
+
+Flattening these back into sibling keys would re-open exactly the *every caller must
+remember* failure that has now been fixed three times in this codebase (§8G.1). The
+spec's shapes are a sketch of what each screen needs; these are a contract. **The
+contract wins, and §10.9 is annotated rather than obeyed.**
+
+One genuine gap the mapping exposes: the spec's `status: trusted|drifting|excluded` is a
+*presentation* vocabulary, and the API exposes the domain vocabulary instead. A frontend
+would have to map `ELIGIBLE → trusted`, `TUNE_WASTE_FACTOR → drifting`,
+`FORCE_MANUAL → excluded` — a trivial mapping, and exactly the kind that gets done
+inconsistently in two places. Worth adding a `trust_status` field rather than letting
+each screen invent it.
+
+### 8H.3 Verified independently
+
+| Invariant | Check |
+|---|---|
+| 1, no order write path | Only two POST routes exist, both composition. `purchase_order` count unchanged by every endpoint. |
+| Preview writes nothing | `template_component` 10 → 10 across a successful preview; `writes_nothing: true` is on the payload. |
+| 11, no float money | A float quantity in the preview body is refused with 422. |
+| 6 | Every stock row carries `basis_label`; `is_theoretical` true on all of them. |
+| 8 | `'card' (£3.00)` and `Syrup Gift Set` return `pence: null`, `is_missing: true`, `excluded_from_aggregates: true`. 280 of 298 ranked items flagged ESTIMATE. |
+| 9 | 40 of 54 rows withhold a run-out entirely, with the reason in place of the number. |
+| Auth fails closed | With no password set, `/api/health` 200 and every other route **503** — not 200. |
+
+### 8H.4 Two bugs the agent found in its own work
+
+Both worth recording because both are the same species: a figure that reads as
+reassurance when it is not.
+
+1. A **capped order line reported the full-window forecast total labelled with the
+   capped day count** — a number matching neither window. Now `full_cover_days`,
+   `forecast_full_window_qty` and `capped_out_qty` make the cap a quantity rather than
+   only prose.
+2. **Previewing a superseded component answered "0 items affected, no warnings"** — it
+   computed honestly against a closed row, and a reviewer reads that as *"this edit is
+   harmless"* and approves it. Now a 409 naming the current row id.
+
+It also added `is_capped` / `cap_reason` to skipped lines, because a cap can shorten the
+window until stock already covers it: the cap applies and then there is nothing to
+order. Without that, an absent line is indistinguishable from "not needed" — and an
+unexplained absence is what gets overridden by hand.
+
+### 8H.5 Money and quantity encoding
+
+Integer pence where the database stores an integer; an **exact decimal string of pence**
+where the figure is derived and fractional (`"77.709059"`). Rounding derived costs to
+whole pence would make the margin screen disagree with the recipe, and a float would be
+invariant 11's bug. Quantities are strings rounded to the **six decimal places
+`db/types.Qty` actually stores** (§8E) — the raw arithmetic produces 28 significant
+digits, which claims precision the column does not have.
+
+### 8H.6 Caveats carried forward
+
+- **`cafeops seed --demo` is reproducible within a revision, not across one.** Two
+  builds either side of the disrupted-supplier-round change gave 117 vs 127 batches.
+  §10's "deterministic, verified by rebuilding twice" holds only for a fixed tree, so
+  anything pinned to seeded figures — including `web/fixtures` — needs regenerating
+  after a seed change.
+- **Whether a shelf-life cap produces a line is day-dependent.** On some dates milk is
+  already covered over the shortened window, so the cap appears under `skipped`. Both
+  fixtures exist so the frontend can build against either.
+- **No CSRF, no rate limiting.** A header credential rather than a cookie, behind a
+  reverse proxy, two users. Recorded as a decision rather than an omission.
+
+---
+
 ## 9. Module layout deviations
 
 | Spec | Actual | Why |

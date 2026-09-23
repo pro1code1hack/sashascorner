@@ -2881,3 +2881,184 @@ def api_fixtures(
 
 if __name__ == "__main__":
     app()
+
+
+# --------------------------------------------------------------------------
+# bot and jobs (agent E)
+# --------------------------------------------------------------------------
+
+
+@app.command(name="bot-preview")
+def bot_preview_cmd(
+    flow: Annotated[
+        str,
+        typer.Argument(
+            help=(
+                "Which flow to drive: start, digest, orders, count, checklist, delivery, "
+                "stranger, or all."
+            )
+        ),
+    ] = "digest",
+    supplier: Annotated[
+        str | None,
+        typer.Option("--supplier", help="orders: only the card for this supplier."),
+    ] = None,
+    answer: Annotated[
+        str, typer.Option("--answer", help="count: the quantity to type for the first item.")
+    ] = "12",
+    packs: Annotated[str, typer.Option("--packs", help="delivery: how many packs arrived.")] = "2",
+    expiry: Annotated[
+        str | None,
+        typer.Option(
+            "--expiry",
+            help=(
+                "delivery: the date on the pack, DD.MM. Pass --no-expiry to press "
+                "'no date on the pack' instead and get an ASSUMED expiry."
+            ),
+        ),
+    ] = "30.09",
+    no_expiry: Annotated[
+        bool, typer.Option("--no-expiry", help="delivery: there is no date on the pack.")
+    ] = False,
+    full_count: Annotated[
+        bool, typer.Option("--full", help="count: the weekly full walk instead of tier A.")
+    ] = False,
+    ok: Annotated[
+        bool, typer.Option("--ok", help="checklist: answer 'enough' instead of 'running low'.")
+    ] = False,
+    adjust: Annotated[
+        bool, typer.Option("--adjust/--no-adjust", help="orders: press +1 on the first line.")
+    ] = True,
+    confirm: Annotated[
+        bool, typer.Option("--confirm/--no-confirm", help="orders: press Confirm.")
+    ] = True,
+    buttons: Annotated[
+        bool, typer.Option("--buttons/--no-buttons", help="Show the inline keyboards.")
+    ] = True,
+) -> None:
+    """Drive the REAL bot handlers locally and print the Russian they produce.
+
+    No Telegram, no token, nothing sent: the dispatcher, routers, filters, FSM and
+    keyboards are the real ones, and only the HTTP session is replaced by one that records
+    outgoing calls. See `cafeops/bot/preview.py`.
+    """
+    import asyncio
+
+    from cafeops.bot.preview import FLOWS, Preview, render
+
+    wanted = flow.strip().lower()
+    names = list(FLOWS) if wanted == "all" else [wanted]
+    unknown = [name for name in names if name not in FLOWS]
+    if unknown:
+        raise typer.BadParameter(f"unknown flow(s) {unknown}; choose from {sorted(FLOWS)} or 'all'")
+
+    kwargs: dict[str, object] = {}
+
+    async def drive(name: str) -> str:
+        preview = Preview()
+        try:
+            if name == "orders":
+                sent = await FLOWS[name](preview, supplier=supplier, adjust=adjust, confirm=confirm)
+            elif name == "count":
+                sent = await FLOWS[name](preview, express=not full_count, answer=answer)
+            elif name == "checklist":
+                sent = await FLOWS[name](preview, low=not ok)
+            elif name == "delivery":
+                sent = await FLOWS[name](preview, packs=packs, expiry=None if no_expiry else expiry)
+            else:
+                sent = await FLOWS[name](preview, **kwargs)
+            return render(sent, show_buttons=buttons)
+        finally:
+            await preview.close()
+
+    for name in names:
+        console.rule(f"[bold]cafeops bot-preview {name}[/bold]  (nothing is sent)")
+        text = asyncio.run(drive(name))
+        if not text.strip():
+            console.print("[yellow](the bot answered nothing)[/yellow]")
+        else:
+            print(text)
+        console.print()
+
+
+@app.command(name="jobs")
+def jobs_cmd(
+    run: Annotated[
+        str | None,
+        typer.Option(
+            "--run",
+            help=(
+                "Fire one job by hand: daily_sync, nightly_expand, expiry_sweep, "
+                "pre_delivery_orders, digest, drift_report."
+            ),
+        ),
+    ] = None,
+    force: Annotated[
+        bool,
+        typer.Option(
+            "--force",
+            help=(
+                "pre_delivery_orders: ignore the idempotency guard and write a second "
+                "draft for a delivery date that already has one."
+            ),
+        ),
+    ] = False,
+    order_date: Annotated[
+        str | None,
+        typer.Option("--order-date", help="pre_delivery_orders: replay a past day, YYYY-MM-DD."),
+    ] = None,
+) -> None:
+    """List the schedule, or fire one job by hand.
+
+    With no options this prints every trigger and the idempotency key that makes a late run
+    safe. Nothing is scheduled by this command -- `cafeops.jobs.scheduler:main` is the
+    long-running unit.
+    """
+    import asyncio
+    import logging
+    from datetime import date as _date
+
+    from cafeops.jobs.scheduler import JOBS, describe_schedule
+
+    # Jobs report through the logger, because in production they run headless under
+    # systemd. Firing one by hand has to show that same output rather than nothing.
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+
+    if run is None:
+        print(describe_schedule())
+        return
+    name = run.strip()
+    if name not in JOBS:
+        raise typer.BadParameter(f"unknown job {name!r}; choose from {sorted(JOBS)}")
+
+    if name == "pre_delivery_orders":
+        from cafeops.jobs.pre_delivery_orders import run_pre_delivery_orders
+
+        when = _date.fromisoformat(order_date) if order_date else None
+        with session_scope() as session:
+            report = run_pre_delivery_orders(session, order_date=when, force=force)
+        print(report.summary())
+        for outcome in report.outcomes:
+            if outcome.skipped and outcome.due:
+                console.print(f"  [yellow]{outcome.supplier_name}: {outcome.skipped}[/yellow]")
+        for warning in report.warnings:
+            console.print(f"  [red]{warning}[/red]")
+        return
+
+    asyncio.run(JOBS[name]())
+    console.print(f"[green]{name} finished. See the log lines above.[/green]")
+
+
+@app.command(name="bot-run")
+def bot_run_cmd() -> None:
+    """Start the Telegram bot. Refuses without a token and an owner chat id."""
+    from cafeops.bot.app import BotNotConfigured
+    from cafeops.bot.app import main as bot_main
+
+    try:
+        bot_main()
+    except BotNotConfigured as exc:
+        # A clean sentence and a non-zero exit, not a traceback: an unconfigured token is
+        # the NORMAL state today, not a crash, and systemd reads the exit code.
+        console.print(f"[yellow]{exc}[/yellow]")
+        raise typer.Exit(code=1) from None

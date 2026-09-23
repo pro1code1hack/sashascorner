@@ -32,11 +32,14 @@ from cafeops.bot.keyboards import count_kb
 from cafeops.bot.states import CountFlow
 from cafeops.bot.viewmodels import CountItemView, CountSessionKind
 from cafeops.bot.views import build_count_session, submit_count
+from cafeops.domain.types import Unit
 
 router = Router(name="count")
 
 
-async def _start(message: Message, state: FSMContext, run_sync: Any, kind: CountSessionKind) -> None:
+async def _start(
+    message: Message, state: FSMContext, run_sync: Any, kind: CountSessionKind
+) -> None:
     items: list[CountItemView] = await run_sync(build_count_session, kind=kind)
     if not items:
         await state.clear()
@@ -110,6 +113,11 @@ async def counted(message: Message, state: FSMContext, run_sync: Any) -> None:
     qty = parse_qty(message.text or "")
     if qty is None:
         await message.answer(fmt.err_bad_number(item.unit))
+        return
+    if item.unit is Unit.EACH and qty != qty.to_integral_value():
+        # Refused rather than rounded. See `formatters.err_fractional_count`: rounding
+        # would write a number to an append-only ledger that nobody saw on the shelf.
+        await message.answer(fmt.err_fractional_count(item.name))
         return
 
     who = owner_name(

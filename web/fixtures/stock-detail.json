@@ -1,0 +1,174 @@
+{
+  "row": {
+    "ingredient_id": 1,
+    "name": "Whole milk",
+    "tier": "A",
+    "unit": "L",
+    "tracking_enabled": true,
+    "waste_factor": "0.1",
+    "unit_cost": {
+      "pence": "69.705882",
+      "source": "INVOICE",
+      "is_estimate": false,
+      "is_missing": false,
+      "excluded_from_aggregates": false,
+      "note": null
+    },
+    "on_hand": {
+      "qty": "48.123",
+      "unit": "L",
+      "as_of": "2026-09-23T17:01:17.073436Z",
+      "is_theoretical": true,
+      "has_count_basis": true,
+      "basis_count_qty": "12.037",
+      "basis_counted_at": "2026-09-19T20:00:00Z",
+      "movement_sum": "36.086",
+      "movement_count": 105,
+      "basis_label": "counted + ledger",
+      "is_negative": false
+    },
+    "shelf_life": {
+      "storage": "CHILLED",
+      "shelf_life_days": 7,
+      "open_life_days": 3,
+      "transit_buffer_days": 2,
+      "usable_days": 5,
+      "is_perishable": true,
+      "source": "ESTIMATE"
+    },
+    "batches": [
+      {
+        "batch_id": 25,
+        "qty_remaining": "48.123",
+        "unit": "L",
+        "received_at": "2026-09-21T06:30:00Z",
+        "expires_at": "2026-09-28T06:30:00Z",
+        "opened_at": null,
+        "effective_expiry": "2026-09-28T06:30:00Z",
+        "days_left": 4,
+        "unit_cost_pence": "69.705882",
+        "value_pence": "3354.456159"
+      }
+    ],
+    "batch_qty": "48.123",
+    "batch_coverage_gap": "0.000",
+    "soonest_expiry_days": 4,
+    "is_short_dated": false,
+    "drift": {
+      "has_observation": true,
+      "observed_at": "2026-09-19T20:00:00Z",
+      "theoretical_qty": "10.372",
+      "counted_qty": "12.037",
+      "drift_pct": -13.832,
+      "verdict": "TUNE_WASTE_FACTOR",
+      "mean_abs_drift_pct": 10.313,
+      "observation_count": 6,
+      "auto_order_enabled": false,
+      "auto_order_reason": "drift -13.83% is in the 10.0-15.0% tuning band: stays manual, tune waste_factor and count again",
+      "clean_streak": 0,
+      "required_streak": 2,
+      "gate_action": "HOLD",
+      "trust_status": "drifting",
+      "attribution": {
+        "cause": "EXPIRY",
+        "headline": "OVER-ORDERING",
+        "action": "100% of the loss is stock that expired, not consumption the recipe missed. ORDER LESS: shorten the cover window or cut the pack count. Tuning waste_factor here would hide a purchasing problem inside the recipe and make every cost wrong as well.",
+        "gap_qty": "-1.665",
+        "expired_qty": "2.167",
+        "measurement_qty": "0",
+        "expiry_qty": "1.665",
+        "expiry_share": 1.0,
+        "unexplained_loss_qty": "0",
+        "surplus_qty": "1.665",
+        "surplus_note": "the count also found 1.665 MORE than the ledger expected. That is not a loss -- it points at a delivery nobody entered, or a miscount. Chase it separately; it is not evidence about the recipe or the order size.",
+        "loss_pct_of_consumption": 4.114
+      }
+    },
+    "run_out": {
+      "forecast": {
+        "qty": "235.536529",
+        "unit": "L",
+        "window_days": 28,
+        "is_low_confidence": false,
+        "reasons": [],
+        "used_flat_average": false,
+        "history_days": 28
+      },
+      "daily_rate_qty": "8.412019",
+      "days": "5.72",
+      "on": "2026-09-28",
+      "is_out_of_stock": false,
+      "note": null
+    }
+  },
+  "drift_history": [
+    {
+      "observed_at": "2026-09-19T20:00:00Z",
+      "theoretical_qty": "10.372",
+      "counted_qty": "12.037",
+      "drift_pct": -13.832,
+      "waste_factor_at_count": "0.1",
+      "expired_qty_in_window": "2.167"
+    },
+    {
+      "observed_at": "2026-09-12T20:00:00Z",
+      "theoretical_qty": "34.518",
+      "counted_qty": "38.007",
+      "drift_pct": -9.18,
+      "waste_factor_at_count": "0.1",
+      "expired_qty_in_window": "5.073"
+    },
+    {
+      "observed_at": "2026-09-05T20:00:00Z",
+      "theoretical_qty": "42.473",
+      "counted_qty": "47.784",
+      "drift_pct": -11.115,
+      "waste_factor_at_count": "0.1",
+      "expired_qty_in_window": "7.302"
+    },
+    {
+      "observed_at": "2026-08-29T20:00:00Z",
+      "theoretical_qty": "14.963",
+      "counted_qty": "14.364",
+      "drift_pct": 4.17,
+      "waste_factor_at_count": "0.1",
+      "expired_qty_in_window": "0"
+    },
+    {
+      "observed_at": "2026-08-22T20:00:00Z",
+      "theoretical_qty": "7.121",
+      "counted_qty": "7.818",
+      "drift_pct": -8.915,
+      "waste_factor_at_count": "0.1",
+      "expired_qty_in_window": "1.023"
+    },
+    {
+      "observed_at": "2026-08-15T20:00:00Z",
+      "theoretical_qty": "35.255",
+      "counted_qty": "41.314",
+      "drift_pct": -14.666,
+      "waste_factor_at_count": "0.1",
+      "expired_qty_in_window": "7.78"
+    },
+    {
+      "observed_at": "2026-08-08T20:00:00Z",
+      "theoretical_qty": "45.037",
+      "counted_qty": "48.875",
+      "drift_pct": -7.853,
+      "waste_factor_at_count": "0.1",
+      "expired_qty_in_window": "5.874"
+    },
+    {
+      "observed_at": "2026-08-01T20:00:00Z",
+      "theoretical_qty": "17.451",
+      "counted_qty": "16.753",
+      "drift_pct": 4.166,
+      "waste_factor_at_count": "0.1",
+      "expired_qty_in_window": "0"
+    }
+  ],
+  "suggested_waste_factor": "0.083",
+  "templates_using": [
+    "1"
+  ]
+}

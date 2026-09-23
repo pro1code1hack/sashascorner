@@ -12,6 +12,11 @@
 > silent `Qty` comparison bug worth understanding before you write repository code).
 >
 > Agent briefs: [`docs/phase1/`](docs/phase1/).
+>
+> **This file is a condensed rendering of the brief, and condensing has already lost
+> normative content once** — the API shapes in §10.9 were dropped and then cited to an
+> agent as if present. When something here reads as a summary, check `ARCHITECTURE.md`
+> before assuming the detail never existed.
 
 ---
 
@@ -380,6 +385,62 @@ light — colour only for crossed thresholds. Avoid the KPI card grid, cream/ser
 terracotta, identical rounded cards, uppercase eyebrow labels, green-good/red-bad as
 the only encoding, decorative sparklines. Estimated or missing costs: shown, flagged,
 excluded from aggregates, never zero.
+
+### 10.9 API shapes (from the spec — restored)
+
+These were in the brief and were lost when this file was condensed — and then cited to
+an agent as if present. They are the spec's own sketch. **`cafeops/api/` does NOT match
+them and deliberately so**: it nests `Cost`, `OnHand` and `Forecast` into types that
+carry their own rules, which is what makes invariants 6, 8 and 9 impossible for a view
+to drop. `ARCHITECTURE.md` §8H has the full field-by-field mapping and the reasoning.
+Build the frontend against `cafeops api-fixtures`, not against this block.
+
+```ts
+GET /api/templates/:id
+{ id, name, category,
+  components: [{ id, role, ingredient, qty_by_size, prep_seconds_by_size,
+                 is_substitutable, is_required }],
+  axes: [{ id, name, role, options: [{id,name,ingredient_id,price_delta_pence,season_id}] }],
+  resolved: [{ size, ingredient_cost_pence, labour_cost_pence,
+               margin_pct, margin_per_minute_pence,
+               items: [{menu_item_id,name,price_pence}] }] }
+
+POST /api/templates/:id/preview          // never writes
+{ changes: [...] } ->
+{ affected_item_count, cost_delta_pence_per_item, monthly_cogs_delta_pence,
+  worst_margin_after: {item, before, after}, warnings: string[] }
+
+GET /api/stock
+{ items: [{ id, name, unit, tier, theoretical_qty, last_count_qty, last_counted_at,
+            drift_pct, drift_attribution: {measurement_pct, expiry_pct},
+            status: 'trusted'|'drifting'|'excluded',
+            projected_runout_date,
+            batches: [{id, qty_remaining, expires_at, days_left}] }] }
+
+GET /api/orders/draft
+{ orders: [{ supplier, target_delivery_date, total_pence, meets_minimum,
+             lines: [{ ingredient, suggested_packs, unit_price_pence,
+                       cap_reason: 'shelf_life'|'season'|null,
+                       note }],
+             rationale: string }],
+  tesco_emergency: [{ ingredient, qty, reason, retail_premium_pence }] }
+
+GET /api/channels?days=30
+{ channels: [{ channel, orders, gross_pence, commission_pence,
+               ad_spend_pence, net_pence, roas,
+               items: [{ menu_item_id, name, views, orders, rank_in_category }] }] }
+```
+
+### 10.10 Frontend technical notes (from the spec — restored)
+
+- Build against a fixture layer; every screen renders from static JSON.
+  (`cafeops api-fixtures --out web/fixtures` writes real responses, not samples.)
+- Money as integer pence, formatted at the edge. No float arithmetic.
+- Quantities as strings, handled as decimals. `0.1 + 0.2` in a recipe editor is
+  unacceptable.
+- Auth: single shared password.
+- Quality floor: responsive to 375px, visible keyboard focus, reduced motion
+  respected, readable contrast.
 
 ---
 

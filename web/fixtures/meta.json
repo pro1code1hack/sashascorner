@@ -1,0 +1,82 @@
+{
+  "money_encoding": "Integer pence where the database stores an integer (price_pence, min_order_pence, pack price, order total). An exact decimal STRING of pence where the figure is derived and fractional (cost_pence, labour_cost_pence, premium_pence). Never a float -- invariant 11. A missing cost is null, never 0.",
+  "quantity_encoding": "Exact decimal strings, always -- including qty_by_size on the way in. JSON has only doubles and a recipe editor that loses 0.1 + 0.2 is unacceptable (ARCHITECTURE 7.4).",
+  "timestamp_encoding": "ISO-8601, tz-aware, UTC. Local days are Europe/London (ARCHITECTURE 6.4).",
+  "units": [
+    "L",
+    "KG",
+    "ML",
+    "G",
+    "EACH"
+  ],
+  "tiers": [
+    "A",
+    "B",
+    "C"
+  ],
+  "size_codes": [
+    "S",
+    "M",
+    "XL",
+    "ONE"
+  ],
+  "component_roles": [
+    "COFFEE",
+    "MILK",
+    "BASE",
+    "FLAVOUR",
+    "TOPPING",
+    "PACKAGING",
+    "SUNDRY"
+  ],
+  "price_sources": [
+    "INVOICE",
+    "ESTIMATE",
+    "SUPPLIER_FEED"
+  ],
+  "storage": [
+    "AMBIENT",
+    "CHILLED",
+    "FROZEN"
+  ],
+  "movement_types": [
+    "SALE",
+    "DELIVERY",
+    "WASTE",
+    "ADJUSTMENT",
+    "STAFF",
+    "COUNT_RESET",
+    "EXPIRED"
+  ],
+  "drift_verdicts": [
+    "ELIGIBLE",
+    "TUNE_WASTE_FACTOR",
+    "FORCE_MANUAL"
+  ],
+  "drift_causes": [
+    "NEGLIGIBLE",
+    "EXPIRY",
+    "MEASUREMENT",
+    "MIXED"
+  ],
+  "order_channels": [
+    "PORTAL",
+    "EMAIL",
+    "EDI",
+    "MANUAL",
+    "BROWSER_AGENT"
+  ],
+  "sales_channels": [
+    "DELIVEROO",
+    "JUST_EAT"
+  ],
+  "loaded_hourly_rate_pence": 1450,
+  "local_timezone": "Europe/London",
+  "invariant_notes": [
+    "6: every stock figure carries is_theoretical and has_count_basis. A figure with has_count_basis=false is a bare movement sum with no physical anchor.",
+    "8: an estimated cost stays flagged through every rollup and aggregate; a MISSING cost is null. Items with missing costs are returned, flagged, and excluded from totals -- excluded_from_aggregates says so on the figure itself.",
+    "9: a low-confidence forecast has qty=null and reasons populated. Render the reasons IN PLACE OF the number -- the number is not in the payload.",
+    "4: a shelf-life or season cap travels on the order line as cap_reason, with the arithmetic in cap_detail.",
+    "1: no endpoint in this API creates, confirms or sends a purchase order. Draft orders are computed and returned; confirmation is a human in Telegram."
+  ]
+}

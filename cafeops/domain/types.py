@@ -273,6 +273,13 @@ class ImpactedItem:
     cost_before_pence: Decimal | None
     cost_after_pence: Decimal | None
     price_pence: int
+    #: Invariant 8: an estimated cost stays flagged through every aggregate, and a
+    #: preview IS an aggregate. Without these the flag is dropped exactly where a
+    #: human is deciding whether to commit, and the caller has to re-derive it from
+    #: the cost cache -- which is only valid while the ingredient set is unchanged,
+    #: so it would be silently wrong for an ingredient swap.
+    cost_source_before: PriceSource | None = None
+    cost_source_after: PriceSource | None = None
 
     @property
     def cost_delta_pence(self) -> Decimal | None:
@@ -297,6 +304,10 @@ class ImpactPreview:
     affected_item_count: int
     items: tuple[ImpactedItem, ...] = ()
     cost_delta_pence_per_item: Decimal | None = None
+    #: (min, max) when the per-item delta is not uniform. A single figure describes
+    #: no real item in that case, and leaving the spread inside a warning sentence
+    #: forces the UI to parse prose to show a range.
+    cost_delta_pence_range: tuple[Decimal, Decimal] | None = None
     #: Projected using the last 30 days of sales volume.
     monthly_cogs_delta_pence: Decimal | None = None
     worst_margin_after: ImpactedItem | None = None

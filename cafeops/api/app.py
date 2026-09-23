@@ -13,6 +13,9 @@ domain errors have a right HTTP answer and it is not 500:
   editor needs to render that refusal rather than a stack trace.
 * `SubstitutionError` -> **409**. Spec 4.3: a SUBSTITUTE into a non-substitutable slot is
   an error, not a silent no-op, and the message names the slot.
+* `ComponentSupersededError` -> **409**. Editing a component a later edit already closed.
+  See `api/errors.py`: it is the one failure a preview cannot report on its own, because a
+  superseded component honestly previews as "nothing changes".
 * `AutoOrderGrantRefused` -> **403**. Invariant 2: nobody grants auto-ordering by hand.
   No route tries to, and this handler is here so that if one ever does it fails loudly.
 """
@@ -25,6 +28,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from cafeops.api.errors import ComponentSupersededError
 from cafeops.api.routers import open_router, router
 from cafeops.db.repositories.par import AutoOrderGrantRefused
 from cafeops.domain.types import SubstitutionError
@@ -100,6 +104,9 @@ def create_app() -> FastAPI:
     )
     app.add_exception_handler(
         SubstitutionError, _handler(status.HTTP_409_CONFLICT, "substitution_refused")
+    )
+    app.add_exception_handler(
+        ComponentSupersededError, _handler(status.HTTP_409_CONFLICT, "component_superseded")
     )
     app.add_exception_handler(
         AutoOrderGrantRefused, _handler(status.HTTP_403_FORBIDDEN, "auto_order_grant_refused")

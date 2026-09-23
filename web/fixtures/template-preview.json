@@ -1,0 +1,418 @@
+{
+  "template_id": 1,
+  "component_id": 2,
+  "component_role": "MILK",
+  "ingredient_name": "Whole milk",
+  "qty_by_size_before": {
+    "M": "0.18",
+    "S": "0.12",
+    "XL": "0.25"
+  },
+  "qty_by_size_after": {
+    "M": "0.20",
+    "S": "0.14",
+    "XL": "0.30"
+  },
+  "at": "2026-09-23T17:01:16.904531Z",
+  "window_days": 30,
+  "preview": {
+    "affected_item_count": 9,
+    "items": [
+      {
+        "menu_item_id": 204,
+        "name": "Pistachio Latte",
+        "size_code": "M",
+        "price_pence": 410,
+        "cost_before": {
+          "pence": "77.709059",
+          "source": "ESTIMATE",
+          "is_estimate": true,
+          "is_missing": false,
+          "excluded_from_aggregates": false,
+          "note": null
+        },
+        "cost_after": {
+          "pence": "79.103176",
+          "source": "ESTIMATE",
+          "is_estimate": true,
+          "is_missing": false,
+          "excluded_from_aggregates": false,
+          "note": null
+        },
+        "cost_delta_pence": "1.394118",
+        "margin_pct_before": 81.047,
+        "margin_pct_after": 80.707
+      },
+      {
+        "menu_item_id": 316,
+        "name": "Vanilla Latte",
+        "size_code": "M",
+        "price_pence": 360,
+        "cost_before": {
+          "pence": "77.709059",
+          "source": "ESTIMATE",
+          "is_estimate": true,
+          "is_missing": false,
+          "excluded_from_aggregates": false,
+          "note": null
+        },
+        "cost_after": {
+          "pence": "79.103176",
+          "source": "ESTIMATE",
+          "is_estimate": true,
+          "is_missing": false,
+          "excluded_from_aggregates": false,
+          "note": null
+        },
+        "cost_delta_pence": "1.394118",
+        "margin_pct_before": 78.414,
+        "margin_pct_after": 78.027
+      },
+      {
+        "menu_item_id": 319,
+        "name": "Caramel Latte",
+        "size_code": "M",
+        "price_pence": 360,
+        "cost_before": {
+          "pence": "77.709059",
+          "source": "ESTIMATE",
+          "is_estimate": true,
+          "is_missing": false,
+          "excluded_from_aggregates": false,
+          "note": null
+        },
+        "cost_after": {
+          "pence": "79.103176",
+          "source": "ESTIMATE",
+          "is_estimate": true,
+          "is_missing": false,
+          "excluded_from_aggregates": false,
+          "note": null
+        },
+        "cost_delta_pence": "1.394118",
+        "margin_pct_before": 78.414,
+        "margin_pct_after": 78.027
+      },
+      {
+        "menu_item_id": 205,
+        "name": "Pistachio Latte",
+        "size_code": "S",
+        "price_pence": 390,
+        "cost_before": {
+          "pence": "67.946706",
+          "source": "ESTIMATE",
+          "is_estimate": true,
+          "is_missing": false,
+          "excluded_from_aggregates": false,
+          "note": null
+        },
+        "cost_after": {
+          "pence": "69.340823",
+          "source": "ESTIMATE",
+          "is_estimate": true,
+          "is_missing": false,
+          "excluded_from_aggregates": false,
+          "note": null
+        },
+        "cost_delta_pence": "1.394118",
+        "margin_pct_before": 82.578,
+        "margin_pct_after": 82.22
+      },
+      {
+        "menu_item_id": 315,
+        "name": "Vanilla Latte",
+        "size_code": "S",
+        "price_pence": 320,
+        "cost_before": {
+          "pence": "67.946706",
+          "source": "ESTIMATE",
+          "is_estimate": true,
+          "is_missing": false,
+          "excluded_from_aggregates": false,
+          "note": null
+        },
+        "cost_after": {
+          "pence": "69.340823",
+          "source": "ESTIMATE",
+          "is_estimate": true,
+          "is_missing": false,
+          "excluded_from_aggregates": false,
+          "note": null
+        },
+        "cost_delta_pence": "1.394118",
+        "margin_pct_before": 78.767,
+        "margin_pct_after": 78.331
+      },
+      {
+        "menu_item_id": 318,
+        "name": "Caramel Latte",
+        "size_code": "S",
+        "price_pence": 320,
+        "cost_before": {
+          "pence": "67.946706",
+          "source": "ESTIMATE",
+          "is_estimate": true,
+          "is_missing": false,
+          "excluded_from_aggregates": false,
+          "note": null
+        },
+        "cost_after": {
+          "pence": "69.340823",
+          "source": "ESTIMATE",
+          "is_estimate": true,
+          "is_missing": false,
+          "excluded_from_aggregates": false,
+          "note": null
+        },
+        "cost_delta_pence": "1.394118",
+        "margin_pct_before": 78.767,
+        "margin_pct_after": 78.331
+      },
+      {
+        "menu_item_id": 206,
+        "name": "Pistachio Latte",
+        "size_code": "XL",
+        "price_pence": 430,
+        "cost_before": {
+          "pence": "105.235471",
+          "source": "ESTIMATE",
+          "is_estimate": true,
+          "is_missing": false,
+          "excluded_from_aggregates": false,
+          "note": null
+        },
+        "cost_after": {
+          "pence": "108.720765",
+          "source": "ESTIMATE",
+          "is_estimate": true,
+          "is_missing": false,
+          "excluded_from_aggregates": false,
+          "note": null
+        },
+        "cost_delta_pence": "3.485294",
+        "margin_pct_before": 75.527,
+        "margin_pct_after": 74.716
+      },
+      {
+        "menu_item_id": 317,
+        "name": "Vanilla Latte",
+        "size_code": "XL",
+        "price_pence": 410,
+        "cost_before": {
+          "pence": "105.235471",
+          "source": "ESTIMATE",
+          "is_estimate": true,
+          "is_missing": false,
+          "excluded_from_aggregates": false,
+          "note": null
+        },
+        "cost_after": {
+          "pence": "108.720765",
+          "source": "ESTIMATE",
+          "is_estimate": true,
+          "is_missing": false,
+          "excluded_from_aggregates": false,
+          "note": null
+        },
+        "cost_delta_pence": "3.485294",
+        "margin_pct_before": 74.333,
+        "margin_pct_after": 73.483
+      },
+      {
+        "menu_item_id": 320,
+        "name": "Caramel Latte",
+        "size_code": "XL",
+        "price_pence": 410,
+        "cost_before": {
+          "pence": "105.235471",
+          "source": "ESTIMATE",
+          "is_estimate": true,
+          "is_missing": false,
+          "excluded_from_aggregates": false,
+          "note": null
+        },
+        "cost_after": {
+          "pence": "108.720765",
+          "source": "ESTIMATE",
+          "is_estimate": true,
+          "is_missing": false,
+          "excluded_from_aggregates": false,
+          "note": null
+        },
+        "cost_delta_pence": "3.485294",
+        "margin_pct_before": 74.333,
+        "margin_pct_after": 73.483
+      }
+    ],
+    "cost_delta_pence_per_item": null,
+    "cost_delta_pence_range": [
+      "1.394118",
+      "3.485294"
+    ],
+    "monthly_cogs_delta_pence": "2694.829398",
+    "worst_margin_after": {
+      "menu_item_id": 317,
+      "name": "Vanilla Latte",
+      "size_code": "XL",
+      "price_pence": 410,
+      "cost_before": {
+        "pence": "105.235471",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "cost_after": {
+        "pence": "108.720765",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "cost_delta_pence": "3.485294",
+      "margin_pct_before": 74.333,
+      "margin_pct_after": 73.483
+    },
+    "warnings": [
+      "cost delta is not uniform across the affected items (+1.394p to +3.485p) -- see the per-item figures; no single per-item delta is reported"
+    ]
+  },
+  "labour": {
+    "items": [
+      {
+        "menu_item_id": 204,
+        "label": "Pistachio Latte M",
+        "prep_seconds": 85,
+        "prep_is_estimate": true,
+        "labour_cost_pence": "34.236111",
+        "true_margin_before_pence": "298.054830",
+        "true_margin_after_pence": "296.660712",
+        "true_margin_delta_pence": "-1.394118",
+        "margin_per_minute_before_pence": "234.558311",
+        "margin_per_minute_after_pence": "233.574228",
+        "margin_per_minute_delta_pence": "-0.984083"
+      },
+      {
+        "menu_item_id": 316,
+        "label": "Vanilla Latte M",
+        "prep_seconds": 85,
+        "prep_is_estimate": true,
+        "labour_cost_pence": "34.236111",
+        "true_margin_before_pence": "248.054830",
+        "true_margin_after_pence": "246.660712",
+        "true_margin_delta_pence": "-1.394118",
+        "margin_per_minute_before_pence": "199.264194",
+        "margin_per_minute_after_pence": "198.280111",
+        "margin_per_minute_delta_pence": "-0.984083"
+      },
+      {
+        "menu_item_id": 319,
+        "label": "Caramel Latte M",
+        "prep_seconds": 85,
+        "prep_is_estimate": true,
+        "labour_cost_pence": "34.236111",
+        "true_margin_before_pence": "248.054830",
+        "true_margin_after_pence": "246.660712",
+        "true_margin_delta_pence": "-1.394118",
+        "margin_per_minute_before_pence": "199.264194",
+        "margin_per_minute_after_pence": "198.280111",
+        "margin_per_minute_delta_pence": "-0.984083"
+      },
+      {
+        "menu_item_id": 205,
+        "label": "Pistachio Latte S",
+        "prep_seconds": 75,
+        "prep_is_estimate": true,
+        "labour_cost_pence": "30.208333",
+        "true_margin_before_pence": "291.844961",
+        "true_margin_after_pence": "290.450843",
+        "true_margin_delta_pence": "-1.394118",
+        "margin_per_minute_before_pence": "257.642635",
+        "margin_per_minute_after_pence": "256.527341",
+        "margin_per_minute_delta_pence": "-1.115294"
+      },
+      {
+        "menu_item_id": 315,
+        "label": "Vanilla Latte S",
+        "prep_seconds": 75,
+        "prep_is_estimate": true,
+        "labour_cost_pence": "30.208333",
+        "true_margin_before_pence": "221.844961",
+        "true_margin_after_pence": "220.450843",
+        "true_margin_delta_pence": "-1.394118",
+        "margin_per_minute_before_pence": "201.642635",
+        "margin_per_minute_after_pence": "200.527341",
+        "margin_per_minute_delta_pence": "-1.115294"
+      },
+      {
+        "menu_item_id": 318,
+        "label": "Caramel Latte S",
+        "prep_seconds": 75,
+        "prep_is_estimate": true,
+        "labour_cost_pence": "30.208333",
+        "true_margin_before_pence": "221.844961",
+        "true_margin_after_pence": "220.450843",
+        "true_margin_delta_pence": "-1.394118",
+        "margin_per_minute_before_pence": "201.642635",
+        "margin_per_minute_after_pence": "200.527341",
+        "margin_per_minute_delta_pence": "-1.115294"
+      },
+      {
+        "menu_item_id": 206,
+        "label": "Pistachio Latte XL",
+        "prep_seconds": 135,
+        "prep_is_estimate": true,
+        "labour_cost_pence": "54.3750",
+        "true_margin_before_pence": "270.389530",
+        "true_margin_after_pence": "266.904235",
+        "true_margin_delta_pence": "-3.485294",
+        "margin_per_minute_before_pence": "144.339791",
+        "margin_per_minute_after_pence": "142.790771",
+        "margin_per_minute_delta_pence": "-1.549020"
+      },
+      {
+        "menu_item_id": 317,
+        "label": "Vanilla Latte XL",
+        "prep_seconds": 100,
+        "prep_is_estimate": true,
+        "labour_cost_pence": "40.277778",
+        "true_margin_before_pence": "264.486752",
+        "true_margin_after_pence": "261.001458",
+        "true_margin_delta_pence": "-3.485294",
+        "margin_per_minute_before_pence": "182.858718",
+        "margin_per_minute_after_pence": "180.767541",
+        "margin_per_minute_delta_pence": "-2.091176"
+      },
+      {
+        "menu_item_id": 320,
+        "label": "Caramel Latte XL",
+        "prep_seconds": 100,
+        "prep_is_estimate": true,
+        "labour_cost_pence": "40.277778",
+        "true_margin_before_pence": "264.486752",
+        "true_margin_after_pence": "261.001458",
+        "true_margin_delta_pence": "-3.485294",
+        "margin_per_minute_before_pence": "182.858718",
+        "margin_per_minute_after_pence": "180.767541",
+        "margin_per_minute_delta_pence": "-2.091176"
+      }
+    ],
+    "labour_cost_pence_per_item": null,
+    "labour_cost_pence_range": [
+      "30.208333",
+      "54.3750"
+    ],
+    "true_margin_delta_pence_per_item": null,
+    "true_margin_delta_pence_range": [
+      "-3.485294",
+      "-1.394118"
+    ],
+    "labour_cost_window_pence": "49358.402778",
+    "untimed_count": 0,
+    "rank_moves": [],
+    "warnings": []
+  },
+  "writes_nothing": true
+}

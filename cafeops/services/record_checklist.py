@@ -56,9 +56,7 @@ class ChecklistRoster:
 
     @property
     def low_ids(self) -> tuple[int, ...]:
-        return tuple(
-            i for i, (status, _) in self.latest.items() if status is ChecklistStatus.LOW
-        )
+        return tuple(i for i, (status, _) in self.latest.items() if status is ChecklistStatus.LOW)
 
 
 def record_checklist_answer(

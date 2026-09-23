@@ -82,6 +82,7 @@ __all__ = [
     "build_order_plan",
     "build_split",
     "create_draft_po",
+    "forecast_for",
     "par_specs",
     "record_emergency_lines",
     "shelf_life_specs",
@@ -186,7 +187,7 @@ def _day_start(day: date, tz: ZoneInfo) -> datetime:
     return datetime.combine(day, time.min, tzinfo=tz).astimezone(UTC)
 
 
-def _forecast_for(
+def forecast_for(
     *,
     ingredient: IngredientSnapshot,
     season: SeasonSpec | None,
@@ -273,7 +274,7 @@ def _candidate(
         cutoff_time=cutoff_time,
     ).window
     history_end = order_date - timedelta(days=1)
-    forecast = _forecast_for(
+    forecast = forecast_for(
         ingredient=ingredient,
         season=season,
         days=cover.days,

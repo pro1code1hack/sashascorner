@@ -18,7 +18,7 @@ import asyncio
 from collections.abc import Callable
 from datetime import UTC, date, datetime, time
 from decimal import Decimal, InvalidOperation
-from typing import Any, ParamSpec, TypeVar
+from typing import Any
 
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -35,8 +35,6 @@ __all__ = [
     "run_sync_factory",
 ]
 
-P = ParamSpec("P")
-T = TypeVar("T")
 
 #: `confirmed_by`, `counted_by` and `received_by` must never be blank -- invariant 1 and
 #: the `CHECK` constraint behind it. A Telegram account with no name still has an id, and
@@ -50,7 +48,7 @@ def run_sync_factory(
 ) -> Callable[..., Any]:
     """Build a `run_sync` bound to a specific session factory. For the local preview."""
 
-    async def _run(fn: Callable[..., T], /, *args: Any, **kwargs: Any) -> T:
+    async def _run[T](fn: Callable[..., T], /, *args: Any, **kwargs: Any) -> T:
         def work() -> T:
             with session_scope(factory) as session:
                 return fn(session, *args, **kwargs)
@@ -60,7 +58,7 @@ def run_sync_factory(
     return _run
 
 
-async def run_sync(fn: Callable[..., T], /, *args: Any, **kwargs: Any) -> T:
+async def run_sync[T](fn: Callable[..., T], /, *args: Any, **kwargs: Any) -> T:
     """Run one sync unit of work on a thread, inside one transaction.
 
     `fn` takes a `Session` as its first argument. Nothing async is allowed inside it --
