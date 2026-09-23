@@ -1,0 +1,30 @@
+[Unit]
+Description=Cafe Ops API (FastAPI/uvicorn, one worker, spec 3)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=cafeops
+Group=cafeops
+WorkingDirectory=/opt/cafeops
+EnvironmentFile=/etc/cafeops/cafeops.env
+# Loopback only. The reverse proxy (Caddy or nginx, spec 3) runs on the same box and
+# talks to 127.0.0.1:8000; the API itself never binds a public interface. One worker
+# is not a flag to change -- see the docstring on `cafeops serve` and
+# ARCHITECTURE.md 8F.8: a second worker would contend on the same SQLite file.
+ExecStart=/opt/cafeops/.venv/bin/cafeops serve --host 127.0.0.1 --port 8000
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=20
+
+# Hardening: this process only needs to read the code tree and read/write the data dir.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/cafeops/data
+UMask=0027
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,33 @@
+# Caddy terminates TLS in front of the API ONLY (spec 3). `bot` and `scheduler` have no
+# host-published ports at all and are not reachable through this file or any other path.
+#
+# {$CAFEOPS_DOMAIN} is a Caddy environment placeholder (native syntax, no templating
+# needed): set CAFEOPS_DOMAIN in .env to the VM's real DNS name and Caddy fetches a
+# real Let's Encrypt certificate automatically on first request -- that IS "Caddy
+# terminating TLS" per spec 3, with zero certificate machinery to operate by hand.
+#
+# Left unset, it falls back to :80 over plain HTTP so a fresh checkout can be curled
+# immediately without owning a domain yet. Do not run the café on that in production --
+# set CAFEOPS_DOMAIN.
+{$CAFEOPS_DOMAIN:http://:80} {
+	encode gzip
+
+	# The API already answers its own CORS preflight; Caddy just forwards. No static
+	# files are served here -- the frontend (web/) is a separate deliverable (Agent H)
+	# and is not deployed by this compose file yet. See docs/OPERATIONS.md.
+	reverse_proxy api:8000 {
+		header_up X-Forwarded-Proto {scheme}
+	}
+
+	header {
+		# Belt-and-braces on top of the app's own security posture (single shared
+		# password, no cookies -- see cafeops/api/security.py).
+		-Server
+		Strict-Transport-Security "max-age=31536000"
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}

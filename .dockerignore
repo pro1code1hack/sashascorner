@@ -1,0 +1,28 @@
+# Never build the app's own venv or caches into the image -- uv creates a fresh one.
+.venv
+__pycache__
+**/__pycache__
+*.py[cod]
+.mypy_cache
+.ruff_cache
+
+.git
+.github
+
+# Secrets and local data. .env is git-ignored already -- never let it reach an image
+# layer either. The database is a volume, not a build artifact.
+.env
+.env.*
+!.env.example
+*.db
+*.db-wal
+*.db-shm
+cafeops.db
+verify_cap.db
+
+# Not needed at runtime; keeps the build context (and layer diff) small.
+docs
+web/node_modules
+web/dist
+*.log
+.DS_Store

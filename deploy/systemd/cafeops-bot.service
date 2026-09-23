@@ -1,0 +1,29 @@
+[Unit]
+Description=Cafe Ops Telegram bot (spec 3: separate systemd unit from the API)
+After=network-online.target cafeops-api.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=cafeops
+Group=cafeops
+WorkingDirectory=/opt/cafeops
+EnvironmentFile=/etc/cafeops/cafeops.env
+ExecStart=/opt/cafeops/.venv/bin/cafeops bot-run
+Restart=on-failure
+RestartSec=5
+# `bot-run` exits 1 (not a crash, a clean refusal) when
+# CAFEOPS_TELEGRAM_BOT_TOKEN/CAFEOPS_TELEGRAM_OWNER_CHAT_ID are unset. Restart=on-failure
+# will keep retrying every 5s until they're set in /etc/cafeops/cafeops.env and the unit
+# is restarted -- that is the correct steady state for "not configured yet", and
+# `systemctl status cafeops-bot` shows exactly that reason each time.
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/cafeops/data
+UMask=0027
+
+[Install]
+WantedBy=multi-user.target

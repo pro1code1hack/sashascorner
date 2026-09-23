@@ -1,0 +1,13 @@
+[Unit]
+Description=Run cafeops-backup nightly (spec 3: nightly off-box backup)
+
+[Timer]
+OnCalendar=*-*-* 02:00:00
+# A box that was asleep or rebooting at 02:00 still gets a backup, once, on next boot --
+# the same "coalesce, don't skip" philosophy the app's own job scheduler uses
+# (cafeops/jobs/scheduler.py's MISFIRE_GRACE_SECONDS).
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target

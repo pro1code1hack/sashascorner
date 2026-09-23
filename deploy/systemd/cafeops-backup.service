@@ -1,0 +1,28 @@
+[Unit]
+Description=Cafe Ops nightly off-box SQLite backup (see deploy/backup.sh)
+# Deliberately NOT `After=cafeops-api.service` / bound to it -- a backup must keep
+# running even if the API unit is down or being restarted. sqlite3 .backup reads the
+# live file directly and is safe to run regardless of which of the three app services
+# happen to be up at 02:00.
+
+[Service]
+Type=oneshot
+User=cafeops
+Group=cafeops
+WorkingDirectory=/opt/cafeops
+# Same env file as the app services -- it also carries the ops-only CAFEOPS_DB_PATH /
+# CAFEOPS_BACKUP_DIR / CAFEOPS_BACKUP_REMOTE / CAFEOPS_BACKUP_RETAIN_DAYS variables
+# that deploy/backup.sh reads directly. The app itself ignores them (cafeops/config.py
+# has no field for any of the four), so one file is enough.
+EnvironmentFile=/etc/cafeops/cafeops.env
+ExecStart=/opt/cafeops/deploy/backup.sh
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+# /opt/cafeops/data needs to be writable, not just readable: taking even a read-only
+# SQLite lock in WAL mode updates the -shm file's reader-mark slots, so a strictly
+# read-only mount here would make `sqlite3 db ".backup ..."` fail to open the source at
+# all, not just fail to write to it.
+ReadWritePaths=/opt/cafeops/data /opt/cafeops/backups

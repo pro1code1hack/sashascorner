@@ -2879,6 +2879,28 @@ def api_fixtures(
     console.print("[dim]index.json lists every file with the query behind it.[/dim]")
 
 
+@app.command(name="scheduler-run")
+def scheduler_run() -> None:
+    """Run the APScheduler process in the foreground. This is a long-running unit.
+
+    Exists so the scheduler starts the same way every other process does --
+    `cafeops serve`, `cafeops bot-run`, `cafeops scheduler-run` -- rather than through
+    `python -c "from cafeops.jobs.scheduler import main; main()"`. A deployment that has
+    to reach past the CLI into a module path is one rename away from a service that
+    silently fails to start, and the scheduler failing silently means no sync, no
+    expansion, no expiry sweep and no draft orders, with nothing on screen to say so.
+
+    Use `cafeops jobs` to see what is scheduled and why, without starting anything.
+    """
+    from cafeops.jobs.scheduler import main as scheduler_main
+
+    console.print(
+        "[bold]Starting the scheduler.[/bold] Ctrl-C to stop. "
+        "Run [cyan]cafeops jobs[/cyan] to see the schedule without starting it."
+    )
+    scheduler_main()
+
+
 if __name__ == "__main__":
     app()
 

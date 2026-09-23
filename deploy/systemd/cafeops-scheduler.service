@@ -1,0 +1,28 @@
+[Unit]
+Description=Cafe Ops job scheduler (APScheduler: sync, expand, sweep, orders, digest, drift)
+After=network-online.target cafeops-api.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=cafeops
+Group=cafeops
+WorkingDirectory=/opt/cafeops
+EnvironmentFile=/etc/cafeops/cafeops.env
+# `cafeops.jobs.scheduler:main` is the documented long-running entry point (see that
+# module's own docstring and the `cafeops jobs` command's help text) but is not exposed
+# as a CLI subcommand -- named the same way `cafeops serve` names uvicorn's ASGI app.
+ExecStart=/opt/cafeops/.venv/bin/cafeops scheduler-run
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/cafeops/data
+UMask=0027
+
+[Install]
+WantedBy=multi-user.target

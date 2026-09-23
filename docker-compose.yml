@@ -1,0 +1,125 @@
+# One box. One SQLite file. One writer. No load balancer, no Postgres, no Redis, no
+# queue -- see CLAUDE.md 3 and ARCHITECTURE.md 8F.8 before adding any of those.
+#
+# Four services run the same image with different commands/entrypoints (api / bot /
+# scheduler / backup). NONE of them publishes a host port -- only `caddy` does. That is
+# what makes "the bot and scheduler must not be reachable from outside" true by
+# construction rather than by convention: there is no port to reach even on localhost
+# from the host, only from inside the compose network, and `caddy` is the sole service
+# with a `ports:` entry, proxying to `api` alone.
+#
+# First run, once (no `uv run` needed inside the container -- the image's PATH already
+# points at the synced venv, see Dockerfile):
+#   docker compose build
+#   docker compose run --rm api alembic upgrade head
+#   docker compose run --rm -e CAFEOPS_FINANCE_WORKBOOK_PATH=/app/sashas_corner_finance__LEGACY_.xlsx \
+#       api cafeops seed --demo   # or import-legacy --commit, see README.md
+#   docker compose up -d
+# See README.md for the full first-run walkthrough and docs/OPERATIONS.md for the
+# nightly backup, restore drill and "what to check when a screen is blank".
+
+services:
+  api:
+    build: .
+    image: cafeops:latest
+    command: ["cafeops", "serve", "--host", "0.0.0.0", "--port", "8000"]
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # Absolute path inside the container; the volume below is where it lives.
+      CAFEOPS_DATABASE_URL: sqlite+pysqlite:////data/cafeops.db
+    volumes:
+      - cafeops_data:/data
+    # No `ports:` here on purpose -- see the file header. Reachable only via `caddy`,
+    # over this compose project's private network.
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  bot:
+    build: .
+    image: cafeops:latest
+    command: ["cafeops", "bot-run"]
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      CAFEOPS_DATABASE_URL: sqlite+pysqlite:////data/cafeops.db
+    volumes:
+      - cafeops_data:/data
+    depends_on:
+      api:
+        condition: service_healthy
+    # Long-polls Telegram outbound; nothing listens on a port in this container.
+    # `cafeops bot-run` exits 1 immediately if CAFEOPS_TELEGRAM_BOT_TOKEN /
+    # CAFEOPS_TELEGRAM_OWNER_CHAT_ID are unset -- `restart: unless-stopped` will then
+    # crash-loop it quietly until they're set, which is the correct failure mode for an
+    # optional-until-configured service, not a bug in this file.
+
+  scheduler:
+    build: .
+    image: cafeops:latest
+    # `cafeops.jobs.scheduler:main` is the documented long-running entry point (see the
+    # `cafeops jobs` command's own docstring) but it is not exposed as a CLI subcommand,
+    # so it is started the same way `cafeops serve` starts uvicorn against
+    # "cafeops.api.app:app" -- by naming the module.
+    command: ["cafeops", "scheduler-run"]
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      CAFEOPS_DATABASE_URL: sqlite+pysqlite:////data/cafeops.db
+    volumes:
+      - cafeops_data:/data
+    depends_on:
+      api:
+        condition: service_healthy
+    # Also listens on nothing. APScheduler runs in-process; the container just needs to
+    # stay up, which `restart: unless-stopped` plus systemd-equivalent supervision
+    # (Docker's own restart policy here) provides.
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+
+  # Nightly off-box backup, containerised for parity with the Docker deployment path.
+  # Reads the live database READ-ONLY (`:ro`) -- a backup process is never a writer.
+  # See deploy/backup.sh for what "off-box" and "verified" mean here, and
+  # docs/OPERATIONS.md for the restore drill that was actually run once, with output.
+  backup:
+    build: .
+    image: cafeops:latest
+    entrypoint: ["/app/deploy/backup-loop.sh"]
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      CAFEOPS_DB_PATH: /data/cafeops.db
+      CAFEOPS_BACKUP_DIR: /backups
+      # CAFEOPS_BACKUP_REMOTE, an rsync target, is read from .env -- unset means the
+      # script loudly logs that the backup is local-only every single night.
+    volumes:
+      - cafeops_data:/data:ro
+      - cafeops_backups:/backups
+      # Mount an SSH key read-only here (and set CAFEOPS_BACKUP_REMOTE) to actually ship
+      # off-box, e.g.:
+      #   - ${CAFEOPS_BACKUP_SSH_KEY:-/dev/null}:/home/cafeops/.ssh/id_ed25519:ro
+      # Left commented: no key exists in this environment, and a placeholder mount that
+      # silently maps to /dev/null is worse than an honest gap. See docs/OPERATIONS.md.
+
+volumes:
+  cafeops_data:
+  cafeops_backups:
+  caddy_data:
+  caddy_config:
