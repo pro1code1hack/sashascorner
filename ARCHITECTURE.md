@@ -1054,6 +1054,81 @@ digits, which claims precision the column does not have.
 
 ---
 
+## 8I. The one lesson worth carrying out of this project
+
+**A fact that exists only as an English sentence will be re-derived, badly, by every
+surface that needs it.**
+
+This failure appeared four times, in four unrelated places, found by four agents who
+never spoke to each other:
+
+| Where | The workaround it forced |
+|---|---|
+| A ledger row needed to name its batch | A **second writer** into `stock_movement`, an append-only table |
+| Resolution needed to know an option's season | An optional argument; omit it and the out-of-season warning vanishes silently |
+| An emergency line needed a non-negative premium | Every call site clamping it, and one that forgot would make a week of panic-buying look like a *saving* |
+| The Russian bot needed to know *why* a line was capped | **A regex over prose this codebase itself wrote** — so a reword upstream silently broke the owner's explanation |
+
+Each was reported as "please add a field", and each time the tempting reading was that
+the agent had been lazy. It was the opposite: four independent engineers reaching for the
+same workaround is evidence that **the contract was wrong, not the callers.**
+
+The fixes all had the same shape — put the rule on the value:
+
+- `MovementSpec.batch_id`, so there is one write path into the ledger again.
+- `season_id` on the composition specs, so the warning cannot be dropped by forgetting
+  an argument.
+- `EmergencyLine.premium_pence` floors at zero *on the type*, with `raw_premium_pence`
+  and `retail_is_cheaper` preserving the signed fact as a separate, arguable finding.
+- `CapKind` and `LowConfidenceKind` enums **derived from the same comparisons that build
+  the sentence**, never parsed back out of it.
+
+The prose stayed in every case. A human reading a log wants the sentence; code must never
+depend on it. The test is simple: *if someone rewords this string, does anything break?*
+If yes, the meaning is in the wrong place.
+
+### Why it mattered more here than it usually does
+
+Three of the four sat directly on an invariant, and all three failed *quietly*:
+
+- The silent one (a batch-less ledger row) meant stock that could never expire and could
+  never be counted as waste — it would simply have vanished from the P&L.
+- The forgettable one (season) meant a seasonal item forecast against 28 days of
+  out-of-season history.
+- The reworded one (cap kind) meant an unexplained cap, and **invariant 4 cannot survive
+  an unexplained cap**: the owner raises the quantity and recreates exactly the waste the
+  cap prevented.
+
+None of them would have raised an error. All three would have produced confident,
+plausible, wrong numbers — which is the same species as §8E's TEXT comparison and §8C's
+double-counted weekday. That species is what this project has to be defended against,
+and it is why the no-test decision (§1) is expensive here specifically: nothing
+re-derives these answers and notices they changed.
+
+---
+
+## 8J. Baseline: invariants verified on a fresh build
+
+Run after every agent wave, from `rm -f cafeops.db && alembic upgrade head &&
+cafeops seed --demo && cafeops drift --backfill`:
+
+```
+PASS  1  order needs a named human     0 violations
+PASS  2  auto-order earned + audited   6 enabled, all with granted_at
+PASS  7  waste_factor set and > 0      0.1 on whole milk
+PASS  8  missing cost is NULL not 0    0 zeroed
+PASS  8  estimates stay flagged        292 items flagged ESTIMATE
+PASS  12 ledger shape sane             no unexplained positive SALE rows
+PASS     batches match the ledger      0 ingredients with a coverage gap
+PASS     expiry write-offs exist       9 EXPIRED movements
+```
+
+The batch-coverage line is the one that regressed silently before (§8G, `record_count`
+not re-anchoring), so it is worth checking on every build rather than only when something
+looks wrong.
+
+---
+
 ## 9. Module layout deviations
 
 | Spec | Actual | Why |
