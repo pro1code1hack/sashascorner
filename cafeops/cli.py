@@ -2663,5 +2663,84 @@ app.add_typer(_channels_app, name="channels")
 app.add_typer(_agent_app, name="agent")
 
 
+# --------------------------------------------------------------------------
+# emergency-report  --  the panic-buy log (spec 4.4)
+# --------------------------------------------------------------------------
+
+
+@app.command(name="emergency-report")
+def emergency_report(
+    days: Annotated[
+        int | None,
+        typer.Option("--days", help="Only routings in the last N days. Default: everything."),
+    ] = None,
+) -> None:
+    """What panic-buying at retail has cost. Spec 4.4's argument for fixing the cadence.
+
+    Not a note and not a screen decoration: one emergency is a bad week, and a pattern is
+    a broken ordering cadence. The premium is the number that turns "we keep running to
+    Tesco" into a case for ordering more often, or for renegotiating a delivery day.
+
+    Rows are written by `cafeops simulate --commit` and by the ordering job -- never by
+    this command, which only reads.
+    """
+    from datetime import UTC, datetime
+    from datetime import timedelta as td
+
+    from cafeops.db.repositories.sourcing import SqlSourcingRepository
+    from cafeops.domain.ordering import pounds
+
+    since = datetime.now(UTC) - td(days=days) if days is not None else None
+    with session_scope() as session:
+        repo = SqlSourcingRepository(session)
+        count, priced, premium, per_ingredient = repo.emergency_summary(since=since)
+        window = f"the last {days} day(s)" if days is not None else "the whole log"
+        if count == 0:
+            console.print(
+                f"[green]No retail routings in {window}.[/green] Either the ordering "
+                "cadence is working or nothing has been logged yet -- `cafeops simulate "
+                "--commit` is what writes these rows."
+            )
+            return
+        console.rule("[bold]panic-buy report[/bold]  spec 4.4")
+        console.print(
+            f"{count} retail routing(s) in {window}, {priced} of them priced. "
+            f"Premium paid over the scheduled suppliers: [bold]{pounds(premium)}[/bold]"
+        )
+        if priced < count:
+            # INVARIANT 8: a total over 9 of 14 rows understates the argument it exists
+            # to make, and the only way to see that is to be told.
+            console.print(
+                f"[yellow]{count - priced} routing(s) carry no premium because a unit "
+                "price was missing, so the figure above is a FLOOR, not the total.[/yellow]"
+            )
+        table = Table(title="by ingredient")
+        table.add_column("Ingredient")
+        table.add_column("Routings", justify="right")
+        table.add_column("Premium", justify="right")
+        for name, (routings, pence) in sorted(
+            per_ingredient.items(), key=lambda kv: (-kv[1][1], kv[0])
+        ):
+            table.add_row(name, str(routings), pounds(pence))
+        console.print(table)
+        console.print("[bold]most recent[/bold]")
+        for row in repo.emergency_log(since=since)[:10]:
+            premium_text = (
+                pounds(row.premium_pence) if row.premium_pence is not None else "premium unknown"
+            )
+            console.print(
+                f"  {row.occurred_at.astimezone(settings.tz).date()}  "
+                f"{row.ingredient.name if row.ingredient is not None else row.ingredient_id}"
+                f"  {premium_text}"
+            )
+            console.print(f"    [dim]{row.reason}[/dim]")
+        console.print(
+            "\n[dim]Every row here is a delivery that came too late, not a supplier "
+            "anybody chose. The fix is the ordering cadence or the delivery schedule -- "
+            "six of the eight suppliers' lead times are still invented placeholders, so "
+            "confirming those is where it starts.[/dim]"
+        )
+
+
 if __name__ == "__main__":
     app()

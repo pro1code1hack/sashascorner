@@ -500,6 +500,7 @@ def _growth_factor(
     lookback_days: int,
     growth_min: Decimal,
     growth_max: Decimal,
+    min_growth_days: int,
 ) -> tuple[Decimal, str]:
     """Season-to-date this year over the same span last year, clamped.
 
@@ -518,6 +519,32 @@ def _growth_factor(
             f"no consumption recorded in the {span} matching day(s) of the previous "
             f"season ({prior_start}..{prior_end}), so last year's level is carried "
             "across unscaled: there is nothing to compute a year-on-year ratio against"
+        )
+    # The symmetric case, and the dangerous one. With no sales yet THIS season the
+    # ratio is 0/prior = 0, which clamps to growth_min and halves the forecast --
+    # at precisely the moment you are stocking up for a season that has not started
+    # selling. That is a guaranteed stockout every time a season opens.
+    #
+    # A zero cannot distinguish "the season has not started" from "we dropped this
+    # line", so it is not evidence of decline. The same reasoning already applied to
+    # a missing PRIOR span applies here: carry last year's level across unscaled and
+    # say so, rather than invent a trend from nothing.
+    if current <= _ZERO:
+        return _ONE, (
+            f"no consumption recorded yet in the {span} day(s) of {season_start}'s "
+            "season, so last year's level is carried across unscaled: a zero this "
+            "early cannot tell a season that has not started from a line that was "
+            "dropped, and treating it as a decline would under-order the opening"
+        )
+    # A ratio off a handful of days is noise before it is a trend, and acting on it
+    # moves real money. Below the threshold, report the ratio but do not apply it.
+    if span < min_growth_days:
+        raw_early = current / prior
+        return _ONE, (
+            f"only {span} day(s) into {season_start}'s season, fewer than the "
+            f"{min_growth_days} needed to read a year-on-year trend: last year's level "
+            f"is carried across unscaled (the season-to-date ratio so far is "
+            f"{_shown(raw_early)}x, shown but NOT applied)"
         )
     raw = current / prior
     factor = min(max(raw, growth_min), growth_max)
@@ -555,6 +582,8 @@ def seasonal_forecast(
     lookback_days: int = SEASON_LOOKBACK_DAYS,
     growth_min: Decimal = Decimal("0.5"),
     growth_max: Decimal = Decimal("2"),
+    #: Days into the season before a year-on-year ratio is trusted enough to apply.
+    min_growth_days: int = 14,
     closed_days: Collection[date] = (),
 ) -> ForecastResult:
     """Forecast a seasonal item from the previous season, scaled by growth. Spec 5.3.
@@ -616,6 +645,7 @@ def seasonal_forecast(
             lookback_days=lookback_days,
             growth_min=growth_min,
             growth_max=growth_max,
+            min_growth_days=min_growth_days,
         )
         reasons.append(
             f"seasonal forecast from {season.name} one year back "

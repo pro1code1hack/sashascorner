@@ -567,6 +567,13 @@ def _emergency_requests(
     placed now -- not to the end of the cover window. The scheduled order is still
     coming; the only question an emergency answers is whether the shelf survives until
     it arrives.
+
+    Stock on open purchase orders is **excluded** here, unlike everywhere else in sizing.
+    Elsewhere it is right to count it, because it prevents ordering the same thing twice.
+    Here it would answer the wrong question: a delivery that has not arrived cannot be
+    poured into a cup, and the days this function is about are precisely the days before
+    it arrives. Counting it is how a system decides the shelf is fine because of a van
+    that is still two days away.
     """
     requests: list[EmergencyRequest] = []
     would_be: dict[int, int] = {}
@@ -601,7 +608,7 @@ def _emergency_requests(
                     ingredient_id=candidate.ingredient_id,
                     ingredient_name=candidate.ingredient_name,
                     unit=candidate.unit,
-                    available_qty=candidate.available_qty,
+                    available_qty=candidate.on_hand_qty,
                     daily_rate=candidate.forecast.base_daily,
                     days_until_delivery=days_until,
                     preferred=preferred,
