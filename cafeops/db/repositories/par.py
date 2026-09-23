@@ -20,7 +20,7 @@ from sqlalchemy.orm import Session
 
 from cafeops.db.models import ParLevel
 from cafeops.domain.tiers import GateDecision, authorises_enable
-from cafeops.domain.types import ParSpec
+from cafeops.domain.types import ParSpec, RevokeCause
 
 
 class AutoOrderGrantRefused(PermissionError):
@@ -41,6 +41,10 @@ class AutoOrderAudit:
     granted_at: datetime | None
     revoked_at: datetime | None
     reason: str | None
+    #: WHY the last revocation happened. Survives the flag being off, which the gate's own
+    #: verdict does not: `evaluate_gate` re-derives from history and reports HOLD once
+    #: auto-ordering is already disabled.
+    revoke_cause: RevokeCause | None = None
 
 
 class SqlParLevelRepository:
@@ -69,6 +73,7 @@ class SqlParLevelRepository:
             granted_at=row.auto_order_granted_at,
             revoked_at=row.auto_order_revoked_at,
             reason=row.auto_order_reason,
+            revoke_cause=row.auto_order_revoke_cause,
         )
 
     def set_auto_order(
@@ -115,6 +120,7 @@ class SqlParLevelRepository:
             reason=decision.reason,
             at=at,
             changed=decision.changed,
+            revoke_cause=decision.revoke_cause,
         )
 
     def _row(self, ingredient_id: int) -> ParLevel | None:
@@ -128,6 +134,7 @@ class SqlParLevelRepository:
         reason: str,
         at: datetime,
         changed: bool | None = None,
+        revoke_cause: RevokeCause | None = None,
     ) -> bool:
         row = self._row(ingredient_id)
         if row is None:
@@ -139,6 +146,10 @@ class SqlParLevelRepository:
         if changed:
             if enabled:
                 row.auto_order_granted_at = at
+                # A fresh grant clears the old cause: keeping it would let the digest
+                # announce a revocation that has since been earned back.
+                row.auto_order_revoke_cause = None
             else:
                 row.auto_order_revoked_at = at
+                row.auto_order_revoke_cause = revoke_cause
         return changed

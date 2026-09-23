@@ -80,6 +80,8 @@ from cafeops.domain.types import (
     CapKind,
     CoverWindow,
     ForecastResult,
+    OrderNote,
+    OrderNoteKind,
     OrderSuggestion,
     PackChoice,
     ParSpec,
@@ -249,7 +251,9 @@ class CoverPlan:
     target_delivery_date: date
     cutoff_missed: bool = False
     slip_days: int = 0
-    notes: tuple[str, ...] = ()
+    #: Coded, because these travel into `OrderSuggestion.notes` and a missed cutoff is
+    #: the owner's own ten minutes -- the one note on an order she can act on tomorrow.
+    notes: tuple[OrderNote, ...] = ()
 
 
 def cover_plan(
@@ -279,23 +283,34 @@ def cover_plan(
         order_time=order_time,
         cutoff_time=cutoff_time,
     )
-    notes: list[str] = []
+    notes: list[OrderNote] = []
     if missed and slip > 0:
         notes.append(
-            f"{supplier.name}: CUTOFF MISSED, and it cost {slip} day(s). Ordering at "
-            f"{order_time} is past the {cutoff_time} cutoff, so the lead time starts "
-            f"tomorrow -- which lands past this supplier's next delivery day, moving "
-            f"delivery from {on_time} to {target}. The cover window is {slip} day(s) "
-            "longer to pay for it, so every quantity on this order is larger than it "
-            "needed to be. Ten minutes earlier and this order would have been on the "
-            "earlier van; a run of these is what a Tesco trip is made of."
+            OrderNote(
+                kind=OrderNoteKind.CUTOFF_MISSED,
+                text=(
+                    f"{supplier.name}: CUTOFF MISSED, and it cost {slip} day(s). Ordering at "
+                    f"{order_time} is past the {cutoff_time} cutoff, so the lead time "
+                    "starts tomorrow -- which lands past this supplier's next delivery "
+                    f"day, moving delivery from {on_time} to {target}. The cover window is "
+                    f"{slip} day(s) longer to pay for it, so every quantity on this order "
+                    "is larger than it needed to be. Ten minutes earlier and this order "
+                    "would have been on the earlier van; a run of these is what a Tesco "
+                    "trip is made of."
+                ),
+            )
         )
     elif missed:
         notes.append(
-            f"{supplier.name}: cutoff missed ({order_time} against a {cutoff_time} "
-            f"cutoff) but it cost nothing -- the next delivery day is {target} either "
-            "way, so the extra day is absorbed by the schedule rather than by the shelf. "
-            "Worth knowing, not worth ordering for."
+            OrderNote(
+                kind=OrderNoteKind.CUTOFF_MISSED,
+                text=(
+                    f"{supplier.name}: cutoff missed ({order_time} against a {cutoff_time} "
+                    f"cutoff) but it cost nothing -- the next delivery day is {target} "
+                    "either way, so the extra day is absorbed by the schedule rather than "
+                    "by the shelf. Worth knowing, not worth ordering for."
+                ),
+            )
         )
     return CoverPlan(
         window=window,
@@ -563,20 +578,21 @@ class OrderCandidate:
 class SizingOutcome:
     """What sizing decided about one candidate, and why.
 
-    `line is None` means nothing was ordered; `note` then says which of the several
+    `line is None` means nothing was ordered; the notes then say which of the several
     good reasons applied. A note also appears alongside a line when a clamp moved the
     number, so no adjustment is ever silent.
 
-    `note` is the full explanation and exists for `cafeops simulate`, which shows the
-    working for every candidate. What reaches `OrderSuggestion.notes` -- and therefore
-    the owner's Telegram message -- is curated by `build_suggestion`: forty lines of
-    "nothing needed" is not information, whereas `below_par_floor` and `data_error`
-    both are.
+    Each note carries an `OrderNoteKind`, derived from the same comparison that wrote the
+    sentence. `note` -- the joined prose -- stays as a property for `cafeops simulate`,
+    which shows the working for every candidate in English. What reaches
+    `OrderSuggestion.notes` -- and therefore the owner's Telegram message -- is curated
+    by `build_suggestion`: forty lines of "nothing needed" is not information, whereas
+    `below_par_floor` and `data_error` both are.
     """
 
     candidate: OrderCandidate
     line: SuggestedLine | None
-    note: str | None = None
+    coded_notes: tuple[OrderNote, ...] = ()
     #: Stock is under `min_qty` but nothing is forecast to move it. Reported, never
     #: ordered against -- see `size_line`.
     below_par_floor: bool = False
@@ -590,6 +606,13 @@ class SizingOutcome:
     #: Seasonal, and the season is not running. Nothing was ordered, on purpose.
     out_of_season: bool = False
 
+    @property
+    def note(self) -> str | None:
+        """Every sentence, joined. The working, for a back-office reader."""
+        if not self.coded_notes:
+            return None
+        return " | ".join(note.text for note in self.coded_notes)
+
 
 @dataclass(frozen=True, slots=True)
 class SizingPlan:
@@ -602,7 +625,7 @@ class SizingPlan:
     #: a re-size (the sourcing pass moving a line to another supplier) can carry them
     #: forward: they are facts about the RUN, and a rebuilt suggestion cannot rediscover
     #: them. Losing them is how a cover window silently grows a day with no explanation.
-    extra_notes: tuple[str, ...] = ()
+    extra_notes: tuple[OrderNote, ...] = ()
 
     @property
     def ordered(self) -> tuple[SizingOutcome, ...]:
@@ -707,23 +730,37 @@ def size_line(candidate: OrderCandidate) -> SizingOutcome:
             f"{candidate.pack.pack_unit.value} is not positive, so no pack count can be "
             "computed; fix the supplier product"
         )
-        return SizingOutcome(candidate, None, error, data_error=error)
+        return SizingOutcome(
+            candidate,
+            None,
+            (OrderNote(kind=OrderNoteKind.PACK_DATA_ERROR, text=error),),
+            data_error=error,
+        )
 
     available = candidate.available_qty
     need = candidate.need_qty
-    notes: list[str] = []
+    notes: list[OrderNote] = []
     data_error: str | None = None
     capped = candidate.is_capped
     capped_note = cap_note(candidate)
     if capped_note is not None:
-        notes.append(capped_note)
+        notes.append(
+            OrderNote(
+                kind=(
+                    OrderNoteKind.OUT_OF_SEASON_NOT_ORDERED
+                    if candidate.out_of_season
+                    else OrderNoteKind.CAP_LINE
+                ),
+                text=capped_note,
+            )
+        )
     if par.min_qty > par.max_qty:
         data_error = (
             f"{name}: par min_qty {_shown(par.min_qty)} exceeds max_qty "
             f"{_shown(par.max_qty)}; max_qty wins so the order cannot run away, but the "
             "par level is wrong and needs fixing"
         )
-        notes.append(data_error)
+        notes.append(OrderNote(kind=OrderNoteKind.PAR_DATA_ERROR, text=data_error))
 
     packs = _ceil_packs(need, pack_qty) if need > _ZERO else 0
     forecast_driven = packs
@@ -738,24 +775,35 @@ def size_line(candidate: OrderCandidate) -> SizingOutcome:
             # here would buy the spoilage the cap exists to prevent, so the floor loses
             # and says why -- a floor above the usable window is a par level to fix.
             notes.append(
-                f"{name}: par floor min_qty {_shown(par.min_qty)} {candidate.unit.value} "
-                f"would need {floor_packs} pack(s), but only {packs} fit inside the "
-                f"{candidate.effective_cover_days}-day usable window. NOT raised -- "
-                "invariant 4 outranks a par floor, and a floor above what will keep is a "
-                "par level to fix, not stock to buy."
+                OrderNote(
+                    kind=OrderNoteKind.PAR_FLOOR_BELOW_CAP,
+                    text=(
+                        f"{name}: par floor min_qty {_shown(par.min_qty)} "
+                        f"{candidate.unit.value} would need {floor_packs} pack(s), but only "
+                        f"{packs} fit inside the {candidate.effective_cover_days}-day usable "
+                        "window. NOT raised -- invariant 4 outranks a par floor, and a floor "
+                        "above what will keep is a par level to fix, not stock to buy."
+                    ),
+                )
             )
         else:
             clamped = "min_qty"
             notes.append(
-                f"{name}: raised from {packs} to {floor_packs} pack(s) so on-hand reaches "
-                f"the par floor min_qty {_shown(par.min_qty)} {candidate.unit.value} "
-                f"({forecast_text(candidate)})"
+                OrderNote(
+                    kind=OrderNoteKind.PAR_FLOOR_RAISED,
+                    text=(
+                        f"{name}: raised from {packs} to {floor_packs} pack(s) so on-hand "
+                        f"reaches the par floor min_qty {_shown(par.min_qty)} "
+                        f"{candidate.unit.value} ({forecast_text(candidate)})"
+                    ),
+                )
             )
             packs = floor_packs
 
     cap_packs = _floor_packs(par.max_qty - available, pack_qty)
     if cap_packs < packs:
         clamped = "max_qty"
+        note_kind = OrderNoteKind.PAR_CEILING_CUT
         note = (
             f"{name}: cut from {packs} to {max(cap_packs, 0)} pack(s) by par ceiling "
             f"max_qty {_shown(par.max_qty)} {candidate.unit.value} "
@@ -768,6 +816,9 @@ def size_line(candidate: OrderCandidate) -> SizingOutcome:
         if not candidate.forecast.low_confidence and capped_result < candidate.forecast_qty:
             # max_qty below the window's demand is not a ceiling, it is a planned
             # stockout. Worth saying before she confirms it, not after she runs out.
+            # A different KIND from a plain ceiling cut, because the answer is different:
+            # one is "the par level sized this", the other is "fix the par level".
+            note_kind = OrderNoteKind.PAR_CEILING_BELOW_DEMAND
             note += (
                 f". WARNING: that leaves {_shown(capped_result)} against forecast demand "
                 f"{_shown(candidate.forecast_qty)} over the next "
@@ -775,7 +826,7 @@ def size_line(candidate: OrderCandidate) -> SizingOutcome:
                 "window of demand, so this par level guarantees a shortfall no matter "
                 "what the forecast says"
             )
-        notes.append(note)
+        notes.append(OrderNote(kind=note_kind, text=note))
 
     if packs <= 0:
         if candidate.out_of_season:
@@ -784,22 +835,33 @@ def size_line(candidate: OrderCandidate) -> SizingOutcome:
             pass
         elif below_par_floor and forecast_driven == 0:
             notes.append(
-                f"{name}: on-hand {_shown(candidate.on_hand_qty)} "
-                f"{candidate.unit.value} is under the par floor min_qty "
-                f"{_shown(par.min_qty)}, but nothing is forecast to move it "
-                f"({forecast_text(candidate)}). NOT ordered -- either the par floor is "
-                "wrong or this ingredient is not selling. A human decides, not a clamp."
+                OrderNote(
+                    kind=OrderNoteKind.BELOW_PAR_FLOOR_NOT_ORDERED,
+                    text=(
+                        f"{name}: on-hand {_shown(candidate.on_hand_qty)} "
+                        f"{candidate.unit.value} is under the par floor min_qty "
+                        f"{_shown(par.min_qty)}, but nothing is forecast to move it "
+                        f"({forecast_text(candidate)}). NOT ordered -- either the par floor "
+                        "is wrong or this ingredient is not selling. A human decides, not a "
+                        "clamp."
+                    ),
+                )
             )
         elif clamped is None:
             notes.append(
-                f"{name}: nothing needed -- {forecast_text(candidate)} is already "
-                f"covered by on-hand {_shown(candidate.on_hand_qty)} + open POs "
-                f"{_shown(candidate.on_open_pos_qty)}"
+                OrderNote(
+                    kind=OrderNoteKind.NOTHING_NEEDED,
+                    text=(
+                        f"{name}: nothing needed -- {forecast_text(candidate)} is already "
+                        f"covered by on-hand {_shown(candidate.on_hand_qty)} + open POs "
+                        f"{_shown(candidate.on_open_pos_qty)}"
+                    ),
+                )
             )
         return SizingOutcome(
             candidate,
             None,
-            " | ".join(notes),
+            tuple(notes),
             below_par_floor=below_par_floor and forecast_driven == 0,
             data_error=data_error,
             clamp_blocked=clamped if forecast_driven > 0 else None,
@@ -825,7 +887,7 @@ def size_line(candidate: OrderCandidate) -> SizingOutcome:
         unit=candidate.unit,
         clamped=clamped,
         low_confidence=candidate.forecast.low_confidence,
-        confidence_reasons=candidate.forecast.confidence_reasons,
+        confidence=candidate.forecast.confidence,
         cover_days=candidate.effective_cover_days,
         cap_reason=candidate.cap_reason,
         cap_kind=candidate.cap_kind,
@@ -834,7 +896,7 @@ def size_line(candidate: OrderCandidate) -> SizingOutcome:
     return SizingOutcome(
         candidate,
         line,
-        " | ".join(notes) if notes else None,
+        tuple(notes),
         data_error=data_error,
         capped=capped,
     )
@@ -936,7 +998,8 @@ def _top_up(
     target_pence: int,
     objective: str,
     rationale: str,
-) -> tuple[tuple[SuggestedLine, ...], bool, tuple[str, ...]]:
+    free_delivery: bool,
+) -> tuple[tuple[SuggestedLine, ...], bool, tuple[OrderNote, ...]]:
     """Add non-perishable tier B lines, shortest cover first, until `target_pence`.
 
     Every added pack is stock the owner did not ask for, so the constraints are tight:
@@ -981,9 +1044,14 @@ def _top_up(
 
     if not added:
         notes = [
-            f"{terms.name}: order total {pounds(subtotal)} is below the "
-            f"{pounds(target_pence)} {objective} and no eligible item could be added. "
-            f"{rationale}"
+            OrderNote(
+                kind=OrderNoteKind.TOP_UP_IMPOSSIBLE,
+                text=(
+                    f"{terms.name}: order total {pounds(subtotal)} is below the "
+                    f"{pounds(target_pence)} {objective} and no eligible item could be "
+                    f"added. {rationale}"
+                ),
+            )
         ]
         notes.extend(_pool_notes(pool))
         return tuple(lines), False, tuple(notes)
@@ -1006,13 +1074,16 @@ def _top_up(
                 unit=candidate.unit,
                 is_top_up=True,
                 low_confidence=candidate.forecast.low_confidence,
-                confidence_reasons=candidate.forecast.confidence_reasons,
+                confidence=candidate.forecast.confidence,
                 cover_days=candidate.effective_cover_days,
                 cap_reason=f"top-up to reach the {objective}",
+                # From the CALLER's decision, not from the objective's wording. The
+                # previous `"free delivery" in objective` test read the code back out of
+                # the sentence it had just written, which is the whole failure this
+                # change exists to end -- rewording `objective` silently reclassified
+                # every top-up line as a minimum top-up.
                 cap_kind=(
-                    CapKind.TOP_UP_FREE_DELIVERY
-                    if "free delivery" in objective
-                    else CapKind.TOP_UP_MINIMUM
+                    CapKind.TOP_UP_FREE_DELIVERY if free_delivery else CapKind.TOP_UP_MINIMUM
                 ),
             )
         )
@@ -1024,51 +1095,84 @@ def _top_up(
         )
 
     notes = [
-        f"{terms.name}: TOP-UP TO REACH THE {objective.upper()}. The forecast asked for "
-        f"{pounds(subtotal)}, below {pounds(target_pence)}, so {len(top_up_lines)} "
-        f"non-perishable tier-B item(s) were added -- shortest remaining cover first: "
-        f"{'; '.join(described)}. {rationale} None of this was forecast as needed; it is "
-        "stock bought early, and it is the one part of this order that exists for the "
-        "supplier's benefit rather than the cafe's.",
+        OrderNote(
+            kind=OrderNoteKind.TOP_UP_APPLIED,
+            text=(
+                f"{terms.name}: TOP-UP TO REACH THE {objective.upper()}. The forecast asked "
+                f"for {pounds(subtotal)}, below {pounds(target_pence)}, so "
+                f"{len(top_up_lines)} non-perishable tier-B item(s) were added -- shortest "
+                f"remaining cover first: {'; '.join(described)}. {rationale} None of this "
+                "was forecast as needed; it is stock bought early, and it is the one part "
+                "of this order that exists for the supplier's benefit rather than the "
+                "cafe's."
+            ),
+        ),
     ]
     if total < target_pence:
         notes.append(
-            f"{terms.name}: still {pounds(target_pence - total)} short of the "
-            f"{pounds(target_pence)} {objective} after topping up -- every eligible item "
-            "is already at its par max_qty. Do not pad this further; either the target, "
-            "the par levels or the supplier needs a human decision."
+            OrderNote(
+                kind=OrderNoteKind.TOP_UP_SHORT_OF_TARGET,
+                text=(
+                    f"{terms.name}: still {pounds(target_pence - total)} short of the "
+                    f"{pounds(target_pence)} {objective} after topping up -- every eligible "
+                    "item is already at its par max_qty. Do not pad this further; either "
+                    "the target, the par levels or the supplier needs a human decision."
+                ),
+            )
         )
     notes.extend(_pool_notes(pool))
     return (*lines, *top_up_lines), True, tuple(notes)
 
 
-def _pool_notes(pool: TopUpPool) -> list[str]:
-    notes: list[str] = []
+def _pool_notes(pool: TopUpPool) -> list[OrderNote]:
+    notes: list[OrderNote] = []
     if pool.perishable:
         names = ", ".join(sorted(c.ingredient_name for c in pool.perishable))
         notes.append(
-            f"INVARIANT 5: {len(pool.perishable)} tier-B item(s) were NOT used as top-up "
-            f"because they are perishable: {names}. Buying something that spoils in order "
-            "to clear a supplier's minimum or save a delivery fee is buying waste, so "
-            "these are excluded however short their cover is."
+            OrderNote(
+                kind=OrderNoteKind.TOP_UP_EXCLUDED_PERISHABLE,
+                text=(
+                    f"INVARIANT 5: {len(pool.perishable)} tier-B item(s) were NOT used as "
+                    f"top-up because they are perishable: {names}. Buying something that "
+                    "spoils in order to clear a supplier's minimum or save a delivery fee is "
+                    "buying waste, so these are excluded however short their cover is."
+                ),
+            )
         )
     if pool.shelf_life_unknown:
         names = ", ".join(sorted(c.ingredient_name for c in pool.shelf_life_unknown))
         notes.append(
-            f"{len(pool.shelf_life_unknown)} tier-B item(s) were not used as top-up "
-            f"because no shelf life is recorded for them: {names}. An unknown shelf life "
-            "is not 'does not expire', and the top-up is not the place to find out which."
+            OrderNote(
+                kind=OrderNoteKind.TOP_UP_EXCLUDED_SHELF_LIFE_UNKNOWN,
+                text=(
+                    f"{len(pool.shelf_life_unknown)} tier-B item(s) were not used as top-up "
+                    f"because no shelf life is recorded for them: {names}. An unknown shelf "
+                    "life is not 'does not expire', and the top-up is not the place to find "
+                    "out which."
+                ),
+            )
         )
     if pool.no_velocity:
         names = ", ".join(sorted(c.ingredient_name for c in pool.no_velocity))
         notes.append(
-            f"{len(pool.no_velocity)} tier-B item(s) were not used as top-up because "
-            f"nothing has been recorded moving: {names}. Buying stock that does not sell "
-            "to reach a supplier minimum is not a saving."
+            OrderNote(
+                kind=OrderNoteKind.TOP_UP_EXCLUDED_NO_VELOCITY,
+                text=(
+                    f"{len(pool.no_velocity)} tier-B item(s) were not used as top-up because "
+                    f"nothing has been recorded moving: {names}. Buying stock that does not "
+                    "sell to reach a supplier minimum is not a saving."
+                ),
+            )
         )
     if not pool.eligible:
         notes.append(
-            "no non-perishable tier-B item with measured consumption was available to top up with."
+            OrderNote(
+                kind=OrderNoteKind.TOP_UP_POOL_EMPTY,
+                text=(
+                    "no non-perishable tier-B item with measured consumption was available "
+                    "to top up with."
+                ),
+            )
         )
     return notes
 
@@ -1086,7 +1190,7 @@ def build_suggestion(
     candidates: Sequence[OrderCandidate],
     terms: SupplierTerms | None = None,
     free_delivery_top_up_multiple: Decimal = DEFAULT_FREE_DELIVERY_TOP_UP_MULTIPLE,
-    extra_notes: Sequence[str] = (),
+    extra_notes: Sequence[OrderNote] = (),
 ) -> SizingPlan:
     """Size every candidate, then consider the two top-ups. Spec 5.4.
 
@@ -1107,38 +1211,56 @@ def build_suggestion(
     # Curated, not every outcome's note. A purchase order's notes are read by a person
     # deciding whether to press Confirm: a clamp that moved a number she is about to
     # approve belongs there, forty "nothing needed" lines do not.
-    notes = [o.note for o in outcomes if o.line is not None and o.note is not None]
-    notes.extend(o.data_error for o in outcomes if o.data_error is not None and o.line is None)
+    notes: list[OrderNote] = [
+        note for o in outcomes if o.line is not None for note in o.coded_notes
+    ]
+    notes.extend(
+        note
+        for o in outcomes
+        if o.data_error is not None and o.line is None
+        for note in o.coded_notes
+        if note.kind in (OrderNoteKind.PAR_DATA_ERROR, OrderNoteKind.PACK_DATA_ERROR)
+    )
     # A clamp or a cap that suppressed a real need belongs in front of whoever confirms
     # this order: the absence of a line is the dangerous part, and an absent line cannot
     # carry its own explanation.
     notes.extend(
-        o.note
+        note
         for o in outcomes
-        if (o.clamp_blocked is not None or o.out_of_season)
-        and o.line is None
-        and o.note is not None
+        if (o.clamp_blocked is not None or o.out_of_season) and o.line is None
+        for note in o.coded_notes
     )
     below_floor = [o.candidate.ingredient_name for o in outcomes if o.below_par_floor]
     if below_floor:
         notes.append(
-            f"{len(below_floor)} item(s) are below their par floor min_qty with nothing "
-            f"forecast to move them, and were NOT ordered: {', '.join(sorted(below_floor))}. "
-            "Either the par floor or the tier is wrong. Ordering against a floor that "
-            "nothing is consuming would be spending money on a data error."
+            OrderNote(
+                kind=OrderNoteKind.BELOW_PAR_FLOOR_SUMMARY,
+                text=(
+                    f"{len(below_floor)} item(s) are below their par floor min_qty with "
+                    "nothing forecast to move them, and were NOT ordered: "
+                    f"{', '.join(sorted(below_floor))}. Either the par floor or the tier is "
+                    "wrong. Ordering against a floor that nothing is consuming would be "
+                    "spending money on a data error."
+                ),
+            )
         )
     capped = [o for o in outcomes if o.capped and o.line is not None]
     if capped:
         notes.append(
-            f"SHELF LIFE / SEASON CAP (invariant 4): {len(capped)} line(s) are "
-            "deliberately SMALLER than the forecast asked for, because the rest would "
-            "spoil or fall outside the season before it could be used: "
-            + "; ".join(
-                f"{o.line.ingredient_name} -- {o.line.cap_reason}"
-                for o in capped
-                if o.line is not None and o.line.cap_reason is not None
+            OrderNote(
+                kind=OrderNoteKind.CAP_SUMMARY,
+                text=(
+                    f"SHELF LIFE / SEASON CAP (invariant 4): {len(capped)} line(s) are "
+                    "deliberately SMALLER than the forecast asked for, because the rest "
+                    "would spoil or fall outside the season before it could be used: "
+                    + "; ".join(
+                        f"{o.line.ingredient_name} -- {o.line.cap_reason}"
+                        for o in capped
+                        if o.line is not None and o.line.cap_reason is not None
+                    )
+                    + ". Ordering more often is the fix, not ordering more."
+                ),
             )
-            + ". Ordering more often is the fix, not ordering more."
         )
 
     topped_up = False
@@ -1156,6 +1278,7 @@ def build_suggestion(
                     "ships nothing, so the alternative to topping up is not a smaller "
                     "order, it is no order and a stockout."
                 ),
+                free_delivery=False,
             )
             notes.extend(top_up_notes)
         lines, fee_topped_up, fee_notes = _consider_free_delivery(
@@ -1168,20 +1291,30 @@ def build_suggestion(
         notes.extend(fee_notes)
     elif resolved.min_order_pence > 0:
         notes.append(
-            f"{resolved.name}: nothing is needed, so the "
-            f"{pounds(resolved.min_order_pence)} minimum does not apply -- a minimum is a "
-            "condition on placing an order, not a reason to place one."
+            OrderNote(
+                kind=OrderNoteKind.MINIMUM_NOT_APPLICABLE,
+                text=(
+                    f"{resolved.name}: nothing is needed, so the "
+                    f"{pounds(resolved.min_order_pence)} minimum does not apply -- a minimum "
+                    "is a condition on placing an order, not a reason to place one."
+                ),
+            )
         )
 
     if resolved.terms_are_placeholders:
         notes.append(
-            f"{resolved.name}: THESE TERMS ARE INVENTED PLACEHOLDERS. Lead time "
-            f"{resolved.lead_time_days}d, delivery days, cutoff "
-            f"{resolved.cutoff_time or 'unknown'}, minimum "
-            f"{pounds(resolved.min_order_pence)} and the free-delivery threshold were "
-            "never confirmed with this supplier (ARCHITECTURE.md 8F.4). The cover window "
-            "above -- and therefore every quantity on this order -- is only as good as "
-            "they are. Confirm them before trusting the numbers."
+            OrderNote(
+                kind=OrderNoteKind.PLACEHOLDER_TERMS,
+                text=(
+                    f"{resolved.name}: THESE TERMS ARE INVENTED PLACEHOLDERS. Lead time "
+                    f"{resolved.lead_time_days}d, delivery days, cutoff "
+                    f"{resolved.cutoff_time or 'unknown'}, minimum "
+                    f"{pounds(resolved.min_order_pence)} and the free-delivery threshold "
+                    "were never confirmed with this supplier (ARCHITECTURE.md 8F.4). The "
+                    "cover window above -- and therefore every quantity on this order -- is "
+                    "only as good as they are. Confirm them before trusting the numbers."
+                ),
+            )
         )
     notes.extend(extra_notes)
 
@@ -1197,7 +1330,7 @@ def build_suggestion(
         cover_window=cover_window,
         lines=lines,
         min_order_topped_up=topped_up,
-        notes=tuple(notes),
+        coded_notes=tuple(notes),
     )
     return SizingPlan(
         suggestion=suggestion, outcomes=final_outcomes, extra_notes=tuple(extra_notes)
@@ -1210,7 +1343,7 @@ def _consider_free_delivery(
     lines: tuple[SuggestedLine, ...],
     candidates: Sequence[OrderCandidate],
     multiple: Decimal,
-) -> tuple[tuple[SuggestedLine, ...], bool, tuple[str, ...]]:
+) -> tuple[tuple[SuggestedLine, ...], bool, tuple[OrderNote, ...]]:
     """The price-break decision, kept apart from the minimum on purpose (spec 5.4).
 
     Three outcomes, all of them spoken aloud:
@@ -1231,9 +1364,15 @@ def _consider_free_delivery(
             lines,
             False,
             (
-                f"{terms.name}: {pounds(subtotal)} clears the {pounds(threshold)} "
-                f"free-delivery threshold, so the {pounds(terms.delivery_fee_pence)} "
-                "delivery fee is waived. Nothing was added to achieve that.",
+                OrderNote(
+                    kind=OrderNoteKind.FREE_DELIVERY_CLEARED,
+                    text=(
+                        f"{terms.name}: {pounds(subtotal)} clears the {pounds(threshold)} "
+                        f"free-delivery threshold, so the "
+                        f"{pounds(terms.delivery_fee_pence)} delivery fee is waived. "
+                        "Nothing was added to achieve that."
+                    ),
+                ),
             ),
         )
     shortfall = threshold - subtotal
@@ -1245,13 +1384,18 @@ def _consider_free_delivery(
             lines,
             False,
             (
-                f"{terms.name}: PAYING THE {pounds(terms.delivery_fee_pence)} DELIVERY "
-                f"FEE. The order is {pounds(subtotal)} and free delivery starts at "
-                f"{pounds(threshold)}, so clearing it would mean buying "
-                f"{pounds(shortfall)} of stock nobody asked for to save "
-                f"{pounds(terms.delivery_fee_pence)}. That is not a saving, so the fee is "
-                "paid. (A free-delivery threshold is a price break, not a minimum -- this "
-                "order ships either way.)",
+                OrderNote(
+                    kind=OrderNoteKind.FREE_DELIVERY_FEE_PAID,
+                    text=(
+                        f"{terms.name}: PAYING THE {pounds(terms.delivery_fee_pence)} "
+                        f"DELIVERY FEE. The order is {pounds(subtotal)} and free delivery "
+                        f"starts at {pounds(threshold)}, so clearing it would mean buying "
+                        f"{pounds(shortfall)} of stock nobody asked for to save "
+                        f"{pounds(terms.delivery_fee_pence)}. That is not a saving, so the "
+                        "fee is paid. (A free-delivery threshold is a price break, not a "
+                        "minimum -- this order ships either way.)"
+                    ),
+                ),
             ),
         )
     lines, added, notes = _top_up(
@@ -1267,5 +1411,6 @@ def _consider_free_delivery(
             f"the shortfall is within {multiple}x the fee -- an interpretation of spec "
             "5.4, which says to top up below the threshold but not at what price."
         ),
+        free_delivery=True,
     )
     return lines, added, notes

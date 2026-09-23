@@ -417,7 +417,7 @@ This is the same move as the purchase-order `CHECK` constraint (§5): with no te
 suite, the way to protect an invariant is to make violating it unrepresentable
 rather than merely forbidden.
 
-### 8A.3 Gap queued for Phase 2: a silent revocation
+### 8A.3 CLOSED: the silent revocation
 
 A revoke in the 10–15% band currently carries `alert=False`, because spec §5.2 only
 demands an alert above 15%. But a revocation is a **material change in system
@@ -425,8 +425,17 @@ behaviour** — orders that were being drafted automatically stop being drafted.
 owner should be told, even at a lower severity than the >15% "your stock figures are
 untrustworthy" alarm.
 
-Not fixed now: `domain/tiers.py` may still be read by a running agent, and `alert`
-is consumed by the bot, which has not been built. Phase 2 change.
+**Fixed.** `GateDecision` gained `revoke_cause` and `alert_level`, and `alert` became a
+derived property. `alert_level` is computed from the action, never passed in: `ALARM` only
+above 15%, `NOTICE` for every revoke, `NONE` otherwise — so a revocation is audible
+without promoting the whole tuning band to an alarm.
+
+One thing that only became visible on implementation: **the gate is stateless.**
+`gate_status` re-derives from current history, so the moment the flag is off the
+revocation has vanished and the digest could only ever have caught it on the single
+morning it coincided. The cause is therefore persisted on `par_level`
+(`auto_order_revoke_cause`) and read back. A derived-only design would have produced a
+notice nobody ever saw.
 
 ### 8A.4 Operational lesson: agents must not share a database
 
@@ -1449,6 +1458,91 @@ price, so the 40p alt-milk upcharge was never counted across 591 of 2,776 lines.
 figure feeds the channel and P&L views, so any margin computed against it looked better
 than the real one — again the direction of error nobody questions. Fixed; the seed now
 reports the upcharge total so it cannot silently drift again.
+
+---
+
+## 8M. The prose-parsing failure, closed — and it had recursed
+
+§8I named the pattern. Closing it turned up two things worth recording.
+
+**It had recursed into the layer that writes the sentence.** `_top_up` in
+`domain/ordering.py` chose its `CapKind` with `"free delivery" in objective` — reading a
+code back out of prose *it had just written itself*. The bot's regexes were the visible
+symptom; this was the same mistake one layer down, where nobody was looking.
+
+**Two enums shared a name and disagreed.** `bot/viewmodels.py` declared its own `CapKind`
+and `LowConfidenceKind` with **different members** from the persisted ones
+(`SHORT_HISTORY` where the database says `THIN_HISTORY`). Nothing raised. Both are gone.
+
+The fix is sharper than what I asked for. Rather than storing a code *and* a sentence,
+the prose fields became **derived properties over a coded tuple**:
+
+- `ForecastResult.confidence_reasons` → a property over `confidence: tuple[ForecastNote, ...]`
+- `SuggestedLine.confidence_reasons` / `low_confidence_kind` → properties over `confidence`
+- `OrderSuggestion.notes` → a property over `coded_notes: tuple[OrderNote, ...]`
+
+Two parallel tuples kept in step by hand would have been §8I again in a new costume, and
+the caller who forgot would be the one whose message lost its reason. `api/` and `web/`
+still read `.notes` and `.confidence_reasons` unchanged.
+
+**Two protocol signatures I had written were already wrong**, and this found them:
+`record_emergency_routing` was missing `qty` and `premium_pence` — *without which the
+premium is a penny out per routing, and the accumulated total is the entire point of that
+table* — and `ParLevelRepository.audit` claimed a 3-tuple while every implementation
+returned a dataclass. A protocol nobody checks is a comment.
+
+Also: `purchase_order.notes` was being **dropped entirely** by the bot. The invariant-5
+sentence — *nothing perishable was used as top-up* — existed and never reached the owner.
+
+### 8M.1 What a tier C `LOW` does, and the reasoning
+
+A `LOW` answer is followed by exactly one question — how many packs — and the answer goes
+onto that supplier's **DRAFT** with `po_line.checklist_requested_by` naming who chose it.
+
+**No suggested figure is offered.** Not a par floor, not "last time you ordered 3". Spec
+§4.7 says tier C is never calculated, so the system genuinely has no number, and either
+suggestion would be *a guess wearing a calculation's clothes* — on a card the owner is
+about to approve, where a hand-typed quantity and a forecast must never look alike.
+
+"Don't order" still marks an item low cheaply, because a 59-item walk demanding a number
+per item is a walk nobody finishes — the same failure by a different route. Four refusals
+each cover a number the system does not have, including *no supplier product* (no pack
+size, no price → refuse rather than invent).
+
+---
+
+## 8N. The frontend, and a correction it made to my instruction
+
+`web/` holds the composition editor and stock, built to spec §11's two-pass process:
+`DESIGN.md` first with no code, then a self-review against the avoid-list, then the build.
+
+Three decisions worth keeping:
+
+- **Every figure goes through one primitive in a monospace face.** A monospace is tabular
+  *by construction*, so there is no `tnum` feature to lose silently through a variable
+  font or a fallback family. Serif for prose, mono for measurements, which makes the
+  typeface itself a second encoding channel: serif means somebody wrote this, mono means
+  something measured it.
+- **One colour, and no green.** A traffic light needs two lights; there is only oxblood,
+  for a crossed threshold. Estimates — 42 of 113 prices, the *ambient* condition rather
+  than an exception — are marked typographically instead.
+- **An unpriced edit refuses.** Editing a quantity no fixture recorded shows "This edit
+  has not been priced" **with no Apply button**, rather than rendering a plausible number.
+
+### 8N.1 I told it to say "never counted", and it was right to refuse
+
+I asked for rows with no `trust_status` to read "never counted". It declined, because
+those rows **have** been counted — `Chocolate powder` carries `counted 5 on 25 Jul` and
+`has_count_basis: true`. What they lack is a drift *observation*: drift needs an anchor
+**plus a later count**, so the first count of anything produces a basis and no reading.
+Verified: 1 physical count, 0 observations.
+
+"Never counted" would have contradicted the basis column two cells to its left — the
+exact confusion the stock screen exists to prevent (invariant 6). It reads "not yet
+judged" / "no evidence either way" instead. My `_trust_status` docstring said the same
+wrong thing and has been corrected.
+
+A brief is not evidence. This one was wrong and the agent was right to say so.
 
 ---
 

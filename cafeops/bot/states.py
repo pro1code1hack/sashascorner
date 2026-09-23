@@ -28,6 +28,15 @@ class CountFlow(StatesGroup):
 
 class ChecklistFlow(StatesGroup):
     awaiting_answer = State()
+    #: After «заканчивается»: how many packs to put on the draft. The answer is written
+    #: the moment it arrives, like every other consequence here -- an abandoned checklist
+    #: leaves the lines already requested, not nothing.
+    #:
+    #: Tier C carries no forecast (spec 4.7), so this is the one quantity in the whole bot
+    #: that the system cannot supply and must not guess. It lives in FSM state only
+    #: between "running low" and the number, because until both are known there is no
+    #: honest line to write.
+    awaiting_order_packs = State()
 
 
 class DeliveryFlow(StatesGroup):

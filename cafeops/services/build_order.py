@@ -65,6 +65,8 @@ from cafeops.domain.stock import theoretical_on_hand
 from cafeops.domain.types import (
     ForecastResult,
     IngredientSnapshot,
+    OrderNote,
+    OrderNoteKind,
     PackChoice,
     ParSpec,
     SeasonSpec,
@@ -406,33 +408,53 @@ def build_order_plan(
             )
         )
 
-    skipped: list[str] = []
+    skipped: list[OrderNote] = []
     if no_par:
         skipped.append(
-            f"{len(no_par)} tracked ingredient(s) have no par level, so there is no "
-            f"min/max to size against and they were not ordered: {', '.join(no_par)}"
+            OrderNote(
+                kind=OrderNoteKind.SKIPPED_NO_PAR,
+                text=(
+                    f"{len(no_par)} tracked ingredient(s) have no par level, so there is no "
+                    f"min/max to size against and they were not ordered: {', '.join(no_par)}"
+                ),
+            )
         )
     if not_earned:
         skipped.append(
-            f"{len(not_earned)} ingredient(s) have not earned auto-ordering (invariant 2 "
-            "-- two consecutive counts under 10% drift) and were left for a human: "
-            f"{', '.join(not_earned)}"
+            OrderNote(
+                kind=OrderNoteKind.SKIPPED_NO_PAR,
+                text=(
+                    f"{len(not_earned)} ingredient(s) have not earned auto-ordering "
+                    "(invariant 2 -- two consecutive counts under 10% drift) and were left "
+                    f"for a human: {', '.join(not_earned)}"
+                ),
+            )
         )
     if not candidates:
         products = len(supplier_repo.packs_for_supplier(supplier.id))
         if products == 0:
             skipped.append(
-                f"{supplier.name} has no supplier products on file at all, so nothing can "
-                "be ordered from it. For Nataly that is spec 15 question 5 still "
-                "unanswered -- what this supplier covers, and through what channel, is "
-                "unknown (ARCHITECTURE.md 8F.4)."
+                OrderNote(
+                    kind=OrderNoteKind.SKIPPED_NO_PAR,
+                    text=(
+                        f"{supplier.name} has no supplier products on file at all, so "
+                        "nothing can be ordered from it. For Nataly that is spec 15 question "
+                        "5 still unanswered -- what this supplier covers, and through what "
+                        "channel, is unknown (ARCHITECTURE.md 8F.4)."
+                    ),
+                )
             )
         else:
             skipped.append(
-                f"{supplier.name} stocks {products} product(s) but none is a tracked tier "
-                "A/B ingredient with a par level, so there is nothing here to calculate. "
-                "Cakesmiths is the real case: its 20 products are all tier C cake, which is "
-                "a yes/no checklist (spec 4.5), not a forecast."
+                OrderNote(
+                    kind=OrderNoteKind.SKIPPED_NO_PAR,
+                    text=(
+                        f"{supplier.name} stocks {products} product(s) but none is a tracked "
+                        "tier A/B ingredient with a par level, so there is nothing here to "
+                        "calculate. Cakesmiths is the real case: its 20 products are all "
+                        "tier C cake, which is a yes/no checklist (spec 4.5), not a forecast."
+                    ),
+                )
             )
 
     plan_for_supplier: CoverPlan = cover_plan(
@@ -817,16 +839,24 @@ def _apply_sourcing(
         if len(keep) == len(plan.outcomes):
             resized.append(plan)
             continue
-        notes: list[str] = []
+        notes: list[OrderNote] = []
         if moved:
             notes.append(
-                f"{supplier.name}: SOURCING MOVED {len(moved)} line(s) off this order: "
-                + "; ".join(moved)
-                + ". The reason is on each sourcing choice. This order was then re-sized, "
-                "so its minimum and any top-up were re-decided against what is left."
+                OrderNote(
+                    kind=OrderNoteKind.SOURCING_LINE_MOVED,
+                    text=(
+                        f"{supplier.name}: SOURCING MOVED {len(moved)} line(s) off this "
+                        "order: " + "; ".join(moved) + ". The reason is on each sourcing "
+                        "choice. This order was then re-sized, so its minimum and any "
+                        "top-up were re-decided against what is left."
+                    ),
+                )
             )
             notes.extend(
-                reason_by_ingredient[c.ingredient_id]
+                OrderNote(
+                    kind=OrderNoteKind.SOURCING_LINE_MOVED,
+                    text=reason_by_ingredient[c.ingredient_id],
+                )
                 for c in choices
                 if c.chosen.supplier_id != supplier.id
                 and any(
@@ -869,8 +899,13 @@ def _resize_with_minimum(plan: SizingPlan, *, min_order_pence: int) -> SizingPla
         terms=None,
         extra_notes=(
             *plan.extra_notes,
-            f"WHAT-IF: this order was sized against a {pounds(min_order_pence)} minimum "
-            "supplied on the command line, not the stored one.",
+            OrderNote(
+                kind=OrderNoteKind.WHAT_IF_MINIMUM,
+                text=(
+                    f"WHAT-IF: this order was sized against a {pounds(min_order_pence)} "
+                    "minimum supplied on the command line, not the stored one."
+                ),
+            ),
         ),
     )
 

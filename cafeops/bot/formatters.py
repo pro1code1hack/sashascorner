@@ -44,6 +44,7 @@ from cafeops.bot.viewmodels import (
     DigestView,
     DispatchView,
     DriftAlertView,
+    EmergencyDigestView,
     ExpiryLineView,
     IngredientRefView,
     LowConfidenceKind,
@@ -52,6 +53,7 @@ from cafeops.bot.viewmodels import (
     OrderView,
     ReceiptIssue,
     ReceiptView,
+    RevocationView,
     StockLineView,
     WriteOffView,
 )
@@ -60,15 +62,20 @@ from cafeops.domain.drift import DriftCause
 from cafeops.domain.tiers import GateAction
 from cafeops.domain.types import (
     DriftVerdict,
+    GateAlertLevel,
     OrderChannel,
+    OrderNoteKind,
     POStatus,
+    RevokeCause,
     Storage,
     Tier,
     Unit,
 )
+from cafeops.services.record_checklist import ChecklistOrderRequest
 
 __all__ = [
     "BTN_CHECKLIST_LOW",
+    "BTN_CHECKLIST_NO_ORDER",
     "BTN_CHECKLIST_OK",
     "BTN_CHECKLIST_SKIP",
     "BTN_COUNT_SKIP",
@@ -85,6 +92,9 @@ __all__ = [
     "adhoc_usage",
     "checklist_done",
     "checklist_intro",
+    "checklist_order_prompt",
+    "checklist_order_refused",
+    "checklist_ordered",
     "checklist_prompt",
     "checklist_result",
     "count_done",
@@ -100,6 +110,7 @@ __all__ = [
     "digest",
     "err_bad_date",
     "err_bad_number",
+    "err_bad_packs",
     "err_fractional_count",
     "err_not_adjustable",
     "err_unknown",
@@ -138,6 +149,10 @@ _STORAGE: dict[Storage, str] = {
 _WEEKDAYS = ("пн", "вт", "ср", "чт", "пт", "сб", "вс")
 
 _TIERS: dict[Tier, str] = {Tier.A: "A", Tier.B: "B", Tier.C: "C"}
+
+
+def _runs(n: int) -> str:
+    return f"{n} {_plural(n, 'поход', 'похода', 'походов')}"
 
 
 def _plural(n: int, one: str, few: str, many: str) -> str:
@@ -286,7 +301,7 @@ def _low_confidence(notice: LowConfidenceNotice) -> str:
             f"ПРОГНОЗ НЕ ПОКАЗАН: расход{window} не зафиксирован вообще. "
             "Ноль здесь означает «ничего не известно», а не «ничего не нужно»."
         )
-    if notice.kind is LowConfidenceKind.SHORT_HISTORY:
+    if notice.kind is LowConfidenceKind.THIN_HISTORY:
         have = "" if notice.history_days is None else f"всего {_days(notice.history_days)}"
         need = "" if notice.needed_days is None else f", нужно {_days(notice.needed_days)}"
         return (
@@ -294,11 +309,16 @@ def _low_confidence(notice: LowConfidenceNotice) -> str:
             "Вместо прогноза взято плоское среднее без поправки на день недели — "
             "количество ниже считайте заглушкой, а не прогнозом."
         )
-    if notice.kind is LowConfidenceKind.FIRST_SEASON:
+    if notice.kind is LowConfidenceKind.NO_PRIOR_SEASON:
         return (
             "ПРОГНОЗ НЕ ПОКАЗАН: этот сезон идёт впервые, сравнивать не с чем. "
             "Количество взято по плоской ставке первых дней сезона, и первые недели "
             "сезона — самые непоказательные. Это заглушка, а не прогноз."
+        )
+    if notice.kind is LowConfidenceKind.UNTRUSTWORTHY_STOCK:
+        return (
+            "ПРОГНОЗ НЕ ПОКАЗАН: расхождение по этой позиции выше допустимого, значит "
+            "остаток, из которого вычитается прогноз, сам недостоверен. Сначала пересчёт."
         )
     return (
         "ПРОГНОЗ НЕ ПОКАЗАН: данных недостаточно для прогноза, которому можно доверять. "
@@ -349,6 +369,131 @@ def _cap(notice: CapNotice) -> str:
 
 
 # ==========================================================================
+# Пояснения к заказу: код -> фраза (spec 5.4)
+# ==========================================================================
+#
+# `purchase_order.notes` -- английская проза для служебного чтения, и раньше бот её просто
+# ВЫБРАСЫВАЛ: перевести прозу на ходу нельзя, значит владелица видела количество без
+# объяснения, откуда оно. Spec 5.4 запрещает молча менять заказ, а фраза, которую нельзя
+# прочитать, — это и есть молчание.
+#
+# Теперь каждое пояснение приходит кодом (`OrderNoteKind`), и русская фраза пишется здесь.
+# Значение `None` — сознательное: это рабочая выкладка для служебного отчёта
+# (`cafeops simulate`), а не решение, которое владелице нужно принять. Пропуск помечен
+# явно, чтобы «нет фразы» нельзя было спутать с «забыли добавить».
+
+_ORDER_NOTE: dict[OrderNoteKind, str | None] = {
+    # Ограничения по сроку годности и сезону: у каждой строки уже есть своя причина выше.
+    OrderNoteKind.CAP_LINE: None,
+    OrderNoteKind.CAP_SUMMARY: None,
+    OrderNoteKind.OUT_OF_SEASON_NOT_ORDERED: (
+        "СЕЗОННАЯ ПОЗИЦИЯ НЕ ЗАКАЗАНА: сезон не идёт. Это была бы закупка под напиток, "
+        "которого нет в меню."
+    ),
+    # Пар-уровни.
+    OrderNoteKind.PAR_FLOOR_RAISED: (
+        "КОЛИЧЕСТВО ПОДНЯТО ВЫШЕ ПРОГНОЗА, чтобы остаток дошёл до нижней границы "
+        "пар-уровня. Прогноз просил меньше — разницу заказывает не он, а пар-уровень."
+    ),
+    OrderNoteKind.PAR_FLOOR_BELOW_CAP: (
+        "Нижняя граница пар-уровня требует больше, чем влезает в срок годности. "
+        "НЕ подняли: срок годности важнее пар-уровня, а границу, которая больше того, "
+        "что успевает уйти, нужно править, а не закупать."
+    ),
+    OrderNoteKind.PAR_CEILING_CUT: (
+        "КОЛИЧЕСТВО УРЕЗАНО верхней границей пар-уровня — заказ сузил не прогноз, а пар-уровень."
+    ),
+    OrderNoteKind.PAR_CEILING_BELOW_DEMAND: (
+        "ВЕРХНЯЯ ГРАНИЦА ПАР-УРОВНЯ НИЖЕ СПРОСА за окно покрытия: при таком потолке "
+        "дефицит будет независимо от прогноза. Это не «осторожный заказ», это "
+        "запланированный дефицит — пар-уровень нужно поправить."
+    ),
+    OrderNoteKind.BELOW_PAR_FLOOR_NOT_ORDERED: None,
+    OrderNoteKind.BELOW_PAR_FLOOR_SUMMARY: (
+        "ЕСТЬ ПОЗИЦИИ НИЖЕ НИЖНЕЙ ГРАНИЦЫ ПАР-УРОВНЯ, по которым ничего не расходуется — "
+        "они НЕ заказаны. Либо граница выставлена неверно, либо позиция не продаётся. "
+        "Закупать под границу, под которой нет расхода, — это тратить деньги на ошибку "
+        "в данных."
+    ),
+    OrderNoteKind.NOTHING_NEEDED: None,
+    OrderNoteKind.PAR_DATA_ERROR: (
+        "ОШИБКА В ПАР-УРОВНЕ: нижняя граница выше верхней. Заказ ограничен верхней, "
+        "чтобы не разогнался, но сам пар-уровень нужно поправить."
+    ),
+    OrderNoteKind.PACK_DATA_ERROR: (
+        "ОШИБКА В КАРТОЧКЕ ТОВАРА: размер упаковки не положительный, посчитать количество "
+        "упаковок нельзя. Позиция не заказана — нужно поправить карточку у поставщика."
+    ),
+    OrderNoteKind.SKIPPED_NO_PAR: (
+        "ЧАСТЬ ПОЗИЦИЙ НЕ РАССМАТРИВАЛАСЬ: у них нет пар-уровня или ещё не заработан "
+        "автозаказ. Это не «ничего не нужно», это «не считалось»."
+    ),
+    # Два разных добора.
+    OrderNoteKind.TOP_UP_APPLIED: None,
+    OrderNoteKind.TOP_UP_IMPOSSIBLE: (
+        "ДОБРАТЬ ДО ЦЕЛИ НЕ ВЫШЛО: ни одна позиция не подходит для добора. Решать вам — "
+        "заказать как есть, отложить или договориться с поставщиком."
+    ),
+    OrderNoteKind.TOP_UP_SHORT_OF_TARGET: (
+        "ПОСЛЕ ДОБОРА ДО ЦЕЛИ ВСЁ РАВНО НЕ ХВАТАЕТ: все подходящие позиции уже на своём "
+        "максимуме. Дальше добивать нельзя — это уже закупка ради закупки."
+    ),
+    OrderNoteKind.TOP_UP_EXCLUDED_PERISHABLE: (
+        "В ДОБОР НЕ ВЗЯТО НИЧЕГО ПОРТЯЩЕГОСЯ (инвариант 5). Купить то, что испортится, "
+        "ради минимальной суммы или бесплатной доставки — это купить будущий убыток."
+    ),
+    OrderNoteKind.TOP_UP_EXCLUDED_SHELF_LIFE_UNKNOWN: (
+        "Часть позиций не взята в добор, потому что срок годности у них не указан. "
+        "«Неизвестно» — это не «не портится», и добор — не место это выяснять."
+    ),
+    OrderNoteKind.TOP_UP_EXCLUDED_NO_VELOCITY: (
+        "Часть позиций не взята в добор, потому что по ним нет зафиксированного расхода. "
+        "Закупать то, что не продаётся, ради минимума поставщика — не экономия."
+    ),
+    OrderNoteKind.TOP_UP_POOL_EMPTY: (
+        "Добирать было нечем: не нашлось ни одной непортящейся позиции категории B "
+        "с измеренным расходом."
+    ),
+    OrderNoteKind.MINIMUM_NOT_APPLICABLE: (
+        "Ничего не нужно, поэтому минимум поставщика не применяется: минимум — это "
+        "условие для заказа, а не повод его сделать."
+    ),
+    OrderNoteKind.FREE_DELIVERY_CLEARED: None,
+    OrderNoteKind.FREE_DELIVERY_FEE_PAID: None,
+    # Факты о самом прогоне.
+    OrderNoteKind.PLACEHOLDER_TERMS: None,
+    OrderNoteKind.SOURCING_LINE_MOVED: (
+        "ЧАСТЬ СТРОК УШЛА К ДРУГОМУ ПОСТАВЩИКУ, потому что там дешевле за единицу. "
+        "Заказ после этого пересчитан заново — вместе с минимумом и добором."
+    ),
+    OrderNoteKind.CUTOFF_MISSED: (
+        "ВРЕМЯ ОТСЕЧЕНИЯ ПРОПУЩЕНО: заказ оформлен позже, чем поставщик принимает на "
+        "ближайшую машину, поэтому поставка сдвинулась. Окно покрытия из-за этого длиннее, "
+        "а значит и каждое количество в заказе больше, чем было бы нужно. Десять минут "
+        "раньше — и заказ ушёл бы предыдущим рейсом."
+    ),
+    OrderNoteKind.WHAT_IF_MINIMUM: (
+        "Заказ посчитан против минимума, заданного вручную, а не того, что записан "
+        "у поставщика. Это прикидка «что если», а не обычный заказ."
+    ),
+    OrderNoteKind.CHECKLIST_REQUEST: None,
+    OrderNoteKind.OTHER: None,
+}
+
+
+def _order_notes(view: OrderView) -> list[str]:
+    """Пояснения к заказу, по кодам. Ни одной английской фразы наружу.
+
+    Порядок — тот, в каком решения принимались (`purchase_order.note_codes`), а не
+    алфавитный: сначала то, что изменило количества, потом то, что объясняет условия.
+    """
+    rows = [text for kind in view.notes if (text := _ORDER_NOTE.get(kind)) is not None]
+    if not rows:
+        return []
+    return ["", "ПОЧЕМУ ЗАКАЗ ТАКОЙ:", *(f"  – {row}" for row in rows)]
+
+
+# ==========================================================================
 # Заказ поставщику
 # ==========================================================================
 
@@ -392,6 +537,14 @@ def _order_line(line: OrderLineView, index: int) -> list[str]:
         rows.append(f"    расчётная потребность {_qty(line.need_qty, line.unit)}")
     if line.cap is not None:
         rows.append(f"    {_cap(line.cap)}")
+    if line.checklist_requested_by is not None:
+        # Категория C не считается (spec 4.7): это количество назвал человек. Показать
+        # его так же, как посчитанное, значило бы выдать догадку за расчёт.
+        rows.append(
+            f"    ИЗ ЧЕК-ЛИСТА: количество назвал(а) «{line.checklist_requested_by}». "
+            "Прогноза по этой позиции нет и быть не может — категория C не считается, "
+            "поэтому цифру выбрал человек, а не система."
+        )
     return rows
 
 
@@ -506,6 +659,17 @@ def order_card(view: OrderView) -> str:
             "доверять; причина указана вместо цифры прогноза."
         )
 
+    checklist = view.checklist_lines
+    if checklist:
+        rows.append("")
+        rows.append(
+            f"ИЗ ЧЕК-ЛИСТА КАТЕГОРИИ C — {_lines_word(len(checklist))}: "
+            + ", ".join(line.ingredient_name for line in checklist)
+            + ". Эти строки попали в заказ потому, что кто-то отметил «заканчивается» "
+            "и сам назвал количество. Система их не считала и посчитать не может."
+        )
+
+    rows += _order_notes(view)
     rows += _order_channel_note(view)
 
     if view.terms_are_placeholders:
@@ -676,6 +840,47 @@ _GATE: dict[GateAction, str] = {
     GateAction.HOLD: "автозаказ без изменений",
 }
 
+#: ПОЧЕМУ автозаказ отобрали. Раньше `reason` была английской прозой, и бот мог сказать
+#: только «выключен» — а у двух причин разные ответы: по одной надо пересчитать, по другой
+#: позиция вообще не должна была быть в автозаказе (`ARCHITECTURE.md` 8A.3).
+_REVOKE_CAUSE: dict[RevokeCause, str] = {
+    RevokeCause.DRIFT_ABOVE_TOLERANCE: (
+        "расхождение выше 15%: расчётным остаткам по этой позиции доверять нельзя, "
+        "а заказ по недостоверному остатку — это и есть те самые £200 молока, "
+        "которое никому не нужно"
+    ),
+    RevokeCause.DRIFT_IN_TUNING_BAND: (
+        "расхождение попало в полосу 10–15%. Автозаказ держался на двух чистых "
+        "пересчётах подряд, и один из них больше не чистый — значит основание истекло. "
+        "Поправьте коэффициент потерь и пересчитайте ещё раз"
+    ),
+    RevokeCause.STREAK_BROKEN: ("чистых пересчётов подряд стало меньше, чем нужно для автозаказа"),
+    RevokeCause.TIER_NOT_A: (
+        "позиция больше не в категории A, а вне категории A автозаказа не бывает"
+    ),
+    RevokeCause.PAR_LEVEL_REMOVED: (
+        "у позиции больше нет пар-уровня: нечем задать минимум и максимум, значит нечего и считать"
+    ),
+    RevokeCause.NO_OBSERVATION: (
+        "истории расхождений по этой позиции больше нет, а автозаказ без истории не существует"
+    ),
+}
+
+
+def _revoke(cause: RevokeCause | None) -> list[str]:
+    """Что именно отобрало автозаказ. Материальное изменение, а не примечание.
+
+    Автозаказ выключился — значит заказы, которые собирались сами, собираться перестали.
+    Узнать об этом по тому, что ничего не приехало, — худший способ.
+    """
+    if cause is None:
+        return []
+    return [
+        "АВТОЗАКАЗ ПО ЭТОЙ ПОЗИЦИИ ВЫКЛЮЧЕН — это меняет поведение системы: черновики "
+        "по ней больше не собираются сами, пока право не заработано заново.",
+        f"причина: {_REVOKE_CAUSE[cause]}",
+    ]
+
 
 def count_result(result: CountResultView) -> str:
     rows = [
@@ -700,6 +905,7 @@ def count_result(result: CountResultView) -> str:
             "сегодняшний остаток он не переопределяет."
         )
     rows.append(_GATE[result.gate_action])
+    rows += _revoke(result.revoke_cause)
     if result.gate_action is not GateAction.GRANT and result.required_streak > 0:
         rows.append(
             f"чистых пересчётов подряд: {result.clean_streak} из {result.required_streak} "
@@ -711,10 +917,19 @@ def count_result(result: CountResultView) -> str:
             f"{result.suggested_waste_factor}. Это предложение, а не изменение — "
             "применять решаете вы."
         )
-    if result.alert:
+    if result.alert_level is GateAlertLevel.ALARM:
         rows.append(
             "ТРЕВОГА: пока расхождение такое, любые расчётные остатки по этой позиции "
             "недостоверны, и автозаказ по ней запрещён."
+        )
+    elif result.alert_level is GateAlertLevel.NOTICE:
+        # Отдельный уровень, а не та же тревога: «вы потеряли автозаказ» и «вашим числам
+        # нельзя верить» — разные утверждения, и склеивать их в один флаг значит потерять
+        # оба. Spec 5.2 требует тревогу только выше 15%; молчать про отзыв она не требует.
+        rows.append(
+            "ВАЖНО: это не «числам нельзя верить» — расхождение ещё в рабочей полосе. "
+            "Но право на автозаказ отозвано, и вернуть его можно только двумя чистыми "
+            "пересчётами подряд."
         )
     return "\n".join(rows)
 
@@ -735,6 +950,7 @@ def count_done(*, counted: int, skipped: int, total: int) -> str:
 BTN_CHECKLIST_OK = "Хватает"
 BTN_CHECKLIST_LOW = "Заканчивается"
 BTN_CHECKLIST_SKIP = "Пропустить"
+BTN_CHECKLIST_NO_ORDER = "Не заказывать"
 
 
 def checklist_intro(items: Sequence[ChecklistItemView]) -> str:
@@ -744,9 +960,12 @@ def checklist_intro(items: Sequence[ChecklistItemView]) -> str:
         [
             f"ЧЕК-ЛИСТ, категория C — {_items(len(items))}.",
             "",
-            "Здесь не нужны числа. По каждой позиции только «хватает» или "
-            "«заканчивается»: категория C не считается и не прогнозируется, а "
-            "«заканчивается» просто попадёт в следующий заказ на ваше решение.",
+            "По каждой позиции сначала только «хватает» или «заканчивается»: категория C "
+            "не считается и не прогнозируется, поэтому считать тут нечего.",
+            "",
+            "Если «заканчивается» — спрошу, сколько упаковок заказать. Число называете вы: "
+            "прогноза по категории C нет, и придумывать его система не будет. "
+            f"«{BTN_CHECKLIST_NO_ORDER}» — если отметить, но пока не заказывать.",
         ]
     )
 
@@ -765,17 +984,84 @@ def checklist_prompt(item: ChecklistItemView, *, index: int, total: int) -> str:
 
 def checklist_result(item: ChecklistItemView) -> str:
     if item.last_was_low:
-        return (
-            f"{item.name}: отмечено «заканчивается». Попадёт в следующий заказ "
-            "на ваше решение — само это ничего не заказывает."
-        )
+        return f"{item.name}: отмечено «заканчивается»."
     return f"{item.name}: отмечено «хватает»."
 
 
-def checklist_done(*, answered: int, low: int, total: int) -> str:
+def checklist_order_prompt(item: ChecklistItemView) -> str:
+    """Единственный вопрос, который категория C вправе задать про количество.
+
+    Спрашиваем без подсказки: ни «в прошлый раз брали N», ни нижней границы пар-уровня —
+    их у категории C нет, и любая такая цифра была бы догадкой в костюме расчёта
+    (spec 4.7). Число целиком на человеке, и строка потом это скажет прямо.
+    """
+    return "\n".join(
+        [
+            f"{item.name}: сколько упаковок заказать?",
+            "",
+            "Цифру подсказать не могу и не буду: категория C не считается и не "
+            "прогнозируется, так что число здесь — ваше решение, и в заказе будет "
+            "написано, что его назвал человек.",
+            f"Пришлите целое число упаковок или нажмите «{BTN_CHECKLIST_NO_ORDER}».",
+        ]
+    )
+
+
+def checklist_ordered(request: ChecklistOrderRequest) -> str:
+    """Что произошло после названного количества. Черновик, не заказ (инвариант 1)."""
+    rows = [
+        f"{request.ingredient_name}: {_packs(request.packs)} "
+        f"x {_qty(request.pack_size, request.pack_unit)} = "
+        f"{_money(request.line_total_pence)} — добавлено в черновик заказа "
+        f"№{request.po_id} «{request.supplier_name}».",
+    ]
+    rows.append(
+        "новый черновик создан"
+        if request.order_created
+        else "строка встала в уже открытый черновик этого поставщика"
+    )
+    rows.append(f"ожидаемая поставка: {_d(request.target_delivery_date)}")
+    rows.append(
+        "В строке записано, что количество назвали вы: прогноза по этой позиции нет, "
+        "и система не будет делать вид, что он есть."
+    )
+    if request.terms_are_placeholders:
+        rows.append(
+            f"Условия «{request.supplier_name}» никто с поставщиком не подтверждал, "
+            "поэтому дата поставки выше — догадка."
+        )
+    rows.append("НИЧЕГО НЕ ЗАКАЗАНО, пока вы не нажали «Подтвердить»: /orders")
+    return "\n".join(rows)
+
+
+def checklist_order_refused(name: str) -> str:
+    """Отказ, а не строка с придуманными условиями.
+
+    Без карточки товара нет ни размера упаковки, ни цены. У категории C нет прогноза,
+    которым потом можно было бы поправить выдумку, поэтому честнее отказаться.
+    """
+    return (
+        f"«{name}» в заказ поставить не могу: у этой позиции нет ни одной карточки "
+        "товара у поставщика, значит нет ни размера упаковки, ни цены.\n"
+        "Выдумывать упаковку я не буду — отметку «заканчивается» записал, "
+        "а карточку товара нужно заполнить."
+    )
+
+
+def checklist_done(*, answered: int, low: int, total: int, ordered: int = 0) -> str:
     rows = [f"Чек-лист закончен: {answered} из {total} отмечено."]
     if low:
-        rows.append(f"«Заканчивается»: {low}. Эти позиции попадут в следующий заказ.")
+        rows.append(f"«Заканчивается»: {low}.")
+    if ordered:
+        rows.append(
+            f"В черновики заказов добавлено: {_lines_word(ordered)} — с пометкой, что "
+            "количество назвал человек. Подтверждать вам: /orders"
+        )
+    elif low:
+        rows.append(
+            "Количество ни по одной не названо, поэтому в заказ ничего не встало. "
+            "Отметка сохранена — она будет в утренней сводке."
+        )
     return "\n".join(rows)
 
 
@@ -863,7 +1149,7 @@ _RECEIPT_ISSUE: dict[ReceiptIssue, str] = {
         "Это та самая дата, по которой товар уйдёт в убыток, — её стоит заменить на "
         "настоящую"
     ),
-    ReceiptIssue.EXPIRY_BEFORE_RECEIPT: (
+    ReceiptIssue.EXPIRY_NOT_AFTER_RECEIPT: (
         "введённая дата не позже даты поставки: товар пришёл уже просроченным и "
         "ближайшая проверка его спишет. Записано как введено — проверьте упаковку"
     ),
@@ -878,7 +1164,9 @@ _RECEIPT_ISSUE: dict[ReceiptIssue, str] = {
         "позиция числится непортящейся, но дата введена. Дату оставляю — человек с "
         "упаковкой в руках важнее справочника, а справочник стоит поправить"
     ),
-    ReceiptIssue.UNCLASSIFIED: "",
+    # Never rendered: `views.py` drops OTHER from `issues` and counts it instead, so the
+    # message says «ещё N замечаний» rather than an empty bullet.
+    ReceiptIssue.OTHER: "",
 }
 
 
@@ -1008,6 +1296,81 @@ def _digest_drift(rows: Sequence[DriftAlertView]) -> list[str]:
         out.append(", ".join(parts))
         if row.cause is not None:
             out.append(f"      {_CAUSE[row.cause]}")
+        for line in _revoke(row.revoke_cause):
+            out.append(f"      {line}")
+    return out
+
+
+def _digest_revocations(rows: Sequence[RevocationView]) -> list[str]:
+    """Позиции, У КОТОРЫХ ОТОБРАЛИ АВТОЗАКАЗ. Событие, а не состояние.
+
+    Это единственный канал, который дойдёт до владелицы независимо от того, кто держал
+    планшет при пересчёте. Автозаказ выключился — значит черновики по позиции больше не
+    собираются сами, и узнать об этом по тому, что ничего не приехало, — худший способ
+    (`ARCHITECTURE.md` 8A.3).
+    """
+    if not rows:
+        return []
+    out = [
+        "",
+        f"АВТОЗАКАЗ ОТОБРАН — {_items(len(rows))}. Это меняет поведение системы: "
+        "черновики по этим позициям больше НЕ собираются сами.",
+    ]
+    for row in rows:
+        drift = "" if row.drift_pct is None else f", расхождение {_pct(row.drift_pct)}"
+        out.append(f"  – {row.name} ({_d(row.revoked_at)}{drift})")
+        out.append(f"      {_REVOKE_CAUSE[row.cause]}")
+    out.append(
+        "Вернуть автозаказ можно только двумя чистыми пересчётами подряд — вручную "
+        "включить его нельзя ни из бота, ни из командной строки (инвариант 2). "
+        "Пока он выключен, заказывать по этим позициям нужно руками: /orders"
+    )
+    return out
+
+
+def _digest_emergency(view: EmergencyDigestView | None) -> list[str]:
+    """РОЗНИЧНАЯ НАЦЕНКА ЗА СПЕШКУ, с накопленной суммой. Spec 4.4.
+
+    Эти строки не было видно нигде, кроме служебного отчёта: `build_split` считал
+    экстренные позиции, отчёт по заказам их пересчитывал, а утренняя сводка молчала.
+    Spec 4.4 говорит прямо: накопленный журнал походов в магазин — это и есть аргумент
+    за то, чтобы поправить частоту заказов. Аргумент, который никто не читает, аргументом
+    не является.
+
+    Две суммы, и обе нужны. За последние недели — то, на что можно повлиять прямо сейчас.
+    За всё время — то, чем спорят: один поход — плохая неделя, двадцать — сломанный
+    график заказов.
+    """
+    if view is None or not view.any_runs:
+        return []
+    out = [
+        "",
+        "РОЗНИЧНАЯ НАЦЕНКА ЗА СПЕШКУ — "
+        f"ВСЕГО {_money(view.total_premium_pence)} за {_runs(view.total_runs)} "
+        "в магазин.",
+    ]
+    if view.recent_runs:
+        out.append(
+            f"  за последние {_days(view.window_days)}: {_runs(view.recent_runs)} "
+            f"на {_money(view.recent_premium_pence)}"
+        )
+    else:
+        out.append(
+            f"  за последние {_days(view.window_days)} — ни одного похода. "
+            "Сумма выше накопилась раньше."
+        )
+    for name, runs, premium in view.by_ingredient:
+        out.append(f"  – {name}: {_runs(runs)}, {_money(premium)}")
+    if view.unpriced_runs:
+        out.append(
+            f"  {view.unpriced_runs} из {view.total_runs} без цены — в сумму не включены. "
+            "Настоящая переплата больше указанной (неизвестная цена не равна нулю)."
+        )
+    out.append(
+        "Это переплата за то, что товар понадобился раньше, чем приедет поставщик, "
+        "а не за сам товар. Лечится не магазином, а частотой заказов и временем "
+        "отсечения: /orders оформлять раньше."
+    )
     return out
 
 
@@ -1074,6 +1437,8 @@ def digest(view: DigestView) -> str:
     rows += _digest_orders(view.drafts)
     rows += _digest_deliveries(view.deliveries_expected)
     rows += _digest_drift(view.drift_alerts)
+    rows += _digest_revocations(view.revocations)
+    rows += _digest_emergency(view.emergency)
     rows += _digest_counts(view.counts_due, overdue_days=view.count_overdue_days)
 
     if view.checklist_low:
@@ -1082,8 +1447,10 @@ def digest(view: DigestView) -> str:
             f"ПО ЧЕК-ЛИСТУ ЗАКАНЧИВАЕТСЯ — {_items(len(view.checklist_low))}: "
             + ", ".join(item.name for item in view.checklist_low[:10])
             + (" …" if len(view.checklist_low) > 10 else "")
-            + ". Категория C не считается и не прогнозируется, поэтому заказать это "
-            "может только человек — само оно в заказ не попадёт."
+            + ". Категория C не считается и не прогнозируется, поэтому количество "
+            "называете вы: /checklist, отметить «заканчивается» и назвать число упаковок — "
+            "строка встанет в черновик заказа этого поставщика с пометкой, что цифру "
+            "выбрал человек. Без вашего подтверждения заказ всё равно не уйдёт."
         )
     if view.checklist_due:
         rows.append("")
@@ -1161,6 +1528,17 @@ def help_text() -> str:
             "",
             "«Добор» — строки, которые прогноз не просил: они добавлены только чтобы "
             "выйти на минимум поставщика. Они всегда названы по именам.",
+            "",
+            "«Из чек-листа» — строка, которую поставил человек по категории C. Там "
+            "количество не считалось: категория C — это «хватает / заканчивается», "
+            "без чисел, поэтому цифру называете вы, и строка об этом говорит прямо.",
+            "",
+            "«Автозаказ выключен» — это не примечание. Пока он выключен, черновики по "
+            "позиции не собираются сами. Я всегда пишу, что именно его отобрало.",
+            "",
+            "«Розничная наценка за спешку» — сколько лишнего заплачено в магазине за то, "
+            "что товар понадобился раньше поставки. Сумма накопительная, и она про "
+            "частоту заказов, а не про магазин.",
         ]
     )
 
@@ -1169,6 +1547,15 @@ def err_bad_number(unit: Unit) -> str:
     return (
         f"Не понял число. Пришлите количество в {_UNITS[unit]}, например 3 или 3.5. "
         "Запятая тоже подойдёт."
+    )
+
+
+def err_bad_packs() -> str:
+    return (
+        "Нужно целое число упаковок — например 1 или 3.\n"
+        "Дробную упаковку поставщик не отгрузит, а округлять за вас я не буду: "
+        f"в заказ попало бы не то, что вы решили. «{BTN_CHECKLIST_NO_ORDER}» — "
+        "если заказывать пока не нужно."
     )
 
 
@@ -1295,7 +1682,10 @@ def job_drift_report(
             body.append(line)
             body.append(f"      {_GATE[row.gate_action]}")
 
-    alerts = [row for row in rows if row.alert]
+    # Два уровня, а не один флаг. «Числам нельзя верить» и «автозаказ отобран» — разные
+    # утверждения с разными ответами, и раньше отзыв в полосе 10–15% не говорил вообще
+    # ничего (`ARCHITECTURE.md` 8A.3).
+    alerts = [row for row in rows if row.alert_level is GateAlertLevel.ALARM]
     if alerts:
         body += [
             "",
@@ -1303,6 +1693,20 @@ def job_drift_report(
             + ", ".join(row.name for row in alerts)
             + ". По этим позициям расчётным остаткам доверять нельзя и автозаказ запрещён.",
         ]
+    revoked = [
+        row
+        for row in rows
+        if row.alert_level is GateAlertLevel.NOTICE and row.revoke_cause is not None
+    ]
+    if revoked:
+        body += ["", f"АВТОЗАКАЗ ОТОБРАН — {_items(len(revoked))}:"]
+        for row in revoked:
+            body.append(f"  – {row.name}: {_REVOKE_CAUSE[row.revoke_cause]}")
+        body.append(
+            "Черновики по этим позициям больше не собираются сами. Расхождение при этом "
+            "ещё в рабочей полосе — истекло не доверие к числам, а основание, на котором "
+            "автозаказ был включён."
+        )
     if backfilled:
         body += [
             "",

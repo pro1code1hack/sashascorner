@@ -25,12 +25,18 @@ from cafeops.db.models.enums import (
     ChannelSourceKind,
     ChecklistStatus,
     ComponentRole,
+    ForecastNoteKind,
+    GateAlertLevel,
+    GateReasonKind,
     LowConfidenceKind,
     ModifierAction,
     MovementType,
     OrderChannel,
+    OrderNoteKind,
     POStatus,
     PriceSource,
+    ReceiptWarningKind,
+    RevokeCause,
     SaleChannel,
     SalesChannelName,
     SizeCode,
@@ -57,8 +63,12 @@ __all__ = [
     "DriftVerdict",
     "EmergencyLine",
     "ExpiryLoss",
+    "ForecastNote",
+    "ForecastNoteKind",
     "ForecastPoint",
     "ForecastResult",
+    "GateAlertLevel",
+    "GateReasonKind",
     "ImpactPreview",
     "ImpactedItem",
     "IngredientSnapshot",
@@ -71,13 +81,18 @@ __all__ = [
     "MovementType",
     "OnHand",
     "OrderChannel",
+    "OrderNote",
+    "OrderNoteKind",
     "OrderSuggestion",
     "POStatus",
     "PackChoice",
     "ParSpec",
     "PriceSource",
+    "ReceiptWarning",
+    "ReceiptWarningKind",
     "ResolvedLine",
     "ResolvedRecipe",
+    "RevokeCause",
     "SaleChannel",
     "SaleLine",
     "SalesChannelName",
@@ -99,6 +114,65 @@ __all__ = [
 
 #: Guards the drift denominator (spec 5.2).
 EPSILON = Decimal("0.0001")
+
+
+# ==========================================================================
+# Explanatory prose, paired with a code
+# ==========================================================================
+#
+# Four times now, a fact has existed in this codebase ONLY as an English sentence, and
+# every other surface has had to guess at it: `po_line.cap_reason` matched by regex,
+# `purchase_order.confidence_notes` split on ingredient names, `DeliveryReceipt.warnings`
+# recognised by substring, `GateDecision.reason` not recoverable at all. The Russian bot
+# was reduced to reporting an unclassified warning as a COUNT -- "N more notes were
+# written to the log" -- which is the shape of a fact that was thrown away.
+#
+# The rule these three types exist to enforce: **the code is derived from the same
+# comparison that writes the sentence, and never parsed back out of it.** The sentence
+# stays, because a person reading `par_level.auto_order_reason` in six months needs it.
+# Code branches on the code.
+
+
+@dataclass(frozen=True, slots=True)
+class ForecastNote:
+    """One thing a forecast says about itself, with its code. Invariant 9.
+
+    `history_days` and `needed_days` are carried because a reason that replaces a number
+    still has to be specific: "history is thin" is a shrug, "6 days of history, 14
+    needed" is an answer. A surface in another language cannot recover them from the
+    English sentence, and inventing them is worse than omitting them -- so they are
+    `None` when the note is not about history at all.
+    """
+
+    kind: ForecastNoteKind
+    text: str
+    history_days: int | None = None
+    needed_days: int | None = None
+
+    @property
+    def blocks_the_number(self) -> bool:
+        """True when invariant 9 requires this reason INSTEAD OF the quantity."""
+        return self.kind.blocks_the_number
+
+
+@dataclass(frozen=True, slots=True)
+class OrderNote:
+    """One explanation attached to an order, with its code. Spec 5.4.
+
+    Spec 5.4 forbids silently adjusting an order, which is why these sentences exist.
+    The code is what lets the adjustment be *said* somewhere other than in English.
+    """
+
+    kind: OrderNoteKind
+    text: str
+
+
+@dataclass(frozen=True, slots=True)
+class ReceiptWarning:
+    """One thing worth saying about a received delivery, with its code."""
+
+    kind: ReceiptWarningKind
+    text: str
 
 
 # ==========================================================================
@@ -463,12 +537,44 @@ class ForecastResult:
     points: tuple[ForecastPoint, ...]
     history_days: int
     low_confidence: bool
-    confidence_reasons: tuple[str, ...] = ()
+    #: Every note the forecast wants to make, each carrying the code for the condition
+    #: that produced it. `confidence_reasons` is derived from this rather than stored
+    #: beside it: two parallel tuples are the "every caller must remember" failure
+    #: `ARCHITECTURE.md` 8G.1 describes, and the caller who forgets is the one whose
+    #: message loses the reason.
+    confidence: tuple[ForecastNote, ...] = ()
     used_flat_average: bool = False
 
     @property
     def total(self) -> Decimal:
         return sum((p.qty for p in self.points), Decimal("0"))
+
+    @property
+    def confidence_reasons(self) -> tuple[str, ...]:
+        """The sentences, for a back-office reader. Never parsed -- read `confidence`."""
+        return tuple(note.text for note in self.confidence)
+
+    @property
+    def low_confidence_kind(self) -> LowConfidenceKind | None:
+        """The FIRST reason that stands in place of the number, as a persisted code.
+
+        First rather than a set: invariant 9 replaces the figure with a reason, and the
+        earliest note is the one the arithmetic hit first -- no history before thin
+        history, and thin history before anything advisory.
+        """
+        for note in self.confidence:
+            kind = note.kind.low_confidence_kind
+            if kind is not None:
+                return kind
+        return LowConfidenceKind.OTHER if self.low_confidence else None
+
+    @property
+    def blocking_note(self) -> ForecastNote | None:
+        """The note behind `low_confidence_kind`, with its day counts."""
+        for note in self.confidence:
+            if note.blocks_the_number:
+                return note
+        return None
 
 
 # ==========================================================================
@@ -533,7 +639,10 @@ class SuggestedLine:
     is_top_up: bool = False
     clamped: str | None = None  # "min_qty" | "max_qty" when a clamp actually bit
     low_confidence: bool = False
-    confidence_reasons: tuple[str, ...] = ()
+    #: The forecast's own notes, carried through with their codes. `confidence_reasons`
+    #: and `low_confidence_kind` are derived from this, so a line cannot end up with a
+    #: code that disagrees with its sentence.
+    confidence: tuple[ForecastNote, ...] = ()
     #: Requested by the ordering agent: safety_days lives on ParSpec, so the cover
     #: window is genuinely per line and only the order carried one. The bot and the
     #: API need it per line to explain a quantity.
@@ -544,15 +653,42 @@ class SuggestedLine:
     cap_reason: str | None = None
     #: The same fact, structured. Branch on this; show `cap_reason` to a human.
     cap_kind: CapKind | None = None
-    #: Structured companion to `confidence_reasons` (invariant 9).
-    low_confidence_kind: LowConfidenceKind | None = None
     #: Set when stock is under the par floor but nothing is moving, so no line was
     #: created. An absent line cannot explain itself; this lets the caller say why.
     below_par_floor: bool = False
+    #: Non-None when a tier C checklist answer put this line here, naming the person who
+    #: chose the quantity. Tier C is never calculated (spec 4.7), so a quantity on such a
+    #: line is somebody's decision and must never read as a forecast.
+    checklist_requested_by: str | None = None
 
     @property
     def line_total_pence(self) -> int:
         return self.packs * self.pack.price_pence
+
+    @property
+    def confidence_reasons(self) -> tuple[str, ...]:
+        return tuple(note.text for note in self.confidence)
+
+    @property
+    def low_confidence_kind(self) -> LowConfidenceKind | None:
+        """Structured companion to `confidence_reasons` (invariant 9).
+
+        Derived, not stored: `po_line.low_confidence_kind` is written from this, and a
+        field would let a caller persist a code that contradicts the sentence next to it.
+        """
+        for note in self.confidence:
+            kind = note.kind.low_confidence_kind
+            if kind is not None:
+                return kind
+        return LowConfidenceKind.OTHER if self.low_confidence else None
+
+    @property
+    def blocking_note(self) -> ForecastNote | None:
+        """The note that replaces the forecast figure, with its day counts."""
+        for note in self.confidence:
+            if note.blocks_the_number:
+                return note
+        return None
 
 
 @dataclass(frozen=True, slots=True)
@@ -562,7 +698,20 @@ class OrderSuggestion:
     cover_window: CoverWindow
     lines: tuple[SuggestedLine, ...] = ()
     min_order_topped_up: bool = False
-    notes: tuple[str, ...] = field(default_factory=tuple)
+    #: Every explanation this order carries, each with the code for the decision that
+    #: wrote it. `notes` is derived, so the prose and the codes cannot drift apart and no
+    #: caller has to remember to populate both.
+    coded_notes: tuple[OrderNote, ...] = field(default_factory=tuple)
+
+    @property
+    def notes(self) -> tuple[str, ...]:
+        """The sentences, in order. Written to `purchase_order.notes` verbatim."""
+        return tuple(note.text for note in self.coded_notes)
+
+    @property
+    def note_kinds(self) -> tuple[OrderNoteKind, ...]:
+        """The codes, deduplicated, in first-seen order. What a formatter branches on."""
+        return tuple(dict.fromkeys(note.kind for note in self.coded_notes))
 
     @property
     def total_pence(self) -> int:

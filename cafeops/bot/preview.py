@@ -312,12 +312,29 @@ async def flow_count(preview: Preview, *, express: bool = True, answer: str = "1
     return out
 
 
-async def flow_checklist(preview: Preview, *, low: bool = True) -> list[Sent]:
+async def flow_checklist(
+    preview: Preview, *, low: bool = True, packs: str | None = "2"
+) -> list[Sent]:
+    """Answer the first item, and -- for a `LOW` -- carry on to the quantity.
+
+    `packs=None` presses «Не заказывать» instead, which is the other half of the decision
+    and the one that has to stay cheap: marking an item low must not cost a number the
+    person does not have. Both paths are driven here because a `LOW` that orders nothing is
+    exactly what this flow used to do by default, and the difference has to be visible.
+    """
     out = await preview.say("/checklist")
     label = fmt.BTN_CHECKLIST_LOW if low else fmt.BTN_CHECKLIST_OK
     button = preview.find_button(out, label)
     if button:
         out += await preview.tap(button)
+    if not low:
+        return out
+    if packs is None:
+        skip = preview.find_button(out, fmt.BTN_CHECKLIST_NO_ORDER)
+        if skip:
+            out += await preview.tap(skip)
+    else:
+        out += await preview.say(packs)
     return out
 
 

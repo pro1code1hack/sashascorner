@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import shutil
 from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
 from pathlib import Path
@@ -2935,6 +2936,14 @@ def api_fixtures(
             help="Shared password to present. Defaults to CAFEOPS_API_PASSWORD.",
         ),
     ] = None,
+    allow_errors: Annotated[
+        bool,
+        typer.Option(
+            "--allow-errors",
+            help="Publish even if an endpoint did not return 200. Only useful when the "
+            "error response IS the fixture you want.",
+        ),
+    ] = False,
 ) -> None:
     """Dump one REAL JSON response per endpoint, so the frontend can build against fixtures.
 
@@ -2951,11 +2960,36 @@ def api_fixtures(
     secret = password or api_password()
     if secret is None:
         console.print(
-            "[yellow]no password: every protected endpoint will dump its 503, which is "
-            "itself worth having as a fixture but is not what you want. Pass --password "
-            "or set CAFEOPS_API_PASSWORD.[/yellow]"
+            "[red]No password, so every protected endpoint would answer 503.[/red] "
+            "Pass --password or set CAFEOPS_API_PASSWORD.\n"
+            "[dim]Refusing rather than writing error bodies: these files are what the "
+            "frontend builds against, and a directory of 503s looks exactly like a "
+            "directory of fixtures until a screen renders blank.[/dim]"
         )
-    written = dump_examples(out, password=secret)
+        raise typer.Exit(2)
+
+    # Build into a scratch directory and publish only once every endpoint answered 200.
+    # Writing in place meant a failed dump replaced good fixtures with error bodies --
+    # which happened, and cost somebody a restore from backup. The artefact is either
+    # complete or the old one is still there.
+    staging = out.parent / f".{out.name}.staging"
+    if staging.exists():
+        shutil.rmtree(staging)
+    written = dump_examples(staging, password=secret)
+    bad_now = [name for name, status, _ in written if status != 200]
+    if bad_now and not allow_errors:
+        console.print(
+            f"[red]{len(bad_now)} endpoint(s) did not return 200: "
+            f"{', '.join(bad_now)}[/red]\n"
+            f"[dim]Nothing was published; {out} is untouched. The staged attempt is in "
+            f"{staging} if you want to look at it. Pass --allow-errors to publish "
+            "anyway, which is only useful when the error IS the fixture.[/dim]"
+        )
+        raise typer.Exit(1)
+
+    if out.exists():
+        shutil.rmtree(out)
+    staging.rename(out)
     table = Table(title=f"{len(written)} fixture(s) -> {out}", title_style="bold")
     table.add_column("Endpoint", no_wrap=True)
     table.add_column("Status", justify="right")

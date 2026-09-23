@@ -12,24 +12,30 @@ handlers querying directly:
    purchase-order repository's `confirm` are the writers. Nothing here invents a
    `stock_movement` or advances a `purchase_order` on its own.
 
-2. **English prose becomes an enum.** `po_line.cap_reason` and
-   `purchase_order.confidence_notes` are sentences written for a back-office reader.
-   A Russian bot cannot show them, and a formatter guessing at prose would be worse
-   than a formatter given a code. `_classify_cap` and `_classify_confidence` do that
-   translation-by-classification here, once, with the patterns documented next to the
-   code that produces them. See `viewmodels` for why.
+2. **Stored codes are READ, never re-derived from prose.** `po_line.cap_reason`,
+   `purchase_order.notes` and `DeliveryReceipt.warnings` are sentences written for a
+   back-office reader. A Russian bot cannot show them, and a formatter guessing at prose
+   would be worse than a formatter given a code.
 
-The parsers are the weak seam and they are deliberately visible. `po_line` has no
-`low_confidence` column and no structured cap kind, so the facts have to be recovered
-from text this codebase itself wrote. Both are integrator-owned changes worth making;
-until then, a parse that fails degrades to `OTHER` and the owner still gets a true
-sentence, never an English one and never silence.
+   This module used to *parse* them: `_classify_cap` matched a regex against
+   `cap_reason`, `_classify_confidence` against `confidence_notes`,
+   `_RECEIPT_ISSUE_MARKERS` did substring tests on receipt warnings, and
+   `_confidence_by_name` split one prose blob back into per-ingredient notices by
+   matching ingredient names against it. All four are **gone.** Every one of those facts
+   now arrives as a code, derived at the point the sentence was written
+   (`db/models/enums.py`, `domain/types.py`): `po_line.cap_kind`, `cover_days`,
+   `low_confidence_kind`, `forecast_history_days`, `forecast_needed_days`,
+   `purchase_order.note_codes`, `DeliveryReceipt.coded_warnings`,
+   `GateDecision.revoke_cause`. A reword upstream can no longer change what the owner is
+   told, which is what it did before -- and what it did was replace her explanation with
+   a count of the notes it could not classify.
+
+   An order written before those columns existed has NULLs. That degrades to a true but
+   general sentence, never to printing the English and never to silence.
 """
 
 from __future__ import annotations
 
-import re
-from collections.abc import Sequence
 from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
 from zoneinfo import ZoneInfo
@@ -49,6 +55,7 @@ from cafeops.bot.viewmodels import (
     DigestView,
     DispatchView,
     DriftAlertView,
+    EmergencyDigestView,
     ExpiryLineView,
     IngredientRefView,
     LowConfidenceKind,
@@ -57,6 +64,8 @@ from cafeops.bot.viewmodels import (
     OrderView,
     ReceiptIssue,
     ReceiptView,
+    RetailRunView,
+    RevocationView,
     StockLineView,
     WriteOffView,
 )
@@ -69,15 +78,18 @@ from cafeops.db.models import (
     SupplierProduct,
 )
 from cafeops.db.repositories.batch import SqlBatchRepository
+from cafeops.db.repositories.drift import SqlDriftRepository
 from cafeops.db.repositories.ingredient import SqlIngredientRepository
 from cafeops.db.repositories.par import SqlParLevelRepository
 from cafeops.db.repositories.purchase_order import SqlPurchaseOrderRepository
+from cafeops.db.repositories.season import SqlSeasonRepository
 from cafeops.db.repositories.sourcing import SqlSourcingRepository
 from cafeops.domain.drift import DriftCause
 from cafeops.domain.tiers import GateAction
 from cafeops.domain.types import (
     ChecklistStatus,
     OrderChannel,
+    OrderNoteKind,
     PriceSource,
     Storage,
     Tier,
@@ -92,7 +104,12 @@ from cafeops.services.receive_delivery import (
     receive_adhoc,
     receive_po_line,
 )
-from cafeops.services.record_checklist import checklist_roster, record_checklist_answer
+from cafeops.services.record_checklist import (
+    ChecklistOrderRequest,
+    checklist_roster,
+    record_checklist_answer,
+    request_checklist_order,
+)
 from cafeops.services.record_count import explain_drift_history, gate_status, record_count
 
 __all__ = [
@@ -110,6 +127,7 @@ __all__ = [
     "lookup_ingredient",
     "receive_adhoc_delivery",
     "receive_line",
+    "request_checklist_line",
     "submit_checklist",
     "submit_count",
 ]
@@ -118,6 +136,22 @@ __all__ = [
 #: here is "be ready to receive this", and a delivery six days out is not actionable at
 #: 07:30 -- it would be noise in the one message that has to stay worth reading.
 DIGEST_DELIVERY_HORIZON_DAYS = 1
+
+#: How far back the digest's "lately" figure for retail emergencies looks. Four weeks:
+#: spec 4.4 wants the PATTERN, and one bad Tuesday inside a fortnight is not one. The
+#: running total alongside it covers the whole log, which is the argument.
+DIGEST_EMERGENCY_WINDOW_DAYS = 28
+
+#: How many ingredients and how many recent trips the digest names. The rest are in
+#: `cafeops emergency-report`; a morning message that lists forty routings is a message
+#: nobody finishes.
+DIGEST_EMERGENCY_LIMIT = 4
+
+#: How long a revocation stays in the morning digest. A week: losing auto-ordering is a
+#: change in behaviour she has to hear about, and once she has heard it for a week the
+#: standing state is `cafeops drift` and the stock view's business. Repeating it every
+#: morning for months is how a digest becomes something people skim past.
+DIGEST_REVOCATION_WINDOW_DAYS = 7
 
 #: A tier A ingredient uncounted for this long is due. The weekly full count and the
 #: twice-weekly express count both aim at keeping this at zero.
@@ -139,89 +173,67 @@ class OrderNotAdjustable(ValueError):
 
 
 # ==========================================================================
-# Prose -> enum. See the module docstring.
+# Stored code -> notice. No parsing. See the module docstring.
 # ==========================================================================
 
-#: `domain/ordering.OrderCandidate.cap_reason` and `_top_up` produce exactly these five
-#: shapes. Matched here rather than translated, because the *kind* is what the sentence
-#: needs and the names are read from the database instead of out of the string.
-_CAP_CAPPED = re.compile(
-    r"^capped at (\d+) days?(?: -- (?P<subject>.+?)(?P<tail> shelf life| ends))?"
-)
-_CAP_OUT_OF_SEASON = re.compile(r"^not ordered -- (?P<season>.+?) is out of season")
-_CAP_TOP_UP_MINIMUM = "top-up to reach the minimum order"
-_CAP_TOP_UP_FREE_DELIVERY = "top-up to reach the free-delivery threshold"
 
+def _cap_notice(line: POLine, *, ingredient_name: str, season_name: str | None) -> CapNotice | None:
+    """`po_line.cap_kind` and `cover_days`, straight off the row.
 
-def _classify_cap(raw: str | None, *, is_top_up: bool) -> CapNotice | None:
-    if raw is None:
-        return CapNotice(kind=CapKind.TOP_UP_MINIMUM) if is_top_up else None
-    text = raw.strip()
-    if text.startswith(_CAP_TOP_UP_FREE_DELIVERY):
-        return CapNotice(kind=CapKind.TOP_UP_FREE_DELIVERY)
-    if text.startswith(_CAP_TOP_UP_MINIMUM):
-        return CapNotice(kind=CapKind.TOP_UP_MINIMUM)
-    out = _CAP_OUT_OF_SEASON.match(text)
-    if out:
-        return CapNotice(kind=CapKind.OUT_OF_SEASON, subject=out.group("season"))
-    capped = _CAP_CAPPED.match(text)
-    if capped:
-        days = int(capped.group(1))
-        subject = capped.group("subject")
-        tail = capped.group("tail")
-        if tail == " shelf life":
-            return CapNotice(kind=CapKind.SHELF_LIFE, days=days, subject=subject)
-        if tail == " ends":
-            return CapNotice(kind=CapKind.SEASON_END, days=days, subject=subject)
-        return CapNotice(kind=CapKind.OTHER, days=days)
-    return CapNotice(kind=CapKind.OTHER)
-
-
-#: `domain/forecast` sets `low_confidence=True` in exactly four places. Each writes a
-#: sentence starting with one of these.
-_LC_NO_HISTORY = re.compile(r"^no consumption recorded in the (\d+) day")
-_LC_SHORT_HISTORY = re.compile(r"^only (\d+) day\(s\) of history to \S+, (\d+) needed")
-_LC_FIRST_SEASON = "has no previous occurrence in the history"
-
-
-def _classify_confidence(reason: str) -> LowConfidenceNotice:
-    text = reason.strip()
-    none_yet = _LC_NO_HISTORY.match(text)
-    if none_yet:
-        return LowConfidenceNotice(
-            kind=LowConfidenceKind.NO_HISTORY, needed_days=int(none_yet.group(1))
-        )
-    short = _LC_SHORT_HISTORY.match(text)
-    if short:
-        return LowConfidenceNotice(
-            kind=LowConfidenceKind.SHORT_HISTORY,
-            history_days=int(short.group(1)),
-            needed_days=int(short.group(2)),
-        )
-    if _LC_FIRST_SEASON in text:
-        return LowConfidenceNotice(kind=LowConfidenceKind.FIRST_SEASON)
-    return LowConfidenceNotice(kind=LowConfidenceKind.OTHER)
-
-
-def _confidence_by_name(notes: str | None, names: Sequence[str]) -> dict[str, LowConfidenceNotice]:
-    """Split `purchase_order.confidence_notes` back into per-ingredient notices.
-
-    `SqlPurchaseOrderRepository._confidence_notes` writes a header line and then one
-    `"{ingredient_name}: {reasons}"` line per low-confidence line. The names are matched
-    against the order's own lines rather than split on the first colon, because
-    ingredient names contain punctuation (`Coffee beans (house blend)`) and a blind
-    split would invent an ingredient called `Invariant 7`.
+    `subject` is the thing the cap belongs to and is looked up from the database rather
+    than sliced out of `cap_reason`: the ingredient for a shelf-life cap, the season for a
+    season cap. A season with no row left is `None` and the formatter says "season"
+    instead of naming one it cannot find.
     """
-    if not notes:
-        return {}
-    found: dict[str, LowConfidenceNotice] = {}
-    for row in notes.splitlines():
-        for name in names:
-            prefix = f"{name}: "
-            if row.startswith(prefix):
-                found[name] = _classify_confidence(row[len(prefix) :])
-                break
-    return found
+    kind = line.cap_kind
+    if kind is None:
+        # A top-up line predating `cap_kind`. `is_top_up` is the older, coarser fact and
+        # it is still true, so it is the honest fallback -- a top-up said as "minimum"
+        # when it was really the delivery threshold is a smaller error than saying nothing.
+        return CapNotice(kind=CapKind.TOP_UP_MINIMUM) if line.is_top_up else None
+    if kind in (CapKind.TOP_UP_MINIMUM, CapKind.TOP_UP_FREE_DELIVERY):
+        return CapNotice(kind=kind)
+    subject = (
+        season_name if kind in (CapKind.SEASON_END, CapKind.OUT_OF_SEASON) else ingredient_name
+    )
+    return CapNotice(kind=kind, days=line.cover_days, subject=subject)
+
+
+def _low_confidence_notice(line: POLine) -> LowConfidenceNotice | None:
+    """`po_line.low_confidence_kind` plus the two day counts its sentence is made of.
+
+    Invariant 9 puts the reason where the number was, so "6 days of history, 14 needed"
+    is the whole point; the figures used to be captured by a regex group off a sentence
+    `domain/forecast.py` wrote, which meant a reword left the Russian with no figures in
+    it at all.
+    """
+    if not line.low_confidence:
+        return None
+    return LowConfidenceNotice(
+        kind=line.low_confidence_kind or LowConfidenceKind.OTHER,
+        history_days=line.forecast_history_days,
+        needed_days=line.forecast_needed_days,
+    )
+
+
+def _note_kinds(raw: str | None) -> tuple[OrderNoteKind, ...]:
+    """`purchase_order.note_codes` back into enum members, skipping anything unknown.
+
+    Unknown rather than raising: a code written by a newer build than the one rendering it
+    is a message that has to go out anyway, and one missing paragraph beats no digest.
+    """
+    if not raw:
+        return ()
+    out: list[OrderNoteKind] = []
+    for token in raw.split(","):
+        name = token.strip()
+        if not name:
+            continue
+        try:
+            out.append(OrderNoteKind(name))
+        except ValueError:
+            continue
+    return tuple(dict.fromkeys(out))
 
 
 # ==========================================================================
@@ -282,10 +294,7 @@ def _order_view(session: Session, order: PurchaseOrder) -> OrderView:
             )
         )
     }
-    names = [
-        ingredients[line.ingredient_id].name for line in lines if line.ingredient_id in ingredients
-    ]
-    confidence = _confidence_by_name(order.confidence_notes, names)
+    seasons = SqlSeasonRepository(session)
 
     line_views: list[OrderLineView] = []
     for line in lines:
@@ -293,6 +302,12 @@ def _order_view(session: Session, order: PurchaseOrder) -> OrderView:
         product = products.get(line.supplier_product_id)
         if ingredient is None or product is None:  # pragma: no cover - FK guarantees both
             continue
+        # Only looked up for a season cap: `for_ingredient` is a join per line and a
+        # shelf-life cap does not need it.
+        season_name: str | None = None
+        if line.cap_kind in (CapKind.SEASON_END, CapKind.OUT_OF_SEASON):
+            season = seasons.for_ingredient(line.ingredient_id)
+            season_name = None if season is None else season.name
         line_views.append(
             OrderLineView(
                 po_line_id=line.id,
@@ -306,8 +321,9 @@ def _order_view(session: Session, order: PurchaseOrder) -> OrderView:
                 unit_price_pence=line.unit_price_pence,
                 need_qty=line.need_qty,
                 is_top_up=line.is_top_up,
-                cap=_classify_cap(line.cap_reason, is_top_up=line.is_top_up),
-                low_confidence=confidence.get(ingredient.name),
+                cap=_cap_notice(line, ingredient_name=ingredient.name, season_name=season_name),
+                low_confidence=_low_confidence_notice(line),
+                checklist_requested_by=line.checklist_requested_by,
             )
         )
 
@@ -334,6 +350,7 @@ def _order_view(session: Session, order: PurchaseOrder) -> OrderView:
         # so this is a statement about the design rather than a per-supplier lookup.
         requires_human_completion=True,
         routing_reason_present=bool(order.routing_reason),
+        notes=_note_kinds(order.note_codes),
     )
 
 
@@ -538,6 +555,8 @@ def submit_count(
         current_waste_factor=outcome.ingredient.waste_factor,
         cause=cause,
         back_dated=any("back-dated" in note for note in outcome.notes),
+        alert_level=outcome.decision.alert_level,
+        revoke_cause=outcome.decision.revoke_cause,
     )
 
 
@@ -566,6 +585,21 @@ def build_checklist(
             )
         )
     return items
+
+
+def request_checklist_line(
+    session: Session, *, ingredient_id: int, packs: int, requested_by: str
+) -> ChecklistOrderRequest:
+    """Act on a «running low»: put the item on its supplier's DRAFT at a chosen quantity.
+
+    The service does the work and owns the refusals; this exists so the handler never
+    touches a repository (spec 8). `packs` comes from the person -- tier C is never
+    calculated (spec 4.7), so there is no figure here for the system to supply and none is
+    invented.
+    """
+    return request_checklist_order(
+        session, ingredient_id=ingredient_id, packs=packs, requested_by=requested_by
+    )
 
 
 def submit_checklist(
@@ -666,29 +700,22 @@ def build_delivery_orders(
     return out
 
 
-#: `DeliveryReceipt.warnings` are English sentences, so they are recognised by their
-#: opening rather than shown. See the module docstring; a `code` on the service's
-#: warning would remove the need for this.
-_RECEIPT_ISSUE_MARKERS: tuple[tuple[str, ReceiptIssue], ...] = (
-    ("no expiry entered", ReceiptIssue.EXPIRY_ASSUMED),
-    ("is not after the delivery", ReceiptIssue.EXPIRY_BEFORE_RECEIPT),
-    ("over-delivery recorded", ReceiptIssue.OVER_DELIVERY),
-    ("no price given", ReceiptIssue.PRICE_FROM_CACHE),
-    ("configured as non-perishable", ReceiptIssue.NON_PERISHABLE_WITH_DATE),
-)
-
-
 def _receipt_view(session: Session, receipt: DeliveryReceipt) -> ReceiptView:
-    issues: list[ReceiptIssue] = []
-    unclassified = 0
-    for warning in receipt.warnings:
-        for marker, issue in _RECEIPT_ISSUE_MARKERS:
-            if marker in warning:
-                issues.append(issue)
-                break
-        else:
-            unclassified += 1
+    """`receipt.warning_kinds`, straight through.
+
+    This used to substring-match `receipt.warnings` against five markers, and anything
+    that did not match became `unclassified_issues` -- which the formatter could only
+    render as "N more notes were written to the log". The one warning that must never
+    arrive as a count is an assumed expiry: it is the single number that decides a
+    write-off. Now every warning carries its own code (`ReceiptWarningKind`), so
+    `unclassified_issues` counts only what a future kind adds before this formatter
+    learns the word for it.
+    """
+    issues = list(receipt.warning_kinds)
+    unclassified = sum(1 for kind in issues if kind is ReceiptIssue.OTHER)
     if receipt.expiry_was_assumed and ReceiptIssue.EXPIRY_ASSUMED not in issues:
+        # Belt and braces, kept: `expiry_was_assumed` and the warning are set by the same
+        # branch, and a receipt that lost the warning must still say the date was a guess.
         issues.append(ReceiptIssue.EXPIRY_ASSUMED)
     return ReceiptView(
         batch_id=receipt.batch_id,
@@ -702,7 +729,7 @@ def _receipt_view(session: Session, receipt: DeliveryReceipt) -> ReceiptView:
         value_pence=receipt.value_pence,
         order_completed=receipt.order_completed,
         open_life_days=SqlBatchRepository(session).open_life_days(receipt.ingredient_id),
-        issues=tuple(dict.fromkeys(issues)),
+        issues=tuple(k for k in dict.fromkeys(issues) if k is not ReceiptIssue.OTHER),
         unclassified_issues=unclassified,
     )
 
@@ -761,6 +788,52 @@ def receive_adhoc_delivery(
 # ==========================================================================
 
 
+def _emergency_digest(
+    session: Session, *, as_of: datetime, window_days: int
+) -> EmergencyDigestView | None:
+    """The `tesco_routing` log, summarised for the morning message. Spec 4.4.
+
+    Read from the LOG rather than recomputed. `build_split` would give a live answer but
+    it is a full ordering run, and the digest is explicitly read-only (see `build_digest`);
+    more to the point, spec 4.4's value is the *accumulation* -- "one emergency is a bad
+    week, a pattern is a broken ordering cadence" -- and that only exists in the log.
+
+    `None` when nothing has ever been logged, so the digest stays silent instead of
+    printing a zero. A zero premium would read as "panic-buying costs nothing", which is
+    the opposite of what an empty log means.
+    """
+    repo = SqlSourcingRepository(session)
+    total_runs, total_priced, total_premium, per_ingredient = repo.emergency_summary()
+    if total_runs == 0:
+        return None
+    since = as_of - timedelta(days=window_days)
+    recent_runs, _recent_priced, recent_premium, _ = repo.emergency_summary(since=since)
+    worst = sorted(
+        ((name, runs, premium) for name, (runs, premium) in per_ingredient.items()),
+        key=lambda row: (-row[2], -row[1], row[0]),
+    )[:DIGEST_EMERGENCY_LIMIT]
+    latest = tuple(
+        RetailRunView(
+            ingredient_name=(
+                row.ingredient.name if row.ingredient is not None else f"#{row.ingredient_id}"
+            ),
+            occurred_at=row.occurred_at,
+            premium_pence=row.premium_pence,
+        )
+        for row in repo.emergency_log()[:DIGEST_EMERGENCY_LIMIT]
+    )
+    return EmergencyDigestView(
+        window_days=window_days,
+        recent_runs=recent_runs,
+        recent_premium_pence=recent_premium,
+        total_runs=total_runs,
+        total_premium_pence=total_premium,
+        total_priced_runs=total_priced,
+        by_ingredient=tuple(worst),
+        latest=latest,
+    )
+
+
 def build_digest(
     session: Session,
     *,
@@ -769,6 +842,8 @@ def build_digest(
     short_dated_days: int = DEFAULT_SHORT_DATED_DAYS,
     overdue_days: int = COUNT_OVERDUE_DAYS,
     headline_limit: int = 12,
+    emergency_window_days: int = DIGEST_EMERGENCY_WINDOW_DAYS,
+    revocation_window_days: int = DIGEST_REVOCATION_WINDOW_DAYS,
 ) -> DigestView:
     """Everything worth saying at 07:00, read-only.
 
@@ -801,9 +876,34 @@ def build_digest(
     par_repo = SqlParLevelRepository(session)
     ingredient_repo = SqlIngredientRepository(session)
     alerts: list[DriftAlertView] = []
+    revocations: list[RevocationView] = []
+    revoked_since = as_of - timedelta(days=revocation_window_days)
     for snapshot in ingredient_repo.list_tracked(tiers=(Tier.A, Tier.B)):
         decision = gate_status(session, ingredient=snapshot)
         par = par_repo.get(snapshot.id)
+        # A revocation is an EVENT and the gate is stateless: re-evaluated on today's
+        # history it reports HOLD once the flag is already off, so the only record that
+        # auto-ordering was taken away is `par_level`. Read it separately, or the digest
+        # can only ever report a revoke on the single morning it happens to coincide with.
+        audit = par_repo.audit(snapshot.id)
+        if (
+            audit is not None
+            and audit.revoke_cause is not None
+            and audit.revoked_at is not None
+            and audit.revoked_at >= revoked_since
+            and not audit.auto_order_enabled
+        ):
+            recent = SqlDriftRepository(session).recent_drift_pcts(snapshot.id, limit=1)
+            revocations.append(
+                RevocationView(
+                    ingredient_id=snapshot.id,
+                    name=snapshot.name,
+                    unit=snapshot.unit,
+                    revoked_at=audit.revoked_at,
+                    cause=audit.revoke_cause,
+                    drift_pct=recent[0] if recent else None,
+                )
+            )
         if not decision.alert and decision.action is not GateAction.REVOKE:
             continue
         history = explain_drift_history(session, ingredient_id=snapshot.id, limit=1)
@@ -822,6 +922,8 @@ def build_digest(
                 required_streak=decision.required_streak,
                 cause=None if latest is None else latest.cause,
                 expiry_share=None if latest is None else latest.explanation.expiry_share,
+                alert_level=decision.alert_level,
+                revoke_cause=decision.revoke_cause,
             )
         )
 
@@ -874,6 +976,8 @@ def build_digest(
             if item.last_was_low
         ),
         telegram_configured=bool(settings.telegram_bot_token),
+        emergency=_emergency_digest(session, as_of=as_of, window_days=emergency_window_days),
+        revocations=tuple(sorted(revocations, key=lambda r: (-r.revoked_at.timestamp(), r.name))),
     )
 
 

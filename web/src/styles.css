@@ -1,0 +1,187 @@
+@import 'tailwindcss';
+
+/* Latin only. @fontsource's bundled stylesheets also ship Vietnamese and
+ * latin-ext, which is ~380KB of woff2 this English-only app never renders.
+ * DM Mono comes in through its own latin-*.css imports in main.tsx. */
+@font-face {
+  font-family: 'Newsreader Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 800;
+  src: url('@fontsource-variable/newsreader/files/newsreader-latin-opsz-normal.woff2')
+    format('woff2-variations');
+}
+@font-face {
+  font-family: 'Newsreader Variable';
+  font-style: italic;
+  font-display: swap;
+  font-weight: 200 800;
+  src: url('@fontsource-variable/newsreader/files/newsreader-latin-opsz-italic.woff2')
+    format('woff2-variations');
+}
+
+/* ------------------------------------------------------------------ *
+ * Tokens. See DESIGN.md §2 (palette) and §3 (type).
+ * Six colour roles. Colour means a crossed threshold and nothing else;
+ * there is deliberately no positive colour in this palette.
+ * ------------------------------------------------------------------ */
+@theme {
+  --color-paper: #f1f2f4;
+  --color-paper-sunk: #e9ebee;
+  --color-slab: #fdfdfe;
+  --color-ink: #15191e;
+  --color-ink-soft: #2b323a;
+  --color-muted: #5a636d;
+  --color-faint: #8a939d;
+  --color-rule: #d3d8dd;
+  --color-rule-strong: #9aa3ac;
+  --color-flag: #96262b;
+  --color-flag-wash: #f6e9e7;
+  --color-flag-light: #e8a29c;
+
+  --font-serif: 'Newsreader Variable', 'Newsreader', Georgia, 'Times New Roman', serif;
+  --font-mono: 'DM Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  /* Fluid scale — DESIGN.md §8.3 */
+  --text-micro: clamp(0.625rem, 0.6rem + 0.1vw, 0.6875rem);
+  --text-fig-sub: clamp(0.75rem, 0.72rem + 0.12vw, 0.8125rem);
+  --text-fig: clamp(0.8125rem, 0.78rem + 0.16vw, 0.9375rem);
+  --text-fig-lg: clamp(1.0625rem, 1rem + 0.4vw, 1.375rem);
+  --text-prose: clamp(0.8125rem, 0.79rem + 0.16vw, 0.9375rem);
+  --text-title: clamp(1.125rem, 1rem + 0.7vw, 1.625rem);
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+    --gutter: clamp(0px, calc((100vw - 380px) * 10), 9.5rem);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-serif);
+    font-size: var(--text-prose);
+    font-optical-sizing: auto;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Every figure in this application goes through .fig. A monospace is
+     tabular by construction, so alignment cannot silently break. §3. */
+  .fig {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums lining-nums;
+    letter-spacing: -0.01em;
+    font-feature-settings: 'tnum' 1;
+  }
+
+  input,
+  button,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
+
+  /* Quality floor: the focus ring is visible on every ground, including
+     the inverted commit gate. */
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 2px;
+    border-radius: 1px;
+  }
+  .on-ink :focus-visible {
+    outline-color: var(--color-paper);
+  }
+
+  ::selection {
+    background: #d8dde2;
+  }
+}
+
+@layer components {
+  /* Hanging marginalia. DESIGN.md §8.3: flags and attribution headlines
+     hang in a reserved left gutter, the way a marginal note hangs in a
+     printed book. Nothing else may occupy it. Below the gutter's minimum
+     width the note reflows to the line above, same reading order. */
+  .sheet {
+    display: grid;
+    grid-template-columns: var(--gutter) minmax(0, 1fr);
+    column-gap: clamp(0px, calc((100vw - 380px) * 10), 1.25rem);
+  }
+  .marg {
+    grid-column: 1;
+    text-align: right;
+    font-family: var(--font-mono);
+    font-size: var(--text-micro);
+    line-height: 1.45;
+    color: var(--color-muted);
+    padding-top: 0.15rem;
+  }
+  .body-col {
+    grid-column: 2;
+    min-width: 0;
+  }
+  @media (max-width: 719px) {
+    .sheet {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .marg,
+    .body-col {
+      grid-column: 1;
+    }
+    .marg {
+      text-align: left;
+      padding-bottom: 0.2rem;
+    }
+  }
+
+  /* An estimated figure is marked typographically, never chromatically:
+     42 of 113 prices are estimates, so it is the ambient condition and
+     not an alarm. DESIGN.md §2. */
+  .est {
+    text-decoration: underline dotted var(--color-rule-strong);
+    text-underline-offset: 0.22em;
+    text-decoration-thickness: from-font;
+  }
+
+  .rule-t {
+    border-top: 1px solid var(--color-rule);
+  }
+  .rule-b {
+    border-bottom: 1px solid var(--color-rule);
+  }
+
+  /* One orchestrated reveal on first paint, 160ms, staggered. §8.3. */
+  @keyframes settle {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 3px, 0);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .settle {
+    animation: settle 160ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: calc(var(--i, 0) * 22ms);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .settle {
+      animation: none;
+    }
+    *,
+    *::before,
+    *::after {
+      transition-duration: 1ms !important;
+    }
+  }
+}

@@ -9,12 +9,21 @@ That constraint is why the enums exist. The services and `domain/` modules expla
 themselves in English prose: `SuggestedLine.cap_reason` is
 `"capped at 5 days -- Whole milk shelf life"`, `ForecastResult.confidence_reasons` is a
 paragraph. A Russian bot cannot render English prose, and translating prose at the
-formatter is guesswork. So `views.py` *classifies* those facts into `CapKind`,
-`LowConfidenceKind` and `ReceiptIssue` here, and the formatter writes its own Russian
-from the classification plus the numbers. The prose is never shown.
+formatter is guesswork.
 
-Where a classification fails, the kind is `OTHER` and the formatter says something true
-but general. It never falls back to printing the English.
+**Those codes are no longer invented here.** They are `db/models/enums.py`'s -- `CapKind`,
+`LowConfidenceKind`, `ReceiptWarningKind`, `OrderNoteKind`, `RevokeCause` -- produced by
+the same comparison that writes each sentence and re-exported through `domain/types.py`.
+This module used to declare its own `CapKind` and `LowConfidenceKind` with *different
+members* from the persisted ones (`SHORT_HISTORY` here against `THIN_HISTORY` there),
+which is the same failure one layer up: two names for one fact, kept in step by hand.
+`views.py` now reads the stored code instead of parsing the stored prose, and the
+formatter writes its own Russian from the code plus the numbers. The prose is never
+shown.
+
+Where a code is absent -- an order written before the columns existed -- the kind is
+`OTHER` and the formatter says something true but general. It never falls back to
+printing the English.
 """
 
 from __future__ import annotations
@@ -27,9 +36,15 @@ from decimal import Decimal
 from cafeops.domain.drift import DriftCause
 from cafeops.domain.tiers import GateAction
 from cafeops.domain.types import (
+    CapKind,
     DriftVerdict,
+    GateAlertLevel,
+    LowConfidenceKind,
     OrderChannel,
+    OrderNoteKind,
     POStatus,
+    ReceiptWarningKind,
+    RevokeCause,
     Storage,
     Tier,
     Unit,
@@ -47,6 +62,7 @@ __all__ = [
     "DigestView",
     "DispatchView",
     "DriftAlertView",
+    "EmergencyDigestView",
     "ExpiryLineView",
     "IngredientRefView",
     "LowConfidenceKind",
@@ -55,37 +71,33 @@ __all__ = [
     "OrderView",
     "ReceiptIssue",
     "ReceiptView",
+    "RetailRunView",
+    "RevocationView",
     "StockLineView",
     "WriteOffView",
 ]
 
+#: The receipt codes come from `db/models/enums.py` like every other one now. The alias is
+#: kept because `ReceiptIssue` is what the formatter and the handlers already call it, and
+#: renaming a local name adds no meaning.
+ReceiptIssue = ReceiptWarningKind
+
 
 # ==========================================================================
-# Classifications: prose in, enum out
+# Notices: a stored code plus the numbers its sentence needs
 # ==========================================================================
-
-
-class CapKind(enum.StrEnum):
-    """Why a line is smaller than the forecast asked for. Spec 5.4, invariant 4.
-
-    INVARIANT 4 MADE VISIBLE. If the owner does not know a line was capped on purpose,
-    she raises it and creates exactly the waste the cap prevented -- so the kind has to
-    survive as far as the message, not just the database column.
-    """
-
-    SHELF_LIFE = "SHELF_LIFE"
-    SEASON_END = "SEASON_END"
-    OUT_OF_SEASON = "OUT_OF_SEASON"
-    #: The line exists ONLY to clear the supplier's minimum order. Nobody asked for it.
-    TOP_UP_MINIMUM = "TOP_UP_MINIMUM"
-    #: ...or only to clear the free-delivery threshold.
-    TOP_UP_FREE_DELIVERY = "TOP_UP_FREE_DELIVERY"
-    #: Capped, but the reason did not classify. The days are still known and shown.
-    OTHER = "OTHER"
 
 
 @dataclass(frozen=True, slots=True)
 class CapNotice:
+    """INVARIANT 4 MADE VISIBLE.
+
+    If the owner does not know a line was capped on purpose she raises it and creates
+    exactly the waste the cap prevented, so the kind has to survive as far as the message.
+    `kind` and `days` are read from `po_line.cap_kind` and `po_line.cover_days`; nothing is
+    recovered from `cap_reason`.
+    """
+
     kind: CapKind
     #: Effective cover days the line was sized on. None when unknown.
     days: int | None = None
@@ -93,32 +105,13 @@ class CapNotice:
     subject: str | None = None
 
 
-class LowConfidenceKind(enum.StrEnum):
-    """Invariant 9: the reason is shown IN PLACE OF the number, so it must be sayable."""
-
-    NO_HISTORY = "NO_HISTORY"
-    SHORT_HISTORY = "SHORT_HISTORY"
-    FIRST_SEASON = "FIRST_SEASON"
-    OTHER = "OTHER"
-
-
 @dataclass(frozen=True, slots=True)
 class LowConfidenceNotice:
+    """Invariant 9: the reason is shown IN PLACE OF the number, so it must be sayable."""
+
     kind: LowConfidenceKind
     history_days: int | None = None
     needed_days: int | None = None
-
-
-class ReceiptIssue(enum.StrEnum):
-    """Something worth saying about a received delivery, as a code rather than prose."""
-
-    EXPIRY_ASSUMED = "EXPIRY_ASSUMED"
-    EXPIRY_BEFORE_RECEIPT = "EXPIRY_BEFORE_RECEIPT"
-    OVER_DELIVERY = "OVER_DELIVERY"
-    PRICE_FROM_CACHE = "PRICE_FROM_CACHE"
-    NON_PERISHABLE_WITH_DATE = "NON_PERISHABLE_WITH_DATE"
-    #: Counted, never printed as English. See the module docstring.
-    UNCLASSIFIED = "UNCLASSIFIED"
 
 
 # ==========================================================================
@@ -189,6 +182,37 @@ class DriftAlertView:
     required_streak: int
     cause: DriftCause | None = None
     expiry_share: float | None = None
+    #: How loudly this has to be said. A REVOKE is a NOTICE -- auto-ordering has just
+    #: stopped, which is a change in behaviour -- and only >15% is an ALARM about the
+    #: figures themselves (`ARCHITECTURE.md` 8A.3).
+    alert_level: GateAlertLevel = GateAlertLevel.NONE
+    #: WHY the grant was taken away. Set only on a revoke: "never earned it" and "just
+    #: lost it" are different messages and the bot could not previously tell them apart.
+    revoke_cause: RevokeCause | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class RevocationView:
+    """Auto-ordering was TAKEN AWAY from this ingredient, and when, and why.
+
+    Separate from `DriftAlertView` because it is a different kind of statement and it
+    survives differently. A drift alert is re-derived from today's history every time the
+    digest runs; a revocation is an EVENT, and the gate is stateless -- once the flag is
+    off, `evaluate_gate` reports HOLD and the event is invisible. So this is read from
+    `par_level.auto_order_revoked_at` / `auto_order_revoke_cause` instead.
+
+    It matters because losing auto-ordering changes what the system does: orders that were
+    being drafted stop being drafted. `ARCHITECTURE.md` 8A.3 called that out as silent, and
+    the count message alone only reaches whoever happened to be counting.
+    """
+
+    ingredient_id: int
+    name: str
+    unit: Unit
+    revoked_at: datetime
+    cause: RevokeCause
+    #: The newest drift figure, when there is one. Withheld rather than guessed.
+    drift_pct: float | None = None
 
 
 # ==========================================================================
@@ -214,6 +238,10 @@ class OrderLineView:
     #: Invariant 9. When set, the quantity is still shown -- it is what will be bought --
     #: but the FORECAST behind it is not, and the reason takes its place.
     low_confidence: LowConfidenceNotice | None
+    #: Non-None when a tier C checklist answer put this line here, naming who chose the
+    #: quantity. Tier C is never calculated (spec 4.7), so this number is a person's
+    #: decision and must never be shown as though it were a forecast.
+    checklist_requested_by: str | None = None
 
     @property
     def line_total_pence(self) -> int:
@@ -248,6 +276,11 @@ class OrderView:
     #: must say "basket ready, press the button", never "ordered".
     requires_human_completion: bool
     routing_reason_present: bool
+    #: `purchase_order.note_codes`. The order's own explanations, as codes, so the
+    #: formatter can write them in Russian instead of dropping `purchase_order.notes`
+    #: because it is English (spec 5.4 forbids a silent adjustment, and a sentence she
+    #: cannot read is silent). Empty for an order written before the column existed.
+    notes: tuple[OrderNoteKind, ...] = ()
 
     @property
     def goods_pence(self) -> int:
@@ -281,6 +314,10 @@ class OrderView:
     @property
     def low_confidence_lines(self) -> tuple[OrderLineView, ...]:
         return tuple(line for line in self.lines if line.low_confidence is not None)
+
+    @property
+    def checklist_lines(self) -> tuple[OrderLineView, ...]:
+        return tuple(line for line in self.lines if line.checklist_requested_by is not None)
 
 
 @dataclass(frozen=True, slots=True)
@@ -342,6 +379,10 @@ class CountResultView:
     current_waste_factor: Decimal
     cause: DriftCause | None
     back_dated: bool
+    #: See `DriftAlertView`. A revoke at the count is the moment she most needs to be
+    #: told, because she is standing at the shelf that caused it.
+    alert_level: GateAlertLevel = GateAlertLevel.NONE
+    revoke_cause: RevokeCause | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -416,8 +457,55 @@ class ReceiptView:
 
 
 # ==========================================================================
-# The morning digest
+# The retail emergency, and the morning digest
 # ==========================================================================
+
+
+@dataclass(frozen=True, slots=True)
+class RetailRunView:
+    """One logged trip to Tesco, from `tesco_routing`."""
+
+    ingredient_name: str
+    occurred_at: datetime
+    #: `None` when either unit price was unknown. Never zero for unknown (invariant 8).
+    premium_pence: int | None
+
+
+@dataclass(frozen=True, slots=True)
+class EmergencyDigestView:
+    """The panic-buy log, summarised. Spec 4.4's most valuable report.
+
+    `build_split` computes emergency lines and the ordering job counts them, but the
+    morning digest never said a word about them -- so the one figure that argues for
+    fixing the ordering cadence lived in a CLI report nobody runs at 07:00. Spec 4.4:
+    "the accumulated log is the argument for fixing the ordering pattern", which means
+    the accumulation has to be somewhere she reads.
+
+    Two windows on purpose. `recent_*` is what happened lately, which is actionable;
+    `total_*` is every routing on record, which is the argument. One without the other is
+    either a shrug or a number with no trend behind it.
+    """
+
+    window_days: int
+    recent_runs: int
+    recent_premium_pence: int
+    total_runs: int
+    total_premium_pence: int
+    #: How many of `total_runs` carried both unit prices. A premium summed over 9 of 14
+    #: routings understates the case, and the only way to see that is to be told
+    #: (invariant 8).
+    total_priced_runs: int
+    #: name -> (routings, premium_pence) over the whole log, worst first.
+    by_ingredient: tuple[tuple[str, int, int], ...] = ()
+    latest: tuple[RetailRunView, ...] = ()
+
+    @property
+    def any_runs(self) -> bool:
+        return self.total_runs > 0
+
+    @property
+    def unpriced_runs(self) -> int:
+        return self.total_runs - self.total_priced_runs
 
 
 @dataclass(frozen=True, slots=True)
@@ -445,6 +533,11 @@ class DigestView:
     #: only thing that can act on a LOW is a person reading it next to the orders.
     checklist_low: tuple[ChecklistItemView, ...]
     telegram_configured: bool
+    #: The retail premium paid for being late, with its running total. Spec 4.4.
+    emergency: EmergencyDigestView | None = None
+    #: Ingredients that LOST auto-ordering recently. A material change in behaviour, and
+    #: the digest is the one channel that reaches her whether or not she was counting.
+    revocations: tuple[RevocationView, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

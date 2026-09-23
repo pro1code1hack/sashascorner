@@ -23,6 +23,17 @@ Three properties are deliberate.
    `auto_order_enabled = True` without it. A human may always revoke; nobody --
    human, CLI, bot or job -- may grant by hand (invariant 2).
 
+4. **No revocation is silent.** A count in the 10-15% band revokes an existing grant
+   (`ARCHITECTURE.md` 8A.1) and used to do it with `alert=False`, because spec 5.2 only
+   demands an alarm above 15%. But orders that were being drafted automatically stop
+   being drafted, and she finds out by noticing nothing arrived. Every revoke now carries
+   a `GateAlertLevel.NOTICE` and a `RevokeCause`; the >15% case keeps its `ALARM`,
+   because "you have lost auto-ordering" and "your stock figures are untrustworthy" are
+   different sentences and collapsing them into one bool lost both.
+
+The gate itself is unchanged. Two consecutive counts under 10% is still the whole rule,
+the tuning band still revokes, and nothing here makes a grant easier to get.
+
 Tier movement is NOT automated here. A tier B ingredient whose history would clear
 the gate is reported by `would_clear_gate` so somebody can promote it deliberately;
 nothing in this module writes `ingredient.tier`, so A -> B cannot happen by accident.
@@ -41,12 +52,21 @@ from cafeops.domain.drift import (
     DEFAULT_WARN_MAX_PCT,
     classify_drift,
 )
-from cafeops.domain.types import DriftVerdict, Tier
+from cafeops.domain.types import (
+    DriftVerdict,
+    GateAlertLevel,
+    GateReasonKind,
+    RevokeCause,
+    Tier,
+)
 
 __all__ = [
     "DEFAULT_REQUIRED_CONSECUTIVE",
     "GateAction",
+    "GateAlertLevel",
     "GateDecision",
+    "GateReasonKind",
+    "RevokeCause",
     "authorises_enable",
     "clean_streak",
     "evaluate_gate",
@@ -76,7 +96,19 @@ class GateDecision:
     """The gate's verdict on one ingredient, with the evidence behind it.
 
     `reason` is written verbatim to `par_level.auto_order_reason`, so it has to read
-    as an answer to "why is this on/off" months later.
+    as an answer to "why is this on/off" months later. It is prose, and prose is not a
+    contract: `reason_code` and `revoke_cause` carry the same two facts as values, so a
+    surface in another language can say WHY without matching English (see
+    `domain/types.py`, "Explanatory prose, paired with a code").
+
+    `alert_level` replaces what used to be a plain `alert` bool. One flag had to mean
+    two different things and so meant neither: spec 5.2 asks for an alarm above 15%, and
+    a count in the 10-15% band that REVOKED an existing grant therefore carried
+    `alert=False` and reached nobody -- the gap `ARCHITECTURE.md` 8A.3 queued. Losing
+    auto-ordering is a material change in behaviour and must be heard; it is not the
+    same statement as "your stock figures are untrustworthy", so it is a NOTICE rather
+    than an ALARM. `alert` is kept as a derived property for callers that only want to
+    know whether to say anything at all.
     """
 
     ingredient_id: int
@@ -86,9 +118,15 @@ class GateDecision:
     #: None when the ingredient has no drift observation at all -- no count, no verdict.
     verdict: DriftVerdict | None
     reason: str
-    alert: bool
+    #: Which branch produced this. Derived from the same comparison as `reason`.
+    reason_code: GateReasonKind
+    alert_level: GateAlertLevel
     clean_streak: int
     required_streak: int
+    #: Set only when this decision TAKES AWAY an existing grant. `None` on a HOLD, and on
+    #: a GRANT, and -- importantly -- on a refusal for an ingredient that was never on:
+    #: "never earned it" and "just lost it" are different messages.
+    revoke_cause: RevokeCause | None = None
     considered_pcts: tuple[float, ...] = ()
     #: Set by `evaluate_gate` alone. See `authorises_enable`.
     grant_token: object | None = field(default=None, repr=False, compare=False)
@@ -96,6 +134,15 @@ class GateDecision:
     @property
     def changed(self) -> bool:
         return self.auto_order_enabled is not self.was_enabled
+
+    @property
+    def alert(self) -> bool:
+        """True when this decision has to reach the owner, at any severity."""
+        return self.alert_level is not GateAlertLevel.NONE
+
+    @property
+    def revoked(self) -> bool:
+        return self.action is GateAction.REVOKE
 
 
 def authorises_enable(decision: GateDecision) -> bool:
@@ -160,14 +207,34 @@ def evaluate_gate(
         enabled: bool,
         verdict: DriftVerdict | None,
         reason: str,
-        alert: bool = False,
+        code: GateReasonKind,
+        revoke_cause: RevokeCause,
+        alarm: bool = False,
     ) -> GateDecision:
+        """Assemble the decision, and decide how loudly it has to be said.
+
+        `revoke_cause` is supplied by every branch but only SURVIVES when the action is
+        actually a revoke. That is deliberate: each branch knows why it would take a
+        grant away, and deciding here -- from `action`, which is computed here -- is what
+        makes it impossible for a HOLD to claim it revoked something.
+
+        The alert level is derived, never passed in. `alarm` marks the one branch spec
+        5.2 demands an alarm for (>15%, whether or not a grant existed); every other
+        revoke is a NOTICE, because auto-ordering stopping is a change in behaviour she
+        has to hear about. Everything else is silent, as before.
+        """
         if enabled and not currently_enabled:
             action = GateAction.GRANT
         elif not enabled and currently_enabled:
             action = GateAction.REVOKE
         else:
             action = GateAction.HOLD
+        if alarm:
+            level = GateAlertLevel.ALARM
+        elif action is GateAction.REVOKE:
+            level = GateAlertLevel.NOTICE
+        else:
+            level = GateAlertLevel.NONE
         return GateDecision(
             ingredient_id=ingredient_id,
             action=action,
@@ -175,9 +242,11 @@ def evaluate_gate(
             was_enabled=currently_enabled,
             verdict=verdict,
             reason=reason,
-            alert=alert,
+            reason_code=code,
+            alert_level=level,
             clean_streak=streak,
             required_streak=required_consecutive,
+            revoke_cause=revoke_cause if action is GateAction.REVOKE else None,
             considered_pcts=considered,
             grant_token=_GRANT_TOKEN if enabled else None,
         )
@@ -187,6 +256,8 @@ def evaluate_gate(
             enabled=False,
             verdict=None,
             reason="no drift observation on record: auto-ordering cannot be earned yet",
+            code=GateReasonKind.NO_OBSERVATION,
+            revoke_cause=RevokeCause.NO_OBSERVATION,
         )
 
     latest = recent_drift_pcts[0]
@@ -202,7 +273,9 @@ def evaluate_gate(
                 f"drift {latest:+.2f}% exceeds {warn_max_pct:.1f}%: auto-ordering refused"
                 " and revoked immediately, theoretical stock is not trustworthy"
             ),
-            alert=True,
+            code=GateReasonKind.DRIFT_ABOVE_TOLERANCE,
+            revoke_cause=RevokeCause.DRIFT_ABOVE_TOLERANCE,
+            alarm=True,
         )
 
     if tier is not Tier.A:
@@ -213,6 +286,8 @@ def evaluate_gate(
                 f"tier {tier.value} is never auto-ordered (spec 4.5): consumption is"
                 " calculated but every order stays under human review"
             ),
+            code=GateReasonKind.NOT_TIER_A,
+            revoke_cause=RevokeCause.TIER_NOT_A,
         )
 
     if not has_par_level:
@@ -220,6 +295,8 @@ def evaluate_gate(
             enabled=False,
             verdict=verdict,
             reason="no par_level row: nothing defines min/max, so nothing can be sized",
+            code=GateReasonKind.NO_PAR_LEVEL,
+            revoke_cause=RevokeCause.PAR_LEVEL_REMOVED,
         )
 
     if verdict is DriftVerdict.TUNE_WASTE_FACTOR:
@@ -230,6 +307,8 @@ def evaluate_gate(
                 f"drift {latest:+.2f}% is in the {eligible_max_pct:.1f}-{warn_max_pct:.1f}%"
                 " tuning band: stays manual, tune waste_factor and count again"
             ),
+            code=GateReasonKind.TUNING_BAND,
+            revoke_cause=RevokeCause.DRIFT_IN_TUNING_BAND,
         )
 
     if streak < required_consecutive:
@@ -241,6 +320,8 @@ def evaluate_gate(
                 f" {eligible_max_pct:.1f}% (latest {latest:+.2f}%): stays manual until the"
                 " next clean count"
             ),
+            code=GateReasonKind.STREAK_INCOMPLETE,
+            revoke_cause=RevokeCause.STREAK_BROKEN,
         )
 
     series = ", ".join(f"{p:+.2f}%" for p in considered)
@@ -251,6 +332,8 @@ def evaluate_gate(
             f"{streak} consecutive counts under {eligible_max_pct:.1f}% ({series}):"
             " auto-ordering earned"
         ),
+        code=GateReasonKind.STREAK_EARNED,
+        revoke_cause=RevokeCause.STREAK_BROKEN,
     )
 
 

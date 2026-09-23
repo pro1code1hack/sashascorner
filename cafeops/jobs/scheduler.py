@@ -86,6 +86,12 @@ class JobTimes:
     expand_minute: int = 0
     sweep_hour: int = 5
     sweep_minute: int = 30
+    #: Channels run AFTER the POS sync. Deliberately once a day: the source is a file the
+    #: owner exports by hand (spec 4.6 -- partner APIs are gated to certified
+    #: integrators), so polling faster than she produces it just re-imports the same
+    #: figures.
+    channel_hour: int = 2
+    channel_minute: int = 50
     digest_hour: int = 7
     digest_minute: int = 30
     #: Monday, after the weekend's counts have been taken.
@@ -228,6 +234,17 @@ def build_scheduler(
         id="expiry_sweep",
         name="expiry_sweep",
     )
+    # Channels once a day, after the POS sync. Deliberately NOT more often: the source
+    # is a file the owner exports by hand (spec 4.6 -- partner APIs are gated), so
+    # polling it faster than she produces it just re-imports the same figures. A missing
+    # export is the normal state and yields an empty report, not an alert.
+    scheduler.add_job(
+        job_channel_sync,
+        CronTrigger(hour=times.channel_hour, minute=times.channel_minute, timezone=tz),
+        kwargs={"factory": factory},
+        id="channel_sync",
+        name="channel_sync",
+    )
 
     # One trigger per supplier, from that supplier's own terms.
     for schedule in _read_schedules(factory):
@@ -297,6 +314,8 @@ def describe_schedule(
         "   (idempotent on sale.expanded_at)",
         f"expiry_sweep       every day {times.sweep_hour:02d}:{times.sweep_minute:02d}"
         "   (idempotent on stock_batch.expired_at)",
+        f"channel_sync       every day {times.channel_hour:02d}:{times.channel_minute:02d}"
+        "   (idempotent on channel+date; a missing export is not an error)",
     ]
     for schedule in _read_schedules(factory):
         when = (
@@ -349,6 +368,62 @@ def main() -> None:
 
 
 #: Every job, by the name the CLI uses to fire one by hand.
+async def job_channel_sync(
+    factory: sessionmaker[Session] | None = None, notifier: Notifier | None = None
+) -> None:
+    """Pull Deliveroo and Just Eat figures for the trailing window.
+
+    Registered because `jobs/channel_sync.py` existed but nothing ever called it, so
+    `cafeops jobs --run channel_sync` answered "unknown job" and the channel screens only
+    ever held whatever somebody had imported by hand.
+
+    Two deliberate quirks. A channel with no export yields an EMPTY report rather than an
+    error -- the owner exports one platform at a time, so a missing file is the normal
+    state and must not turn into a nightly alert nobody reads. And the whole job is
+    tolerant of the source being unavailable: spec 4.6 says the browser agent will break,
+    and spec 9 says falling back to CSV is expected behaviour, not an incident.
+    """
+    from cafeops.integrations.channels import (
+        ChannelSourceUnavailable,
+        build_source,
+    )
+    from cafeops.jobs.channel_sync import default_window, sync_all_channels
+
+    since, until = default_window()
+
+    def _run() -> list[object]:
+        try:
+            primary, fallback = build_source()
+        except ValueError as exc:
+            log.warning("channel_sync: %s", exc)
+            return []
+        with session_scope(factory) as session:
+            try:
+                return list(
+                    sync_all_channels(
+                        session,
+                        since=since,
+                        until=until,
+                        primary=primary,
+                        fallback=fallback,
+                    )
+                )
+            except ChannelSourceUnavailable as exc:
+                log.warning("channel_sync: no source reachable: %s", exc)
+                return []
+
+    reports = await asyncio.to_thread(_run)
+    if not reports:
+        log.info("channel_sync %s..%s: nothing to import", since, until)
+        return
+    for report in reports:
+        # Explicit rather than a getattr-with-lambda default: the lambda captured the
+        # loop variable late, so every fallback line would have described the LAST
+        # report. ruff's B023 caught it, and it would have been a quietly wrong log.
+        summarise = getattr(report, "summary", None)
+        log.info(summarise() if callable(summarise) else str(report))
+
+
 JOBS: dict[str, Callable[..., Awaitable[None]]] = {
     "daily_sync": job_daily_sync,
     "nightly_expand": job_nightly_expand,
@@ -356,4 +431,5 @@ JOBS: dict[str, Callable[..., Awaitable[None]]] = {
     "pre_delivery_orders": job_pre_delivery_orders,
     "digest": job_digest,
     "drift_report": job_drift_report,
+    "channel_sync": job_channel_sync,
 }

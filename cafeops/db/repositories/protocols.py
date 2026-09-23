@@ -269,8 +269,25 @@ class ParLevelRepository(Protocol):
         """
         ...
 
-    def audit(self, ingredient_id: int) -> tuple[datetime | None, datetime | None, str | None]:
-        """(granted_at, revoked_at, reason) -- who turned this on, on what evidence."""
+    def audit(self, ingredient_id: int) -> object | None:
+        """Who turned this on, on what evidence -- and why it was last taken away.
+
+        Returns an object carrying `auto_order_enabled`, `granted_at`, `revoked_at`,
+        `reason` and `revoke_cause` (`repositories/par.AutoOrderAudit`). Declared as
+        `object` for the same reason `apply_gate_decision` takes one: the concrete
+        dataclass lives in the implementation, and this file may not import it.
+
+        **`revoke_cause` is why this method exists rather than a bare flag read.** The gate
+        is stateless -- `domain/tiers.evaluate_gate` re-derives its verdict from today's
+        drift history, so once `auto_order_enabled` is already False it reports HOLD and
+        the fact that a revocation HAPPENED is gone. `par_level` is the only record, and a
+        revocation is a material change in behaviour: orders that were being drafted stop
+        being drafted (`ARCHITECTURE.md` 8A.3). The morning digest reads this.
+
+        The previous signature claimed a 3-tuple and the implementation had always
+        returned a dataclass. Corrected rather than preserved: a protocol nobody can
+        satisfy is worse than none.
+        """
         ...
 
 
@@ -301,9 +318,37 @@ class PurchaseOrderRepository(Protocol):
 
     def mark_sent(self, po_id: int, *, at: datetime) -> None: ...
 
+    def add_checklist_line(
+        self,
+        *,
+        ingredient_id: int,
+        supplier_id: int,
+        supplier_product_id: int,
+        packs: int,
+        unit_price_pence: int,
+        requested_by: str,
+        target_delivery_date: date,
+    ) -> tuple[int, int, bool, date]:
+        """Put a tier C checklist request on a DRAFT. `(po_id, line_id, new, delivery on)`.
+
+        Its own method rather than a `create_draft` with an invented `OrderSuggestion`,
+        because there is no suggestion: spec 4.7 says tier C is never calculated, so there
+        is no forecast, no par level and no cover window. `packs` is a number a PERSON
+        typed, and `requested_by` is recorded on the line so no surface can render it as a
+        calculation.
+
+        `DRAFT` and nothing further, like `create_draft` (invariant 1). The delivery date
+        is RETURNED rather than assumed: a line joining an existing draft arrives on that
+        order's date, and reporting the freshly computed one would be a promise the order
+        does not make.
+        """
+        ...
+
 
 @runtime_checkable
 class ChecklistRepository(Protocol):
+    """Tier C: yes/no, never a number (spec 4.7)."""
+
     def record(
         self,
         ingredient_id: int,
@@ -312,7 +357,32 @@ class ChecklistRepository(Protocol):
         responded_by: str,
     ) -> int: ...
 
-    def latest_low(self, *, since: datetime) -> list[int]: ...
+    def latest_low(self, *, since: datetime) -> list[int]:
+        """Ingredient ids whose MOST RECENT answer since `since` was LOW.
+
+        Most recent, not "any LOW": an item answered LOW on Monday and OK on Thursday is
+        not low, and reporting it would send somebody to buy what is already there.
+        """
+        ...
+
+    def latest_by_ingredient(
+        self, ingredient_ids: Sequence[int] | None = None
+    ) -> dict[int, tuple[ChecklistStatus, datetime]]:
+        """(status, responded_at) of the newest answer per ingredient. ONE query.
+
+        Declared because the roster is 59 items and a per-ingredient lookup would be 59
+        queries to render one message. Added by the bot agent and adopted here, not
+        invented now.
+        """
+        ...
+
+    def checklist_ingredients(self) -> list[tuple[int, str]]:
+        """Every tier C ingredient, by name. The checklist roster.
+
+        Deliberately NOT filtered on `tracking_enabled`: tier C exists *because* these are
+        not tracked numerically, so requiring tracking would return an empty checklist.
+        """
+        ...
 
 
 @runtime_checkable
@@ -397,9 +467,38 @@ class SourcingRepository(Protocol):
         preferred_unit_price_pence: int | None = None,
         would_be_supplier_id: int | None = None,
         po_line_id: int | None = None,
+        qty: Decimal | None = None,
+        premium_pence: int | None = None,
     ) -> int:
         """Log a Tesco run. The accumulated log is the argument for fixing the
-        ordering cadence (spec 4.4), so it is data, not a note."""
+        ordering cadence (spec 4.4), so it is data, not a note.
+
+        `qty` and `premium_pence` were missing here while the implementation already took
+        both. They are not optional detail: unit prices are integer pence, so deriving the
+        premium from them rounds twice before multiplying (82.5p against 69.71p over 4 L is
+        51p; 83 - 70 over 4 L is 52p). A penny does not matter on one routing and does over
+        a quarter of them, and the total IS the point of the table. `premium_pence` stays
+        `None` when either price is unknown -- never zero for unknown (invariant 8).
+        """
+        ...
+
+    def emergency_log(self, *, since: datetime | None = None) -> list[object]:
+        """Routings, newest first. `TescoRouting` rows; the report, not a note."""
+        ...
+
+    def emergency_summary(
+        self, *, since: datetime | None = None
+    ) -> tuple[int, int, int, dict[str, tuple[int, int]]]:
+        """`(routings, priced_routings, total_premium_pence, name -> (routings, premium))`.
+
+        Declared because the MORNING DIGEST reads it, not only the CLI report: spec 4.4's
+        most valuable figure is the accumulated premium, and until now it lived where
+        nobody looks at 07:00.
+
+        `priced_routings` is reported alongside the count on purpose. A premium summed over
+        9 of 14 routings understates the argument the table exists to make, and the only
+        way to see that is to be told (invariant 8).
+        """
         ...
 
 

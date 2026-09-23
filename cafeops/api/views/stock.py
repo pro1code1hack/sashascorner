@@ -169,8 +169,16 @@ def _trust_status(verdict: DriftVerdict | None, has_observation: bool) -> str | 
     stock list, the ingredient detail and the digest, and three independent mappings
     will not stay in step.
 
-    None when there is no observation at all -- that is a fourth state ("never counted")
-    and calling it "trusted" would assert confidence nothing has earned.
+    None when there is no drift observation -- a genuine fourth state, and calling it
+    "trusted" would assert confidence nothing has earned.
+
+    Do NOT label that state "never counted". An ingredient can have a physical count and
+    still have no observation: drift needs an ANCHOR plus a later count, so the first
+    count of anything produces a basis and no reading. Chocolate powder on the seeded data
+    has exactly one count and zero observations. Calling it "never counted" would
+    contradict the basis column two cells to its left, which is the specific confusion the
+    stock screen exists to prevent (invariant 6). The frontend renders it as
+    "not yet judged" / "no evidence either way", which is what it actually is.
     """
     if verdict is None or not has_observation:
         return None

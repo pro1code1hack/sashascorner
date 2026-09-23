@@ -79,7 +79,14 @@ from collections.abc import Collection, Iterable, Sequence
 from datetime import date, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 
-from cafeops.domain.types import ConsumptionPoint, ForecastPoint, ForecastResult, SeasonSpec
+from cafeops.domain.types import (
+    ConsumptionPoint,
+    ForecastNote,
+    ForecastNoteKind,
+    ForecastPoint,
+    ForecastResult,
+    SeasonSpec,
+)
 
 __all__ = [
     "SEASON_LOOKBACK_DAYS",
@@ -341,7 +348,7 @@ def forecast_consumption(
 
     points = list(history)
     closed = set(closed_days)
-    season_reasons: list[str] = []
+    season_reasons: list[ForecastNote] = []
     if season is not None:
         # Out-of-season days are removed the same way a closed day is -- not zero-filled.
         # A zero on a day the item was not on the menu is not evidence about demand, and
@@ -350,10 +357,15 @@ def forecast_consumption(
         excluded = out_of_season_days(season, start=as_of - timedelta(days=widest - 1), end=as_of)
         if excluded:
             season_reasons.append(
-                f"{len(excluded)} of the last {widest} day(s) fall outside "
-                f"{season.name} and were EXCLUDED from the baseline, not counted as "
-                "zero demand (spec 4.3): out-of-season silence is not evidence about "
-                "in-season demand, in either direction"
+                ForecastNote(
+                    kind=ForecastNoteKind.SEASON_HISTORY_EXCLUDED,
+                    text=(
+                        f"{len(excluded)} of the last {widest} day(s) fall outside "
+                        f"{season.name} and were EXCLUDED from the baseline, not counted as "
+                        "zero demand (spec 4.3): out-of-season silence is not evidence about "
+                        "in-season demand, in either direction"
+                    ),
+                )
             )
         closed = closed | excluded
 
@@ -372,7 +384,7 @@ def forecast_consumption(
     observations = [qty for _, qty in base_series]
     history_days = len(observations)
 
-    reasons: list[str] = []
+    reasons: list[ForecastNote] = []
     factors: dict[int, Decimal]
 
     if history_days == 0:
@@ -381,9 +393,17 @@ def forecast_consumption(
         low_confidence = True
         factors = dict.fromkeys(WEEKDAY_NAMES, _ONE)
         reasons.append(
-            f"no consumption recorded in the {ewma_window_days} day(s) to {as_of}: "
-            "there is no forecast to give, and a zero here means 'nothing known', "
-            "not 'nothing needed'"
+            ForecastNote(
+                kind=ForecastNoteKind.NO_HISTORY,
+                text=(
+                    f"no consumption recorded in the {ewma_window_days} day(s) to {as_of}: "
+                    "there is no forecast to give, and a zero here means 'nothing known', "
+                    "not 'nothing needed'"
+                ),
+                history_days=0,
+                # The window looked at, which is what "nothing in N days" is a claim about.
+                needed_days=ewma_window_days,
+            )
         )
     elif history_days < min_history_days:
         base_daily = flat_mean(observations)
@@ -395,9 +415,16 @@ def forecast_consumption(
         # number puts it back on screen. `base_daily` is still on the result for
         # whoever legitimately needs it.
         reasons.append(
-            f"only {history_days} day(s) of history to {as_of}, {min_history_days} "
-            "needed: falling back to a flat mean with no day-of-week shaping "
-            "(spec 5.3), so treat any quantity below as a placeholder, not a forecast"
+            ForecastNote(
+                kind=ForecastNoteKind.THIN_HISTORY,
+                text=(
+                    f"only {history_days} day(s) of history to {as_of}, {min_history_days} "
+                    "needed: falling back to a flat mean with no day-of-week shaping "
+                    "(spec 5.3), so treat any quantity below as a placeholder, not a forecast"
+                ),
+                history_days=history_days,
+                needed_days=min_history_days,
+            )
         )
     else:
         used_flat_average = False
@@ -436,15 +463,25 @@ def forecast_consumption(
         else:
             base_daily = ewma(observations, ewma_alpha)
             reasons.append(
-                "base_daily uses the literal spec 5.3 formula, which double-counts "
-                "the weekday effect: the value swings by roughly a third depending "
-                "on which weekday the history window ends on"
+                ForecastNote(
+                    kind=ForecastNoteKind.LITERAL_SPEC_FORMULA,
+                    text=(
+                        "base_daily uses the literal spec 5.3 formula, which double-counts "
+                        "the weekday effect: the value swings by roughly a third depending "
+                        "on which weekday the history window ends on"
+                    ),
+                )
             )
         # Advisory, not fatal: `low_confidence` stays the gate for invariant 7,
         # while `confidence_reasons` carries everything worth knowing about the
         # number. A caller that renders reasons on a confident forecast shows a
         # caveat; one that hides them hides a clamped weekday.
-        reasons.extend(dow_notes)
+        # `dow_factors` speaks in sentences; every one of them is the same KIND of fact
+        # -- a weekday factor that had to be invented or clamped -- so the code is
+        # attached here rather than plumbed through a public signature.
+        reasons.extend(
+            ForecastNote(kind=ForecastNoteKind.DOW_FACTOR_CLAMPED, text=note) for note in dow_notes
+        )
 
     reasons.extend(season_reasons)
 
@@ -465,15 +502,25 @@ def forecast_consumption(
         forecast_points.append(ForecastPoint(day=day, qty=base_daily * factor, dow_factor=factor))
     if closed_in_window:
         reasons.append(
-            f"{len(closed_in_window)} day(s) in the window are declared closed and "
-            f"forecast as zero demand: {', '.join(str(d) for d in closed_in_window)}"
+            ForecastNote(
+                kind=ForecastNoteKind.CLOSED_DAYS_IN_WINDOW,
+                text=(
+                    f"{len(closed_in_window)} day(s) in the window are declared closed and "
+                    f"forecast as zero demand: {', '.join(str(d) for d in closed_in_window)}"
+                ),
+            )
         )
     if out_of_season_in_window and season is not None:
         reasons.append(
-            f"{len(out_of_season_in_window)} day(s) in the window fall outside "
-            f"{season.name} and are forecast as zero demand: "
-            f"{out_of_season_in_window[0]}..{out_of_season_in_window[-1]}. Ordering for "
-            "them would be buying stock for a drink that is off the menu (spec 4.3)"
+            ForecastNote(
+                kind=ForecastNoteKind.OUT_OF_SEASON_DAYS_IN_WINDOW,
+                text=(
+                    f"{len(out_of_season_in_window)} day(s) in the window fall outside "
+                    f"{season.name} and are forecast as zero demand: "
+                    f"{out_of_season_in_window[0]}..{out_of_season_in_window[-1]}. Ordering for "
+                    "them would be buying stock for a drink that is off the menu (spec 4.3)"
+                ),
+            )
         )
 
     return ForecastResult(
@@ -482,7 +529,7 @@ def forecast_consumption(
         points=tuple(forecast_points),
         history_days=history_days,
         low_confidence=low_confidence,
-        confidence_reasons=tuple(reasons),
+        confidence=tuple(reasons),
         used_flat_average=used_flat_average,
     )
 
@@ -625,7 +672,7 @@ def seasonal_forecast(
     for point in history:
         by_day[point.day] = by_day.get(point.day, _ZERO) + point.qty
 
-    reasons: list[str] = []
+    reasons: list[ForecastNote] = []
     in_season_days = [d for d in days if season.contains(d) and d not in closed]
     out_days = [d for d in days if not season.contains(d)]
 
@@ -648,11 +695,16 @@ def seasonal_forecast(
             min_growth_days=min_growth_days,
         )
         reasons.append(
-            f"seasonal forecast from {season.name} one year back "
-            f"({lookback_days} days = {lookback_days // 7} weeks, so weekdays line up), "
-            f"{len(prior_observed)} of {len(in_season_days)} day(s) matched"
+            ForecastNote(
+                kind=ForecastNoteKind.SEASONAL_FROM_PRIOR,
+                text=(
+                    f"seasonal forecast from {season.name} one year back "
+                    f"({lookback_days} days = {lookback_days // 7} weeks, so weekdays line "
+                    f"up), {len(prior_observed)} of {len(in_season_days)} day(s) matched"
+                ),
+            )
         )
-        reasons.append(growth_note)
+        reasons.append(ForecastNote(kind=ForecastNoteKind.SEASONAL_GROWTH, text=growth_note))
         missing = [d for d, prior in prior_days.items() if prior not in by_day]
         if missing:
             # A gap in last season's ledger is not zero demand: it is a day nobody
@@ -661,10 +713,15 @@ def seasonal_forecast(
                 max((as_of - start).days + 1, 1)
             )
             reasons.append(
-                f"{len(missing)} day(s) of last season have no record and were filled "
-                f"with this season's running mean rather than zero: an unrecorded day is "
-                "not a day nothing sold, and zero-filling it would under-order the same "
-                "day this year"
+                ForecastNote(
+                    kind=ForecastNoteKind.SEASONAL_GAP_FILLED,
+                    text=(
+                        f"{len(missing)} day(s) of last season have no record and were "
+                        "filled with this season's running mean rather than zero: an "
+                        "unrecorded day is not a day nothing sold, and zero-filling it "
+                        "would under-order the same day this year"
+                    ),
+                )
             )
         else:
             in_season_mean = _ZERO
@@ -689,18 +746,33 @@ def seasonal_forecast(
         ]
         rate = flat_mean(observed) if observed else _ZERO
         reasons.append(
-            f"{season.name} has no previous occurrence in the history, so there is no "
-            f"season to scale: this is a FLAT RATE from the first {len(observed)} day(s) "
-            f"of the current season ({window_start}..{window_end}), spec 5.3's "
-            "no-prior-season fallback. It carries no weekday shape and no ramp, and the "
-            "first weeks of a season are its least representative -- treat the quantity "
-            "as a placeholder and show this sentence instead of it (invariant 9)"
+            ForecastNote(
+                kind=ForecastNoteKind.NO_PRIOR_SEASON,
+                text=(
+                    f"{season.name} has no previous occurrence in the history, so there is "
+                    f"no season to scale: this is a FLAT RATE from the first "
+                    f"{len(observed)} day(s) of the current season "
+                    f"({window_start}..{window_end}), spec 5.3's no-prior-season fallback. "
+                    "It carries no weekday shape and no ramp, and the first weeks of a "
+                    "season are its least representative -- treat the quantity as a "
+                    "placeholder and show this sentence instead of it (invariant 9)"
+                ),
+                history_days=len(observed),
+                needed_days=flat_rate_days,
+            )
         )
         if not observed:
             reasons.append(
-                f"the season has not started yet as of {as_of}, so even the flat rate "
-                "has nothing behind it: this forecast is zero because nothing is known, "
-                "not because nothing is needed"
+                ForecastNote(
+                    kind=ForecastNoteKind.SEASON_NOT_STARTED,
+                    text=(
+                        f"the season has not started yet as of {as_of}, so even the flat "
+                        "rate has nothing behind it: this forecast is zero because nothing "
+                        "is known, not because nothing is needed"
+                    ),
+                    history_days=0,
+                    needed_days=flat_rate_days,
+                )
             )
         for day in days:
             qty = _ZERO if (day in out_days or day in closed) else rate
@@ -708,8 +780,13 @@ def seasonal_forecast(
 
     if out_days:
         reasons.append(
-            f"{len(out_days)} day(s) of the window fall outside {season.name} and are "
-            f"forecast as zero demand: {out_days[0]}..{out_days[-1]}"
+            ForecastNote(
+                kind=ForecastNoteKind.OUT_OF_SEASON_DAYS_IN_WINDOW,
+                text=(
+                    f"{len(out_days)} day(s) of the window fall outside {season.name} and "
+                    f"are forecast as zero demand: {out_days[0]}..{out_days[-1]}"
+                ),
+            )
         )
     counted = [p.qty for p in forecast_points]
     base_daily = flat_mean(counted)
@@ -719,6 +796,6 @@ def seasonal_forecast(
         points=tuple(forecast_points),
         history_days=len(by_day),
         low_confidence=low_confidence,
-        confidence_reasons=tuple(reasons),
+        confidence=tuple(reasons),
         used_flat_average=used_flat_average,
     )

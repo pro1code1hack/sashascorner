@@ -54,6 +54,17 @@ class PurchaseOrder(Base):
     # Invariant 7: low-confidence forecasts say so IN PLACE OF the number. This
     # carries the reason through to the Telegram message.
     confidence_notes: Mapped[str | None] = mapped_column(Text)
+    #: `OrderNoteKind` member names, comma-separated and deduplicated, in the order the
+    #: decisions were taken. `notes` above is the English prose those decisions wrote.
+    #:
+    #: Without this the Russian bot had to DROP the notes entirely -- it cannot render
+    #: English, and translating prose at the formatter is guesswork -- so the owner read
+    #: a quantity with no account of the par ceiling that cut it or the perishables
+    #: invariant 5 kept out of the top-up. Spec 5.4 forbids a silent adjustment, and a
+    #: sentence she cannot read is silent. A comma-separated list rather than JSON because
+    #: it is a set of enum names, it is greppable in a database browser, and nothing about
+    #: it is nested.
+    note_codes: Mapped[str | None] = mapped_column(String(600))
 
     supplier: Mapped[Supplier] = relationship()
     lines: Mapped[list[POLine]] = relationship(back_populates="po", cascade="all, delete-orphan")
@@ -123,6 +134,22 @@ class POLine(Base):
         enum_col(LowConfidenceKind)
     )
     confidence_reason: Mapped[str | None] = mapped_column(Text)
+    #: `SuggestedLine.cover_days` -- the EFFECTIVE window this line was sized on, after
+    #: the shelf-life and season caps. Persisted because "capped at 4 days" is the whole
+    #: of the invariant 4 message and the number was previously recovered by regex out of
+    #: `cap_reason`; a reword left the Russian sentence with no figure in it.
+    cover_days: Mapped[int | None] = mapped_column(Integer)
+    #: How many days of history stood behind the forecast, and how many it wanted.
+    #: Invariant 9 replaces the quantity with a reason, and "6 days of history, 14 needed"
+    #: is a reason; "history is thin" is a shrug. Stored rather than read back from config
+    #: at render time: the requirement is what it was when the order was sized, and a
+    #: later change to `min_history_days` must not rewrite the explanation.
+    forecast_history_days: Mapped[int | None] = mapped_column(Integer)
+    forecast_needed_days: Mapped[int | None] = mapped_column(Integer)
+    #: Non-NULL when a tier C checklist answer put this line here, naming the person who
+    #: chose the quantity. Tier C is never calculated (spec 4.7) -- so this line's number
+    #: is somebody's decision, and it must never be shown as though it were a forecast.
+    checklist_requested_by: Mapped[str | None] = mapped_column(String(120))
 
     po: Mapped[PurchaseOrder] = relationship(back_populates="lines")
     ingredient: Mapped[Ingredient] = relationship()

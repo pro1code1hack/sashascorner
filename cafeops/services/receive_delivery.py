@@ -74,7 +74,7 @@ from cafeops.db.models import (
 )
 from cafeops.db.repositories.batch import SqlBatchRepository
 from cafeops.domain.stock import batch_expiry_for
-from cafeops.domain.types import MovementSpec, Unit
+from cafeops.domain.types import MovementSpec, ReceiptWarning, ReceiptWarningKind, Unit
 from cafeops.domain.units import convert
 
 __all__ = [
@@ -131,7 +131,22 @@ class DeliveryReceipt:
     movements_written: int
     #: Set when this receipt completed every line on the order.
     order_completed: bool = False
-    warnings: tuple[str, ...] = ()
+    #: Every warning, each with the code for the condition that produced it. The bot used
+    #: to recover these by SUBSTRING against the sentences below -- `"no expiry entered"
+    #: in warning` -- so rewording one silently turned the Russian receipt into "N more
+    #: notes were written to the log". An assumed expiry decides a write-off; it is not
+    #: allowed to arrive as a count.
+    coded_warnings: tuple[ReceiptWarning, ...] = ()
+
+    @property
+    def warnings(self) -> tuple[str, ...]:
+        """The sentences, for the CLI and the log. Never matched -- read the codes."""
+        return tuple(warning.text for warning in self.coded_warnings)
+
+    @property
+    def warning_kinds(self) -> tuple[ReceiptWarningKind, ...]:
+        """The codes, deduplicated, in the order they were raised."""
+        return tuple(dict.fromkeys(warning.kind for warning in self.coded_warnings))
 
     @property
     def value_pence(self) -> Decimal:
@@ -204,7 +219,7 @@ def receive_po_line(
         raise LookupError(f"supplier_product {line.supplier_product_id} not found")
 
     received_at = _require_aware(received_at or datetime.now(UTC), "received_at")
-    warnings: list[str] = []
+    warnings: list[ReceiptWarning] = []
 
     qty = _resolve_qty(
         received_packs=received_packs,
@@ -217,8 +232,14 @@ def receive_po_line(
     expected = _expected_qty(line, product, ingredient.unit)
     if expected is not None and qty > expected:
         warnings.append(
-            f"received {qty} {ingredient.unit.value} against {expected} ordered: "
-            "over-delivery recorded as received, because the stock is on the shelf either way"
+            ReceiptWarning(
+                kind=ReceiptWarningKind.OVER_DELIVERY,
+                text=(
+                    f"received {qty} {ingredient.unit.value} against {expected} ordered: "
+                    "over-delivery recorded as received, because the stock is on the shelf "
+                    "either way"
+                ),
+            )
         )
 
     unit_cost = _unit_cost_pence(line, product, ingredient)
@@ -292,14 +313,19 @@ def receive_adhoc(
         raise ReceiveRefused(f"a delivery must be a positive quantity, got {qty}")
 
     received_at = _require_aware(received_at or datetime.now(UTC), "received_at")
-    warnings: list[str] = []
+    warnings: list[ReceiptWarning] = []
 
     if unit_cost_pence is None:
         unit_cost_pence = ingredient.current_cost_pence_per_unit or Decimal("0")
         warnings.append(
-            "no price given: costed from the ingredient's cached unit cost. A retail "
-            "emergency buy usually cost more than that, so any write-off against this "
-            "batch understates the loss."
+            ReceiptWarning(
+                kind=ReceiptWarningKind.PRICE_FROM_CACHE,
+                text=(
+                    "no price given: costed from the ingredient's cached unit cost. A retail "
+                    "emergency buy usually cost more than that, so any write-off against "
+                    "this batch understates the loss."
+                ),
+            )
         )
 
     expires_at, assumed, expiry_warnings = _resolve_expiry(
@@ -385,7 +411,7 @@ def _create_batch_and_movement(
     ref_type: str,
     ref_id: int | None,
     note: str,
-    warnings: tuple[str, ...],
+    warnings: tuple[ReceiptWarning, ...],
 ) -> DeliveryReceipt:
     repo = SqlBatchRepository(session)
     batch_id = repo.create_batch(
@@ -426,7 +452,7 @@ def _create_batch_and_movement(
         expiry_was_assumed=expiry_was_assumed,
         unit_cost_pence=unit_cost_pence,
         movements_written=written,
-        warnings=warnings,
+        coded_warnings=warnings,
     )
 
 
@@ -436,25 +462,37 @@ def _resolve_expiry(
     ingredient_id: int,
     received_at: datetime,
     expires_at: datetime | None,
-) -> tuple[datetime | None, bool, list[str]]:
+) -> tuple[datetime | None, bool, list[ReceiptWarning]]:
     """The date on the carton, or an honest guess clearly labelled as one."""
     repo = SqlBatchRepository(session)
     shelf_life = repo.shelf_life(ingredient_id)
-    warnings: list[str] = []
+    warnings: list[ReceiptWarning] = []
 
     if expires_at is not None:
         expires_at = _require_aware(expires_at, "expires_at")
         if expires_at <= received_at:
             warnings.append(
-                f"the date given ({expires_at:%Y-%m-%d}) is not after the delivery "
-                f"({received_at:%Y-%m-%d}): this stock arrived already expired and the next "
-                "sweep will write it off. Recorded as entered -- check the carton."
+                ReceiptWarning(
+                    kind=ReceiptWarningKind.EXPIRY_NOT_AFTER_RECEIPT,
+                    text=(
+                        f"the date given ({expires_at:%Y-%m-%d}) is not after the delivery "
+                        f"({received_at:%Y-%m-%d}): this stock arrived already expired and "
+                        "the next sweep will write it off. Recorded as entered -- check the "
+                        "carton."
+                    ),
+                )
             )
         if shelf_life is not None and shelf_life.shelf_life_days is None:
             warnings.append(
-                "this ingredient is configured as non-perishable (shelf_life_days is NULL) "
-                "but a date was entered. The date is used -- a human reading a carton beats "
-                "a seeded default -- and the ingredient's shelf life is worth correcting."
+                ReceiptWarning(
+                    kind=ReceiptWarningKind.NON_PERISHABLE_WITH_DATE,
+                    text=(
+                        "this ingredient is configured as non-perishable (shelf_life_days is "
+                        "NULL) but a date was entered. The date is used -- a human reading a "
+                        "carton beats a seeded default -- and the ingredient's shelf life is "
+                        "worth correcting."
+                    ),
+                )
             )
         return expires_at, False, warnings
 
@@ -465,9 +503,14 @@ def _resolve_expiry(
     days = shelf_life.shelf_life_days if shelf_life else None
     source = shelf_life.source.value if shelf_life and shelf_life.source else "unknown"
     warnings.append(
-        f"no expiry entered: assumed {derived:%Y-%m-%d} from a {days}-day shelf life "
-        f"flagged {source}. This date decides whether the stock is written off, so it is "
-        "a guess worth replacing with what the carton says."
+        ReceiptWarning(
+            kind=ReceiptWarningKind.EXPIRY_ASSUMED,
+            text=(
+                f"no expiry entered: assumed {derived:%Y-%m-%d} from a {days}-day shelf life "
+                f"flagged {source}. This date decides whether the stock is written off, so "
+                "it is a guess worth replacing with what the carton says."
+            ),
+        )
     )
     return derived, True, warnings
 

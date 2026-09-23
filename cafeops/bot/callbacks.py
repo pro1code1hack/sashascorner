@@ -35,7 +35,7 @@ class CountCB(CallbackData, prefix="cnt"):
 
 
 class ChecklistCB(CallbackData, prefix="chk"):
-    action: str  # "ok" | "low" | "skip"
+    action: str  # "ok" | "low" | "skip" | "no_order"
     ingredient_id: int
 
 

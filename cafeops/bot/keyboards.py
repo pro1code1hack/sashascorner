@@ -16,7 +16,14 @@ from cafeops.bot import formatters as f
 from cafeops.bot.callbacks import ChecklistCB, CountCB, DeliveryCB, OrderCB
 from cafeops.bot.viewmodels import ChecklistItemView, OrderView
 
-__all__ = ["checklist_kb", "count_kb", "delivery_expiry_kb", "delivery_qty_kb", "order_kb"]
+__all__ = [
+    "checklist_kb",
+    "checklist_order_kb",
+    "count_kb",
+    "delivery_expiry_kb",
+    "delivery_qty_kb",
+    "order_kb",
+]
 
 
 def order_kb(view: OrderView) -> InlineKeyboardMarkup:
@@ -95,6 +102,23 @@ def checklist_kb(item: ChecklistItemView) -> InlineKeyboardMarkup:
         InlineKeyboardButton(
             text=f.BTN_CHECKLIST_SKIP,
             callback_data=ChecklistCB(action="skip", ingredient_id=item.ingredient_id).pack(),
+        )
+    )
+    return builder.as_markup()
+
+
+def checklist_order_kb(ingredient_id: int) -> InlineKeyboardMarkup:
+    """The escape from the quantity question.
+
+    Present because «заканчивается» must stay answerable without committing to a number:
+    the point of asking is that the system has none, and forcing one would make the
+    checklist expensive to fill in -- which is how it stops being filled in at all.
+    """
+    builder = InlineKeyboardBuilder()
+    builder.row(
+        InlineKeyboardButton(
+            text=f.BTN_CHECKLIST_NO_ORDER,
+            callback_data=ChecklistCB(action="no_order", ingredient_id=ingredient_id).pack(),
         )
     )
     return builder.as_markup()
