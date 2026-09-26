@@ -51,11 +51,13 @@ from cafeops.api.areas.finance_schemas import (
     OverviewOut,
     PayoutIn,
     PLResponse,
+    ReceiptsResponse,
     ReconcileResponse,
     SalesDayIn,
     SalesDayOut,
     SalesDayPatch,
     SalesResponse,
+    TakingsLedgerResponse,
 )
 from cafeops.api.runtime import in_session
 from cafeops.api.security import ApiAuth
@@ -250,3 +252,76 @@ async def director_patch(entry_id: int, body: DirectorEntryPatch) -> DirectorEnt
 @router.delete("/director/{entry_id}", response_model=DeletedOut, summary="Remove an entry.")
 async def director_delete(entry_id: int, operator: OperatorQ = None) -> DeletedOut:
     return await _run(lambda s: v.director_delete_view(s, entry_id, operator))
+
+
+# ---------------------------------------------------------- transactions ---
+
+FromQ = Annotated[date | None, Query(alias="from", description="YYYY-MM-DD, inclusive.")]
+ToQ = Annotated[date | None, Query(alias="to", description="YYYY-MM-DD, inclusive.")]
+MinQ = Annotated[int | None, Query(ge=0, description="Pence.")]
+PageQ = Annotated[int, Query(ge=1)]
+PageSizeQ = Annotated[int, Query(ge=1, le=200)]
+
+
+@router.get(
+    "/transactions/receipts",
+    response_model=ReceiptsResponse,
+    summary="Lightspeed receipts, newest first. Read-only.",
+)
+async def receipts(
+    since: FromQ = None,
+    until: ToQ = None,
+    channel: Annotated[str | None, Query(description="EPOS | DELIVEROO | JUST_EAT | OTHER")] = None,
+    q: Annotated[str | None, Query(max_length=100)] = None,
+    min_pence: MinQ = None,
+    max_pence: MinQ = None,
+    include_voided: bool = True,
+    page: PageQ = 1,
+    page_size: PageSizeQ = 50,
+) -> ReceiptsResponse:
+    return await _run(
+        lambda s: v.receipts_view(
+            s,
+            since=since,
+            until=until,
+            channel=channel,
+            q=q,
+            min_pence=min_pence,
+            max_pence=max_pence,
+            include_voided=include_voided,
+            page=page,
+            page_size=page_size,
+        )
+    )
+
+
+@router.get(
+    "/transactions/takings",
+    response_model=TakingsLedgerResponse,
+    summary="Takings rows by day, method and source (every source shown). Read-only.",
+)
+async def takings_ledger(
+    since: FromQ = None,
+    until: ToQ = None,
+    method: Annotated[str | None, Query(description="CARD | CASH | CASH_OFF_TILL | ...")] = None,
+    source: Annotated[str | None, Query(description="POS_API | CSV_UPLOAD | MANUAL | ...")] = None,
+    used_only: bool = False,
+    min_pence: MinQ = None,
+    max_pence: MinQ = None,
+    page: PageQ = 1,
+    page_size: PageSizeQ = 50,
+) -> TakingsLedgerResponse:
+    return await _run(
+        lambda s: v.takings_ledger_view(
+            s,
+            since=since,
+            until=until,
+            method=method,
+            source=source,
+            used_only=used_only,
+            min_pence=min_pence,
+            max_pence=max_pence,
+            page=page,
+            page_size=page_size,
+        )
+    )

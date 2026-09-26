@@ -25,12 +25,14 @@ import type {
   IngredientPricePreview,
   IngredientsResponse,
   IngredientWrite,
+  ItemSales,
   LineIn,
   LinesPreview,
   MenuItemDetail,
   MenuItemsResponse,
   MenuWrite,
   PhotoResult,
+  PrepWrite,
   PricesPreview,
   ProposalPreview,
   RecipeEditor,
@@ -114,6 +116,7 @@ export const MENU_KEYS = {
   swaps: ['menu', 'swaps'] as const,
   menuItems: ['menu', 'items'] as const,
   menuItem: (id: number) => ['menu', 'item', id] as const,
+  itemSales: (id: number, page: number, size: number, all: boolean) => ['menu', 'sales', id, page, size, all] as const,
   ingredients: ['menu', 'ingredients'] as const,
   ingredient: (id: number) => ['menu', 'ingredient', id] as const,
 }
@@ -139,6 +142,17 @@ export function useMenuItem(id: number | null) {
     queryKey: MENU_KEYS.menuItem(id ?? 0),
     queryFn: () => read<MenuItemDetail>(`/api/menu-items/${id}`),
     enabled: id !== null,
+    // Switching sizes on the item page keeps the page up while the next loads.
+    placeholderData: (prev) => prev,
+  })
+}
+/** Till lines matched to a product (every size) or one size. Read-only. */
+export function useItemSales(id: number, page: number, pageSize: number, allSizes: boolean) {
+  return useQuery({
+    queryKey: MENU_KEYS.itemSales(id, page, pageSize, allSizes),
+    queryFn: () =>
+      read<ItemSales>(`/api/menu-items/${id}/sales?page=${page}&page_size=${pageSize}&all_sizes=${allSizes}`),
+    placeholderData: (prev) => prev,
   })
 }
 export function useIngredients() {
@@ -205,6 +219,9 @@ export const menuApi = {
     send<{ diff: string[]; pos_actions: string[] }>('/api/menu-items/prices/apply', { prices, actor }),
   category: (name: string, kind: 'DRINKS' | 'FOOD' | 'OTHER') =>
     send<{ name: string }>('/api/menu-categories', { name, kind }),
+  /** `null` clears an item's own time so the recipe's time applies again. */
+  prep: (id: number, seconds: Record<number, number | null>, isEstimate: boolean, actor: string) =>
+    send<PrepWrite>(`/api/menu-items/${id}/prep`, { seconds, is_estimate: isEstimate, actor }),
   clearPhoto: (id: number) => send<PhotoResult>(`/api/menu-items/${id}/photo/clear`, {}),
   /** Raw body; the server decides the type from the bytes, not this header. */
   uploadPhoto: (id: number, blob: Blob, actor: string | null) =>

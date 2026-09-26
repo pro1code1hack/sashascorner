@@ -11,7 +11,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Button, Checkbox, EstNote, ErrorBox, Loading, Table, TBody, Td, Th, THead, Tr } from '../../components/ui'
-import { OperatorNeeded } from '../../components/shell/Operator'
 import { api } from '../../lib/api'
 import { recipeApi, useInvalidateMenu } from '../../lib/menu-api'
 import { useOperator } from '../../lib/operator'
@@ -186,7 +185,6 @@ export function ProposalView({ proposalId, onConfirmed }: { proposalId: string; 
           Confirm this recipe
         </Button>
         <div className="mt-2">
-          <OperatorNeeded what="confirm a recipe" />
         </div>
       </section>
     </div>

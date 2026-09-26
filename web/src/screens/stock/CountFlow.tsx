@@ -9,7 +9,6 @@
  */
 import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { OperatorNeeded } from '../../components/shell/Operator'
 import { Button, Stepper, cx } from '../../components/ui'
 import { add, cmp, fromInt, parseDec, sub, toFixed } from '../../lib/dec'
 import type { Dec } from '../../lib/dec'
@@ -105,7 +104,7 @@ export function CountFlow({
   }
 
   const save = async () => {
-    if (v === null || val.trim() === '' || operator === null || v.u < 0n) return
+    if (v === null || val.trim() === '' || v.u < 0n) return
     setPending(true)
     setRefusal(null)
     try {
@@ -183,11 +182,6 @@ export function CountFlow({
         >
           {refusal !== null ? <span className="text-bad-ink">{refusal}</span> : msg?.text}
         </div>
-        {operator === null && (
-          <div className="mb-3">
-            <OperatorNeeded what="record a count" />
-          </div>
-        )}
         <div className="flex gap-2.5">
           <Button size="lg" className="flex-1 rounded-[20px]" onClick={next}>
             Skip
@@ -196,7 +190,7 @@ export function CountFlow({
             variant="primary"
             size="lg"
             className="flex-[2] rounded-[20px]"
-            disabled={v === null || val.trim() === '' || operator === null}
+            disabled={v === null || val.trim() === ''}
             pending={pending}
             pendingLabel="Saving…"
             onClick={save}

@@ -11,7 +11,18 @@
  * stay decimal strings. A £0 price is refused: unknown is not free (inv. 8).
  */
 import { useEffect, useMemo, useState } from 'react'
-import { Button, Input, MoneyInput, Select, cx } from '../../components/ui'
+import {
+  ActiveFilters,
+  Button,
+  FilterBar,
+  FilterSelect,
+  Input,
+  MoneyInput,
+  SearchInput,
+  Select,
+  cx,
+} from '../../components/ui'
+import type { ActiveFilterChip } from '../../components/ui'
 import { penceToPounds, poundsToPence } from '../../components/confirm/numbers'
 import { parseDec } from '../../lib/dec'
 import { useOperator } from '../../lib/operator'
@@ -37,33 +48,145 @@ function savedText(r: ProductWriteOut): string {
   return 'Saved'
 }
 
+type Star = 'all' | 'star' | 'nostar'
+type Vs = 'all' | 'dearer' | 'cheaper' | 'only'
+type Sort = 'name' | 'dearer' | 'pack' | 'stale'
+
+const SORTS: ReadonlyArray<{ value: Sort; label: string }> = [
+  { value: 'name', label: 'Sort: ingredient A–Z' },
+  { value: 'dearer', label: 'Sort: dearest vs others first' },
+  { value: 'pack', label: 'Sort: pack price, high first' },
+  { value: 'stale', label: 'Sort: price oldest first' },
+]
+
+function vsOf(p: SupplierProduct): Vs {
+  const v = p.vs_best_other
+  if (v === null) return 'only'
+  return v.diff_pct > 0.5 ? 'dearer' : 'cheaper'
+}
+
 export function Products({ data, onSaved }: { data: SupplierProductsResponse; onSaved: (s: Saved) => void }) {
   const [filter, setFilter] = useState('')
+  const [star, setStar] = useState<Star>('all')
+  const [vs, setVs] = useState<Vs>('all')
+  const [sort, setSort] = useState<Sort>('name')
   const [adding, setAdding] = useState(false)
   const rows = useMemo(() => {
     const f = filter.trim().toLowerCase()
-    return data.products.filter((p) => f === '' || p.ingredient_name.toLowerCase().includes(f))
-  }, [data.products, filter])
+    const out = data.products.filter(
+      (p) =>
+        (f === '' || p.ingredient_name.toLowerCase().includes(f) || p.sku.toLowerCase().includes(f)) &&
+        (star === 'all' || (star === 'star') === p.is_preferred) &&
+        (vs === 'all' || vsOf(p) === vs),
+    )
+    const byName = (a: SupplierProduct, b: SupplierProduct) => a.ingredient_name.localeCompare(b.ingredient_name)
+    const cmp: Record<Sort, (a: SupplierProduct, b: SupplierProduct) => number> = {
+      name: byName,
+      dearer: (a, b) =>
+        (b.vs_best_other?.diff_pct ?? -Infinity) - (a.vs_best_other?.diff_pct ?? -Infinity) || byName(a, b),
+      pack: (a, b) => b.price_pence - a.price_pence || byName(a, b),
+      stale: (a, b) => (a.last_seen_price_at ?? '').localeCompare(b.last_seen_price_at ?? '') || byName(a, b),
+    }
+    return [...out].sort(cmp[sort])
+  }, [data.products, filter, star, vs, sort])
+
+  const count = (v: Vs) => data.products.filter((p) => vsOf(p) === v).length
+  const chips: ActiveFilterChip[] = []
+  if (filter.trim())
+    chips.push({
+      key: 'q',
+      label: `“${filter.trim()}”`,
+      onRemove: () => setFilter(''),
+    })
+  if (star !== 'all')
+    chips.push({
+      key: 'star',
+      label: star === 'star' ? '★ recipe price' : 'Not the recipe price',
+      onRemove: () => setStar('all'),
+    })
+  if (vs !== 'all')
+    chips.push({
+      key: 'vs',
+      label: vs === 'dearer' ? 'Dearer than elsewhere' : vs === 'cheaper' ? 'Cheapest here' : 'Only supplier',
+      onRemove: () => setVs('all'),
+    })
 
   return (
     <section aria-label="What we buy here">
-      <div className="mb-1.5 flex flex-wrap items-baseline gap-3">
+      <div className="mb-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <h2 className="text-lg font-extrabold">What we buy here · {data.products.length}</h2>
         <span className="text-sm text-ink-2">★ = the price used in recipe costs</span>
-        <span className="flex-1" />
-        <Input
-          size="xs"
-          aria-label="Filter products"
-          placeholder="Filter"
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          className="w-[150px]!"
-        />
       </div>
-      <div className="scroll-x relative">
+      {data.products.length > 0 && (
+        <>
+          <FilterBar
+            label="Filter products"
+            search={
+              <SearchInput
+                label="Search products"
+                placeholder="Ingredient or code"
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+              />
+            }
+            trailing={
+              <FilterSelect
+                label="Sort products"
+                value={sort}
+                allValue={sort}
+                onChange={(v) => setSort(v as Sort)}
+                options={SORTS}
+              />
+            }
+          >
+            <FilterSelect
+              label="Recipe price"
+              value={star}
+              onChange={(v) => setStar(v as Star)}
+              options={[
+                { value: 'all', label: 'Starred or not' },
+                { value: 'star', label: '★ Recipe price' },
+                { value: 'nostar', label: 'Not the recipe price' },
+              ]}
+            />
+            <FilterSelect
+              label="Compared with other suppliers"
+              value={vs}
+              onChange={(v) => setVs(v as Vs)}
+              options={[
+                { value: 'all', label: 'Any price vs others' },
+                {
+                  value: 'dearer',
+                  label: `Dearer than elsewhere (${count('dearer')})`,
+                },
+                {
+                  value: 'cheaper',
+                  label: `Cheapest here (${count('cheaper')})`,
+                },
+                { value: 'only', label: `Only supplier (${count('only')})` },
+              ]}
+            />
+          </FilterBar>
+          <ActiveFilters
+            className="mt-2"
+            chips={chips}
+            onClearAll={() => {
+              setFilter('')
+              setStar('all')
+              setVs('all')
+            }}
+            summary={chips.length > 0 ? `${rows.length} of ${data.products.length}` : undefined}
+          />
+        </>
+      )}
+      <div className="scroll-x relative mt-2">
         <div className="min-w-[820px]">
-          <div className={cx(GRID, 'border-b border-line py-1 text-sm text-ink-2')}>
-            <span><span className="sr-only">Preferred</span></span>
+          <div
+            className={cx(GRID, 'border-b border-line py-1 text-label font-bold uppercase tracking-[.05em] text-ink-2')}
+          >
+            <span>
+              <span className="sr-only">Preferred</span>
+            </span>
             <span>Ingredient</span>
             <span>Their product / SKU</span>
             <span className="text-right">Pack</span>
@@ -71,13 +194,17 @@ export function Products({ data, onSaved }: { data: SupplierProductsResponse; on
             <span className="text-right">Pack £</span>
             <span className="text-right">Per unit</span>
             <span>vs other suppliers</span>
-            <span><span className="sr-only">Remove</span></span>
+            <span>
+              <span className="sr-only">Remove</span>
+            </span>
           </div>
           {rows.map((p) => (
             <ProductRow key={p.supplier_product_id} p={p} onSaved={onSaved} />
           ))}
           {rows.length === 0 && (
-            <p className="py-3 text-sm text-ink-2">{data.products.length === 0 ? 'Nothing linked yet.' : 'No match.'}</p>
+            <p className="py-3 text-sm text-ink-2">
+              {data.products.length === 0 ? 'Nothing linked yet.' : 'No product matches these filters.'}
+            </p>
           )}
           {adding && <NewLink data={data} onDone={() => setAdding(false)} onSaved={onSaved} />}
         </div>
@@ -131,13 +258,16 @@ function ProductRow({ p, onSaved }: { p: SupplierProduct; onSaved: (s: Saved) =>
   }, [w.outcome, onSaved, p.ingredient_name])
 
   const edit = async (body: { sku?: string; pack_size?: string; pack_unit?: Unit; price_pence?: number }) => {
-    if (operator === null) {
-      onSaved({ tone: 'bad', text: 'Say who you are first.' })
-      return
-    }
-    const r = await w.run(() => supplierWrites.editProduct(p.supplier_product_id, { changed_by: operator, ...body }), {
-      invalidate: afterProduct(p.supplier_id),
-    })
+    const r = await w.run(
+      () =>
+        supplierWrites.editProduct(p.supplier_product_id, {
+          changed_by: operator,
+          ...body,
+        }),
+      {
+        invalidate: afterProduct(p.supplier_id),
+      },
+    )
     if (r) onSaved({ tone: 'ok', text: savedText(r) })
   }
 
@@ -145,7 +275,10 @@ function ProductRow({ p, onSaved }: { p: SupplierProduct; onSaved: (s: Saved) =>
     if (pack.trim() === p.pack_size) return
     const d = parseDec(pack)
     if (d === null || d.u <= 0n) {
-      onSaved({ tone: 'bad', text: `${p.ingredient_name}: a pack size is a plain number above zero, like 4 or 2.5.` })
+      onSaved({
+        tone: 'bad',
+        text: `${p.ingredient_name}: a pack size is a plain number above zero, like 4 or 2.5.`,
+      })
       setPack(p.pack_size)
       return
     }
@@ -169,11 +302,14 @@ function ProductRow({ p, onSaved }: { p: SupplierProduct; onSaved: (s: Saved) =>
     <div className={cx(GRID, 'border-b border-line py-1.5 text-base')}>
       <button
         type="button"
-        aria-label={p.is_preferred ? `${p.ingredient_name}: the price recipes use` : `Use this price for ${p.ingredient_name} in recipes`}
+        aria-label={
+          p.is_preferred
+            ? `${p.ingredient_name}: the price recipes use`
+            : `Use this price for ${p.ingredient_name} in recipes`
+        }
         aria-pressed={p.is_preferred}
-        disabled={operator === null || w.pending || p.is_preferred}
+        disabled={w.pending || p.is_preferred}
         onClick={async () => {
-          if (operator === null) return
           const r = await w.run(() => supplierWrites.prefer(p.supplier_product_id, operator), {
             invalidate: afterProduct(p.supplier_id),
           })
@@ -186,8 +322,23 @@ function ProductRow({ p, onSaved }: { p: SupplierProduct; onSaved: (s: Saved) =>
       <span className="truncate" title={p.ingredient_name}>
         {p.ingredient_name}
       </span>
-      <Input size="xs" aria-label={`${p.ingredient_name} product code`} value={sku} onChange={(e) => setSku(e.target.value)} onBlur={() => sku !== p.sku && edit({ sku })} className={CTRL} />
-      <Input size="xs" numeric aria-label={`${p.ingredient_name} pack size`} value={pack} onChange={(e) => setPack(e.target.value)} onBlur={blurPack} className={CTRL} />
+      <Input
+        size="xs"
+        aria-label={`${p.ingredient_name} product code`}
+        value={sku}
+        onChange={(e) => setSku(e.target.value)}
+        onBlur={() => sku !== p.sku && edit({ sku })}
+        className={CTRL}
+      />
+      <Input
+        size="xs"
+        numeric
+        aria-label={`${p.ingredient_name} pack size`}
+        value={pack}
+        onChange={(e) => setPack(e.target.value)}
+        onBlur={blurPack}
+        className={CTRL}
+      />
       <Select
         size="xs"
         aria-label={`${p.ingredient_name} pack unit`}
@@ -201,7 +352,14 @@ function ProductRow({ p, onSaved }: { p: SupplierProduct; onSaved: (s: Saved) =>
           </option>
         ))}
       </Select>
-      <MoneyInput size="xs" aria-label={`${p.ingredient_name} pack price`} value={price} onChange={(e) => setPrice(e.target.value)} onBlur={blurPrice} className={CTRL} />
+      <MoneyInput
+        size="xs"
+        aria-label={`${p.ingredient_name} pack price`}
+        value={price}
+        onChange={(e) => setPrice(e.target.value)}
+        onBlur={blurPrice}
+        className={CTRL}
+      />
       <span className={cx('fig text-right', p.price_source === 'ESTIMATE' && 'italic')}>
         {p.unit_price_pence === null ? '—' : `${unitPrice(p.unit_price_pence)}/${unitWord(p.ingredient_unit)}`}
       </span>
@@ -209,14 +367,13 @@ function ProductRow({ p, onSaved }: { p: SupplierProduct; onSaved: (s: Saved) =>
       <button
         type="button"
         aria-label={armed ? `Tap again to unlink ${p.ingredient_name}` : `Unlink ${p.ingredient_name}`}
-        disabled={operator === null || w.pending}
+        disabled={w.pending}
         onClick={async () => {
           if (!armed) {
             setArmed(true)
             return
           }
           setArmed(false)
-          if (operator === null) return
           const r = await w.run(() => supplierWrites.archiveProduct(p.supplier_product_id, operator), {
             invalidate: afterProduct(p.supplier_id),
           })
@@ -253,9 +410,9 @@ function NewLink({
     return d !== null && d.u > 0n
   })()
   const priceP = poundsToPence(price)
-  const ok = operator !== null && ing !== null && packOk && priceP.kind === 'value' && priceP.value > 0
+  const ok = ing !== null && packOk && priceP.kind === 'value' && priceP.value > 0
   const submit = async () => {
-    if (!ok || ing === null || priceP.kind !== 'value' || operator === null) return
+    if (!ok || ing === null || priceP.kind !== 'value') return
     const r = await w.run(
       () =>
         supplierWrites.link(data.supplier.supplier_id, {
@@ -298,16 +455,41 @@ function NewLink({
             </option>
           ))}
         </Select>
-        <Input size="xs" aria-label="Their product code" value={sku} onChange={(e) => setSku(e.target.value)} className={CTRL} />
-        <Input size="xs" numeric aria-label="Pack size" value={pack} onChange={(e) => setPack(e.target.value)} className={CTRL} />
-        <Select size="xs" aria-label="Pack unit" value={unit} onChange={(e) => setUnit(e.target.value as Unit)} className={cx(CTRL, 'px-1!')}>
+        <Input
+          size="xs"
+          aria-label="Their product code"
+          value={sku}
+          onChange={(e) => setSku(e.target.value)}
+          className={CTRL}
+        />
+        <Input
+          size="xs"
+          numeric
+          aria-label="Pack size"
+          value={pack}
+          onChange={(e) => setPack(e.target.value)}
+          className={CTRL}
+        />
+        <Select
+          size="xs"
+          aria-label="Pack unit"
+          value={unit}
+          onChange={(e) => setUnit(e.target.value as Unit)}
+          className={cx(CTRL, 'px-1!')}
+        >
           {UNITS.map((u) => (
             <option key={u.value} value={u.value}>
               {u.label}
             </option>
           ))}
         </Select>
-        <MoneyInput size="xs" aria-label="Pack price" value={price} onChange={(e) => setPrice(e.target.value)} className={CTRL} />
+        <MoneyInput
+          size="xs"
+          aria-label="Pack price"
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+          className={CTRL}
+        />
         <span className="text-right text-sm text-ink-2">{opt ? `per ${unitWord(opt.unit)}` : ''}</span>
         <span />
         <span />

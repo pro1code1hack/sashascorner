@@ -12,7 +12,7 @@ const links = [
 ];
 ---
 
-<header class:list={['hdr', `hdr--${tone}`]} data-hdr>
+<header class:list={['hdr', `hdr--${tone}`, { 'on-dark': tone === 'dark' }]} data-hdr>
   <div class="hdr__in wrap">
     <a href="/" class="hdr__logo" aria-label="Sasha's Corner, home">
       <img
@@ -20,7 +20,6 @@ const links = [
         alt=""
         width="116"
         height="70"
-        fetchpriority="high"
       />
     </a>
     <nav aria-label="Main" class="hdr__navwrap">
@@ -104,11 +103,14 @@ const links = [
     gap: clamp(12px, 3vw, 36px);
     min-height: 84px;
   }
+  /* The logo keeps at least 8px above and below inside the 84px bar: at 128px wide
+     it was 77px tall with 3px to spare, and the portafilter line read as clipped. */
   .hdr__logo {
     margin-right: auto;
+    padding-block: 8px;
   }
   .hdr__logo img {
-    width: clamp(92px, 12vw, 128px);
+    width: clamp(88px, 10vw, 110px);
     height: auto;
   }
   .hdr__nav {

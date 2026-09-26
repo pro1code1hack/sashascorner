@@ -60,6 +60,7 @@ from cafeops.db.repositories.sourcing import SqlSourcingRepository
 from cafeops.domain.ordering import SizingOutcome, SizingPlan, cap_note, terms_of, top_up_pool
 from cafeops.domain.types import EmergencyLine, SourcingChoice, SupplierTerms, Tier
 from cafeops.services.build_order import SplitResult, build_split
+from cafeops.services.suppliers import contact_details
 
 __all__ = ["draft_orders_view", "persisted_order_out", "suppliers_view"]
 
@@ -85,6 +86,8 @@ def _supplier_out(
         contact=row.contact if row is not None else None,
         order_url=row.order_url if row is not None else None,
         notes=row.notes if row is not None else None,
+        email=contact_details(row)["email"] if row is not None else None,
+        phone=contact_details(row)["phone"] if row is not None else None,
         archived=row is not None and row.archived_at is not None,
         product_count=product_count,
         supplier_id=terms.supplier_id,

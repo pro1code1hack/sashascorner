@@ -883,3 +883,84 @@ def attach_photo(session: Session, menu_item_id: int, asset_id: int | None) -> l
         row.photo_asset_id = asset_id
     session.commit()
     return [r.id for r in rows]
+
+
+# --------------------------------------------------------------------------
+# Prep time per size (spec 5.6)
+# --------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class PrepApplied:
+    menu_item_ids: list[int]
+    summary: str
+    rollup_items_recosted: int
+
+
+def set_prep_seconds(
+    session: Session,
+    seconds: dict[int, int | None],
+    *,
+    actor: str,
+    is_estimate: bool = False,
+) -> PrepApplied:
+    """Set (or clear) the item-level prep time for sizes of ONE product.
+
+    `menu_item.prep_seconds` overrides the recipe's per-size time
+    (`domain/labour.py`); `None` clears the override so the recipe's time applies
+    again. Prep time is labour, not recipe or price, so it is not effective-dated;
+    the change is still logged as a `RecipeChange` and every touched size is
+    recosted in the same transaction.
+    """
+    actor = _signed(actor)
+    if not seconds:
+        raise ValueError("there is nothing to apply: no sizes given")
+    rows = [session.get(MenuItem, i) for i in seconds]
+    found = [r for r in rows if r is not None]
+    if len(found) != len(rows):
+        raise LookupError("one of those menu items does not exist")
+    names = {r.name for r in found}
+    if len(names) != 1:
+        raise ValueError("prep times can be set for the sizes of one product at a time")
+    for value in seconds.values():
+        if value is not None and not 1 <= value <= 3600:
+            raise ValueError("a prep time is between 1 and 3600 seconds")
+    at = datetime.now(UTC)
+    diff: list[str] = []
+    try:
+        for row in found:
+            new = seconds[row.id]
+            if row.prep_seconds == new and (
+                new is None or row.prep_seconds_is_estimate == is_estimate
+            ):
+                continue
+            size = row.size_code.value if row.size_code else "One"
+            before = f"{row.prep_seconds}s" if row.prep_seconds is not None else "recipe time"
+            after = f"{new}s" if new is not None else "recipe time"
+            diff.append(f"{size}: {before} -> {after}")
+            row.prep_seconds = new
+            row.prep_seconds_is_estimate = is_estimate if new is not None else None
+            session.add(
+                RecipeChange(
+                    menu_item_id=row.id,
+                    change_kind="prep_seconds",
+                    effective_from=at,
+                    actor=actor,
+                    summary=f"time to make {size}: {before} -> {after}",
+                    lines=[f"{size}: {before} -> {after}"],
+                )
+            )
+        if not diff:
+            raise ValueError("there is nothing to apply: the times are already exactly this")
+        session.flush()
+        ids = [r.id for r in found]
+        rollup = rollup_menu_items(session, ids, at=at, trigger=f"prep time edit by {actor}")
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    return PrepApplied(
+        menu_item_ids=ids,
+        summary=f"{found[0].name}: " + "; ".join(diff),
+        rollup_items_recosted=rollup.costed,
+    )

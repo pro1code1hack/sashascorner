@@ -21,7 +21,7 @@ from __future__ import annotations
 import re
 from typing import Annotated
 
-from fastapi import APIRouter, Header, HTTPException, Request, status
+from fastapi import APIRouter, Header, HTTPException, Query, Request, status
 from fastapi.responses import FileResponse
 
 from cafeops.api.areas import menu_views as views
@@ -41,6 +41,7 @@ from cafeops.api.areas.menu_schemas import (
     IngredientPricePreviewOut,
     IngredientsResponse,
     IngredientWriteOut,
+    ItemSalesOut,
     LinesAppliedOut,
     LinesPreviewOut,
     ManualLinesApplyIn,
@@ -55,6 +56,8 @@ from cafeops.api.areas.menu_schemas import (
     MenuSizeIn,
     MenuWriteOut,
     PhotoOut,
+    PrepIn,
+    PrepOut,
     PricesAppliedOut,
     PricesPreviewOut,
     ProposalConfirmIn,
@@ -221,6 +224,33 @@ async def category_create(body: CategoryIn) -> MenuCategoryOut:
 )
 async def menu_item_detail(menu_item_id: int) -> MenuItemDetailOut:
     return await in_session(lambda s: views.menu_item_detail_view(s, menu_item_id))
+
+
+@router.get(
+    "/api/menu-items/{menu_item_id}/sales",
+    response_model=ItemSalesOut,
+    summary="Till lines matched to this product (every size) or this size. Read-only.",
+)
+async def menu_item_sales(
+    menu_item_id: int,
+    page: Annotated[int, Query(ge=1, le=10000)] = 1,
+    page_size: Annotated[int, Query(ge=5, le=200)] = 25,
+    all_sizes: bool = True,
+) -> ItemSalesOut:
+    return await in_session(
+        lambda s: views.menu_item_sales_view(
+            s, menu_item_id, page=page, page_size=page_size, all_sizes=all_sizes
+        )
+    )
+
+
+@router.post(
+    "/api/menu-items/{menu_item_id}/prep",
+    response_model=PrepOut,
+    summary="Set or clear time to make per size (labour), recosting those sizes.",
+)
+async def menu_prep(menu_item_id: int, body: PrepIn) -> PrepOut:
+    return await in_session(lambda s: views.menu_prep_view(s, menu_item_id, body))
 
 
 @router.post(

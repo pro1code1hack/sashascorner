@@ -43,11 +43,15 @@ __all__ = [
     "PLResponse",
     "PayoutIn",
     "PeriodFiguresOut",
+    "ReceiptOut",
+    "ReceiptsResponse",
     "ReconcileResponse",
     "SalesDayIn",
     "SalesDayOut",
     "SalesDayPatch",
     "SalesResponse",
+    "TakingsLedgerResponse",
+    "TakingsRowOut",
 ]
 
 Pence = int
@@ -540,3 +544,63 @@ class CashAlertOut(Out):
 class FinanceAlertsOut(Out):
     cash: CashAlertOut | None
     takings_last_imported_at: dt.datetime | None
+
+
+# --------------------------------------------------------------------------
+# transactions (read-only ledgers)
+# --------------------------------------------------------------------------
+
+
+class ReceiptOut(Out):
+    receipt_id: str
+    date: dt.date
+    weekday: str
+    time: str = Field(description="HH:MM, Europe/London.")
+    channel: str
+    lines: int
+    items: str = Field(description="Item count as a decimal string.")
+    summary: str
+    gross_pence: Pence = Field(description="Non-voided lines only.")
+    voided: bool
+    refund: bool
+
+
+class ReceiptsResponse(Out):
+    rows: list[ReceiptOut]
+    page: int
+    page_size: int
+    total_rows: int
+    gross_pence: Pence = Field(description="Every receipt matching the filters, all pages.")
+    voided_count: int
+    first_date: dt.date | None
+    last_date: dt.date | None
+    caveats: list[str]
+
+
+class TakingsRowOut(Out):
+    id: int
+    date: dt.date
+    weekday: str
+    method: str
+    source: str
+    basis: Literal["TILL", "BANK_DEPOSIT"]
+    gross_pence: Pence
+    refunds_pence: Pence | None
+    fees_pence: Pence | None
+    discounts_pence: Pence | None
+    net_pence: Pence | None = Field(description="Null when any deduction was not reported.")
+    transactions: int | None
+    used: bool = Field(description="False = shadowed by a higher-precedence source; not added.")
+    source_ref: str | None
+    notes: str | None
+
+
+class TakingsLedgerResponse(Out):
+    rows: list[TakingsRowOut]
+    page: int
+    page_size: int
+    total_rows: int
+    used_gross_pence: Pence
+    by_method_pence: dict[str, Pence]
+    shadowed_count: int
+    caveats: list[str]

@@ -37,8 +37,20 @@
   --paper-dim: #dcd8cc;
   --rule: color-mix(in oklab, var(--olive-900) 22%, transparent);
   --rule-strong: color-mix(in oklab, var(--olive-900) 45%, transparent);
-  --on-dark: #f3f1eb;
-  --on-dark-soft: color-mix(in oklab, #f3f1eb 72%, transparent);
+  --on-dark: var(--paper);
+  --on-dark-soft: color-mix(in oklab, var(--on-dark) 72%, transparent);
+  /* Caramel lifted toward paper for text on olive-900: 4.6:1 (caramel itself is 3.4:1). */
+  --caramel-on-dark: color-mix(in srgb, var(--caramel) 70%, var(--paper));
+  --caramel-hover: color-mix(in srgb, var(--caramel) 85%, var(--paper)); /* ink on it 8:1 */
+  --paper-bright: color-mix(in srgb, var(--paper) 45%, white); /* input wells */
+  --shadow-ink: color-mix(in srgb, var(--ink) 25%, transparent);
+
+  /* Focus ring, two bands: --focus-ring outside, --focus-halo against the element.
+     Paper grounds: caramel (2.5:1) + olive-900 halo (8.6:1). Dark grounds set
+     .on-dark (or the two properties) for a paper ring: 8.6:1 on olive-900,
+     5.2:1 on olive-700, where caramel is only 3.4:1 and 2.1:1. */
+  --focus-ring: var(--caramel);
+  --focus-halo: var(--olive-900);
 
   --font-display: 'Aldo', 'Saira Variable', 'Saira', system-ui, sans-serif;
   --font-text: 'Jost Variable', 'Jost', system-ui, sans-serif;
@@ -147,13 +159,16 @@ a {
 }
 
 :focus-visible {
-  /* Two bands: caramel ring (3.4:1 on the olive grounds) and an olive band against
-     the element (8.6:1 on paper). Caramel alone is 2.5:1 on paper, under the 3:1
-     a focus indicator needs. */
-  outline: 2px solid var(--caramel);
+  /* See --focus-ring above. Caramel alone is 2.5:1 on paper and 2.1:1 on olive-700,
+     under the 3:1 a focus indicator needs, so each ground picks its outer band. */
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
-  box-shadow: 0 0 0 2px var(--olive-900);
+  box-shadow: 0 0 0 2px var(--focus-halo);
   border-radius: 3px;
+}
+.on-dark {
+  --focus-ring: var(--paper);
+  --focus-halo: var(--ink);
 }
 
 .num {
@@ -246,7 +261,7 @@ a {
   --fg: var(--ink);
 }
 .btn--caramel:hover {
-  --bg: #de9660;
+  --bg: var(--caramel-hover);
 }
 .btn--ghost {
   --bg: transparent;
@@ -278,7 +293,7 @@ a {
   padding: 12px 14px;
   border: 1px solid var(--rule-strong);
   border-radius: var(--radius-s);
-  background: #fbfaf6;
+  background: var(--paper-bright);
   color: var(--ink);
   font: 400 var(--step-0) / 1.4 var(--font-text);
   transition: border-color 0.2s, box-shadow 0.2s;

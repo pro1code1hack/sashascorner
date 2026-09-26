@@ -189,3 +189,110 @@ export function decStr(d: Dec): string {
   const raw = (neg ? -d.u : d.u).toString().padStart(d.s + 1, '0')
   return `${neg ? '-' : ''}${raw.slice(0, -d.s)}.${raw.slice(-d.s)}`
 }
+
+/* ------------------------------------------------------ human quantities --- */
+
+function trimZeros(text: string): string {
+  return text.includes('.') ? text.replace(/0+$/, '').replace(/\.$/, '') : text
+}
+
+/** Round to a sensible precision for a person: 2 dp under 10, 1 dp under 100, else whole. */
+function sensible(d: Dec, maxDp = 2): string {
+  const a = abs(d)
+  const dp = cmp(a, TEN) < 0 ? maxDp : cmp(a, fromInt(100)) < 0 ? Math.min(1, maxDp) : 0
+  return groupInt(trimZeros(toFixed(d, dp)))
+}
+
+/**
+ * A quantity in the unit a person would say: 2460 ml → "2.46 L", 0.35 kg →
+ * "350 g", 26.755 each → "27". Exact decimals in, rounded words out; the value
+ * itself is never changed, only how it is spoken.
+ */
+export function humanQty(text: string | null | undefined, unit: Unit | string): string {
+  if (text === null || text === undefined) return '—'
+  const d = parseDec(text)
+  if (d === null) return text
+  const a = abs(d)
+  const THOUSAND = fromInt(1000)
+  switch (unit) {
+    case 'ML':
+      return cmp(a, THOUSAND) >= 0 ? `${sensible(shiftDown(d, 3))} L` : `${sensible(d, 0)} ml`
+    case 'L':
+      return a.u !== 0n && cmp(a, fromInt(1)) < 0 ? `${sensible(mulPow10(d, 3), 0)} ml` : `${sensible(d)} L`
+    case 'G':
+      return cmp(a, THOUSAND) >= 0 ? `${sensible(shiftDown(d, 3))} kg` : `${sensible(d, 0)} g`
+    case 'KG':
+      return a.u !== 0n && cmp(a, fromInt(1)) < 0 ? `${sensible(mulPow10(d, 3), 0)} g` : `${sensible(d)} kg`
+    case 'EACH':
+      return sensible(d, cmp(a, TEN) < 0 ? 1 : 0)
+    default:
+      return `${sensible(d)}${unitSuffix(unit)}`
+  }
+}
+
+function mulPow10(d: Dec, n: number): Dec {
+  return d.s >= n ? { u: d.u, s: d.s - n } : { u: d.u * 10n ** BigInt(n - d.s), s: 0 }
+}
+
+/** a / b to `dp` places, half-up, as a Dec. Null when b is zero. */
+export function divDec(a: Dec, b: Dec, dp = 1): Dec | null {
+  if (b.u === 0n) return null
+  const s = Math.max(a.s, b.s)
+  const x = rescale(a, s).u * 10n ** BigInt(dp)
+  const y = rescale(b, s).u
+  const neg = x < 0n !== y < 0n
+  const ax = x < 0n ? -x : x
+  const ay = y < 0n ? -y : y
+  const q = (ax * 2n + ay) / (ay * 2n)
+  return { u: neg ? -q : q, s: dp }
+}
+
+/** The word for one pack, by what it is. Only ever decoration. */
+export function packNoun(category: string | null | undefined, unit: Unit | string, n: Dec): string {
+  const one = cmp(abs(n), fromInt(1)) === 0
+  const c = (category ?? '').toLowerCase()
+  let word = 'pack'
+  if (c.includes('syrup') || c.includes('bottled')) word = 'bottle'
+  else if ((c.includes('dairy') || c.includes('milk')) && (unit === 'L' || unit === 'ML')) word = 'carton'
+  else if (c.includes('coffee') || c.includes('tea')) word = 'bag'
+  else if (c.includes('packaging')) word = 'box'
+  return one ? word : word === 'box' ? 'boxes' : `${word}s`
+}
+
+export interface PackLike {
+  size_in_unit: string | null
+  pack_size: string
+  pack_unit: string
+}
+
+/**
+ * "≈ 3 bottles" for a quantity against a pack, or null when it would say
+ * nothing (no pack, a pack of one each, or a pack of another dimension).
+ */
+export function packEquiv(
+  qty: string | null | undefined,
+  pack: PackLike | null | undefined,
+  category?: string | null,
+): { text: string; title: string } | null {
+  if (!pack || pack.size_in_unit === null || qty === null || qty === undefined) return null
+  const size = parseDec(pack.size_in_unit)
+  const q = parseDec(qty)
+  if (size === null || q === null || size.u <= 0n || q.u < 0n) return null
+  if (pack.pack_unit === 'EACH' && cmp(size, fromInt(1)) === 0) return null
+  const n = divDec(q, size, 1)
+  if (n === null) return null
+  const shown = trimZeros(toFixed(n, cmp(abs(n), TEN) < 0 ? 1 : 0))
+  const packLabel = `${humanQty(pack.pack_size, pack.pack_unit)}${pack.pack_unit === 'EACH' ? ' each' : ''}`
+  const one = packNoun(category, pack.pack_unit, fromInt(1))
+  const lt1 = cmp(abs(n), fromInt(1)) < 0
+  const text =
+    n.u <= 0n && q.u > 0n
+      ? `under a tenth of a ${one}`
+      : lt1
+        ? `≈ ${shown} of a ${one}`
+        : `≈ ${shown} ${packNoun(category, pack.pack_unit, n)}`
+  return {
+    text,
+    title: `Pack of ${packLabel}`,
+  }
+}

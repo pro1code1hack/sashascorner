@@ -15,7 +15,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ChangeEvent } from 'react'
 import { Button, ErrorBox, Loading, PageBody, PageHeader, TBody, THead, Table, Td, Th, Tr, cx } from '../../components/ui'
-import { OperatorNeeded } from '../../components/shell/Operator'
 import { parseDec, rescale } from '../../lib/dec'
 import { useLocation } from '../../lib/router'
 import { useOperator } from '../../lib/operator'
@@ -424,11 +423,6 @@ function CashSection({ data, save, focusDate }: { data: ReconcileResponse; save:
           : `${c.days_with_cash} ${c.days_with_cash === 1 ? 'day' : 'days'} with cash · net difference ${gbp(c.net_diff_pence)} · ` +
             `${c.days_out} ${c.days_out === 1 ? 'day' : 'days'} over ${gbp(tol)} out`}
       </p>
-      {operator === null && c.rows.length > 0 && (
-        <div className="mb-2">
-          <OperatorNeeded what="record a cash count" />
-        </div>
-      )}
       {c.rows.length === 0 ? (
         <p className="py-2.5 text-base text-ink-2">No cash taken this month.</p>
       ) : (
@@ -462,7 +456,6 @@ function CashSection({ data, save, focusDate }: { data: ReconcileResponse; save:
                         <MoneyCell
                           pence={r.counted_pence}
                           placeholder="not counted"
-                          disabled={operator === null}
                           label={`Cash counted on ${fd(r.date)}`}
                           onCommit={(v) => committed(save, () => financeWrite.cashCount(r.date, v, operator), refresh)}
                         />
@@ -495,7 +488,7 @@ function CashSection({ data, save, focusDate }: { data: ReconcileResponse; save:
   )
 }
 
-function Explain({ row, save, operator, tolerance }: { row: CashRow; save: Save; operator: string | null; tolerance: number }) {
+function Explain({ row, save, operator, tolerance }: { row: CashRow; save: Save; operator: string; tolerance: number }) {
   const refresh = useInvalidateFinance()
   const [text, setText] = useState(row.explanation ?? '')
   useEffect(() => setText(row.explanation ?? ''), [row.explanation])
@@ -506,12 +499,11 @@ function Explain({ row, save, operator, tolerance }: { row: CashRow; save: Save;
       title={explained && row.explained_by ? `explained by ${row.explained_by}` : undefined}
       placeholder={`over ${gbp(tolerance)} out: why? (e.g. float not topped up)`}
       value={text}
-      disabled={operator === null}
       onChange={(e) => setText(e.target.value)}
       onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
       onBlur={() => {
         const t = text.trim()
-        if (!t || t === row.explanation || operator === null) return
+        if (!t || t === row.explanation) return
         void committed(save, () => financeWrite.explainCash(row.date, t, operator), refresh)
       }}
       className={cx(

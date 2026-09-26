@@ -604,6 +604,24 @@ class ParOut(Out):
     min_qty_set_at: datetime | None = None
 
 
+class StockPackOut(Out):
+    """The preferred supplier pack, so a quantity can be read as "about 3 bottles".
+
+    `size_in_unit` is the pack converted into the INGREDIENT's unit (exact), or null
+    when the pack's unit is of another dimension. Display help only: ordering maths
+    never reads this field.
+    """
+
+    supplier_product_id: int
+    supplier_id: int
+    supplier_name: str
+    pack_size: str
+    pack_unit: str
+    size_in_unit: str | None
+    price_pence: int
+    is_preferred: bool
+
+
 class StockRow(Out):
     ingredient_id: int
     name: str
@@ -640,6 +658,10 @@ class StockRow(Out):
     checklist: ChecklistStateOut | None = None
     since_count: SinceCountOut | None = None
     par: ParOut | None = None
+    pack: StockPackOut | None = Field(
+        default=None,
+        description="Preferred (else cheapest linked) supplier pack, for pack-equivalents.",
+    )
 
 
 class WrittenOffOut(Out):
@@ -730,6 +752,8 @@ class SupplierOut(Out):
     contact: str | None = None
     order_url: str | None = None
     notes: str | None = None
+    email: str | None = None
+    phone: str | None = None
     product_count: int | None = Field(
         default=None, description="Linked (not archived) products. Null where not computed."
     )

@@ -391,3 +391,423 @@ export function aFrame(board: THREE.Texture): THREE.Group {
   }
   return g;
 }
+
+// ---- v2: the window bar, the big table and the counter clutter -------------------
+
+/** Bar stool: velvet seat on a dark post with a brass footring. */
+export function barStool(cushion: string): THREE.Group {
+  const g = new THREE.Group();
+  const frame = mat(C.darkWood, 0.5);
+  g.add(at(cyl(0.2, 0.22, 0.03, frame, 24), 0, 0.015, 0));
+  g.add(at(cyl(0.028, 0.028, 0.68, frame, 10), 0, 0.36, 0));
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.012, 6, 24), mat('#b89a62', 0.3, 0.9));
+  ring.rotation.x = Math.PI / 2;
+  ring.position.y = 0.3;
+  g.add(ring);
+  g.add(at(cyl(0.18, 0.17, 0.07, mat(cushion, 0.95), 24), 0, 0.72, 0));
+  return g;
+}
+
+/** The big round table in the middle of the room. */
+export function bigRoundTable(r = 0.78): THREE.Group {
+  const g = new THREE.Group();
+  const white = mat(C.white, 0.45);
+  g.add(at(cyl(r, r, 0.05, white, 56), 0, 0.745, 0));
+  g.add(at(cyl(0.07, 0.07, 0.72, white, 14), 0, 0.37, 0));
+  g.add(at(cyl(0.34, 0.38, 0.035, white, 28), 0, 0.018, 0));
+  return g;
+}
+
+/** Till: a small tablet on a stand, and a card reader beside it. */
+export function till(): THREE.Group {
+  const g = new THREE.Group();
+  const dark = mat(C.ink, 0.35, 0.2);
+  g.add(at(cyl(0.05, 0.06, 0.02, dark, 16), 0, 0.01, 0));
+  g.add(at(cyl(0.012, 0.012, 0.14, dark, 8), 0, 0.08, 0));
+  const tab = rbox(0.26, 0.18, 0.015, dark, 0.008);
+  tab.position.set(0, 0.2, 0.01);
+  tab.rotation.x = -0.45;
+  g.add(tab);
+  const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.23, 0.15), new THREE.MeshBasicMaterial({ color: '#dfe7e0', toneMapped: false }));
+  screen.position.set(0, 0.2, 0.019);
+  screen.rotation.x = -0.45;
+  g.add(screen);
+  const reader = rbox(0.07, 0.03, 0.12, mat('#2a2a28', 0.4), 0.01);
+  reader.position.set(0.22, 0.015, 0.08);
+  reader.rotation.y = -0.3;
+  g.add(reader);
+  return g;
+}
+
+/** A stack of takeaway cups, upside down. */
+export function cupStack(color: string, n = 7): THREE.Group {
+  const g = new THREE.Group();
+  const m = mat(color, 0.6);
+  for (let i = 0; i < n; i++) g.add(at(cyl(0.04, 0.05, 0.1, m, 14), 0, 0.05 + i * 0.022, 0));
+  return g;
+}
+
+/** Glass jar with a lid, holding biscuits, beans or boba. */
+export function jar(fill: string, h = 0.2): THREE.Group {
+  const g = new THREE.Group();
+  g.add(at(cyl(0.065, 0.065, h * 0.62, mat(fill, 0.8), 16), 0, h * 0.31, 0));
+  g.add(at(cyl(0.07, 0.07, h, new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.05, transparent: true, opacity: 0.2 }), 18), 0, h / 2, 0));
+  g.add(at(cyl(0.072, 0.072, 0.025, mat(C.darkWood, 0.6), 18), 0, h + 0.012, 0));
+  return g;
+}
+
+/** A row of syrup bottles with pumps. */
+export function syrups(colors: string[]): THREE.Group {
+  const g = new THREE.Group();
+  const pump = mat(C.ink, 0.4);
+  colors.forEach((c, i) => {
+    const b = new THREE.Group();
+    b.add(at(cyl(0.035, 0.035, 0.22, mat(c, 0.3), 12), 0, 0.11, 0));
+    b.add(at(cyl(0.014, 0.03, 0.05, mat(c, 0.3), 10), 0, 0.245, 0));
+    b.add(at(cyl(0.008, 0.008, 0.07, pump, 6), 0, 0.3, 0));
+    b.add(at(rbox(0.05, 0.015, 0.02, pump, 0.005), 0.015, 0.34, 0));
+    g.add(at(b, i * 0.085, 0, 0));
+  });
+  return g;
+}
+
+export function milkJug(): THREE.Group {
+  const g = new THREE.Group();
+  g.add(at(cyl(0.045, 0.055, 0.12, mat(C.chrome, 0.2, 0.95), 16), 0, 0.06, 0));
+  const spout = cyl(0.004, 0.02, 0.04, mat(C.chrome, 0.2, 0.95), 8);
+  spout.position.set(0.05, 0.11, 0);
+  spout.rotation.z = -0.9;
+  g.add(spout);
+  return g;
+}
+
+/** A cake stand under a dome, with slices set out. */
+export function cakeStand(): THREE.Group {
+  const g = new THREE.Group();
+  const white = mat(C.white, 0.4);
+  g.add(at(cyl(0.06, 0.08, 0.1, white, 16), 0, 0.05, 0));
+  g.add(at(cyl(0.17, 0.17, 0.015, white, 28), 0, 0.105, 0));
+  const slice = (color: string, top: string, a: number) => {
+    const s = new THREE.Group();
+    s.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.06, 10, 1, false, 0, Math.PI / 4), mat(color, 0.7)), 0, 0.03, 0));
+    s.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.01, 10, 1, false, 0, Math.PI / 4), mat(top, 0.7)), 0, 0.064, 0));
+    s.rotation.y = a;
+    return s;
+  };
+  g.add(at(slice('#e8d6b5', '#5d3a22', 0), 0, 0.113, 0));
+  g.add(at(slice('#f0e2c8', '#c96f6a', 2.1), 0, 0.113, 0));
+  g.add(at(slice('#d9c38f', '#8fa05a', 4.2), 0, 0.113, 0));
+  const dome = new THREE.Mesh(
+    new THREE.SphereGeometry(0.17, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2),
+    new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.04, transparent: true, opacity: 0.16, depthWrite: false }),
+  );
+  dome.position.y = 0.113;
+  dome.scale.y = 0.9;
+  g.add(dome);
+  return g;
+}
+
+// ---- 2026-09-26: the right-hand side, from the owner's photos ----------------------
+
+/** White spindle-back chair on light-wood legs, as along the mural wall. */
+export function spindleChair(): THREE.Group {
+  const g = new THREE.Group();
+  const white = mat(C.white, 0.5);
+  const oak = mat(C.oak, 0.55);
+  g.add(at(rbox(0.42, 0.05, 0.4, white, 0.02), 0, 0.46, 0));
+  for (const [x, z] of [
+    [-0.16, -0.15],
+    [0.16, -0.15],
+    [-0.16, 0.15],
+    [0.16, 0.15],
+  ] as const) {
+    const leg = cyl(0.018, 0.014, 0.45, oak, 8);
+    leg.position.set(x, 0.225, z);
+    leg.rotation.x = z > 0 ? 0.06 : -0.06;
+    g.add(leg);
+  }
+  for (let i = 0; i < 5; i++) g.add(at(cyl(0.009, 0.009, 0.42, white, 6), -0.14 + i * 0.07, 0.69, -0.18));
+  g.add(at(rbox(0.4, 0.05, 0.035, white, 0.015), 0, 0.92, -0.18));
+  return g;
+}
+
+/** Tall dracaena: a fan of long, spiky leaves out of a grey pot. */
+export function dracaena(height = 1.7): THREE.Group {
+  const g = new THREE.Group();
+  const pot = mat('#9a9c98', 0.8);
+  g.add(at(cyl(0.2, 0.16, 0.4, pot, 20), 0, 0.2, 0));
+  g.add(at(cyl(0.18, 0.18, 0.02, mat('#3a2a1c', 1), 16), 0, 0.39, 0));
+  g.add(at(cyl(0.02, 0.03, height * 0.45, mat('#6b5a3e', 0.9), 6), 0, 0.4 + height * 0.22, 0));
+  const leaf = mat('#3f5a34', 0.6);
+  const geo = new THREE.ConeGeometry(0.02, 1, 4);
+  let seed = 5;
+  const r = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+  const top = 0.4 + height * 0.45;
+  for (let i = 0; i < 26; i++) {
+    const a = i * 2.39;
+    const tilt = 0.25 + r() * 0.9;
+    const len = 0.45 + r() * 0.45;
+    const l = new THREE.Mesh(geo, leaf);
+    l.scale.set(1, len, 0.35);
+    // lean out from the crown along (a, tilt)
+    l.position.set(Math.cos(a) * Math.sin(tilt) * len * 0.5, top + Math.cos(tilt) * len * 0.5, Math.sin(a) * Math.sin(tilt) * len * 0.5);
+    l.rotation.set(0, -a, 0);
+    l.rotateZ(-tilt);
+    g.add(l);
+  }
+  return g;
+}
+
+/** Black bentwood coat stand with curled hooks. */
+export function coatStand(): THREE.Group {
+  const g = new THREE.Group();
+  const black = mat('#141412', 0.45);
+  g.add(at(cyl(0.025, 0.03, 1.8, black, 10), 0, 0.9, 0));
+  for (let k = 0; k < 4; k++) {
+    const a = (k / 4) * Math.PI * 2 + 0.4;
+    const foot = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.015, 6, 12, Math.PI / 2), black);
+    foot.position.set(Math.cos(a) * 0.18, 0.18, Math.sin(a) * 0.18);
+    foot.rotation.y = -a;
+    g.add(foot);
+    const hook = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.014, 6, 14, Math.PI * 1.3), black);
+    hook.position.set(Math.cos(a) * 0.1, 1.68, Math.sin(a) * 0.1);
+    hook.rotation.y = -a;
+    hook.rotation.z = -0.4;
+    g.add(hook);
+  }
+  return g;
+}
+
+/** White stair banister: a newel post and a sloping handrail over spindles. */
+export function banister(len = 0.9): THREE.Group {
+  const g = new THREE.Group();
+  const white = mat(C.white, 0.45);
+  g.add(at(rbox(0.08, 1.05, 0.08, white, 0.01), 0, 0.525, 0));
+  const rail = rbox(0.06, 0.05, len, white, 0.015);
+  rail.position.set(0, 0.95, len / 2);
+  g.add(rail);
+  const n = Math.max(3, Math.round(len / 0.12));
+  for (let i = 1; i <= n; i++) g.add(at(rbox(0.025, 0.9, 0.025, white, 0.005), 0, 0.47, (i / (n + 1)) * len));
+  return g;
+}
+
+/** A stack of board-game boxes, slightly askew. */
+export function gameStack(): THREE.Group {
+  const g = new THREE.Group();
+  const boxes: Array<[string, number, number, number]> = [
+    ['#e6e2d6', 0.26, 0.2, 0.05],
+    ['#3c3a8a', 0.24, 0.18, 0.04],
+    ['#c44b3b', 0.25, 0.19, 0.05],
+    ['#141412', 0.2, 0.16, 0.04],
+    ['#e0c24a', 0.22, 0.17, 0.035],
+  ];
+  let y = 0;
+  boxes.forEach(([c, w, d, h], i) => {
+    g.add(at(rbox(w, h, d, mat(c, 0.7), 0.006), (i % 2 ? 0.01 : -0.01), y + h / 2, 0, (i - 2) * 0.08));
+    y += h;
+  });
+  return g;
+}
+
+/** A Halloween paper lantern: orange, ribbed, with a face. */
+export function pumpkin(r = 0.12): THREE.Group {
+  const g = new THREE.Group();
+  const orange = mat('#e07a2a', 0.8);
+  for (let k = 0; k < 6; k++) {
+    const s = new THREE.Mesh(new THREE.SphereGeometry(r, 12, 10), orange);
+    s.scale.set(0.55, 0.85, 1);
+    s.position.set(Math.cos((k / 6) * Math.PI * 2) * r * 0.45, r * 0.85, Math.sin((k / 6) * Math.PI * 2) * r * 0.45);
+    s.rotation.y = -(k / 6) * Math.PI * 2;
+    g.add(s);
+  }
+  const face = mat('#1b1712', 0.8);
+  for (const dx of [-0.35, 0.35]) g.add(at(rbox(r * 0.25, r * 0.22, 0.01, face, 0.002), dx * r, r * 1.05, r * 0.98));
+  g.add(at(rbox(r * 0.8, r * 0.14, 0.01, face, 0.002), 0, r * 0.62, r * 0.99));
+  g.add(at(cyl(0.01, 0.012, 0.05, mat('#3a2a1c', 0.8), 6), 0, r * 1.7, 0));
+  return g;
+}
+
+/** A hanging pot with trailing strands, off a wall bracket. */
+export function hangingPlant(): THREE.Group {
+  const g = new THREE.Group();
+  g.add(at(cyl(0.08, 0.06, 0.1, mat(C.ink, 0.5), 12), 0, 0, 0));
+  const leaf = mat('#5c7a3c', 0.6);
+  const geo = new THREE.SphereGeometry(0.03, 6, 5);
+  for (let s = 0; s < 7; s++) {
+    const a = (s / 7) * Math.PI * 2;
+    const len = 5 + (s % 3) * 3;
+    for (let k = 0; k < len; k++) {
+      const l = new THREE.Mesh(geo, leaf);
+      l.scale.set(1, 0.6, 0.6);
+      l.position.set(Math.cos(a) * 0.07, 0.04 - k * 0.055, Math.sin(a) * 0.07 * 0.5);
+      g.add(l);
+    }
+  }
+  return g;
+}
+
+/** The acrylic tiered pastry display on the counter, with chalk price tags. */
+export function pastryDisplay(tag: THREE.Texture): THREE.Group {
+  const g = new THREE.Group();
+  const acrylic = new THREE.MeshStandardMaterial({ color: '#e8f0f2', roughness: 0.05, transparent: true, opacity: 0.28, depthWrite: false });
+  const W = 0.42;
+  const D = 0.34;
+  g.add(at(rbox(W, 0.62, D, acrylic, 0.01), 0, 0.31, 0));
+  const tagMat = new THREE.MeshStandardMaterial({ map: tag, roughness: 0.9 });
+  const pastries = ['#c98f4f', '#d9b27a', '#b5733c', '#e2c28c'];
+  for (let i = 0; i < 3; i++) {
+    const y = 0.05 + i * 0.19;
+    g.add(at(rbox(W - 0.02, 0.01, D - 0.02, mat('#b98c60', 0.6), 0.004), 0, y, 0));
+    for (let k = 0; k < 3; k++) {
+      const p = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 8), mat(pastries[(i + k) % 4], 0.8));
+      p.scale.set(1.3, 0.55, 0.9);
+      p.position.set(-0.12 + k * 0.12, y + 0.03, -0.02);
+      g.add(p);
+    }
+    const t = new THREE.Mesh(new THREE.PlaneGeometry(0.09, 0.05), tagMat);
+    t.position.set(-0.1 + (i % 2) * 0.18, y + 0.06, D / 2 + 0.005);
+    g.add(t);
+  }
+  return g;
+}
+
+/** Glass-box cake showcase: whole cakes on stands above, slices on the shelf below. */
+export function cakeShowcase(): THREE.Group {
+  const g = new THREE.Group();
+  const W = 0.78;
+  const D = 0.44;
+  const Hh = 0.46;
+  g.add(at(rbox(W, 0.04, D, mat(C.white, 0.4), 0.01), 0, 0.02, 0));
+  const glassMat = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.04, transparent: true, opacity: 0.14, depthWrite: false });
+  const box = rbox(W - 0.01, Hh, D - 0.01, glassMat, 0.012);
+  box.position.y = 0.04 + Hh / 2;
+  box.castShadow = false;
+  g.add(box);
+  const edge = mat('#c9b27a', 0.3, 0.8);
+  for (const [x, z] of [
+    [-W / 2, -D / 2],
+    [W / 2, -D / 2],
+    [-W / 2, D / 2],
+    [W / 2, D / 2],
+  ] as const)
+    g.add(at(rbox(0.012, Hh, 0.012, edge, 0.003), x, 0.04 + Hh / 2, z));
+  g.add(at(rbox(W, 0.012, D, edge, 0.003), 0, 0.04 + Hh, 0));
+  // middle glass shelf
+  g.add(at(rbox(W - 0.03, 0.008, D - 0.03, glassMat, 0.002), 0, 0.22, 0));
+  const stand = (y: number) => {
+    const s = new THREE.Group();
+    s.add(at(cyl(0.02, 0.035, 0.05, mat(C.white, 0.3), 12), 0, 0.025, 0));
+    s.add(at(cyl(0.1, 0.1, 0.008, mat(C.white, 0.3), 24), 0, 0.054, 0));
+    s.position.y = y;
+    return s;
+  };
+  const cake = (layers: string[], top: string, r = 0.085) => {
+    const k = new THREE.Group();
+    layers.forEach((c, i) => k.add(at(cyl(r, r, 0.024, mat(c, 0.7), 24), 0, 0.012 + i * 0.024, 0)));
+    const ht = layers.length * 0.024;
+    k.add(at(cyl(r + 0.002, r + 0.002, 0.012, mat(top, 0.6), 24), 0, ht + 0.006, 0));
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2;
+      k.add(at(new THREE.Mesh(new THREE.SphereGeometry(0.012, 8, 6), mat(i % 2 ? '#c44b5b' : C.paper, 0.5)), Math.cos(a) * r * 0.7, ht + 0.02, Math.sin(a) * r * 0.7));
+    }
+    return k;
+  };
+  // top: three whole cakes on stands (Kyiv, raspberry, lemon)
+  const tops: Array<[string[], string]> = [
+    [['#e8d6b5', '#c79363', '#e8d6b5', '#c79363'], '#5d3a22'],
+    [['#f3d9de', '#e79aa8', '#f3d9de'], '#d45a74'],
+    [['#f6ecc2', '#e9cf6a', '#f6ecc2'], '#f4e7a8'],
+  ];
+  tops.forEach(([l, t], i) => {
+    const s = stand(0.228);
+    s.add(at(cake(l, t), 0, 0.058, 0));
+    g.add(at(s, -0.25 + i * 0.25, 0, 0));
+  });
+  // bottom: slices in a row, varied
+  const sliceCols: Array<[string, string]> = [
+    ['#4a2c1c', '#6b3f26'],
+    ['#e8d6b5', '#8fa05a'],
+    ['#f3d9de', '#d45a74'],
+    ['#efe3c8', '#c98f4f'],
+    ['#4a2c1c', '#e8d6b5'],
+  ];
+  sliceCols.forEach(([body, top], i) => {
+    const sl = new THREE.Group();
+    const w = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.06, 12, 1, false, 0, Math.PI / 4), mat(body, 0.7));
+    w.position.y = 0.03;
+    sl.add(w);
+    const tp = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.01, 12, 1, false, 0, Math.PI / 4), mat(top, 0.6));
+    tp.position.y = 0.065;
+    sl.add(tp);
+    sl.add(at(cyl(0.05, 0.05, 0.006, mat(C.paper, 0.4), 16), 0.02, 0.003, 0.02));
+    g.add(at(sl, -0.3 + i * 0.15, 0.045, 0.02, 2.2 + i * 0.3));
+  });
+  return g;
+}
+
+/** An open laptop: thin dark base and an angled lid with a lit screen. */
+export function laptop(): THREE.Group {
+  const g = new THREE.Group();
+  const shell = mat('#3a3b3e', 0.35, 0.6);
+  g.add(at(rbox(0.3, 0.012, 0.21, shell, 0.004), 0, 0.006, 0));
+  const lid = new THREE.Group();
+  lid.add(at(rbox(0.3, 0.2, 0.008, shell, 0.003), 0, 0.1, 0));
+  const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.27, 0.17), new THREE.MeshBasicMaterial({ color: '#cfe0f0', toneMapped: false }));
+  scr.position.set(0, 0.1, -0.0045);
+  scr.rotation.y = Math.PI;
+  lid.add(scr);
+  lid.position.set(0, 0.012, 0.105);
+  lid.rotation.x = -0.28; // leaning back, away from the person
+  g.add(lid);
+  return g;
+}
+
+/** Glass jar of cookies with a wooden lid. */
+export function cookieJar(): THREE.Group {
+  const g = new THREE.Group();
+  const glassMat = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.05, transparent: true, opacity: 0.22, depthWrite: false });
+  g.add(at(cyl(0.075, 0.075, 0.2, glassMat, 18), 0, 0.1, 0));
+  g.add(at(cyl(0.078, 0.078, 0.03, mat(C.oak, 0.6), 18), 0, 0.215, 0));
+  for (let i = 0; i < 6; i++) g.add(at(cyl(0.05, 0.05, 0.014, mat(i % 2 ? '#c98f4f' : '#8a5a33', 0.8), 14), 0, 0.02 + i * 0.028, 0));
+  return g;
+}
+
+/** Tip jar: a small glass with a paper label and a few coins. */
+export function tipJar(): THREE.Group {
+  const g = new THREE.Group();
+  const glassMat = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.05, transparent: true, opacity: 0.25, depthWrite: false });
+  g.add(at(cyl(0.045, 0.04, 0.12, glassMat, 14), 0, 0.06, 0));
+  g.add(at(cyl(0.036, 0.036, 0.02, mat('#c9a44c', 0.3, 0.8), 12), 0, 0.012, 0));
+  g.add(at(rbox(0.06, 0.035, 0.004, mat(C.paper, 0.6), 0.001), 0, 0.07, 0.044));
+  return g;
+}
+
+/** A small vase of flowers. */
+export function flowers(): THREE.Group {
+  const g = new THREE.Group();
+  g.add(at(cyl(0.04, 0.03, 0.1, mat('#6d8a72', 0.4), 12), 0, 0.05, 0));
+  const stem = mat('#4b5a36', 0.8);
+  const petals = ['#f3d9de', '#f1efe8', '#e79aa8', '#f4e7a8', '#f3d9de'];
+  petals.forEach((c, i) => {
+    const a = (i / petals.length) * Math.PI * 2;
+    const x = Math.cos(a) * 0.04;
+    const z = Math.sin(a) * 0.04;
+    const st = cyl(0.004, 0.004, 0.14, stem, 4);
+    st.position.set(x / 2, 0.16, z / 2);
+    st.rotation.set(z * 4, 0, -x * 4);
+    g.add(st);
+    g.add(at(new THREE.Mesh(new THREE.SphereGeometry(0.028, 8, 6), mat(c, 0.7)), x, 0.23 + (i % 2) * 0.02, z));
+  });
+  return g;
+}
+
+/** A small easel sign that stands on a counter. */
+export function counterSign(face: THREE.Texture): THREE.Group {
+  const g = new THREE.Group();
+  g.add(at(rbox(0.2, 0.15, 0.012, mat(C.oak, 0.6), 0.004), 0, 0.08, 0));
+  const p = new THREE.Mesh(new THREE.PlaneGeometry(0.18, 0.13), new THREE.MeshStandardMaterial({ map: face, roughness: 0.95 }));
+  p.position.set(0, 0.08, 0.007);
+  g.add(p);
+  g.rotation.x = -0.2;
+  return g;
+}

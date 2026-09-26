@@ -44,6 +44,7 @@ from cafeops.api.schemas import (
     ShelfLifeOut,
     SinceCountOut,
     StockDetail,
+    StockPackOut,
     StockResponse,
     StockRow,
     StockSummary,
@@ -62,6 +63,8 @@ from cafeops.db.models import (
     StockBatch,
     StockCount,
     StockMovement,
+    Supplier,
+    SupplierProduct,
 )
 from cafeops.db.repositories.composition import SqlCompositionRepository
 from cafeops.db.repositories.drift import SqlDriftRepository
@@ -83,6 +86,7 @@ from cafeops.domain.types import (
     ShelfLifeSpec,
     Tier,
 )
+from cafeops.domain.units import IncompatibleUnitsError, convert
 
 # `forecast_for` in `services/build_order.py` holds the EWMA-vs-seasonal choice. It is
 # imported rather than reimplemented on purpose: it holds the choice between the
@@ -399,6 +403,7 @@ def _row(
         checklist=extras.checklist.get(ingredient.id),
         since_count=_since_count(session, reading, at),
         par=extras.par.get(ingredient.id),
+        pack=extras.packs.get(ingredient.id),
     )
 
 
@@ -635,6 +640,7 @@ class _Extras:
     batches: dict[int, _BatchExtra] = field(default_factory=dict)
     checklist: dict[int, ChecklistStateOut] = field(default_factory=dict)
     par: dict[int, ParOut] = field(default_factory=dict)
+    packs: dict[int, StockPackOut] = field(default_factory=dict)
 
     @classmethod
     def load(cls, session: Session) -> _Extras:
@@ -679,7 +685,51 @@ class _Extras:
                 min_qty_set_by=par.min_qty_set_by,
                 min_qty_set_at=par.min_qty_set_at,
             )
+        out.packs = _packs(session)
         return out
+
+
+def _packs(session: Session) -> dict[int, StockPackOut]:
+    """One pack per ingredient: the preferred live product, else the cheapest per unit.
+
+    Display only (pack-equivalents on the Stock screen); ordering picks its own
+    product in services/build_order.py and never reads this.
+    """
+    units = dict(session.execute(select(Ingredient.id, Ingredient.unit)).tuples().all())
+    rows = session.execute(
+        select(SupplierProduct, Supplier.name)
+        .join(Supplier, Supplier.id == SupplierProduct.supplier_id)
+        .where(SupplierProduct.archived_at.is_(None), Supplier.archived_at.is_(None))
+    ).tuples()
+    best: dict[int, tuple[tuple[int, Decimal], StockPackOut]] = {}
+    for product, supplier_name in rows:
+        unit = units.get(product.ingredient_id)
+        size: Decimal | None = None
+        if unit is not None:
+            try:
+                size = convert(product.pack_size, product.pack_unit, unit)
+            except IncompatibleUnitsError:
+                size = None
+        per_unit = (
+            Decimal(product.price_pence) / size
+            if size is not None and size > 0
+            else Decimal("Infinity")
+        )
+        key = (0 if product.is_preferred else 1, per_unit)
+        pack = StockPackOut(
+            supplier_product_id=product.id,
+            supplier_id=product.supplier_id,
+            supplier_name=supplier_name,
+            pack_size=as_qty(product.pack_size) or "0",
+            pack_unit=product.pack_unit.value,
+            size_in_unit=as_qty(size) if size is not None else None,
+            price_pence=product.price_pence,
+            is_preferred=product.is_preferred,
+        )
+        current = best.get(product.ingredient_id)
+        if current is None or key < current[0]:
+            best[product.ingredient_id] = (key, pack)
+    return {ingredient_id: pack for ingredient_id, (_, pack) in best.items()}
 
 
 def trust_label(*, has_count_basis: bool, drift: DriftOut) -> str:

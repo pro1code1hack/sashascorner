@@ -17,9 +17,11 @@ Four rules carry this module:
 - **The preview writes nothing**: the after side is the same resolution with this
   ingredient's cost replaced in the price snapshot.
 
-Supplier links (`supplier_product`) are read here and never written: the Suppliers
-area owns them. So a price recorded here does not update the preferred link's pack
-price (spec C-8 asked for both); the link keeps what the Suppliers screen last set.
+Supplier links (`supplier_product`) are read here and written only once: the first
+link of a brand-new ingredient created with a supplier price (see `create_ingredient`).
+After that the Suppliers area owns them. So a price recorded here does not update the
+preferred link's pack price (spec C-8 asked for both); the link keeps what the Suppliers
+screen last set.
 """
 
 from __future__ import annotations
@@ -489,8 +491,20 @@ def create_ingredient(
     note: str | None,
     price: PriceIn | None,
     actor: str,
+    open_life_days: int | None = None,
+    transit_buffer_days: int = 0,
+    waste_factor: Decimal = Decimal("0"),
+    sku: str | None = None,
 ) -> int:
-    """A new ingredient: tier C, not tracked, shelf life an ESTIMATE until confirmed."""
+    """A new ingredient: tier C, not tracked, shelf life an ESTIMATE until confirmed.
+
+    With a price from a supplier (`price.supplier_id`), the ingredient is also linked
+    at that supplier with the same pack and price. The one place this module writes a
+    `supplier_product`: a brand-new ingredient has no links, so this is its preferred
+    one by definition, and the recipe price keeps the source the operator gave it
+    (routing it through `suppliers.link_product` would re-record it as SUPPLIER_FEED,
+    clearing an estimate flag nobody cleared -- invariant 8).
+    """
     actor = _signed(actor)
     clean = name.strip()
     if not clean:
@@ -504,6 +518,27 @@ def create_ingredient(
         )
     if shelf_life_days is not None and shelf_life_days <= 0:
         raise ValueError("a shelf life must be at least 1 day")
+    if open_life_days is not None:
+        if open_life_days <= 0:
+            raise ValueError("an opened life must be at least 1 day")
+        if shelf_life_days is not None and open_life_days > shelf_life_days:
+            raise ValueError("life once opened cannot be longer than the unopened shelf life")
+    if transit_buffer_days < 0:
+        raise ValueError("a transit buffer cannot be negative")
+    if shelf_life_days is not None and transit_buffer_days >= shelf_life_days:
+        raise ValueError(
+            "the transit buffer must be shorter than the shelf life, or nothing could "
+            "ever be ordered"
+        )
+    if not (Decimal("0") <= waste_factor <= Decimal("0.5")):
+        raise ValueError("waste factor is a fraction between 0 and 0.5 (0.05 = 5% lost)")
+    supplier: Supplier | None = None
+    if price is not None and price.supplier_id is not None:
+        supplier = session.get(Supplier, price.supplier_id)
+        if supplier is None:
+            raise LookupError(f"supplier {price.supplier_id} not found")
+        if supplier.archived_at is not None:
+            raise ValueError(f"{supplier.name} is archived; pick another supplier")
     at = datetime.now(UTC)
     row = Ingredient(
         name=clean,
@@ -511,10 +546,16 @@ def create_ingredient(
         category=(category or "").strip() or None,
         tier=Tier.C,
         tracking_enabled=False,
-        waste_factor=Decimal("0"),
+        waste_factor=waste_factor,
         storage=storage,
         shelf_life_days=shelf_life_days,
-        shelf_life_source=PriceSource.ESTIMATE if shelf_life_days is not None else None,
+        open_life_days=open_life_days,
+        transit_buffer_days=transit_buffer_days,
+        shelf_life_source=(
+            PriceSource.ESTIMATE
+            if shelf_life_days is not None or open_life_days is not None
+            else None
+        ),
         source_note=(note or "").strip()[:400] or None,
     )
     try:
@@ -522,6 +563,21 @@ def create_ingredient(
         session.flush()
         if price is not None:
             _record_price(session, row, price, at=at, actor=actor)
+            if supplier is not None:
+                session.add(
+                    SupplierProduct(
+                        supplier_id=supplier.id,
+                        ingredient_id=row.id,
+                        sku=(sku or "").strip()[:80],
+                        pack_size=price.pack_size,
+                        pack_unit=price.pack_unit,
+                        price_pence=price.pack_cost_pence,
+                        is_preferred=True,
+                        moq_packs=1,
+                        last_seen_price_at=at,
+                    )
+                )
+                session.flush()
         session.commit()
     except Exception:
         session.rollback()

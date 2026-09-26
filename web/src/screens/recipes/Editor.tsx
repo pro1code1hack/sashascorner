@@ -343,7 +343,6 @@ export function RecipeEditorView({
               <span className="w-[110px] flex-none text-ink-2">from {dayLabel(h.effective_from)}</span>
               <span className="min-w-0">
                 {h.summary}
-                <span className="text-ink-2"> · {h.actor}</span>
               </span>
             </div>
           ))}

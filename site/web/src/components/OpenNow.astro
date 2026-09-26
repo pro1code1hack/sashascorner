@@ -59,7 +59,9 @@ const fallback = allSame && 'open' in hours[0] ? `Open every day, ${clock(hours[
     display: inline-flex;
     align-items: center;
     gap: 10px;
+    max-width: 100%;
     font-size: var(--step--1);
+    line-height: 1.4;
   }
   /* Not --on-dark-soft (72%): that is 3.6:1 where this sits on olive-700 grounds. */
   .open--dark {
@@ -69,6 +71,7 @@ const fallback = allSame && 'open' in hours[0] ? `Open every day, ${clock(hours[
     color: var(--olive-900);
   }
   .open__dot {
+    flex: none; /* stays round when "Closed now · opens Wednesday at 9am" wraps */
     width: 8px;
     height: 8px;
     border-radius: 50%;

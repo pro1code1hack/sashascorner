@@ -28,10 +28,14 @@ import type {
   FinanceSettings,
   PLResponse,
   Period,
+  ReceiptFilters,
+  ReceiptsResponse,
   ReconcileResponse,
   SalesDay,
   SalesDayIn,
   SalesResponse,
+  TakingsFilters,
+  TakingsLedgerResponse,
 } from './types/finance'
 
 /** Fixture mode is `request`'s business (lib/fixtures). */
@@ -42,11 +46,11 @@ function read<T>(path: string): Promise<T> {
 /** Every finance query key starts here, so one invalidation refreshes the tabs. */
 export const FINANCE_KEY = ['finance'] as const
 
-function qs(params: Record<string, string | boolean | undefined>): string {
+function qs(params: Record<string, string | number | boolean | undefined>): string {
   const u = new URLSearchParams()
   for (const [k, v] of Object.entries(params)) {
     if (v === undefined || v === false || v === '') continue
-    u.set(k, v === true ? 'true' : v)
+    u.set(k, v === true ? 'true' : String(v))
   }
   const s = u.toString()
   return s ? `?${s}` : ''
@@ -72,6 +76,16 @@ export const financeApi = {
   reconcile: (period: Period) => read<ReconcileResponse>(`/api/finance/reconcile${qs({ period })}`),
   director: () => read<DirectorResponse>('/api/finance/director'),
   alerts: () => read<FinanceAlerts>('/api/finance/alerts'),
+  receipts: (f: ReceiptFilters) =>
+    read<ReceiptsResponse>(
+      `/api/finance/transactions/receipts${qs({
+        ...f,
+        q: f.q?.trim() || undefined,
+        // Only the non-default is sent: voided receipts are included by default.
+        include_voided: f.include_voided === false ? 'false' : undefined,
+      })}`,
+    ),
+  takings: (f: TakingsFilters) => read<TakingsLedgerResponse>(`/api/finance/transactions/takings${qs({ ...f })}`),
 }
 
 export const useFinanceMonths = () =>
@@ -106,6 +120,20 @@ export const useReconcile = (period: Period | null) =>
   })
 export const useDirector = () =>
   useQuery({ queryKey: [...FINANCE_KEY, 'director'], queryFn: financeApi.director })
+export const useReceipts = (f: ReceiptFilters, enabled = true) =>
+  useQuery({
+    queryKey: [...FINANCE_KEY, 'receipts', f],
+    queryFn: () => financeApi.receipts(f),
+    placeholderData: (prev) => prev,
+    enabled,
+  })
+export const useTakingsLedger = (f: TakingsFilters, enabled = true) =>
+  useQuery({
+    queryKey: [...FINANCE_KEY, 'takings', f],
+    queryFn: () => financeApi.takings(f),
+    placeholderData: (prev) => prev,
+    enabled,
+  })
 /** For the shell's cash banner. Polls gently; the banner is not urgent. */
 export const useFinanceAlerts = () =>
   useQuery({

@@ -38,11 +38,13 @@ from cafeops.api.areas.finance_schemas import (
     OverviewOut,
     PayoutIn,
     PLResponse,
+    ReceiptsResponse,
     ReconcileResponse,
     SalesDayIn,
     SalesDayOut,
     SalesDayPatch,
     SalesResponse,
+    TakingsLedgerResponse,
 )
 from cafeops.db.models.enums import (
     DirectorEntryType,
@@ -58,6 +60,7 @@ from cafeops.services.finance import (
     periods,
     reconcile,
     trading_days,
+    transactions,
 )
 from cafeops.services.finance.common import (
     UNSET,
@@ -415,3 +418,64 @@ def director_patch_view(
 
 def director_delete_view(session: Session, entry_id: int, operator: str | None) -> DeletedOut:
     return DeletedOut(deleted=str(director.delete_entry(session, entry_id, operator=operator)))
+
+
+# --------------------------------------------------------------------------
+# transactions (read-only)
+# --------------------------------------------------------------------------
+
+
+def receipts_view(
+    session: Session,
+    *,
+    since: date | None,
+    until: date | None,
+    channel: str | None,
+    q: str | None,
+    min_pence: int | None,
+    max_pence: int | None,
+    include_voided: bool,
+    page: int,
+    page_size: int,
+) -> ReceiptsResponse:
+    r = transactions.list_receipts(
+        session,
+        since=since,
+        until=until,
+        channel=channel,
+        q=q,
+        min_pence=min_pence,
+        max_pence=max_pence,
+        include_voided=include_voided,
+        page=page,
+        page_size=page_size,
+    )
+    return ReceiptsResponse.model_validate(r)
+
+
+def takings_ledger_view(
+    session: Session,
+    *,
+    since: date | None,
+    until: date | None,
+    method: str | None,
+    source: str | None,
+    used_only: bool,
+    min_pence: int | None,
+    max_pence: int | None,
+    page: int,
+    page_size: int,
+) -> TakingsLedgerResponse:
+    r = transactions.list_takings(
+        session,
+        since=since,
+        until=until,
+        method=method,
+        source=source,
+        used_only=used_only,
+        min_pence=min_pence,
+        max_pence=max_pence,
+        page=page,
+        page_size=page_size,
+    )
+    return TakingsLedgerResponse.model_validate(r)

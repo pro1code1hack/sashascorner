@@ -123,6 +123,20 @@ export interface StockRow {
   checklist?: ChecklistState | null
   since_count?: SinceCount | null
   par?: Par | null
+  /** Preferred (else cheapest) supplier pack, for "≈ 3 bottles". Display only. */
+  pack?: StockPack | null
+}
+
+export interface StockPack {
+  supplier_product_id: number
+  supplier_id: number
+  supplier_name: string
+  pack_size: Qty
+  pack_unit: Unit
+  /** The pack in the ingredient's own unit; null across dimensions. */
+  size_in_unit: Qty | null
+  price_pence: number
+  is_preferred: boolean
 }
 
 export interface WrittenOff {
@@ -305,6 +319,8 @@ export interface Supplier {
   contact?: string | null
   order_url?: string | null
   notes?: string | null
+  email?: string | null
+  phone?: string | null
   product_count?: number | null
   archived?: boolean
 }
@@ -587,6 +603,16 @@ export interface SupplierCreateIn {
   contact?: string | null
   order_url?: string | null
   notes?: string | null
+  email?: string | null
+  phone?: string | null
+  /** Terms, optional: all or none. Stored as a guess unless `terms_confirmed`. */
+  lead_time_days?: number
+  delivery_weekdays?: number[]
+  min_order_pence?: number
+  delivery_fee_pence?: number
+  cutoff_time?: string | null
+  free_delivery_threshold_pence?: number | null
+  terms_confirmed?: boolean
 }
 
 export interface SupplierPatchIn {
@@ -597,4 +623,6 @@ export interface SupplierPatchIn {
   contact?: string | null
   order_url?: string | null
   notes?: string | null
+  email?: string | null
+  phone?: string | null
 }

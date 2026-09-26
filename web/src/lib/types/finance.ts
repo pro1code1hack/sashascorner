@@ -355,3 +355,88 @@ export interface FinanceAlerts {
   }
   takings_last_imported_at: string | null
 }
+
+/* ------------------------------------------------ transactions (read-only) --- */
+
+export interface Receipt {
+  receipt_id: string
+  date: ISODate
+  weekday: string
+  /** HH:MM, Europe/London. */
+  time: string
+  channel: string
+  lines: number
+  /** Item count as a decimal string. */
+  items: string
+  summary: string
+  gross_pence: Pence
+  voided: boolean
+  refund: boolean
+}
+
+export interface ReceiptsResponse {
+  rows: Receipt[]
+  page: number
+  page_size: number
+  total_rows: number
+  gross_pence: Pence
+  voided_count: number
+  first_date: ISODate | null
+  last_date: ISODate | null
+  caveats: string[]
+}
+
+export interface TakingsRow {
+  id: number
+  date: ISODate
+  weekday: string
+  method: string
+  source: string
+  basis: 'TILL' | 'BANK_DEPOSIT'
+  gross_pence: Pence
+  refunds_pence: Pence | null
+  fees_pence: Pence | null
+  discounts_pence: Pence | null
+  /** null when any deduction was not reported. */
+  net_pence: Pence | null
+  transactions: number | null
+  /** false = another source wins for this day and method; shown, not added. */
+  used: boolean
+  source_ref: string | null
+  notes: string | null
+}
+
+export interface TakingsLedgerResponse {
+  rows: TakingsRow[]
+  page: number
+  page_size: number
+  total_rows: number
+  used_gross_pence: Pence
+  by_method_pence: Record<string, Pence>
+  shadowed_count: number
+  caveats: string[]
+}
+
+export interface ReceiptFilters {
+  from?: ISODate
+  to?: ISODate
+  channel?: string
+  q?: string
+  min_pence?: number
+  max_pence?: number
+  include_voided?: boolean
+  page: number
+  page_size: number
+}
+
+export interface TakingsFilters {
+  from?: ISODate
+  to?: ISODate
+  method?: string
+  source?: string
+  used_only?: boolean
+  min_pence?: number
+  max_pence?: number
+  page: number
+  page_size: number
+}

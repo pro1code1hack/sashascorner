@@ -20,14 +20,20 @@ const MAX_LEN = 60
 let memory: string | null = null
 const listeners = new Set<() => void>()
 
-function read(): string | null {
+/**
+ * Owner's instruction (2026-09-26): never ask "who are you". Writes that carry
+ * a name get this one unless a device has set its own.
+ */
+export const DEFAULT_OPERATOR = 'Back office'
+
+function read(): string {
   try {
     const v = localStorage.getItem(STORE)
     if (v !== null) return v
   } catch {
     /* fall through */
   }
-  return memory
+  return memory ?? DEFAULT_OPERATOR
 }
 
 /** Trim and bound a typed name. Returns null for a blank one. */
@@ -36,7 +42,7 @@ export function normaliseOperator(raw: string): string | null {
   return v === '' ? null : v
 }
 
-export function getOperator(): string | null {
+export function getOperator(): string {
   return read()
 }
 
@@ -68,7 +74,7 @@ function subscribe(l: () => void): () => void {
  * `const [name, setName] = useOperator()`. `name` is null until set. Every
  * component using it re-renders when it changes, in this tab or another.
  */
-export function useOperator(): [string | null, (name: string | null) => void] {
-  const name = useSyncExternalStore(subscribe, read, () => null)
+export function useOperator(): [string, (name: string | null) => void] {
+  const name = useSyncExternalStore(subscribe, read, () => DEFAULT_OPERATOR)
   return [name, setOperator]
 }

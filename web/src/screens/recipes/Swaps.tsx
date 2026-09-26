@@ -12,7 +12,6 @@
  */
 import { useMemo, useState } from 'react'
 import { Button, Checkbox, Input, Select, cx } from '../../components/ui'
-import { OperatorNeeded } from '../../components/shell/Operator'
 import { recipeApi, useInvalidateMenu } from '../../lib/menu-api'
 import { useOperator } from '../../lib/operator'
 import type { ComponentRole, IngredientRow, RecipeEditor, Swap, SwapPreview } from '../../lib/types/menu'
@@ -219,7 +218,6 @@ function SwapCard({ swap, ingOptions }: { swap: Swap; ingOptions: IngredientRow[
               Apply from today
             </Button>
           </div>
-          <OperatorNeeded what="change a swap" />
         </div>
       )}
     </div>

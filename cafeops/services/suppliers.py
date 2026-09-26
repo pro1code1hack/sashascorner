@@ -46,6 +46,11 @@ from cafeops.db.models import (
 )
 from cafeops.domain.units import IncompatibleUnitsError, convert
 from cafeops.jobs.cost_rollup import rollup_for_ingredient
+from cafeops.services.confirm_terms import (
+    ConfirmationRefused,
+    SupplierTerms,
+    confirm_supplier_terms,
+)
 
 __all__ = [
     "OPEN_STATUSES",
@@ -53,6 +58,7 @@ __all__ = [
     "SupplierRefused",
     "archive_product",
     "archive_supplier",
+    "contact_details",
     "create_supplier",
     "edit_product",
     "link_product",
@@ -73,6 +79,13 @@ _KIND_MAX = 40
 _CONTACT_MAX = 400
 _URL_MAX = 500
 _SKU_MAX = 80
+_EMAIL_MAX = 200
+_PHONE_MAX = 60
+
+#: Email and phone live in `supplier.channel_config` (a JSON column that exists and
+#: was unused) rather than new columns: they are how an order reaches the supplier,
+#: which is what that column is for, and it needs no migration.
+_CONTACT_KEYS = ("email", "phone")
 
 
 class SupplierRefused(ValueError):
@@ -96,6 +109,48 @@ def _text(value: str | None, limit: int) -> str | None:
         return None
     clean = value.strip()
     return clean[:limit] or None
+
+
+def _email(value: str | None) -> str | None:
+    clean = _text(value, _EMAIL_MAX)
+    if clean is not None and ("@" not in clean or " " in clean or clean.startswith("@")):
+        raise SupplierRefused(f"{clean!r} is not an email address")
+    return clean
+
+
+def contact_details(row: Supplier) -> dict[str, str | None]:
+    """The supplier's email and phone, from `channel_config`."""
+    cfg = row.channel_config or {}
+    out: dict[str, str | None] = {}
+    for key in _CONTACT_KEYS:
+        v = cfg.get(key)
+        out[key] = v if isinstance(v, str) and v else None
+    return out
+
+
+def _set_contact(row: Supplier, key: str, value: str | None) -> bool:
+    cfg = dict(row.channel_config or {})
+    if cfg.get(key) == value or (value is None and key not in cfg):
+        return False
+    if value is None:
+        cfg.pop(key, None)
+    else:
+        cfg[key] = value
+    row.channel_config = cfg  # a new dict, so the JSON change is seen
+    return True
+
+
+def _check_guessed_terms(terms: SupplierTerms) -> None:
+    """Coherence for terms entered but NOT confirmed. An empty week is allowed:
+    it means "not known yet", and the placeholder flag already says so."""
+    if terms.lead_time_days < 0 or terms.lead_time_days > 60:
+        raise SupplierRefused("lead time is 0 to 60 days")
+    if any(d < 1 or d > 7 for d in terms.delivery_weekdays):
+        raise SupplierRefused("delivery weekdays are ISO 1-7 (Mon-Sun)")
+    if terms.min_order_pence < 0 or terms.delivery_fee_pence < 0:
+        raise SupplierRefused("minimum order and delivery fee cannot be negative")
+    if terms.free_delivery_threshold_pence is not None and terms.free_delivery_threshold_pence < 0:
+        raise SupplierRefused("free-delivery threshold cannot be negative")
 
 
 def _supplier(session: Session, supplier_id: int) -> Supplier:
@@ -156,9 +211,24 @@ def create_supplier(
     contact: str | None = None,
     order_url: str | None = None,
     notes: str | None = None,
+    email: str | None = None,
+    phone: str | None = None,
+    terms: SupplierTerms | None = None,
+    terms_confirmed: bool = False,
 ) -> Supplier:
-    """A new supplier. Its terms are placeholders until confirmed with them."""
+    """A new supplier. Its terms are placeholders until confirmed with them.
+
+    `terms` may be given up front. Unless `terms_confirmed`, they are stored as a
+    guess and the placeholder flag stays set. Confirmed terms go through
+    `confirm_supplier_terms`, all together, exactly as the /confirm endpoint does.
+    """
     _who(created_by, "created_by")
+    if terms_confirmed and terms is None:
+        raise SupplierRefused("there are no terms to confirm: fill them all in first")
+    if terms is not None and not terms_confirmed:
+        _check_guessed_terms(terms)
+    clean_email = _email(email)
+    clean_phone = _text(phone, _PHONE_MAX)
     clean = name.strip()
     if not clean:
         raise SupplierRefused("a supplier needs a name")
@@ -182,8 +252,25 @@ def create_supplier(
         delivery_fee_pence=0,
         channel_config={},
     )
+    if clean_email is not None:
+        _set_contact(row, "email", clean_email)
+    if clean_phone is not None:
+        _set_contact(row, "phone", clean_phone)
+    if terms is not None and not terms_confirmed:
+        row.lead_time_days = terms.lead_time_days
+        row.delivery_weekdays = sorted(set(terms.delivery_weekdays))
+        row.min_order_pence = terms.min_order_pence
+        row.delivery_fee_pence = terms.delivery_fee_pence
+        row.cutoff_time = terms.cutoff_time
+        row.free_delivery_threshold_pence = terms.free_delivery_threshold_pence
     session.add(row)
     session.flush()
+    if terms is not None and terms_confirmed:
+        try:
+            confirm_supplier_terms(session, name=row.name, terms=terms)
+        except ConfirmationRefused as exc:
+            raise SupplierRefused(str(exc)) from None
+        session.flush()
     return row
 
 
@@ -202,6 +289,8 @@ def update_supplier_profile(
     contact: str | object | None = UNSET,
     order_url: str | object | None = UNSET,
     notes: str | object | None = UNSET,
+    email: str | object | None = UNSET,
+    phone: str | object | None = UNSET,
 ) -> tuple[Supplier, list[str]]:
     """Profile fields only. Terms go through `confirm_supplier_terms`, all together."""
     _who(changed_by)
@@ -235,6 +324,13 @@ def update_supplier_profile(
         if new != getattr(row, field_name):
             changed.append(field_name)
             setattr(row, field_name, new)
+    if email is not UNSET:
+        if _set_contact(row, "email", _email(email if isinstance(email, str) else None)):
+            changed.append("email")
+    if phone is not UNSET:
+        new_phone = _text(phone if isinstance(phone, str) else None, _PHONE_MAX)
+        if _set_contact(row, "phone", new_phone):
+            changed.append("phone")
     session.flush()
     return row, changed
 

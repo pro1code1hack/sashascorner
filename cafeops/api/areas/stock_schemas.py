@@ -295,6 +295,18 @@ class SupplierCreateIn(In):
     contact: str | None = Field(default=None, max_length=400)
     order_url: str | None = Field(default=None, max_length=500)
     notes: str | None = None
+    email: str | None = Field(default=None, max_length=200)
+    phone: str | None = Field(default=None, max_length=60)
+    # Terms, optional. Either none of them or all of them (lead time and delivery
+    # days at least). Unless `terms_confirmed`, they are stored as a guess and the
+    # supplier stays `terms_are_placeholders` (spec 10.9b: confirmed all together).
+    lead_time_days: int | None = Field(default=None, ge=0, le=60)
+    delivery_weekdays: tuple[int, ...] | None = None
+    min_order_pence: int | None = Field(default=None, ge=0)
+    delivery_fee_pence: int | None = Field(default=None, ge=0)
+    cutoff_time: str | None = Field(default=None, description="HH:MM, or null for none.")
+    free_delivery_threshold_pence: int | None = Field(default=None, ge=0)
+    terms_confirmed: bool = False
 
 
 class SupplierPatchIn(In):
@@ -307,6 +319,8 @@ class SupplierPatchIn(In):
     contact: str | None = Field(default=None, max_length=400)
     order_url: str | None = Field(default=None, max_length=500)
     notes: str | None = None
+    email: str | None = Field(default=None, max_length=200)
+    phone: str | None = Field(default=None, max_length=60)
 
 
 class SupplierArchiveIn(In):

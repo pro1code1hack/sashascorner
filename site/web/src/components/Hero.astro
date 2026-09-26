@@ -21,20 +21,19 @@ const spots = [
   { key: 'menu', href: '/menu', label: 'The menu', hint: 'Counter', flip: true },
   { key: 'book', href: '/book', label: 'Book a table', hint: 'Table' },
   { key: 'visit', href: '/visit', label: 'Find us', hint: 'Front door' },
-  ...(instagram ? [{ key: 'instagram', href: instagram, label: 'Instagram', hint: 'Photo wall', external: true, flip: true }] : []),
 ];
 ---
 
-<section class="hero" aria-labelledby="hero-title">
+<section class="hero on-dark" aria-labelledby="hero-title">
   <div class="hero__grid wrap">
     <div class="hero__copy">
-      <p class="label hero__kicker">Independent café · Dundee</p>
+      <p class="label hero__kicker"><span>Independent café</span><span class="hero__sep"> · </span><span>Commercial Street</span></p>
       <h1 id="hero-title" class="hero__title">
         A warm corner <span class="hero__soft">for coffee</span> in Dundee.
       </h1>
       <p class="hero__lede">
-        More than a hundred drinks on the board — matcha whisked in front of you, blue matcha, Raff coffee,
-        bubble tea — plus waffles, soup and homemade cake. On Commercial Street, 9 till 7.
+        More than a hundred drinks on the board — matcha whisked in front of you, Raff coffee, bubble tea —
+        plus waffles, soup and homemade cake.
       </p>
       <div class="hero__cta">
         <a class="btn btn--caramel" href="/book">Book a table <span class="arrow" aria-hidden="true">→</span></a>
@@ -151,21 +150,42 @@ const spots = [
     min-height: min(88svh, 900px);
     padding-block: clamp(24px, 4vw, 48px) clamp(32px, 5vw, 64px);
   }
+  .hero__copy {
+    min-width: 0;
+  }
   .hero__kicker {
     color: var(--sage-on-dark);
     margin-bottom: 22px;
+  }
+  .hero__kicker span {
+    display: inline-block;
+  }
+  .hero__sep {
+    white-space: pre;
+  }
+  /* Phones: the kicker stacks on two lines rather than leaving the dot dangling. */
+  @media (max-width: 520px) {
+    .hero__kicker span:not(.hero__sep) {
+      display: block;
+    }
+    .hero__kicker .hero__sep {
+      display: none;
+    }
   }
   .hero__title {
     font-size: var(--step-5);
     line-height: 0.9;
     letter-spacing: -0.02em;
+    overflow-wrap: break-word;
   }
+  /* Weight 300, not the 200 of .soft elsewhere: at 50px on a phone the 200 strokes
+     go to hairlines on olive. Lifted caramel: 4.6:1 on olive-900 (caramel 3.4:1). */
   .hero__soft {
     font-family: var(--font-light);
-    font-weight: 200;
+    font-weight: 300;
     font-stretch: 100%;
-    letter-spacing: -0.035em;
-    color: var(--caramel);
+    letter-spacing: -0.03em;
+    color: var(--caramel-on-dark);
   }
   .hero__lede {
     margin-top: 26px;
@@ -180,6 +200,43 @@ const spots = [
     flex-wrap: wrap;
     gap: 12px;
     margin-block: 34px 26px;
+  }
+  .hero__cta .btn {
+    white-space: nowrap;
+  }
+  /* 320px: the pair can't share a row, so each takes the full width rather than
+     stacking as two ragged pills. */
+  @media (max-width: 359px) {
+    .hero__cta .btn {
+      flex: 1 1 100%;
+      justify-content: center;
+    }
+  }
+
+  /* Laptops: kicker, headline, lede and both buttons fit above the fold (measured
+     at 1000x640 to 1920x1080). The copy column is wider than before so the headline
+     runs three lines, not four, and its size is capped by the viewport height as well
+     as its width -- a 1280x720 screen gets a 72px headline, not 96px. */
+  @media (min-width: 901px) {
+    .hero__grid {
+      grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+      min-height: min(calc(100svh - 84px), 900px);
+      padding-block: clamp(16px, 4svh, 48px) clamp(24px, 5svh, 64px);
+    }
+    .hero__kicker {
+      margin-bottom: clamp(12px, 2.4svh, 22px);
+    }
+    .hero__title {
+      font-size: min(var(--step-5), 11svh, 5.6vw);
+    }
+    .hero__lede {
+      margin-top: clamp(14px, 2.8svh, 26px);
+      max-width: 38ch;
+      font-size: min(var(--step-1), 2.9svh);
+    }
+    .hero__cta {
+      margin-block: clamp(18px, 3.6svh, 34px) clamp(14px, 2.6svh, 26px);
+    }
   }
 
   .diorama {
@@ -225,17 +282,26 @@ const spots = [
     justify-content: center;
     gap: 8px;
   }
+  /* Hidden pins take `visibility: hidden` as well as opacity 0, so they leave the
+     tab order (WCAG 2.4.7). Visibility flips after the fade out, at once on the way in. */
   .diorama.is-live .pin {
     position: absolute;
     left: 0;
     top: 0;
     opacity: 0;
+    visibility: hidden;
     pointer-events: none;
-    transition: opacity 0.5s;
+    transition:
+      opacity 0.5s,
+      visibility 0s linear 0.5s;
   }
   .diorama.is-live.is-ready .pin {
     opacity: 1;
+    visibility: visible;
     pointer-events: auto;
+    transition:
+      opacity 0.5s,
+      visibility 0s;
   }
   .pin {
     position: relative;
@@ -264,12 +330,30 @@ const spots = [
     box-shadow: 0 0 0 4px color-mix(in oklab, var(--caramel) 35%, transparent);
     flex: none;
   }
+  /* The ping ring: three pulses when the model comes up, staggered pin by pin so
+     they don't beat in unison, then still. A hot pin (hovered or chosen in the
+     scene) pulses while it stays hot. None under reduced motion. */
   .pin__dot::after {
     content: '';
     position: absolute;
     inset: -4px;
     border-radius: 50%;
     border: 1px solid var(--caramel);
+    opacity: 0;
+  }
+  .diorama.is-ready .pin__dot::after {
+    animation: ping 2.4s var(--ease-out) 3 both;
+  }
+  .diorama.is-ready li:nth-child(2) .pin__dot::after {
+    animation-delay: 0.6s;
+  }
+  .diorama.is-ready li:nth-child(3) .pin__dot::after {
+    animation-delay: 1.2s;
+  }
+  .diorama.is-ready li:nth-child(4) .pin__dot::after {
+    animation-delay: 1.8s;
+  }
+  .diorama.is-ready .pin.is-hot .pin__dot::after {
     animation: ping 2.4s var(--ease-out) infinite;
   }
   @keyframes ping {
@@ -289,7 +373,7 @@ const spots = [
     font-size: var(--step--1);
     font-weight: 500;
     white-space: nowrap;
-    box-shadow: 0 6px 20px rgb(13 13 11 / 0.25);
+    box-shadow: 0 6px 20px var(--shadow-ink);
     transform: translateX(-4px);
     opacity: 0.92;
     transition:
@@ -313,12 +397,19 @@ const spots = [
     align-items: center;
     gap: 12px;
     opacity: 0;
+    visibility: hidden; /* out of the tab order until the model can turn */
     pointer-events: none;
-    transition: opacity 0.6s 0.4s;
+    transition:
+      opacity 0.6s 0.4s,
+      visibility 0s linear 1s;
   }
   .diorama.is-ready .diorama__turn {
     opacity: 1;
+    visibility: visible;
     pointer-events: auto;
+    transition:
+      opacity 0.6s 0.4s,
+      visibility 0s;
   }
   .diorama__turn button {
     display: grid;
@@ -347,7 +438,11 @@ const spots = [
   }
   .diorama.is-live .pin.is-away {
     opacity: 0 !important;
+    visibility: hidden !important;
     pointer-events: none !important;
+    transition:
+      opacity 0.5s,
+      visibility 0s linear 0.5s;
   }
 
   @media (max-width: 900px) {
@@ -392,7 +487,7 @@ const spots = [
   }
   @media (prefers-reduced-motion: reduce) {
     .pin__dot::after {
-      animation: none;
+      animation: none !important;
       opacity: 0;
     }
     .pin__label,

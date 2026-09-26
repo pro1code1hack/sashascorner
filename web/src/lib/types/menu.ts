@@ -294,6 +294,12 @@ export interface MenuSize {
   labour_cost_pence: string | null
   manual_recipe: boolean
   data_quality_flag: string | null
+  /** Optional: absent in fixtures recorded before these fields existed. */
+  has_recipe?: boolean
+  prep_seconds?: number | null
+  prep_is_estimate?: boolean | null
+  prep_is_override?: boolean
+  margin_per_minute_pence?: string | null
 }
 export interface MenuGroup {
   key: string
@@ -309,6 +315,10 @@ export interface MenuGroup {
   on_till: boolean
   sizes: MenuSize[]
   lowest_margin: { pct: number | null; is_estimate: boolean; is_missing: boolean; no_price: boolean }
+  season_id?: number | null
+  season_name?: string | null
+  /** Net units, every size, last 30 days (decimal string). */
+  sold_30d?: string
 }
 export interface MenuCategory {
   name: string
@@ -397,6 +407,11 @@ export interface IngredientRow {
   storage: 'AMBIENT' | 'CHILLED' | 'FROZEN'
   shelf_life_days: number | null
   shelf_life_source: string | null
+  open_life_days?: number | null
+  transit_buffer_days?: number
+  tier?: string
+  /** Decimal string, fraction lost in use (stock depletion only, never cost). */
+  waste_factor?: string
 }
 export interface IngredientsResponse {
   rows: IngredientRow[]
@@ -459,4 +474,39 @@ export interface IngredientPricePreview {
 export interface IngredientWrite {
   ingredient_id: number
   summary: string
+}
+
+/* ------------------------------------------------- menu item sales --- */
+
+export type SaleChannel = 'EPOS' | 'DELIVEROO' | 'JUST_EAT' | 'OTHER'
+export interface ItemSale {
+  sale_id: number
+  sold_at: string
+  receipt_id: string
+  menu_item_id: number
+  size_code: SizeCode | null
+  qty: string
+  gross_pence: number
+  channel: SaleChannel
+  voided: boolean
+  is_refund: boolean
+  modifier_names: string[]
+}
+export interface ItemSales {
+  menu_item_ids: number[]
+  total_rows: number
+  page: number
+  page_size: number
+  units: string
+  gross_pence: number
+  first_sold_at: string | null
+  last_sold_at: string | null
+  by_channel: Partial<Record<SaleChannel, number>>
+  payment_note: string
+  rows: ItemSale[]
+}
+export interface PrepWrite {
+  menu_item_ids: number[]
+  summary: string
+  rollup_items_recosted: number
 }

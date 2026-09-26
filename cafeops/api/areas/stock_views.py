@@ -63,6 +63,7 @@ from cafeops.api.areas.stock_schemas import (
 )
 from cafeops.api.encoding import as_pence, as_qty, pct
 from cafeops.api.schemas import Cost, OnHand, SupplierOut
+from cafeops.api.views.confirm import _parse_cutoff
 from cafeops.api.views.orders import _supplier_out, persisted_order_out
 from cafeops.api.views.stock import _attribution, _drift, trust_label
 from cafeops.config import settings
@@ -84,6 +85,7 @@ from cafeops.db.models import (
 )
 from cafeops.db.repositories.sourcing import _terms
 from cafeops.services import order_actions, suppliers
+from cafeops.services.confirm_terms import SupplierTerms
 from cafeops.services.receive_delivery import DeliveryReceipt, receive_adhoc
 from cafeops.services.record_checklist import record_checklist_answer
 from cafeops.services.record_count import record_count
@@ -571,6 +573,25 @@ def _supplier_full(session: Session, row: Supplier) -> SupplierOut:
     return _supplier_out(_terms(row), row, count)
 
 
+def _create_terms(body: SupplierCreateIn) -> SupplierTerms | None:
+    """All the terms, or none. Lead time and delivery days are what make it "given"."""
+    given = body.lead_time_days is not None or body.delivery_weekdays is not None
+    if not given:
+        if body.terms_confirmed:
+            raise suppliers.SupplierRefused("there are no terms to confirm: fill them all in first")
+        return None
+    if body.lead_time_days is None:
+        raise suppliers.SupplierRefused("lead time is needed with the other terms")
+    return SupplierTerms(
+        lead_time_days=body.lead_time_days,
+        delivery_weekdays=tuple(body.delivery_weekdays or ()),
+        min_order_pence=body.min_order_pence or 0,
+        delivery_fee_pence=body.delivery_fee_pence or 0,
+        cutoff_time=_parse_cutoff(body.cutoff_time),
+        free_delivery_threshold_pence=body.free_delivery_threshold_pence,
+    )
+
+
 def supplier_create_view(session: Session, *, body: SupplierCreateIn) -> SupplierWriteOut:
     row = suppliers.create_supplier(
         session,
@@ -581,8 +602,13 @@ def supplier_create_view(session: Session, *, body: SupplierCreateIn) -> Supplie
         contact=body.contact,
         order_url=body.order_url,
         notes=body.notes,
+        email=body.email,
+        phone=body.phone,
+        terms=_create_terms(body),
+        terms_confirmed=body.terms_confirmed,
     )
-    return SupplierWriteOut(supplier=_supplier_full(session, row), changed=("created",))
+    changed = ("created", "terms confirmed") if body.terms_confirmed else ("created",)
+    return SupplierWriteOut(supplier=_supplier_full(session, row), changed=changed)
 
 
 def supplier_patch_view(
@@ -600,6 +626,8 @@ def supplier_patch_view(
         contact=body.contact if "contact" in given else unset,
         order_url=body.order_url if "order_url" in given else unset,
         notes=body.notes if "notes" in given else unset,
+        email=body.email if "email" in given else unset,
+        phone=body.phone if "phone" in given else unset,
     )
     return SupplierWriteOut(supplier=_supplier_full(session, row), changed=tuple(changed))
 

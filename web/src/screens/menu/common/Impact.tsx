@@ -9,7 +9,6 @@
  */
 import type { ReactNode } from 'react'
 import { Button, cx } from '../../../components/ui'
-import { OperatorNeeded } from '../../../components/shell/Operator'
 import { useOperator } from '../../../lib/operator'
 import type { ChangeImpact } from '../../../lib/types/menu'
 import { gbpDelta3, gbpSigned, pctText, sizeLabel } from './figures'
@@ -78,7 +77,6 @@ export function ImpactPanel({
   onApply,
   applying,
   ready,
-  operatorWhat = 'apply this change',
   children,
 }: {
   title?: string
@@ -95,6 +93,7 @@ export function ImpactPanel({
   applying: boolean
   /** A preview for exactly the current draft is on screen, with no refusals. */
   ready: boolean
+  /** Kept for callers; the operator prompt is gone (owner, 2026-09-26). */
   operatorWhat?: string
   children?: ReactNode
 }) {
@@ -175,9 +174,6 @@ export function ImpactPanel({
         >
           {applyLabel}
         </Button>
-      </div>
-      <div className="mt-2">
-        <OperatorNeeded what={operatorWhat} />
       </div>
     </section>
   )

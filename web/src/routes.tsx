@@ -32,13 +32,15 @@ function screen<K extends string>(
 const StockScreen = screen(() => import('./screens/stock/StockScreen'), 'StockScreen')
 const OrdersScreen = screen(() => import('./screens/orders/OrdersScreen'), 'OrdersScreen')
 const AgentsScreen = screen(() => import('./screens/agents/AgentsScreen'), 'AgentsScreen')
-const RecipesScreen = screen(() => import('./screens/recipes/RecipesScreen'), 'RecipesScreen')
-const MenuItemsScreen = screen(() => import('./screens/menu/MenuItemsScreen'), 'MenuItemsScreen')
+/** Recipes live inside Menu now (#/menu/recipes); #/recipes redirects there. */
+const RecipesRedirect = screen(() => import('./screens/menu/MenuArea'), 'RecipesRedirect')
+const MenuArea = screen(() => import('./screens/menu/MenuArea'), 'MenuArea')
 const IngredientsScreen = screen(() => import('./screens/ingredients/IngredientsScreen'), 'IngredientsScreen')
 const SuppliersScreen = screen(() => import('./screens/suppliers/SuppliersScreen'), 'SuppliersScreen')
 const OverviewScreen = screen(() => import('./screens/money/OverviewScreen'), 'OverviewScreen')
 const SalesScreen = screen(() => import('./screens/money/SalesScreen'), 'SalesScreen')
 const ExpensesScreen = screen(() => import('./screens/money/ExpensesScreen'), 'ExpensesScreen')
+const TransactionsScreen = screen(() => import('./screens/money/TransactionsScreen'), 'TransactionsScreen')
 const ReconcileScreen = screen(() => import('./screens/money/ReconcileScreen'), 'ReconcileScreen')
 const ProfitLossScreen = screen(() => import('./screens/money/ProfitLossScreen'), 'ProfitLossScreen')
 const DirectorsAccountScreen = screen(() => import('./screens/money/DirectorsAccountScreen'), 'DirectorsAccountScreen')
@@ -56,6 +58,7 @@ export type RouteId =
   | 'money.overview'
   | 'money.sales'
   | 'money.expenses'
+  | 'money.transactions'
   | 'money.reconcile'
   | 'money.pnl'
   | 'money.director'
@@ -77,13 +80,19 @@ export const ROUTES: Record<RouteId, RouteDef> = {
   stock: { id: 'stock', path: '/stock', label: 'Stock', Screen: StockScreen },
   orders: { id: 'orders', path: '/orders', label: 'Orders', Screen: OrdersScreen, badge: 'orders_waiting' },
   agents: { id: 'agents', path: '/agents', label: 'Agents', Screen: AgentsScreen, badge: 'proposals_waiting' },
-  recipes: { id: 'recipes', path: '/recipes', label: 'Recipes', Screen: RecipesScreen },
-  menu: { id: 'menu', path: '/menu', label: 'Menu items', Screen: MenuItemsScreen },
+  recipes: { id: 'recipes', path: '/recipes', label: 'Recipes', Screen: RecipesRedirect },
+  menu: { id: 'menu', path: '/menu', label: 'Menu items', Screen: MenuArea },
   ingredients: { id: 'ingredients', path: '/ingredients', label: 'Ingredients', Screen: IngredientsScreen },
   suppliers: { id: 'suppliers', path: '/suppliers', label: 'Suppliers', Screen: SuppliersScreen },
   'money.overview': { id: 'money.overview', path: '/money/overview', label: 'Overview', Screen: OverviewScreen },
   'money.sales': { id: 'money.sales', path: '/money/sales', label: 'Sales', Screen: SalesScreen },
   'money.expenses': { id: 'money.expenses', path: '/money/expenses', label: 'Expenses', Screen: ExpensesScreen },
+  'money.transactions': {
+    id: 'money.transactions',
+    path: '/money/transactions',
+    label: 'Transactions',
+    Screen: TransactionsScreen,
+  },
   'money.reconcile': { id: 'money.reconcile', path: '/money/reconcile', label: 'Reconcile', Screen: ReconcileScreen },
   'money.pnl': { id: 'money.pnl', path: '/money/pnl', label: 'Profit & loss', Screen: ProfitLossScreen },
   'money.director': {
@@ -99,10 +108,10 @@ export const ROUTES: Record<RouteId, RouteDef> = {
 /** Sidebar groups, in the design's order. Settings sits in the footer. */
 export const NAV_GROUPS: ReadonlyArray<{ head: string; items: readonly RouteId[] }> = [
   { head: 'Every day', items: ['stock', 'orders', 'agents'] },
-  { head: 'Menu', items: ['recipes', 'menu', 'ingredients', 'suppliers'] },
+  { head: 'Menu', items: ['menu', 'ingredients', 'suppliers'] },
   {
     head: 'Money',
-    items: ['money.overview', 'money.sales', 'money.expenses', 'money.reconcile', 'money.pnl', 'money.director'],
+    items: ['money.overview', 'money.sales', 'money.transactions', 'money.expenses', 'money.reconcile', 'money.pnl', 'money.director'],
   },
 ]
 

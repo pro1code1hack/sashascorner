@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from collections.abc import Mapping
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from typing import cast
 
@@ -49,6 +49,8 @@ from cafeops.api.areas.menu_schemas import (
     IngredientsResponse,
     IngredientSupplierOut,
     IngredientWriteOut,
+    ItemSaleOut,
+    ItemSalesOut,
     LineIn,
     LinesAppliedOut,
     LinesPreviewOut,
@@ -72,6 +74,8 @@ from cafeops.api.areas.menu_schemas import (
     OneOffOut,
     PackOut,
     PhotoOut,
+    PrepIn,
+    PrepOut,
     PriceHistoryOut,
     PricesAppliedOut,
     PricesPreviewOut,
@@ -112,6 +116,7 @@ from cafeops.db.models import (
     Modifier,
     ModifierVersion,
     RecipeChange,
+    Sale,
     Season,
     Supplier,
     SupplierProduct,
@@ -841,6 +846,9 @@ def _groups(session: Session, rows: list[MenuItem]) -> list[MenuGroupOut]:
         session.execute(select(DrinkTemplate.id, DrinkTemplate.name)).tuples().all()
     )
     photos = {a.id: a.filename for a in session.scalars(select(MediaAsset))}
+    prep = SqlCompositionRepository(session).prep_times([r.id for r in rows])
+    season_names = dict(session.execute(select(Season.id, Season.name)).tuples().all())
+    sold = _sold_since(session, [r.id for r in rows], days=30)
     by_name: dict[str, list[MenuItem]] = defaultdict(list)
     for row in rows:
         by_name[row.name].append(row)
@@ -856,6 +864,13 @@ def _groups(session: Session, rows: list[MenuItem]) -> list[MenuGroupOut]:
                 if cached is not None
                 else cost_unknown("no recipe lines, so what this costs is unknown -- not zero")
             )
+            p = prep.get(r.id)
+            seconds = p.seconds if p is not None and p.is_known else None
+            mpm: str | None = None
+            if seconds and cost.pence is not None and r.price_pence > 0:
+                mpm = as_pence(
+                    (Decimal(r.price_pence) - Decimal(cost.pence)) / (Decimal(seconds) / 60)
+                )
             sizes.append(
                 MenuSizeOut(
                     menu_item_id=r.id,
@@ -868,6 +883,11 @@ def _groups(session: Session, rows: list[MenuItem]) -> list[MenuGroupOut]:
                     labour_cost_pence=as_pence(cached.labour_cost_pence) if cached else None,
                     manual_recipe=r.manual_recipe,
                     data_quality_flag=r.data_quality_flag,
+                    has_recipe=cached is not None and cached.ingredient_count > 0,
+                    prep_seconds=seconds,
+                    prep_is_estimate=p.is_estimate if seconds is not None and p else None,
+                    prep_is_override=r.prep_seconds is not None,
+                    margin_per_minute_pence=mpm,
                 )
             )
         considered = [s for s in sizes if s.active] or sizes
@@ -899,8 +919,32 @@ def _groups(session: Session, rows: list[MenuItem]) -> list[MenuGroupOut]:
                     is_missing=bool(priced) and not known,
                     no_price=not priced,
                 ),
+                season_id=next((r.season_id for r in members if r.season_id), None),
+                season_name=next(
+                    (season_names.get(r.season_id) for r in members if r.season_id), None
+                ),
+                sold_30d=as_qty(sum((sold.get(r.id, Decimal(0)) for r in members), Decimal(0)))
+                or "0",
             )
         )
+    return out
+
+
+def _sold_since(session: Session, ids: list[int], *, days: int) -> dict[int, Decimal]:
+    """menu_item_id -> net units sold in the last `days` days (voided lines excluded).
+
+    Summed in Python, not SQL: `qty` is a scaled integer on SQLite (ARCHITECTURE 8E).
+    """
+    if not ids:
+        return {}
+    since = datetime.now(UTC) - timedelta(days=days)
+    out: dict[int, Decimal] = defaultdict(Decimal)
+    for item_id, qty in session.execute(
+        select(Sale.menu_item_id, Sale.qty).where(
+            Sale.sold_at >= since, Sale.voided.is_(False), Sale.menu_item_id.in_(ids)
+        )
+    ).tuples():
+        out[item_id] += qty
     return out
 
 
@@ -977,6 +1021,114 @@ def menu_item_detail_view(session: Session, menu_item_id: int) -> MenuItemDetail
         ),
         prices=prices,
         history=history,
+    )
+
+
+PAYMENT_NOTE = (
+    "How each sale was paid (card, cash) is not recorded per item: the till's payment "
+    "reports arrive as daily totals per method, so they cannot be matched to a line."
+)
+
+
+def menu_item_sales_view(
+    session: Session, menu_item_id: int, *, page: int, page_size: int, all_sizes: bool
+) -> ItemSalesOut:
+    """Read-only: every till line matched to this product (or this size), newest first.
+
+    Totals are over every matched line, not just the page, and exclude voided lines.
+    """
+    rows = mc.group_rows(session, menu_item_id) if all_sizes else []
+    if not all_sizes:
+        row = session.get(MenuItem, menu_item_id)
+        if row is None:
+            raise LookupError(f"menu item {menu_item_id} not found")
+        rows = [row]
+    ids = [r.id for r in rows]
+    size_of = {r.id: _size_str(r.size_code) for r in rows}
+    units = Decimal(0)
+    gross = 0
+    first: datetime | None = None
+    last: datetime | None = None
+    by_channel: dict[str, int] = defaultdict(int)
+    total = 0
+    for qty, gross_pence, sold_at, channel, voided in session.execute(
+        select(Sale.qty, Sale.gross_pence, Sale.sold_at, Sale.channel, Sale.voided).where(
+            Sale.menu_item_id.in_(ids)
+        )
+    ).tuples():
+        total += 1
+        if voided:
+            continue
+        units += qty
+        gross += gross_pence
+        by_channel[channel.value] += 1
+        first = sold_at if first is None or sold_at < first else first
+        last = sold_at if last is None or sold_at > last else last
+    page_rows = list(
+        session.scalars(
+            select(Sale)
+            .where(Sale.menu_item_id.in_(ids))
+            .order_by(Sale.sold_at.desc(), Sale.id.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        )
+    )
+    modifier_ids = {m for sale in page_rows for m in (sale.applied_modifiers or [])}
+    modifier_names = (
+        dict(
+            session.execute(select(Modifier.id, Modifier.name).where(Modifier.id.in_(modifier_ids)))
+            .tuples()
+            .all()
+        )
+        if modifier_ids
+        else {}
+    )
+    return ItemSalesOut(
+        menu_item_ids=tuple(ids),
+        total_rows=total,
+        page=page,
+        page_size=page_size,
+        units=as_qty(units) or "0",
+        gross_pence=gross,
+        first_sold_at=first,
+        last_sold_at=last,
+        by_channel=dict(by_channel),
+        payment_note=PAYMENT_NOTE,
+        rows=tuple(
+            ItemSaleOut(
+                sale_id=sale.id,
+                sold_at=sale.sold_at,
+                receipt_id=sale.lightspeed_receipt_id,
+                menu_item_id=sale.menu_item_id,
+                size_code=size_of.get(sale.menu_item_id),
+                qty=as_qty(sale.qty) or "0",
+                gross_pence=sale.gross_pence,
+                channel=sale.channel.value,
+                voided=sale.voided,
+                is_refund=sale.is_refund,
+                modifier_names=tuple(
+                    modifier_names.get(m, f"modifier {m}") for m in (sale.applied_modifiers or [])
+                ),
+            )
+            for sale in page_rows
+        ),
+    )
+
+
+def menu_prep_view(session: Session, menu_item_id: int, body: PrepIn) -> PrepOut:
+    group_ids = {r.id for r in mc.group_rows(session, menu_item_id)}
+    if not set(body.seconds) <= group_ids:
+        raise ValueError("those sizes do not all belong to this product")
+    try:
+        done = mc.set_prep_seconds(
+            session, dict(body.seconds), actor=body.actor, is_estimate=body.is_estimate
+        )
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
+    return PrepOut(
+        menu_item_ids=tuple(done.menu_item_ids),
+        summary=done.summary,
+        rollup_items_recosted=done.rollup_items_recosted,
     )
 
 
@@ -1320,6 +1472,10 @@ def _rows(session: Session, ingredients: list[Ingredient]) -> list[IngredientRow
                 storage=i.storage.value,
                 shelf_life_days=i.shelf_life_days,
                 shelf_life_source=i.shelf_life_source.value if i.shelf_life_source else None,
+                open_life_days=i.open_life_days,
+                transit_buffer_days=i.transit_buffer_days,
+                tier=i.tier.value,
+                waste_factor=as_qty(i.waste_factor) or "0",
             )
         )
     return out
@@ -1494,8 +1650,12 @@ def ingredient_create_view(session: Session, body: IngredientCreateIn) -> Ingred
         category=body.category,
         storage=Storage(body.storage),
         shelf_life_days=body.shelf_life_days,
+        open_life_days=body.open_life_days,
+        transit_buffer_days=body.transit_buffer_days,
+        waste_factor=_qty(body.waste_factor, "waste factor"),
         note=body.note,
         price=_price_in(body.price) if body.price is not None else None,
+        sku=body.sku,
         actor=body.actor,
     )
     return IngredientWriteOut(ingredient_id=new_id, summary=f"Added {body.name.strip()}")

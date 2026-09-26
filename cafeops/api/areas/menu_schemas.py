@@ -480,6 +480,18 @@ class MenuSizeOut(Out):
     labour_cost_pence: str | None
     manual_recipe: bool
     data_quality_flag: str | None
+    has_recipe: bool = Field(
+        default=False, description="The cost cache resolved at least one ingredient line."
+    )
+    prep_seconds: int | None = Field(default=None, description="Null = not timed.")
+    prep_is_estimate: bool | None = None
+    prep_is_override: bool = Field(
+        default=False, description="menu_item.prep_seconds overrides the recipe's time."
+    )
+    margin_per_minute_pence: str | None = Field(
+        default=None,
+        description="(price - ingredient cost) per minute of prep. Null when cost or prep unknown.",
+    )
 
 
 class MenuGroupOut(Out):
@@ -496,6 +508,9 @@ class MenuGroupOut(Out):
     on_till: bool
     sizes: tuple[MenuSizeOut, ...]
     lowest_margin: LowestMarginOut
+    season_id: int | None = None
+    season_name: str | None = None
+    sold_30d: str = Field(default="0", description="Units sold, every size, last 30 days (net).")
 
 
 class MenuCategoryOut(Out):
@@ -537,6 +552,47 @@ class MenuItemDetailOut(Out):
     estimate_names: tuple[str, ...]
     prices: tuple[PriceHistoryOut, ...]
     history: tuple[HistoryEntryOut, ...]
+
+
+class ItemSaleOut(Out):
+    sale_id: int
+    sold_at: datetime
+    receipt_id: str
+    menu_item_id: int
+    size_code: str | None
+    qty: str
+    gross_pence: int
+    channel: str
+    voided: bool
+    is_refund: bool
+    modifier_names: tuple[str, ...]
+
+
+class ItemSalesOut(Out):
+    menu_item_ids: tuple[int, ...]
+    total_rows: int
+    page: int
+    page_size: int
+    units: str = Field(description="Net units over every matched, non-voided line.")
+    gross_pence: int = Field(description="Net takings over every matched, non-voided line.")
+    first_sold_at: datetime | None
+    last_sold_at: datetime | None
+    by_channel: dict[str, int] = Field(description="Channel -> non-voided line count.")
+    payment_note: str
+    rows: tuple[ItemSaleOut, ...]
+
+
+class PrepIn(In):
+    #: menu_item_id -> seconds; null clears the override (the recipe's time applies).
+    seconds: dict[int, int | None] = Field(max_length=8)
+    is_estimate: bool = False
+    actor: str = ACTOR
+
+
+class PrepOut(Out):
+    menu_item_ids: tuple[int, ...]
+    summary: str
+    rollup_items_recosted: int
 
 
 class LineIn(In):
@@ -689,6 +745,10 @@ class IngredientRowOut(Out):
     storage: str
     shelf_life_days: int | None
     shelf_life_source: str | None
+    open_life_days: int | None = None
+    transit_buffer_days: int = 0
+    tier: str = "C"
+    waste_factor: str = "0"
 
 
 class SupplierNameOut(Out):
@@ -800,8 +860,21 @@ class IngredientCreateIn(In):
     category: str | None = Field(default=None, max_length=80)
     storage: Literal["AMBIENT", "CHILLED", "FROZEN"] = "AMBIENT"
     shelf_life_days: int | None = Field(default=None, ge=1, le=3650)
+    open_life_days: int | None = Field(
+        default=None, ge=1, le=3650, description="Life once opened; not above shelf life."
+    )
+    transit_buffer_days: int = Field(default=0, ge=0, le=60)
+    waste_factor: QtyStr = Field(
+        default="0", description="Fraction lost in use, 0 to 0.5. Stock depletion only."
+    )
     note: str | None = Field(default=None, max_length=400)
     price: IngredientPriceIn | None = None
+    sku: str | None = Field(
+        default=None,
+        max_length=80,
+        description="Supplier code. When price.supplier_id is set the ingredient is also "
+        "linked at that supplier (the preferred link, since it is the first).",
+    )
     actor: str = ACTOR
 
 

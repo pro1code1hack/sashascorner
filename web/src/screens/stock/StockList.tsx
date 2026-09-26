@@ -9,11 +9,12 @@
  */
 import { Pill, TierBadge, TrustPill, cx } from '../../components/ui'
 import type { StockRow } from '../../lib/types/stock'
-import { driftShown } from './fmt'
+import type { ReactNode } from 'react'
+import { driftShown, packEquiv } from './fmt'
 import { lastCountCell, leftCell, runsOutCell, trustOf, useByCell } from './model'
 
 export const GRID =
-  'grid grid-cols-[minmax(0,2.2fr)_84px_minmax(0,1.3fr)_64px_118px_minmax(0,1.2fr)_70px] gap-3'
+  'grid grid-cols-[minmax(0,2.2fr)_112px_minmax(0,1.3fr)_64px_118px_minmax(0,1.2fr)_70px] gap-3'
 
 export function StockTrust({ row }: { row: StockRow }) {
   if (row.tier === 'C') {
@@ -34,11 +35,39 @@ export function StockList({
   rows,
   selected,
   onSelect,
+  groupBy,
 }: {
   rows: StockRow[]
   selected: number | null
   onSelect: (id: number) => void
+  /** Insert a heading whenever this key changes (rows arrive sorted by it). */
+  groupBy?: (row: StockRow) => string
 }) {
+  const items: ReactNode[] = []
+  let last: string | null = null
+  for (const row of rows) {
+    if (groupBy) {
+      const g = groupBy(row)
+      if (g !== last) {
+        const n = rows.filter((r) => groupBy(r) === g).length
+        items.push(
+          <li
+            key={`g-${g}`}
+            className="sticky top-[37px] z-[1] flex items-baseline gap-2 border-b border-line-soft bg-canvas-2 px-5 py-1.5 text-label font-bold uppercase tracking-[.06em] text-ink-2"
+          >
+            {g}
+            <span className="fig font-normal normal-case tracking-normal text-ink-3">{n}</span>
+          </li>,
+        )
+        last = g
+      }
+    }
+    items.push(
+      <li key={row.ingredient_id}>
+        <Row row={row} selected={selected === row.ingredient_id} onSelect={onSelect} />
+      </li>,
+    )
+  }
   return (
     <div className="scroll-x flex min-h-0 flex-1 flex-col overflow-y-auto">
       <div className="flex min-w-[760px] flex-col compact:min-w-0">
@@ -57,13 +86,7 @@ export function StockList({
           <span>Runs out</span>
           <span>Use by</span>
         </div>
-        <ul aria-label="Ingredients">
-          {rows.map((row) => (
-            <li key={row.ingredient_id}>
-              <Row row={row} selected={selected === row.ingredient_id} onSelect={onSelect} />
-            </li>
-          ))}
-        </ul>
+        <ul aria-label="Ingredients">{items}</ul>
       </div>
     </div>
   )
@@ -74,6 +97,9 @@ function Row({ row, selected, onSelect }: { row: StockRow; selected: boolean; on
   const abs = drift === null ? 0 : Math.abs(drift)
   const ro = runsOutCell(row)
   const useBy = useByCell(row)
+  // Pack-equivalent under the estimate, italic like it (still theoretical).
+  const left =
+    row.tier !== 'C' && row.on_hand.has_count_basis ? packEquiv(row.on_hand.qty, row.pack, row.category) : null
   return (
     <button
       type="button"
@@ -91,7 +117,14 @@ function Row({ row, selected, onSelect }: { row: StockRow; selected: boolean; on
         <TierBadge tier={row.tier} />
         <span className="truncate font-semibold">{row.name}</span>
       </span>
-      <span className="fig truncate text-right italic">{leftCell(row)}</span>
+      <span className="flex min-w-0 flex-col items-end leading-tight">
+        <span className="fig max-w-full truncate italic">{leftCell(row)}</span>
+        {left !== null && (
+          <span className="fig max-w-full truncate text-xs italic text-ink-2" title={left.title}>
+            {left.text}
+          </span>
+        )}
+      </span>
       <span className="truncate text-sm text-ink-2">{lastCountCell(row)}</span>
       <span
         className={cx(

@@ -4,7 +4,9 @@
  *
  * Rail: confirmed recipes by category, then the recipes detected in the
  * import but not confirmed (spec C-16), then the one-off items. Selection is in
- * the URL (`#/recipes?t=1`, `?p=<proposal id>`, `?one=1`) so a reload keeps it.
+ * the URL (`#/menu/recipes?t=1`, `?p=<proposal id>`, `?one=1`) so a reload keeps it.
+ * Lives inside Menu (owner, 2026-09-26): the Items | Recipes tabs sit in the
+ * header, and `?from=<menu item id>` shows a way back to the item that sent you.
  * Leaving a recipe with unsaved changes asks first (spec C-15) — inline, not a
  * modal.
  */
@@ -17,6 +19,7 @@ import type { RecipesRail } from '../../lib/types/menu'
 import { RailChips, RailColumn } from '../menu/common/Rail'
 import type { RailItem } from '../menu/common/Rail'
 import { RecipeEditorView } from './Editor'
+import { MenuTabs } from '../menu/MenuTabs'
 import { ProposalView } from './ProposalView'
 
 type Sel = { kind: 'template'; id: number } | { kind: 'proposal'; id: string } | { kind: 'one' } | { kind: 'none' }
@@ -41,13 +44,16 @@ export function RecipesScreen() {
   const [dirty, setDirty] = useState(false)
   const [pending, setPending] = useState<Record<string, string> | null>(null)
   const onDirty = useCallback((d: boolean) => setDirty(d), [])
+  const fromRaw = loc.query.get('from')
+  const from = fromRaw && /^\d+$/.test(fromRaw) ? Number(fromRaw) : null
 
-  const go = (query: Record<string, string>) => {
+  const go = (q: Record<string, string>) => {
+    const query = from !== null ? { ...q, from: String(from) } : q
     if (dirty) {
       setPending(query)
       return
     }
-    navigate('/recipes', { query })
+    navigate('/menu/recipes', { query })
   }
 
   const items: RailItem[] = []
@@ -95,8 +101,8 @@ export function RecipesScreen() {
   return (
     <>
       <PageHeader
-        title="Recipes"
-        subtitle="set a recipe once; every item made from it follows"
+        title="Menu"
+        subtitle={<MenuTabs current="recipes" />}
         saved={dirty ? 'Unsaved changes' : rail.data ? 'Saved' : 'Loading…'}
         actions={
           <Button
@@ -110,6 +116,14 @@ export function RecipesScreen() {
           </Button>
         }
       />
+      {from !== null && (
+        <a
+          href={href(`/menu/${from}`)}
+          className="flex-none border-b border-line bg-brand-wash px-5 py-2 text-base font-bold text-brand-ink no-underline hover:underline"
+        >
+          ‹ Back to the menu item
+        </a>
+      )}
       <RailChips items={items} label="Recipes" />
       {pending && (
         <div
@@ -124,7 +138,7 @@ export function RecipesScreen() {
               const q = pending
               setPending(null)
               setDirty(false)
-              navigate('/recipes', { query: q })
+              navigate('/menu/recipes', { query: q })
             }}
           >
             Discard
@@ -154,20 +168,20 @@ export function RecipesScreen() {
         ) : sel.kind === 'proposal' ? (
           <ProposalView
             proposalId={sel.id}
-            onConfirmed={(id) => navigate('/recipes', { query: id ? { t: String(id) } : {} })}
+            onConfirmed={(id) => navigate('/menu/recipes', { query: id ? { t: String(id) } : {} })}
           />
         ) : sel.kind === 'one' && rail.data ? (
           <div className="min-h-0 flex-1 overflow-y-auto bg-surface px-4 pb-8 pt-5 sm:px-[22px]">
             <h2 className="text-2xl font-extrabold tracking-[-.01em]">One-off recipes</h2>
             <p className="mb-3.5 mt-1 text-base text-ink-2">
               {rail.data.one_offs.length} items have their own hand-written recipe (cakes, bottled drinks, toasties, meal
-              deals…). That is correct for them. Tap one to edit it in Menu items.
+              deals…). That is correct for them. Tap one to open and edit it.
             </p>
             <div className="flex flex-wrap gap-1.5">
               {rail.data.one_offs.map((o) => (
                 <a
                   key={o.menu_item_id}
-                  href={href('/menu', { item: o.menu_item_id })}
+                  href={href(`/menu/${o.menu_item_id}`)}
                   className="rounded-button border border-line-strong px-3.5 py-1.5 text-base no-underline hover:bg-canvas"
                 >
                   {o.name}

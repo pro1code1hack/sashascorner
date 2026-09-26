@@ -12,22 +12,26 @@
  * - Supplier links are shown, not edited here (the Suppliers screen owns them).
  */
 import { useEffect, useState } from 'react'
+import type { ReactNode } from 'react'
 import {
   Button,
   Checkbox,
   ConfirmTwiceButton,
   ErrorBox,
+  Field,
   Input,
   Loading,
   Segmented,
   Select,
+  Textarea,
+  TierBadge,
   cx,
 } from '../../components/ui'
-import { OperatorNeeded } from '../../components/shell/Operator'
+import { parseDec, toFixed, trimQty } from '../../lib/dec'
 import { ingredientApi, useIngredient, useInvalidateMenu } from '../../lib/menu-api'
 import { useOperator } from '../../lib/operator'
 import { href } from '../../lib/router'
-import type { IngredientDetail, IngredientPricePreview, PriceSource, Unit } from '../../lib/types/menu'
+import type { IngredientDetail, IngredientPricePreview, IngredientRow, PriceSource, Unit } from '../../lib/types/menu'
 import {
   MONEY_INPUT,
   QTY_INPUT,
@@ -84,7 +88,6 @@ function DetailBody({ d, categories, onRetired }: { d: IngredientDetail; categor
   const unitLocked = Object.keys(d.unit_locked_by).length > 0
 
   const saveMeta = async () => {
-    if (!operator) return
     setSaving(true)
     const body: Record<string, unknown> = { actor: operator }
     if (name.trim() !== row.name) body.name = name.trim()
@@ -116,9 +119,7 @@ function DetailBody({ d, categories, onRetired }: { d: IngredientDetail; categor
         <ConfirmTwiceButton
           variant="danger"
           armedLabel="Tap again to retire"
-          disabled={operator === null}
           onConfirm={async () => {
-            if (!operator) return
             const r = await ingredientApi.retire(row.ingredient_id, operator)
             if (r.kind === 'ok') {
               await invalidate()
@@ -129,6 +130,7 @@ function DetailBody({ d, categories, onRetired }: { d: IngredientDetail; categor
           Retire
         </ConfirmTwiceButton>
       </div>
+      <NoteField value={note} onChange={setNote} />
       {Object.keys(d.retire_blocked_by).length > 0 && (
         <p className="mt-1 text-sm text-ink-2">
           Cannot be retired while{' '}
@@ -169,16 +171,10 @@ function DetailBody({ d, categories, onRetired }: { d: IngredientDetail; categor
         </label>
       </div>
 
-      <PriceEditor d={d} />
-
-      <label className="mb-4 flex flex-col gap-1 text-base text-ink-2">
-        Notes
-        <Input value={note} onChange={(e) => setNote(e.target.value)} className="text-ink" />
-      </label>
       {metaDirty && (
         <div className="mb-4 flex flex-wrap items-center gap-2">
-          <Button variant="primary" size="sm" pending={saving} pendingLabel="Saving…" disabled={operator === null} onClick={saveMeta}>
-            Save name, category and notes
+          <Button variant="primary" size="sm" pending={saving} pendingLabel="Saving…" onClick={saveMeta}>
+            Save changes
           </Button>
           <Button
             variant="ghost"
@@ -192,7 +188,6 @@ function DetailBody({ d, categories, onRetired }: { d: IngredientDetail; categor
           >
             Undo
           </Button>
-          <OperatorNeeded what="save this ingredient" />
         </div>
       )}
       {metaMsg && (
@@ -200,6 +195,9 @@ function DetailBody({ d, categories, onRetired }: { d: IngredientDetail; categor
           {metaMsg}
         </p>
       )}
+
+      <PriceEditor d={d} />
+      <ShelfLife row={row} />
 
       <section className="mb-4" aria-labelledby="ing-buy">
         <div className="flex flex-wrap items-baseline gap-x-2.5">
@@ -250,19 +248,17 @@ function DetailBody({ d, categories, onRetired }: { d: IngredientDetail; categor
         </div>
       </section>
 
-      <section className="mb-4 text-base" aria-label="Shelf life">
-        <span className="text-ink-2">Shelf life: </span>
-        {row.shelf_life_days === null ? 'does not expire' : `${row.shelf_life_days} days`}
-        {row.shelf_life_source === 'ESTIMATE' && <em className="text-ink-2"> (estimate)</em>}
-        <span className="text-ink-2"> · {row.storage.toLowerCase()} · </span>
-        <a href={href('/stock', { id: row.ingredient_id })}>confirm it on Stock</a>
-      </section>
-
-      <section className="mb-4" aria-labelledby="ing-used">
-        <h3 id="ing-used" className="mb-1.5 text-lg font-extrabold">
-          Used in {d.used_in.length} item{d.used_in.length === 1 ? '' : 's'}
-        </h3>
-        <div className="flex flex-wrap gap-1.5">
+      <details className="group mb-4 rounded-card border border-line">
+        <summary className="flex cursor-pointer list-none items-center gap-2 px-3.5 py-2.5 [&::-webkit-details-marker]:hidden">
+          <span aria-hidden="true" className="text-ink-2 transition-transform group-open:rotate-90 motion-reduce:transition-none">
+            ▸
+          </span>
+          <span className="text-lg font-extrabold">Used in</span>
+          <span className="fig text-lg font-extrabold">{d.used_in.length}</span>
+          <span className="text-lg font-extrabold">item{d.used_in.length === 1 ? '' : 's'}</span>
+          {d.used_in.length === 0 && <span className="text-sm text-ink-2">· not in any recipe yet</span>}
+        </summary>
+        <div className="flex flex-wrap gap-1.5 border-t border-line px-3.5 py-3">
           {d.used_in.slice(0, 40).map((u) => (
             <a
               key={u.menu_item_id}
@@ -275,7 +271,7 @@ function DetailBody({ d, categories, onRetired }: { d: IngredientDetail; categor
           ))}
           {d.used_in.length > 40 && <span className="px-2 py-1.5 text-base text-ink-2">and {d.used_in.length - 40} more</span>}
         </div>
-      </section>
+      </details>
 
       <section aria-labelledby="ing-hist">
         <h3 id="ing-hist" className="mb-1 text-lg font-extrabold">
@@ -440,7 +436,7 @@ function PriceEditor({ d }: { d: IngredientDetail }) {
               ready={cur?.status.kind === 'ready'}
               operatorWhat="record a price"
               onApply={async () => {
-                if (!operator || !body) return
+                if (!body) return
                 setApplying(true)
                 const r = await ingredientApi.priceApply(row.ingredient_id, { ...body, actor: operator })
                 setApplying(false)
@@ -458,124 +454,403 @@ function PriceEditor({ d }: { d: IngredientDetail }) {
   )
 }
 
-export function CreateIngredient({ categories, defaultCategory, onCreated }: { categories: string[]; defaultCategory: string; onCreated: (id: number) => void }) {
+/* ------------------------------------------------------------ small parts --- */
+
+/** One line until focused; grows while you type. */
+function NoteField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [focus, setFocus] = useState(false)
+  const rows = focus ? Math.min(6, Math.max(3, value.split('\n').length)) : 1
+  return (
+    <textarea
+      aria-label="Notes"
+      rows={rows}
+      maxLength={400}
+      placeholder="Add a note…"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      onFocus={() => setFocus(true)}
+      onBlur={() => setFocus(false)}
+      className={cx(
+        'mt-1.5 block w-full resize-none rounded-control border px-2 py-1 text-sm outline-none placeholder:text-ink-3',
+        focus
+          ? 'border-line-control bg-surface text-ink ring-3 ring-brand-wash'
+          : 'overflow-hidden text-ellipsis whitespace-nowrap border-transparent bg-transparent text-ink-2 hover:border-line',
+      )}
+    />
+  )
+}
+
+/** "0.05" → "5%". Exact: a Dec shifted two places, never a float. */
+function wastePct(raw: string | undefined): string {
+  const d = raw ? parseDec(raw) : null
+  if (d === null) return '—'
+  return `${trimQty(toFixed({ u: d.u * 100n, s: d.s }, d.s))}%`
+}
+
+const STORAGE_WORD: Record<string, string> = { AMBIENT: 'Ambient', CHILLED: 'Chilled', FROZEN: 'Frozen' }
+
+function ShelfLife({ row }: { row: IngredientRow }) {
+  const est = row.shelf_life_source === 'ESTIMATE' && (row.shelf_life_days !== null || row.open_life_days != null)
+  const transit = row.transit_buffer_days ?? 0
+  const usable = row.shelf_life_days === null ? null : Math.max(0, row.shelf_life_days - transit)
+  const tiles: { k: string; label: string; value: string; est?: boolean; hint?: string }[] = [
+    { k: 'storage', label: 'Storage', value: STORAGE_WORD[row.storage] ?? row.storage },
+    {
+      k: 'life',
+      label: 'Shelf life',
+      value: row.shelf_life_days === null ? 'Does not expire' : `${row.shelf_life_days} days`,
+      est: est && row.shelf_life_days !== null,
+      hint: 'unopened',
+    },
+    {
+      k: 'open',
+      label: 'Once opened',
+      value: row.open_life_days == null ? '—' : `${row.open_life_days} days`,
+      est: est && row.open_life_days != null,
+    },
+    { k: 'transit', label: 'Transit buffer', value: `${transit} day${transit === 1 ? '' : 's'}` },
+    {
+      k: 'usable',
+      label: 'Order covers at most',
+      value: usable === null ? 'No cap' : `${usable} days`,
+      est: est && usable !== null,
+      hint: usable === null ? undefined : 'shelf life − transit',
+    },
+    { k: 'waste', label: 'Waste factor', value: wastePct(row.waste_factor), hint: 'stock only, not cost' },
+  ]
+  return (
+    <section className="mb-4" aria-labelledby="ing-life">
+      <div className="mb-1.5 flex flex-wrap items-baseline gap-x-2.5">
+        <h3 id="ing-life" className="text-lg font-extrabold">
+          Storage & shelf life
+        </h3>
+        <span className="text-sm text-ink-2">
+          {est ? (
+            <>
+              <em>Italic = estimate</em>, still capping orders. <a href={href('/stock', { id: row.ingredient_id })}>Confirm it on Stock</a>
+            </>
+          ) : row.shelf_life_source && row.shelf_life_source !== 'ESTIMATE' ? (
+            'Confirmed.'
+          ) : (
+            <a href={href('/stock', { id: row.ingredient_id })}>Set on Stock</a>
+          )}
+        </span>
+        <span className="ml-auto flex items-center gap-1.5 text-sm text-ink-2">
+          <TierBadge tier={row.tier ?? 'C'} /> tier
+        </span>
+      </div>
+      <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-line bg-line sm:grid-cols-3">
+        {tiles.map((t) => (
+          <div key={t.k} className="min-w-0 bg-surface px-3.5 py-2.5">
+            <dt className="text-label font-bold uppercase tracking-[.05em] text-ink-2">{t.label}</dt>
+            <dd className={cx('fig mt-0.5 text-lg', t.est && 'italic')}>{t.value}</dd>
+            {t.hint && <dd className="text-xs text-ink-2">{t.hint}</dd>}
+          </div>
+        ))}
+      </dl>
+    </section>
+  )
+}
+
+/* -------------------------------------------------------------- creation --- */
+
+/**
+ * Display-only cost per ingredient unit for a pack being typed: exact BigInt
+ * division to 6 dp of a penny. The server computes the recorded figure.
+ */
+function perUnitPence(pence: number, sizeText: string, packUnit: Unit, unit: Unit): string | null {
+  const d = parseDec(sizeText)
+  if (d === null || d.u <= 0n) return null
+  let mulF = 1n
+  let divF = 1n
+  if ((packUnit === 'L' && unit === 'ML') || (packUnit === 'KG' && unit === 'G')) mulF = 1000n
+  else if ((packUnit === 'ML' && unit === 'L') || (packUnit === 'G' && unit === 'KG')) divF = 1000n
+  else if (packUnit !== unit) return null
+  const num = BigInt(pence) * 10n ** BigInt(d.s) * divF * 10n ** 6n
+  const den = d.u * mulF
+  const q = (num * 2n + den) / (2n * den)
+  return toFixed({ u: q, s: 6 }, 6)
+}
+
+/** "5" or "2.5" percent → the fraction string the API takes ("0.05"). */
+function pctToFraction(text: string): string | null {
+  const t = text.trim()
+  if (t === '') return '0'
+  const d = parseDec(t.endsWith('.') ? t.slice(0, -1) : t)
+  if (d === null || d.u < 0n) return null
+  return toFixed({ u: d.u, s: d.s + 2 }, d.s + 2)
+}
+
+function FormSection({ title, note, children }: { title: string; note?: string; children: ReactNode }) {
+  return (
+    <section className="border-t border-line pt-4">
+      <h3 className="text-label font-bold uppercase tracking-[.05em] text-ink-2">{title}</h3>
+      {note && <p className="mt-0.5 text-sm text-ink-2">{note}</p>}
+      <div className="mt-3 grid grid-cols-1 gap-3.5 sm:grid-cols-2 wide:grid-cols-3">{children}</div>
+    </section>
+  )
+}
+
+const DAYS_INPUT = /^\d{0,4}$/
+
+export function CreateIngredient({
+  categories,
+  suppliers,
+  defaultCategory,
+  onCreated,
+  onCancel,
+}: {
+  categories: string[]
+  suppliers: { supplier_id: number; name: string }[]
+  defaultCategory: string
+  onCreated: (id: number) => void
+  onCancel: () => void
+}) {
   const [name, setName] = useState('')
   const [cat, setCat] = useState(defaultCategory)
-  const [unit, setUnit] = useState<Unit>('EACH')
-  const [storage, setStorage] = useState<'AMBIENT' | 'CHILLED' | 'FROZEN'>('AMBIENT')
-  const [life, setLife] = useState('')
+  const [unit, setUnitRaw] = useState<Unit>('EACH')
+  const [supplier, setSupplier] = useState('')
+  const [sku, setSku] = useState('')
   const [size, setSize] = useState('1')
+  const [packUnit, setPackUnit] = useState<Unit>('EACH')
   const [cost, setCost] = useState('')
   const [source, setSource] = useState<PriceSource>('ESTIMATE')
+  const [storage, setStorage] = useState<'AMBIENT' | 'CHILLED' | 'FROZEN'>('AMBIENT')
+  const [life, setLife] = useState('')
+  const [openLife, setOpenLife] = useState('')
+  const [transit, setTransit] = useState('0')
+  const [waste, setWaste] = useState('')
+  const [note, setNote] = useState('')
+  const [tried, setTried] = useState(false)
   const [operator] = useOperator()
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
   const invalidate = useInvalidateMenu()
+
+  const setUnit = (u: Unit) => {
+    setUnitRaw(u)
+    if (!compatibleUnits(u).includes(packUnit)) setPackUnit(u)
+  }
   const pence = poundsToPence(cost)
   const sizeOut = qtyOut(size)
+  const lifeN = life === '' ? null : Number(life)
+  const openN = openLife === '' ? null : Number(openLife)
+  const transitN = transit === '' ? 0 : Number(transit)
+  const wasteOut = pctToFraction(waste)
+  const perUnit = pence !== null && sizeOut !== null ? perUnitPence(pence, sizeOut, packUnit, unit) : null
+  const cats = [...new Set([...categories, defaultCategory].filter(Boolean))].sort((a, b) => a.localeCompare(b))
+
+  const errors: Partial<Record<'name' | 'size' | 'cost' | 'life' | 'open' | 'transit' | 'waste', string>> = {}
+  if (name.trim() === '') errors.name = 'Give it a name.'
+  if (cost !== '' && pence === null) errors.cost = 'Pounds and pence, e.g. 3.90.'
+  if (supplier !== '' && pence === null) errors.cost = 'A supplier link needs the pack cost.'
+  if (pence !== null && (sizeOut === null || sizeOut === '0')) errors.size = 'A pack size above 0.'
+  if (storage !== 'AMBIENT' && lifeN === null)
+    errors.life = `A ${storage.toLowerCase()} ingredient needs a shelf life; blank means it never expires.`
+  if (lifeN !== null && lifeN < 1) errors.life = 'At least 1 day.'
+  if (openN !== null && openN < 1) errors.open = 'At least 1 day.'
+  else if (openN !== null && lifeN !== null && openN > lifeN) errors.open = 'Cannot be longer than the unopened shelf life.'
+  if (lifeN !== null && transitN >= lifeN) errors.transit = 'Must be shorter than the shelf life.'
+  if (wasteOut === null || Number(waste || '0') > 50) errors.waste = 'A percentage from 0 to 50.'
+  const blocking = Object.keys(errors).length > 0
+  // Required-but-empty errors wait for a submit attempt; wrong values show at once.
+  const show = (k: keyof typeof errors) => (tried || (k !== 'name' && k !== 'life') ? errors[k] : undefined)
+
+  const submit = async () => {
+    setTried(true)
+    if (blocking) return
+    setBusy(true)
+    const r = await ingredientApi.create({
+      name: name.trim(),
+      unit,
+      category: cat.trim() || null,
+      storage,
+      shelf_life_days: lifeN,
+      open_life_days: openN,
+      transit_buffer_days: transitN,
+      waste_factor: wasteOut ?? '0',
+      note: note.trim() || null,
+      price:
+        pence === null
+          ? null
+          : { pack_size: sizeOut, pack_unit: packUnit, pack_cost_pence: pence, source, supplier_id: supplier === '' ? null : Number(supplier) },
+      sku: supplier !== '' && sku.trim() ? sku.trim() : null,
+      actor: operator,
+    })
+    setBusy(false)
+    if (r.kind === 'ok') {
+      await invalidate()
+      onCreated(r.data.ingredient_id)
+    } else setMsg(r.message)
+  }
+
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto px-4 py-[18px] sm:px-[22px]">
-      <h2 className="text-3xl font-extrabold tracking-[-.01em]">New ingredient</h2>
-      <p className="mb-4 mt-1 text-base text-ink-2">Starts on tier C, not stock-tracked. A shelf life you type is kept as an estimate until confirmed on Stock.</p>
-      <div className="grid max-w-[720px] grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3.5">
-        <label className="flex min-w-0 flex-col gap-1 text-base text-ink-2">
-          Name
-          <Input value={name} onChange={(e) => setName(e.target.value)} className="text-ink" autoFocus />
-        </label>
-        <label className="flex min-w-0 flex-col gap-1 text-base text-ink-2">
-          Category
-          <Select value={cat} onChange={(e) => setCat(e.target.value)} className="text-ink">
-            <option value="">No category</option>
-            {categories.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </Select>
-        </label>
-        <label className="flex min-w-0 flex-col gap-1 text-base text-ink-2">
-          Costed per
-          <Select value={unit} onChange={(e) => setUnit(e.target.value as Unit)} className="text-ink">
-            {UNITS.map((u) => (
-              <option key={u} value={u}>
-                {unitWord(u)}
-              </option>
-            ))}
-          </Select>
-        </label>
-        <label className="flex min-w-0 flex-col gap-1 text-base text-ink-2">
-          Storage
-          <Select value={storage} onChange={(e) => setStorage(e.target.value as typeof storage)} className="text-ink">
-            <option value="AMBIENT">Ambient</option>
-            <option value="CHILLED">Chilled</option>
-            <option value="FROZEN">Frozen</option>
-          </Select>
-        </label>
-        <label className="flex min-w-0 flex-col gap-1 text-base text-ink-2">
-          Shelf life, days
-          <Input numeric value={life} placeholder={storage === 'AMBIENT' ? 'blank = never expires' : 'required'} onChange={(e) => /^\d*$/.test(e.target.value) && setLife(e.target.value)} className="text-ink" />
-        </label>
-        <label className="flex min-w-0 flex-col gap-1 text-base text-ink-2">
-          Pack size ({unitWord(unit)})
-          <Input numeric value={size} onChange={(e) => QTY_INPUT.test(e.target.value) && setSize(e.target.value)} className="text-ink" />
-        </label>
-        <label className="flex min-w-0 flex-col gap-1 text-base text-ink-2">
-          Pack cost £
-          <Input numeric value={cost} placeholder="leave blank if unknown" onChange={(e) => MONEY_INPUT.test(e.target.value) && setCost(e.target.value)} className="text-ink" />
-        </label>
-      </div>
-      {pence !== null && (
-        <div className="mt-3.5 flex flex-wrap items-center gap-2.5">
-          <span className="text-base font-bold">Where is this price from?</span>
-          <Segmented
-            label="Price source"
-            value={source}
-            onChange={setSource}
-            options={[
-              { value: 'INVOICE', label: 'Invoice' },
-              { value: 'SUPPLIER_FEED', label: 'Supplier price list' },
-              { value: 'ESTIMATE', label: 'Still an estimate' },
-            ]}
-          />
+    <form
+      className="min-h-0 flex-1 overflow-y-auto px-4 py-[18px] sm:px-[22px]"
+      onSubmit={(e) => {
+        e.preventDefault()
+        void submit()
+      }}
+      noValidate
+    >
+      <div className="max-w-[780px]">
+        <h2 className="text-3xl font-extrabold tracking-[-.01em]">New ingredient</h2>
+        <p className="mb-4 mt-1 text-base text-ink-2">Only the name is required. Anything you leave blank can be filled in later.</p>
+
+        <div className="flex flex-col gap-5">
+          <FormSection title="Basics">
+            <Field label="Name" error={show('name')} className="sm:col-span-2 wide:col-span-2">
+              <Input value={name} onChange={(e) => setName(e.target.value)} autoFocus placeholder="e.g. Oat milk (Oatly Barista)" />
+            </Field>
+            <Field label="Category" hint="Pick one or type a new one">
+              <Input list="ingredient-categories" value={cat} onChange={(e) => setCat(e.target.value)} placeholder="No category" />
+              <datalist id="ingredient-categories">
+                {cats.map((c) => (
+                  <option key={c} value={c} />
+                ))}
+              </datalist>
+            </Field>
+            <div className="flex min-w-0 flex-col gap-1 sm:col-span-2 wide:col-span-3">
+              <span className="text-xs font-bold text-ink-2" id="unit-label">
+                Costed and counted per
+              </span>
+              <Segmented
+                label="Costed per"
+                value={unit}
+                onChange={setUnit}
+                options={UNITS.map((u) => ({ value: u, label: unitWord(u) }))}
+                className="self-start"
+              />
+              <span className="text-xs text-ink-2">Recipes and stock counts use this unit. It locks once anything records a quantity in it.</span>
+            </div>
+          </FormSection>
+
+          <FormSection title="Buying & price" note="Leave the cost blank if you do not know it yet: the ingredient then shows “no price”, never £0.">
+            <Field label="Supplier" hint={supplier === '' ? undefined : 'Linked as the preferred supplier'}>
+              <Select value={supplier} onChange={(e) => setSupplier(e.target.value)}>
+                <option value="">No supplier yet</option>
+                {suppliers.map((s) => (
+                  <option key={s.supplier_id} value={s.supplier_id}>
+                    {s.name}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="Supplier code (SKU)" hint="Optional">
+              <Input value={sku} maxLength={80} disabled={supplier === ''} onChange={(e) => setSku(e.target.value)} placeholder={supplier === '' ? 'Choose a supplier first' : ''} />
+            </Field>
+            <Field label="Pack size" error={show('size')}>
+              <span className="flex gap-1.5">
+                <Input numeric value={size} onChange={(e) => QTY_INPUT.test(e.target.value) && setSize(e.target.value)} />
+                <span className="w-[84px] flex-none">
+                  <Select aria-label="Pack unit" value={packUnit} onChange={(e) => setPackUnit(e.target.value as Unit)}>
+                    {compatibleUnits(unit).map((u) => (
+                      <option key={u} value={u}>
+                        {unitWord(u)}
+                      </option>
+                    ))}
+                  </Select>
+                </span>
+              </span>
+            </Field>
+            <Field label="Pack cost £" error={show('cost')}>
+              <Input numeric value={cost} placeholder="unknown" onChange={(e) => MONEY_INPUT.test(e.target.value) && setCost(e.target.value)} />
+            </Field>
+            <div className="flex min-w-0 flex-col justify-end rounded-card bg-canvas-2 px-3.5 py-2">
+              <span className="text-xs font-bold text-ink-2">Cost per {unitWord(unit)}</span>
+              <span className={cx('fig text-2xl', source === 'ESTIMATE' && perUnit !== null && 'italic')}>
+                {perUnit === null ? <span className="text-ink-2">no price</span> : unitPrice(perUnit)}
+              </span>
+              {perUnit !== null && source === 'ESTIMATE' && <span className="text-xs text-ink-2">flagged as an estimate</span>}
+            </div>
+            {pence !== null && (
+              <div className="flex min-w-0 flex-col gap-1 sm:col-span-2 wide:col-span-3">
+                <span className="text-xs font-bold text-ink-2">Where is this price from?</span>
+                <Segmented
+                  label="Price source"
+                  value={source}
+                  onChange={setSource}
+                  className="max-w-full self-start overflow-x-auto"
+                  options={[
+                    { value: 'INVOICE', label: 'Invoice' },
+                    { value: 'SUPPLIER_FEED', label: 'Price list' },
+                    { value: 'ESTIMATE', label: 'Estimate' },
+                  ]}
+                />
+                <span className="text-xs text-ink-2">Only an invoice or a supplier price list clears the estimate flag.</span>
+              </div>
+            )}
+          </FormSection>
+
+          <FormSection title="Storage & shelf life" note="Shelf life caps how much one order can buy. What you type here stays an estimate until confirmed on Stock.">
+            <div className="flex min-w-0 flex-col gap-1 sm:col-span-2 wide:col-span-3">
+              <span className="text-xs font-bold text-ink-2">Storage</span>
+              <Segmented
+                label="Storage"
+                value={storage}
+                onChange={setStorage}
+                className="self-start"
+                options={[
+                  { value: 'AMBIENT', label: 'Ambient' },
+                  { value: 'CHILLED', label: 'Chilled' },
+                  { value: 'FROZEN', label: 'Frozen' },
+                ]}
+              />
+            </div>
+            <Field label="Shelf life, days" hint="Unopened. Blank = never expires" error={show('life')}>
+              <Input numeric value={life} placeholder={storage === 'AMBIENT' ? 'never expires' : 'required'} onChange={(e) => DAYS_INPUT.test(e.target.value) && setLife(e.target.value)} />
+            </Field>
+            <Field label="Once opened, days" hint="Optional" error={show('open')}>
+              <Input numeric value={openLife} onChange={(e) => DAYS_INPUT.test(e.target.value) && setOpenLife(e.target.value)} />
+            </Field>
+            <Field
+              label="Transit buffer, days"
+              hint={lifeN !== null && !errors.transit ? `One order covers at most ${lifeN - transitN} days` : 'Days lost before it arrives'}
+              error={show('transit')}
+            >
+              <Input numeric value={transit} onChange={(e) => /^\d{0,2}$/.test(e.target.value) && setTransit(e.target.value)} />
+            </Field>
+          </FormSection>
+
+          <FormSection title="Stock">
+            <Field label="Waste factor %" hint="Lost in use (foam, residue). Affects stock only, never menu cost." error={show('waste')}>
+              <Input numeric value={waste} placeholder="0" onChange={(e) => QTY_INPUT.test(e.target.value) && setWaste(e.target.value)} />
+            </Field>
+            <div className="flex min-w-0 items-start gap-2.5 rounded-card bg-canvas-2 px-3.5 py-2.5 sm:col-span-1 wide:col-span-2">
+              <TierBadge tier="C" />
+              <p className="text-sm text-ink-2">
+                Starts on tier C: on the checklist, not stock-tracked. Tracking and tiers are set on Stock; auto-ordering is earned
+                with two counts within 10%, never switched on by hand.
+              </p>
+            </div>
+          </FormSection>
+
+          <section className="border-t border-line pt-4">
+            <Field label="Notes" hint="Optional">
+              <Textarea rows={2} maxLength={400} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Brand, where it lives, anything worth knowing" />
+            </Field>
+          </section>
         </div>
-      )}
-      {msg && (
-        <p role="alert" className="mt-3 text-sm text-bad-ink">
-          {msg}
-        </p>
-      )}
-      <div className="mt-4 flex items-center gap-3">
-        <Button
-          variant="primary"
-          pending={busy}
-          pendingLabel="Adding…"
-          disabled={operator === null || name.trim() === '' || (pence !== null && (sizeOut === null || sizeOut === '0'))}
-          onClick={async () => {
-            if (!operator) return
-            setBusy(true)
-            const r = await ingredientApi.create({
-              name: name.trim(),
-              unit,
-              category: cat || null,
-              storage,
-              shelf_life_days: life === '' ? null : Number(life),
-              price:
-                pence === null
-                  ? null
-                  : { pack_size: sizeOut, pack_unit: unit, pack_cost_pence: pence, source, supplier_id: null },
-              actor: operator,
-            })
-            setBusy(false)
-            if (r.kind === 'ok') {
-              await invalidate()
-              onCreated(r.data.ingredient_id)
-            } else setMsg(r.message)
-          }}
-        >
-          Add ingredient
-        </Button>
-        <OperatorNeeded what="add an ingredient" />
+
+        {msg && (
+          <p role="alert" className="mt-4 text-sm text-bad-ink">
+            {msg}
+          </p>
+        )}
+        {tried && blocking && (
+          <p role="alert" className="mt-4 text-sm text-bad-ink">
+            Fix the highlighted fields to add it.
+          </p>
+        )}
+        <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-line pt-4">
+          <Button type="submit" variant="primary" pending={busy} pendingLabel="Adding…">
+            Add ingredient
+          </Button>
+          <Button type="button" variant="ghost" onClick={onCancel}>
+            Cancel
+          </Button>
+        </div>
       </div>
-    </div>
+    </form>
   )
 }

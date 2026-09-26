@@ -7,10 +7,10 @@
 import { cmp, fromInt, mustDec, parseDec } from '../../lib/dec'
 import type { Dec } from '../../lib/dec'
 import type { StockRow, TrustLabel } from '../../lib/types/stock'
-import { dayMonth, fmtD, fmtQ } from './fmt'
+import { dayMonth, fmtD, humanQty } from './fmt'
 
 export type TierFilter = 'all' | 'A' | 'B' | 'C'
-export type StockFilter = 'all' | 'count' | 'out' | 'soon' | 'check'
+export type StockFilter = 'all' | 'count' | 'out' | 'soon' | 'drift' | 'check' | 'low'
 
 export const SOON_DAYS = 3
 
@@ -86,8 +86,15 @@ export function matches(row: StockRow, f: StockFilter): boolean {
     }
     case 'soon':
       return soonestLiveBatch(row) !== null && (soonestLiveBatch(row)?.days_left ?? 99) <= SOON_DAYS
+    case 'drift': {
+      if (row.tier === 'C') return false
+      const t = trustOf(row)
+      return t === 'drifting' || t === 'excluded'
+    }
     case 'check':
       return row.tier === 'C'
+    case 'low':
+      return row.tier === 'C' && row.checklist?.status === 'LOW'
   }
 }
 
@@ -107,7 +114,7 @@ export function leftCell(row: StockRow): string {
   if (row.tier === 'C') return ''
   // C9: without a count, the figure is a ledger sum; never dress it as "~qty".
   if (!row.on_hand.has_count_basis) return '—'
-  return `~${fmtQ(row.on_hand.qty, row.unit)}`
+  return `~${humanQty(row.on_hand.qty, row.unit)}`
 }
 
 export function lastCountCell(row: StockRow): string {
@@ -117,7 +124,7 @@ export function lastCountCell(row: StockRow): string {
     return 'checklist'
   }
   if (!row.on_hand.has_count_basis || row.on_hand.basis_count_qty === null) return 'never'
-  return `${fmtQ(row.on_hand.basis_count_qty, row.unit)} · ${dayMonth(row.on_hand.basis_counted_at)}`
+  return `${humanQty(row.on_hand.basis_count_qty, row.unit)} · ${dayMonth(row.on_hand.basis_counted_at)}`
 }
 
 export type RunsOut = { text: string; title?: string; alert: boolean; reason: boolean }

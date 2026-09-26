@@ -9,7 +9,6 @@
  */
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { OperatorNeeded } from '../../components/shell/Operator'
 import { Button, Drawer, Input, Meter, Select, cx } from '../../components/ui'
 import { confirmShelfLife } from '../../lib/api'
 import { parseDec } from '../../lib/dec'
@@ -32,7 +31,6 @@ export function StockDrawer({
   onClose: () => void
   onCountNow: () => void
 }) {
-  const [operator] = useOperator()
   return (
     <Drawer
       open
@@ -44,7 +42,6 @@ export function StockDrawer({
       tone="canvas"
       titleSize="lg"
     >
-      {operator === null && <OperatorNeeded what="record anything here" />}
       <TierRow row={row} />
       {row.tier === 'C' ? (
         <ChecklistCard row={row} />
@@ -79,7 +76,7 @@ function TierRow({ row }: { row: StockRow }) {
 
   const earned = row.drift.clean_streak >= row.drift.required_streak && row.drift.has_observation
   const submit = async () => {
-    if (target === null || operator === null) return
+    if (target === null) return
     await w.run(() => stockWrites.tier(row.ingredient_id, { tier: target, changed_by: operator, reason }), {
       invalidate: AFTER_STOCK_WRITE(row.ingredient_id),
       ok: (d) => d.note,
@@ -147,7 +144,7 @@ function TierRow({ row }: { row: StockRow }) {
             <Button
               variant="primary"
               size="sm"
-              disabled={operator === null || reason.trim() === ''}
+              disabled={reason.trim() === ''}
               pending={w.pending}
               pendingLabel="Saving…"
               onClick={submit}
@@ -171,8 +168,7 @@ function ChecklistCard({ row }: { row: StockRow }) {
   const [operator] = useOperator()
   const w = useWrite()
   const answer = async (status: 'OK' | 'LOW') => {
-    if (operator === null) return
-    await w.run(() => stockWrites.checklist(row.ingredient_id, { status, responded_by: operator }), {
+        await w.run(() => stockWrites.checklist(row.ingredient_id, { status, responded_by: operator }), {
       invalidate: AFTER_STOCK_WRITE(row.ingredient_id),
       ok: (d) => `Marked ${d.status === 'LOW' ? 'running low' : 'plenty'} by ${d.responded_by}.`,
     })
@@ -192,7 +188,7 @@ function ChecklistCard({ row }: { row: StockRow }) {
             key={status}
             type="button"
             aria-pressed={current === status}
-            disabled={operator === null || w.pending}
+            disabled={w.pending}
             onClick={() => answer(status)}
             className={cx(
               'flex-1 rounded-card-lg border px-3 py-1.5 text-base disabled:opacity-50',
@@ -425,9 +421,9 @@ function DeliveryRow({ row }: { row: StockRow }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [row.ingredient_id])
   const d = parseDec(qty)
-  const ok = d !== null && d.u > 0n && operator !== null
+  const ok = d !== null && d.u > 0n
   const record = async () => {
-    if (!ok || operator === null) return
+    if (!ok) return
     await w.run(
       () =>
         stockWrites.delivery(row.ingredient_id, {
@@ -504,9 +500,9 @@ function WriteOffRow({ row }: { row: StockRow }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [row.ingredient_id])
   const d = parseDec(qty)
-  const ok = d !== null && d.u > 0n && operator !== null && (reason !== 'OTHER' || note.trim() !== '')
+  const ok = d !== null && d.u > 0n && (reason !== 'OTHER' || note.trim() !== '')
   const submit = async () => {
-    if (!ok || operator === null) return
+    if (!ok) return
     await w.run(
       () =>
         stockWrites.writeOff(row.ingredient_id, {
@@ -628,7 +624,7 @@ function Keeps({ row }: { row: StockRow }) {
 
   const reorderChanged = row.par !== null && row.par !== undefined && reorder.trim() !== row.par.min_qty
   const saveReorder = async () => {
-    if (!reorderChanged || operator === null) return
+    if (!reorderChanged) return
     const d = parseDec(reorder)
     if (d === null || d.u < 0n) {
       parW.setOutcome({ tone: 'bad', text: 'A reorder level is a plain number, like 4 or 2.5.' })
@@ -682,7 +678,7 @@ function Keeps({ row }: { row: StockRow }) {
             numeric
             value={row.tier === 'C' || !row.par ? '' : reorder}
             placeholder="—"
-            disabled={row.tier === 'C' || !row.par || operator === null}
+            disabled={row.tier === 'C' || !row.par}
             onChange={(e) => setReorder(e.target.value)}
             onBlur={saveReorder}
             onKeyDown={(e) => {
