@@ -285,7 +285,8 @@ export interface ParChangeOut {
 export interface TierIn {
   tier: Tier
   changed_by: string
-  reason: string
+  /** Optional: the owner dropped the "why" prompt (DECISIONS 22). */
+  reason?: string
 }
 
 export interface TierOut {

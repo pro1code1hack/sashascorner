@@ -129,12 +129,8 @@ def change_tier(
     """Move an ingredient between tiers. Promotion to A only on earned evidence."""
     if not changed_by.strip():
         raise SettingRefused("changed_by is required: a tier move is a decision somebody made")
-    clean_reason = reason.strip()
-    if not clean_reason:
-        raise SettingRefused(
-            "say why: a tier decides how an ingredient is ordered, and the reason is what "
-            "the next person reads"
-        )
+    # The owner dropped the "why" prompt (DECISIONS 22): a tier tap is the decision.
+    clean_reason = reason.strip() or "Changed on the ingredient's stock page"
     at = at or datetime.now(UTC)
 
     row = session.get(Ingredient, ingredient_id)

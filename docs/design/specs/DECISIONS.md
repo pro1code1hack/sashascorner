@@ -90,3 +90,15 @@ using the resolutions recommended in each spec's "Conflicts" section.
     "missing", never £0), by weekday, best days, then Profit by month. Colours validated
     with the dataviz checker: card #4a6fd1, till cash #1baf7a, own cash #eb6834, delivery
     apps #8a4fc8. Per-order channels need Lightspeed; the `sale` rows today are demo seed.
+
+## Ingredient stock page (owner, 2026-09-26, later the same day)
+22. **The ingredient's stock page (`#/stock/<id>`) is laid out like the menu item page**:
+    white panels with an `h2` per section and uppercase table labels. The main column
+    holds *On the shelf* (worked out · last counted · runs out, side by side), *Counts*
+    (drift and cause, the count table, "Count it now") and *Batches*. The side column
+    holds *Delivery came in* and *Write off* as labelled fields, then *Tier* and *How long
+    it keeps* / reorder level. The old drawer (`StockDrawer.tsx`) is gone; the sections
+    now live in `StockItemSections.tsx`.
+    **No "why" prompt on a tier move:** one tap changes it. `reason` is optional on
+    `POST /api/ingredients/{id}/tier`, and the service records a default. Tier A is still
+    earned (invariant 2): the A button is disabled until earned, and the server refuses it anyway.

@@ -4608,3 +4608,7 @@
 {"message":"[200] /menu 8ms","label":null,"level":"info"}
 {"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
 {"message":"[200] /book 4ms","label":null,"level":"info"}
+{"message":"[200] /book 69ms","label":null,"level":"info"}
+{"message":"[200] /about 273ms","label":null,"level":"info"}
+{"message":"[200] /book 6ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}

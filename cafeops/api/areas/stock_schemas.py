@@ -155,7 +155,9 @@ class ParChangeOut(Out):
 class TierIn(In):
     tier: Literal["A", "B", "C"]
     changed_by: Name
-    reason: str = Field(min_length=1, max_length=2000)
+    # Optional since 2026-09-26 (owner: no "why" prompt on a tier move). The
+    # service records a default so the history row still says where it came from.
+    reason: str = Field(default="", max_length=2000)
 
 
 class TierOut(Out):
