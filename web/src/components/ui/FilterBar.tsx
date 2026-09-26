@@ -7,8 +7,15 @@
  *     <FilterSelect label="Category" value={cat} onChange={setCat} options={…} />
  *   </FilterBar>
  *   <ActiveFilters chips={[{ key: 'cat', label: 'Category: Syrup', onRemove }]} onClearAll={…} />
+ *
+ * Below the 900px breakpoint a bar with a search box folds its selects and
+ * `trailing` behind a "Filters (n)" button, so a phone sees the list rather
+ * than a wall of dropdowns. `activeCount` is the number on that button.
  */
+import { useState } from 'react'
 import type { ReactNode } from 'react'
+import { useIsDocked } from '../../lib/media'
+import { Button } from './button'
 import { cx } from './cx'
 
 export function FilterBar({
@@ -16,6 +23,7 @@ export function FilterBar({
   search,
   children,
   trailing,
+  activeCount = 0,
   className,
 }: {
   label: string
@@ -23,13 +31,28 @@ export function FilterBar({
   children?: ReactNode
   /** Right-aligned (sort, counts). Wraps under at narrow widths. */
   trailing?: ReactNode
+  /** How many filters are set, shown on the narrow-screen "Filters" button. */
+  activeCount?: number
   className?: string
 }) {
+  const docked = useIsDocked()
+  const [open, setOpen] = useState(false)
+  const folds = !docked && search != null && (children != null || trailing != null)
+  const shown = !folds || open
   return (
     <div role="group" aria-label={label} className={cx('flex flex-wrap items-center gap-2', className)}>
-      {search && <div className="w-full min-w-0 sm:w-[240px] sm:flex-none">{search}</div>}
-      {children}
-      {trailing && <div className="ml-auto flex flex-wrap items-center gap-2">{trailing}</div>}
+      {search && (
+        <div className={cx('flex w-full min-w-0 items-center gap-2', !folds && 'sm:w-[240px] sm:flex-none')}>
+          <div className="min-w-0 flex-1">{search}</div>
+          {folds && (
+            <Button variant="secondary" size="sm" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+              Filters{activeCount > 0 ? ` (${activeCount})` : ''}
+            </Button>
+          )}
+        </div>
+      )}
+      {shown && children}
+      {shown && trailing && <div className="ml-auto flex flex-wrap items-center gap-2">{trailing}</div>}
     </div>
   )
 }
@@ -67,7 +90,7 @@ export function FilterSelect({
       onChange={(e) => onChange(e.target.value)}
       className={cx(
         'h-[34px] max-w-full min-w-0 cursor-pointer rounded-full border px-3 text-base outline-none',
-        'focus-visible:border-brand focus-visible:ring-3 focus-visible:ring-brand-wash',
+        'focus-visible:edge-brand',
         active ? 'border-brand-line bg-brand-wash font-bold text-brand-ink' : 'border-line-control bg-surface text-ink',
         className,
       )}

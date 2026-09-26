@@ -237,6 +237,7 @@ export function BuyList({ stockRows }: { stockRows: StockRow[] }) {
     <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">
       <div className="flex flex-none flex-col gap-2.5 border-b border-line-soft px-4 py-3.5 sm:px-5">
         <FilterBar
+          activeCount={chips.length}
           label="Filter the shopping list"
           search={
             <SearchInput

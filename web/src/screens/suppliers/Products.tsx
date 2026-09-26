@@ -34,7 +34,12 @@ import type { Saved } from './SuppliersScreen'
 import { UNITS } from './vocab'
 
 const GRID =
-  'grid grid-cols-[28px_minmax(0,2.2fr)_minmax(0,1.3fr)_70px_64px_80px_100px_minmax(0,1.1fr)_20px] items-center gap-2'
+  'grid grid-cols-[28px_minmax(0,2.2fr)_minmax(0,1.3fr)_70px_64px_80px_100px_minmax(0,1.1fr)_28px] items-center gap-2'
+/**
+ * A glyph button in a product row, sized to the row's 28px controls. Not
+ * IconButton: that fixes its ink colour, and these turn red when set.
+ */
+const ROW_ICON = 'grid size-7 place-items-center rounded-control text-lg leading-none hover:bg-wash'
 const CTRL = 'h-7! rounded-control! border-line-strong! px-1.5! text-base'
 
 function afterProduct(supplierId: number) {
@@ -120,6 +125,7 @@ export function Products({ data, onSaved }: { data: SupplierProductsResponse; on
       {data.products.length > 0 && (
         <>
           <FilterBar
+            activeCount={chips.length}
             label="Filter products"
             search={
               <SearchInput
@@ -315,7 +321,7 @@ function ProductRow({ p, onSaved }: { p: SupplierProduct; onSaved: (s: Saved) =>
           })
           if (r) onSaved({ tone: 'ok', text: savedText(r) })
         }}
-        className={cx('text-[17px] leading-none', p.is_preferred ? 'text-alert' : 'text-ink-3 hover:text-ink-2')}
+        className={cx(ROW_ICON, p.is_preferred ? 'text-alert' : 'text-ink-3 hover:text-ink-2')}
       >
         <span aria-hidden="true">{p.is_preferred ? '★' : '☆'}</span>
       </button>
@@ -379,7 +385,7 @@ function ProductRow({ p, onSaved }: { p: SupplierProduct; onSaved: (s: Saved) =>
           })
           if (r) onSaved({ tone: 'ok', text: savedText(r) })
         }}
-        className={cx('text-center', armed ? 'font-bold text-alert' : 'text-ink-3 hover:text-ink-2')}
+        className={cx(ROW_ICON, 'disabled:opacity-50', armed ? 'font-bold text-alert' : 'text-ink-3 hover:text-ink-2')}
         title={armed ? 'Tap again to unlink' : 'Unlink'}
       >
         <span aria-hidden="true">{armed ? '!' : '×'}</span>

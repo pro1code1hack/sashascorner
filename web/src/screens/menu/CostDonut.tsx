@@ -114,7 +114,7 @@ export function CostDonut({ lines, className }: { lines: MenuLine[]; className?:
           textAnchor="middle"
           dominantBaseline="central"
           transform="rotate(90 50 50)"
-          className={cx('fig fill-ink text-[15px] font-extrabold', totalEst && 'italic')}
+          className={cx('fig fill-ink text-md font-extrabold', totalEst && 'italic')}
         >
           {gbp(totalExact)}
         </text>

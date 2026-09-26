@@ -18,7 +18,7 @@
  * who-changed-what is not shown here (owner's instruction).
  */
 import { useEffect, useMemo, useState } from 'react'
-import { Button, ErrorBox, IconButton, InfoPanel, Input, Loading, Select, SizeTile, Toggle, cx } from '../../components/ui'
+import { Button, ErrorBox, IconButton, InfoPanel, Input, Loading, Select, SizeTile, TitleInput, Toggle, cx } from '../../components/ui'
 import { fromInt, fromMoney, mul, parseDec, sub } from '../../lib/dec'
 import { menuApi, useFetchMenuItem, useIngredients, useInvalidateMenu, useMenuItem, useMenuItems } from '../../lib/menu-api'
 import { useOperator } from '../../lib/operator'
@@ -169,11 +169,7 @@ function Details({ detail, categories }: { detail: MenuItemDetail; categories: M
     <div className="flex min-w-0 flex-col gap-3">
         <label className="flex flex-col gap-1 text-xs font-bold text-ink-2">
           Name
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full border-b border-line bg-transparent py-0.5 text-2xl font-extrabold tracking-[-.01em] text-ink outline-none focus-visible:border-brand"
-          />
+          <TitleInput variant="compact" value={name} onChange={(e) => setName(e.target.value)} />
         </label>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <label className="flex min-w-0 flex-col gap-1 text-xs font-bold text-ink-2">

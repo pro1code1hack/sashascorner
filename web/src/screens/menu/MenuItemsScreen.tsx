@@ -252,6 +252,7 @@ export function MenuItemsScreen() {
       />
       <div className="flex-none border-b border-line bg-surface px-4 pb-2.5 pt-3 sm:px-5">
         <FilterBar
+          activeCount={chips.length}
           label="Filter the menu"
           search={
             <SearchInput
@@ -412,7 +413,7 @@ function PriceRange({ min, max, onChange }: { min: string; max: string; onChange
     if (lo !== min || hi !== max) onChange(lo, hi)
   }
   const cls =
-    'h-[34px] w-[64px] rounded-full border border-line-control bg-surface px-2.5 text-base text-ink outline-none focus-visible:border-brand focus-visible:ring-3 focus-visible:ring-brand-wash'
+    'h-[34px] w-[64px] rounded-full border border-line-control bg-surface px-2.5 text-base text-ink outline-none focus-visible:edge-brand'
   return (
     <span className={cx('flex items-center gap-1 text-sm', min || max ? 'font-bold text-brand-ink' : 'text-ink-2')}>
       £

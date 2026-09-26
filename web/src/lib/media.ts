@@ -11,16 +11,31 @@ export const COMPACT_QUERY = '(min-width: 900px)'
 export const WIDE_QUERY = '(min-width: 1280px)'
 export const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)'
 
+/**
+ * One MediaQueryList and one subscribe function per query, so a re-render
+ * (a FilterBar on every search keystroke) neither re-queries nor resubscribes.
+ */
+const stores = new Map<string, { subscribe: (cb: () => void) => () => void; get: () => boolean }>()
+
+function store(query: string) {
+  let s = stores.get(query)
+  if (s === undefined) {
+    const m = window.matchMedia(query)
+    s = {
+      subscribe: (cb) => {
+        m.addEventListener('change', cb)
+        return () => m.removeEventListener('change', cb)
+      },
+      get: () => m.matches,
+    }
+    stores.set(query, s)
+  }
+  return s
+}
+
 export function useMediaQuery(query: string): boolean {
-  return useSyncExternalStore(
-    (cb) => {
-      const m = window.matchMedia(query)
-      m.addEventListener('change', cb)
-      return () => m.removeEventListener('change', cb)
-    },
-    () => window.matchMedia(query).matches,
-    () => false,
-  )
+  const s = store(query)
+  return useSyncExternalStore(s.subscribe, s.get, () => false)
 }
 
 /** True at >= 900px: the sidebar is docked and drawers sit inline. */

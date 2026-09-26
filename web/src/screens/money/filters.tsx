@@ -82,7 +82,7 @@ export function shortDate(iso: ISODate): string {
 
 const DATE_INPUT =
   'fig h-[34px] rounded-full border border-line-control bg-surface px-3 text-sm outline-none ' +
-  'focus:border-brand focus:ring-3 focus:ring-brand-wash'
+  'focus:edge-brand'
 
 /**
  * "Period" + All + every month + Custom. Custom shows two date inputs; a
@@ -246,7 +246,7 @@ function PoundBox({
       onKeyDown={(e) => e.key === 'Enter' && commit()}
       className={cx(
         'fig h-[34px] w-[84px] rounded-full border bg-surface px-3 text-right text-base outline-none placeholder:text-left placeholder:text-ink-3',
-        'focus:border-brand focus:ring-3 focus:ring-brand-wash',
+        'focus:edge-brand',
         bad ? 'border-alert' : pence !== null ? 'border-brand-line bg-brand-wash font-bold text-brand-ink' : 'border-line-control',
       )}
     />

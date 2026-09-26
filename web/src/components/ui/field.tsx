@@ -83,7 +83,7 @@ const BOX: Record<InputSize, string> = {
   xs: 'h-7 px-1.5 rounded-control border border-line-strong text-base',
 }
 
-const FOCUS = 'outline-none focus-visible:border-brand focus-visible:ring-3 focus-visible:ring-brand-wash focus-visible:outline-none'
+const FOCUS = 'outline-none focus-visible:edge-brand'
 
 export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> {
   size?: InputSize
@@ -163,7 +163,7 @@ export const SearchInput = forwardRef<HTMLInputElement, Omit<InputProps, 'size'>
       <div
         className={cx(
           'flex h-10 min-w-0 items-center gap-2 rounded-button border border-line-control bg-surface px-3',
-          'focus-within:border-brand focus-within:ring-3 focus-within:ring-brand-wash',
+          'focus-within:edge-brand',
           className,
         )}
       >
@@ -184,14 +184,16 @@ export const SearchInput = forwardRef<HTMLInputElement, Omit<InputProps, 'size'>
 /** Borderless entity name: ingredient, supplier, recipe. */
 export const TitleInput = forwardRef<
   HTMLInputElement,
-  InputHTMLAttributes<HTMLInputElement> & { variant?: 'page' | 'drawer' }
+  InputHTMLAttributes<HTMLInputElement> & { variant?: 'page' | 'compact' }
 >(function TitleInput({ variant = 'page', className, ...rest }, ref) {
   return (
     <input
       ref={ref}
       className={cx(
-        'w-full min-w-0 bg-transparent font-extrabold tracking-[-.01em] outline-none focus-visible:outline-none focus-visible:border-brand',
-        variant === 'page' ? 'border-b border-line pb-1 text-3xl' : 'text-2xl',
+        // Focus is a 2px brand underline: the 1px border alone was too faint to find.
+        'w-full min-w-0 border-b border-line bg-transparent py-0.5 font-extrabold tracking-[-.01em] text-ink',
+        'outline-none focus-visible:border-brand focus-visible:shadow-focus-underline',
+        variant === 'page' ? 'text-3xl' : 'text-2xl',
         className,
       )}
       {...rest}
@@ -257,7 +259,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, InputHTMLAttributes<HT
         type="password"
         {...fp}
         className={cx(
-          'h-12 w-full rounded-card border border-line-strong bg-surface px-3.5 text-[17px] placeholder:text-ink-3',
+          'h-12 w-full rounded-card border border-line-strong bg-surface px-3.5 text-lg placeholder:text-ink-3',
           FOCUS,
           className,
         )}

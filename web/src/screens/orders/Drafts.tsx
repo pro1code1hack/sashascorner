@@ -343,7 +343,7 @@ function ShopRunBox({ lines, premium }: { lines: EmergencyLine[]; premium: strin
   return (
     <DashedPanel className="mt-4 max-w-[760px]">
       <div className="flex items-baseline gap-2.5">
-        <h2 className="flex-1 text-[17px] font-extrabold">Shop run · can’t wait for a delivery</h2>
+        <h2 className="flex-1 text-xl font-extrabold">Shop run · can’t wait for a delivery</h2>
         <span className="fig text-lg">{total === null ? 'not all priced' : gbp(decStr(total))}</span>
       </div>
       {lines.map((l, i) => {

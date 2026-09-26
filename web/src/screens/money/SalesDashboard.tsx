@@ -17,10 +17,9 @@
  *   By weekday          average takings per weekday
  *   Best days           the five biggest days in view
  *
- * Colours (validated with the dataviz checker on white, adjacent pairs): card
- * #4a6fd1, till cash #1baf7a, own cash #eb6834, delivery apps #8a4fc8. Till
- * cash is under 3:1 contrast, so every chart carries a legend with values and
- * the day-by-day table below is the table view.
+ * Colours are the --color-chart-* tokens in styles.css. Till cash is under 3:1
+ * contrast, so every chart carries a legend with values and the day-by-day
+ * table below is the table view.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
@@ -31,11 +30,11 @@ import { count, weekdayIndex } from './filters'
 import { fd, gbp, mLabel } from './shared'
 
 export const SERIES = [
-  { key: 'card', label: 'Card', color: '#4a6fd1' },
-  { key: 'till', label: 'Till cash', color: '#1baf7a' },
-  { key: 'own', label: 'Own cash', color: '#eb6834' },
+  { key: 'card', label: 'Card', color: 'var(--color-chart-card)' },
+  { key: 'till', label: 'Till cash', color: 'var(--color-chart-till)' },
+  { key: 'own', label: 'Own cash', color: 'var(--color-chart-own)' },
 ] as const
-const DELIVERY = { label: 'Delivery apps', color: '#8a4fc8' }
+const DELIVERY = { label: 'Delivery apps', color: 'var(--color-chart-delivery)' }
 type SeriesKey = (typeof SERIES)[number]['key']
 type Grain = 'day' | 'week' | 'month'
 
@@ -175,7 +174,7 @@ function Legend({
   onToggle?: (key: string) => void
 }) {
   return (
-    <ul className="mb-3 flex flex-wrap gap-x-5 gap-y-1.5" aria-label="Legend">
+    <ul className="mb-3 flex flex-wrap gap-x-4 gap-y-1" aria-label="Legend">
       {items.map((it) => {
         const body = (
           <>
@@ -187,11 +186,11 @@ function Legend({
         return (
           <li key={it.key}>
             {onToggle ? (
-              <button type="button" aria-pressed={!it.off} title={it.off ? 'Show' : 'Hide'} onClick={() => onToggle(it.key)} className="flex items-center gap-1.5 rounded-control px-1 py-0.5 hover:bg-canvas-2">
+              <button type="button" aria-pressed={!it.off} title={it.off ? 'Show' : 'Hide'} onClick={() => onToggle(it.key)} className="flex min-h-8 items-center gap-1.5 rounded-control px-1.5 hover:bg-canvas-2">
                 {body}
               </button>
             ) : (
-              <span className="flex items-center gap-1.5 px-1 py-0.5">{body}</span>
+              <span className="flex min-h-8 items-center gap-1.5 px-1.5">{body}</span>
             )}
           </li>
         )
@@ -224,11 +223,11 @@ function TakingsChart({ buckets, hidden, grain }: { buckets: Bucket[]; hidden: S
   return (
     <div ref={ref} className="relative w-full" onMouseLeave={() => setHover(null)}>
       {width > 0 && (
-        <svg width={width} height={H} role="img" aria-label={`Takings per ${grain}, stacked by how it was paid`}>
+        <svg width={width} height={H} role="group" aria-label={`Takings per ${grain}, stacked by how it was paid`}>
           {ticks.map((t) => (
             <g key={t}>
               <line x1={PAD.left} x2={width - PAD.right} y1={y(t)} y2={y(t)} stroke="var(--color-line)" strokeWidth={t === 0 ? 1.5 : 1} />
-              <text x={PAD.left - 8} y={y(t)} dy="0.32em" textAnchor="end" className="fill-ink-3 text-[11px]">
+              <text x={PAD.left - 8} y={y(t)} dy="0.32em" textAnchor="end" className="fill-ink-3 text-label">
                 {axisMoney(t)}
               </text>
             </g>
@@ -259,14 +258,14 @@ function TakingsChart({ buckets, hidden, grain }: { buckets: Bucket[]; hidden: S
           {avg > 0 && buckets.length > 2 && (
             <g>
               <line x1={PAD.left} x2={width - PAD.right} y1={y(avg)} y2={y(avg)} stroke="var(--color-ink-2)" strokeWidth={1.5} strokeDasharray="4 4" />
-              <text x={width - PAD.right} y={y(avg) - 5} textAnchor="end" className="fill-ink-2 text-[11px] font-bold">
+              <text x={width - PAD.right} y={y(avg) - 5} textAnchor="end" className="fill-ink-2 text-label font-bold">
                 avg {gbp(Math.round(avg))}
               </text>
             </g>
           )}
           {buckets.map((b, i) =>
             i % every === 0 ? (
-              <text key={b.key} x={PAD.left + i * slot + slot / 2} y={H - 8} textAnchor="middle" className="fill-ink-3 text-[11px]">
+              <text key={b.key} x={PAD.left + i * slot + slot / 2} y={H - 8} textAnchor="middle" className="fill-ink-3 text-label">
                 {b.label}
               </text>
             ) : null,
@@ -284,6 +283,7 @@ function TakingsChart({ buckets, hidden, grain }: { buckets: Bucket[]; hidden: S
               onFocus={() => setHover(i)}
               onBlur={() => setHover(null)}
               tabIndex={0}
+              role="img"
               aria-label={`${b.long}: ${gbp(totals[i] ?? 0)}`}
             />
           ))}
@@ -415,14 +415,15 @@ function WeekdayChart({ rows }: { rows: SalesDay[] }) {
             className="relative flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1"
             onMouseEnter={() => setHover(i)}
             tabIndex={0}
+            role="img"
             onFocus={() => setHover(i)}
             onBlur={() => setHover(null)}
             aria-label={`${WD[i]}: ${b.avg === null ? 'no days' : `average ${gbp(b.avg)} over ${b.n} days`}`}
           >
             <span className={cx('fig text-xs', i === best ? 'font-bold text-ink' : 'text-ink-2')}>{b.avg === null ? '—' : axisMoney(b.avg)}</span>
             <span
-              className="w-full max-w-[44px] rounded-t-[4px]"
-              style={{ height: `${((b.avg ?? 0) / top) * 100}%`, minHeight: b.avg ? 2 : 0, background: '#4a6fd1', opacity: hover === null || hover === i ? 1 : 0.45 }}
+              className="w-full max-w-[44px] rounded-t-[4px] bg-brand"
+              style={{ height: `${((b.avg ?? 0) / top) * 100}%`, minHeight: b.avg ? 2 : 0, opacity: hover === null || hover === i ? 1 : 0.45 }}
             />
             <span className={cx('text-sm', i >= 5 ? 'font-bold text-ink' : 'text-ink-2')}>{WD[i]}</span>
             {hover === i && b.avg !== null && (
@@ -454,7 +455,7 @@ function BestDays({ rows }: { rows: SalesDay[] }) {
             <span className="fig text-sm text-ink-3">{i + 1}</span>
             <span className="truncate">{fd(d.date)}</span>
             <span className="h-2 rounded-full bg-line-soft" aria-hidden="true">
-              <span className="block h-2 rounded-full" style={{ width: `${(d.total_pence / max) * 100}%`, background: '#4a6fd1' }} />
+              <span className="block h-2 rounded-full bg-brand" style={{ width: `${(d.total_pence / max) * 100}%` }} />
             </span>
             <span className="fig text-right font-bold">{gbp(d.total_pence)}</span>
           </li>

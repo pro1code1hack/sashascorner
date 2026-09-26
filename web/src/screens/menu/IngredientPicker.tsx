@@ -97,7 +97,7 @@ export function IngredientPicker({
         onClick={() => setOpen((v) => !v)}
         className={cx(
           'flex h-10 w-full min-w-0 items-center gap-2 rounded-button border bg-surface px-3 text-left text-md',
-          open ? 'border-brand ring-3 ring-brand-wash' : 'border-line-control hover:border-line-strong',
+          open ? 'edge-brand' : 'border-line-control hover:border-line-strong',
         )}
       >
         <span className={cx('min-w-0 flex-1 truncate', !selected && 'text-ink-3')}>
@@ -130,7 +130,7 @@ export function IngredientPicker({
           }}
         >
           <div className="flex flex-col gap-2 border-b border-line p-2.5">
-            <div className="flex h-10 items-center gap-2 rounded-button border border-line-control px-3 focus-within:border-brand">
+            <div className="flex h-10 items-center gap-2 rounded-button border border-line-control px-3 focus-within:edge-brand">
               <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" className="flex-none text-ink-3">
                 <circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" strokeWidth="1.8" />
                 <path d="m11 11 3.5 3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />

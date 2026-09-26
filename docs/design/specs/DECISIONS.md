@@ -102,3 +102,20 @@ using the resolutions recommended in each spec's "Conflicts" section.
     **No "why" prompt on a tier move:** one tap changes it. `reason` is optional on
     `POST /api/ingredients/{id}/tier`, and the service records a default. Tier A is still
     earned (invariant 2): the A button is disabled until earned, and the server refuses it anyway.
+
+## Accessibility overrides of design values (UI audit, 2026-09-26)
+23. **Five colour tokens no longer match the design export**, because the design values fail
+    WCAG AA where the screens use them. The audit named the conflict and the owner ran the
+    fix anyway (`/impeccable:normalize`). Don't "restore" these from `design-system.md` §1:
+
+    | Token | Design | Now | Why |
+    |---|---|---|---|
+    | `ink-3` | `#8a93a3` | `#687080` | 3.1:1 on white, 2.9:1 on canvas; it labels every table column and nav group |
+    | `alert` | `#d4554a` | `#c2453b` | 4.0:1 on white; 20 of its 21 uses are text under WCAG's large size |
+    | `bad-ink` | `#c2453b` | `#b8443a` | 4.4:1 on `bad-wash` (pills) |
+    | `warn-ink` | `#9a6a12` | `#8f6210` | 4.3:1 on `warn-wash` ("Drifting" pill) |
+    | `ok` | `#3fa57a` | `#34936b` | switch track at 3.05:1 against white |
+
+    Keyboard focus on fields is now a 2px brand edge (border + `ring-1 ring-brand`) instead
+    of the design's pale `brand-wash` halo, which was ~1.1:1 and could not be seen. Chart
+    series colours from decision 21 are tokens now (`--color-chart-*` in `styles.css`).

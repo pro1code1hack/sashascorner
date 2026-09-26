@@ -7,7 +7,8 @@
  *
  * Every value is taken from docs/design/specs/design-system.md §4, which was
  * grepped from the v2 design export. Nothing here is invented except where that
- * spec says "(proposed)": focus, hover and the scrim.
+ * spec says "(proposed)": focus, hover and the scrim. Five colours were darkened
+ * for WCAG AA after the 2026-09-26 audit; see docs/design/specs/DECISIONS.md 23.
  *
  * Rules the tokens encode (design-system.md §1.1):
  *   - red means a threshold was crossed, and nothing else;
@@ -29,7 +30,9 @@
   /* ink */
   --color-ink: #1f2633;
   --color-ink-2: #5b6475;
-  --color-ink-3: #8a93a3; /* >= 14px non-essential meta only (contrast 3.2:1) */
+  /* Design value #8a93a3 measured 3.1:1 on white, 2.9:1 on canvas, and it labels
+   * every table column and nav group. Darkened to pass AA (4.5:1) on both. */
+  --color-ink-3: #687080;
 
   /* lines */
   --color-line: #e8ebf0; /* default hairline */
@@ -46,16 +49,26 @@
   --color-brand-line: #c9d5f5;
 
   /* semantic: threshold crossed */
-  --color-alert: #d4554a; /* figure, border or dot on white; >= 14px bold */
+  /* Design value #d4554a is 4.0:1 on white, and 20 of its 21 uses are text under
+   * 18.66px bold (WCAG's large-text line). This passes on white and alert-wash. */
+  --color-alert: #c2453b;
   --color-alert-wash: #fdf1ef; /* flagged row, cash banner, changed cell */
-  --color-bad-ink: #c2453b; /* text on bad-wash; 13px red text */
+  --color-bad-ink: #b8443a; /* text on bad-wash (4.7:1) */
   --color-bad-wash: #fdecea;
-  --color-warn-ink: #9a6a12;
+  --color-warn-ink: #8f6210; /* 4.9:1 on warn-wash; the design's #9a6a12 was 4.3:1 */
   --color-warn-wash: #fdf3e1;
-  --color-ok: #3fa57a; /* toggle track only */
+  --color-ok: #34936b; /* toggle track only; 3.8:1 against white (design #3fa57a, 3.05:1) */
   --color-ok-ink: #237a57;
   --color-ok-wash: #e8f5ee;
   --color-est-wash: #fdf6e7; /* "italic = estimate" note */
+
+  /* chart series (SalesDashboard, ProfitSection). Validated as adjacent pairs on
+   * white; till cash is under 3:1, so each chart carries a legend with values. */
+  --color-chart-card: #4a6fd1;
+  --color-chart-till: #1baf7a;
+  --color-chart-own: #eb6834;
+  --color-chart-delivery: #8a4fc8;
+  --color-chart-costs: #b87a1f;
 
   /* (proposed) the scrim behind the off-canvas sidebar */
   --color-scrim: rgb(31 38 51 / 0.24);
@@ -95,13 +108,21 @@
   --shadow-seg: 0 1px 2px rgb(31 38 51 / 0.08);
   --shadow-login: 0 1px 2px rgb(31 38 51 / 0.04), 0 12px 32px rgb(31 38 51 / 0.06);
   --shadow-knob: 0 1px 2px rgb(0 0 0 / 0.2);
-  --shadow-selected: 0 0 0 2px #4a6fd1;
+  --shadow-selected: 0 0 0 2px var(--color-brand);
+  --shadow-focus-underline: 0 1px 0 var(--color-brand); /* border-b + this = 2px underline */
 
   --ease-ui: ease;
   --default-transition-duration: 150ms;
 
   --breakpoint-compact: 56.25rem; /* 900px: sidebar becomes a drawer below this */
   --breakpoint-wide: 80rem; /* 1280px: 232px sidebar and wide drawers from here */
+}
+
+/* The field focus edge: brand border plus a 1px brand ring, 2px of 4.7:1 blue.
+ * Use with a state variant: focus-visible:edge-brand, focus-within:edge-brand,
+ * or focus:edge-brand where Chrome won't report :focus-visible (date inputs). */
+@utility edge-brand {
+  @apply border-brand ring-1 ring-brand;
 }
 
 @layer base {

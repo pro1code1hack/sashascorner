@@ -25,6 +25,7 @@ import {
   Select,
   Textarea,
   TierBadge,
+  TitleInput,
   cx,
 } from '../../components/ui'
 import { parseDec, toFixed, trimQty } from '../../lib/dec'
@@ -110,12 +111,7 @@ function DetailBody({ d, categories, onRetired }: { d: IngredientDetail; categor
   return (
     <div className="min-h-0 flex-1 overflow-y-auto px-4 py-[18px] sm:px-[22px]">
       <div className="flex items-center gap-3">
-        <input
-          aria-label="Ingredient name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="min-w-0 flex-1 border-b border-line bg-transparent pb-1 text-3xl font-extrabold tracking-[-.01em] outline-none focus-visible:border-brand"
-        />
+        <TitleInput aria-label="Ingredient name" value={name} onChange={(e) => setName(e.target.value)} className="flex-1" />
         <ConfirmTwiceButton
           variant="danger"
           armedLabel="Tap again to retire"
@@ -220,7 +216,7 @@ function DetailBody({ d, categories, onRetired }: { d: IngredientDetail; categor
                 className="grid grid-cols-[28px_minmax(0,1.4fr)_minmax(0,1.4fr)_minmax(0,110px)_minmax(0,1fr)] items-center gap-2.5 border-b border-line py-2 text-base last:border-b-0"
               >
                 <span
-                  className={cx('text-[17px]', o.is_preferred ? 'text-alert' : 'text-ink-3')}
+                  className={cx('text-lg', o.is_preferred ? 'text-alert' : 'text-ink-3')}
                   title={o.is_preferred ? 'Preferred supplier' : 'Not preferred'}
                   aria-label={o.is_preferred ? 'Preferred' : 'Not preferred'}
                 >
@@ -473,7 +469,7 @@ function NoteField({ value, onChange }: { value: string; onChange: (v: string) =
       className={cx(
         'mt-1.5 block w-full resize-none rounded-control border px-2 py-1 text-sm outline-none placeholder:text-ink-3',
         focus
-          ? 'border-line-control bg-surface text-ink ring-3 ring-brand-wash'
+          ? 'edge-brand bg-surface text-ink'
           : 'overflow-hidden text-ellipsis whitespace-nowrap border-transparent bg-transparent text-ink-2 hover:border-line',
       )}
     />

@@ -203,7 +203,7 @@ const CELL =
   'h-7 w-full min-w-0 rounded-control border bg-surface px-1.5 text-base outline-none ' +
   // `focus:` not `focus-visible:`: a date input's focus sits on an inner field,
   // and Chrome does not report :focus-visible on the input itself.
-  'placeholder:text-ink-3 focus:border-brand focus:ring-3 focus:ring-brand-wash ' +
+  'placeholder:text-ink-3 focus:edge-brand ' +
   'disabled:bg-canvas disabled:text-ink-2'
 
 /**

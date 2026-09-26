@@ -13,7 +13,7 @@ export function CountBadge({ count, label }: { count: number | null | undefined;
   if (count === null || count === undefined || count <= 0) return null
   return (
     <span
-      className="fig flex-none rounded-full bg-brand px-[7px] py-0.5 text-[11px] font-bold leading-[14px] text-white"
+      className="fig flex-none rounded-full bg-brand px-[7px] py-0.5 text-label font-bold leading-[14px] text-white"
       aria-label={label ? `${count} ${label}` : undefined}
     >
       {count}

@@ -155,6 +155,7 @@ export function SuppliersScreen() {
       <div className="min-h-0 min-w-0 flex-1 overflow-y-auto">
         <div className="border-b border-line-soft px-4 py-3 sm:px-5">
           <FilterBar
+            activeCount={chips.length}
             label="Filter suppliers"
             search={
               <SearchInput

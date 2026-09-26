@@ -86,7 +86,6 @@ export function StockScreen() {
   const [grouped, setGrouped] = useState(false)
   const [more, setMore] = useState<MoreFilters>(NO_MORE)
   const [sort, setSort] = useState<StockSort>('attention')
-  const [open, setOpen] = useState(false)
   const docked = useIsDocked()
   const setM = <K extends keyof MoreFilters>(k: K, v: MoreFilters[K]) => setMore((p) => ({ ...p, [k]: v }))
   // Suppliers and recipe use come from the ingredient list (same ids): /api/stock
@@ -268,88 +267,79 @@ export function StockScreen() {
       ) : (
         <div role="tabpanel" aria-label="On the shelf" className="flex min-h-0 min-w-0 flex-1 flex-col">
           <div className="flex flex-none flex-col gap-2 border-b border-line bg-surface px-4 pb-2.5 pt-3 sm:px-5">
-            {!docked && (
-              <div className="flex items-center gap-2">
-                <div className="min-w-0 flex-1">{searchBox}</div>
-                <Button variant="secondary" size="sm" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-                  Filters{activeChips.length > 0 ? ` (${activeChips.length})` : ''}
-                </Button>
-              </div>
-            )}
-            {(docked || open) && (
-              <FilterBar
-                label="Filter stock"
-                search={docked ? searchBox : undefined}
-                trailing={
-                  <>
-                    <FilterSelect label="Sort" value={sort} allValue={sort} onChange={(v) => setSort(v as StockSort)} options={STOCK_SORTS} />
-                    {docked && countButton}
-                  </>
-                }
-              >
-                <FilterSelect
-                  label="Category"
-                  value={cat}
-                  onChange={setCat}
-                  options={[
-                    { value: 'all', label: `All categories (${rows.length})` },
-                    ...categories.map(([c, n]) => ({ value: c, label: `${c} (${n})` })),
-                  ]}
-                />
-                <FilterSelect
-                  label="Supplier"
-                  value={more.sup}
-                  onChange={(v) => setM('sup', v)}
-                  options={[
-                    { value: 'all', label: 'All suppliers' },
-                    { value: 'none', label: 'No supplier yet' },
-                    ...suppliers.map((x) => ({ value: String(x.supplier_id), label: x.name })),
-                  ]}
-                />
-                <FilterSelect
-                  label="Storage"
-                  value={more.storage}
-                  onChange={(v) => setM('storage', v)}
-                  options={[{ value: 'all', label: 'Any storage' }, ...Object.entries(STORAGE_LABEL).map(([value, label]) => ({ value, label }))]}
-                />
-                <FilterSelect
-                  label="Trust"
-                  value={more.trust}
-                  onChange={(v) => setM('trust', v)}
-                  options={[{ value: 'all', label: 'Any trust' }, ...TRUST_KEYS.map((t) => ({ value: t, label: TRUST_WORD[t] }))]}
-                />
-                <FilterSelect
-                  label="Counted in"
-                  value={more.unit}
-                  onChange={(v) => setM('unit', v)}
-                  options={[{ value: 'all', label: 'Any unit' }, ...units.map((u) => ({ value: u, label: `In ${UNIT_LABEL[u] ?? u}` }))]}
-                />
-                <FilterSelect
-                  label="Used in"
-                  value={more.use}
-                  onChange={(v) => setM('use', v)}
-                  options={[{ value: 'all', label: 'Used or not' }, ...Object.entries(USE_LABEL).map(([value, label]) => ({ value, label }))]}
-                />
-                <Segmented<TierFilter>
-                  label="Tier"
-                  showLabel
-                  value={tierF}
-                  onChange={setTierF}
-                  options={[
-                    { value: 'all', label: 'All' },
-                    { value: 'A', label: 'A', ariaLabel: 'Tier A' },
-                    { value: 'B', label: 'B', ariaLabel: 'Tier B' },
-                    { value: 'C', label: 'C', ariaLabel: 'Tier C' },
-                  ]}
-                />
-                <FilterToggle active={more.est} onToggle={() => setM('est', !more.est)}>
-                  Estimated prices only
-                </FilterToggle>
-                <FilterToggle active={grouped} onToggle={() => setGrouped((v) => !v)}>
-                  Group by category
-                </FilterToggle>
-              </FilterBar>
-            )}
+            <FilterBar
+              label="Filter stock"
+              search={searchBox}
+              activeCount={activeChips.length}
+              trailing={
+                <>
+                  <FilterSelect label="Sort" value={sort} allValue={sort} onChange={(v) => setSort(v as StockSort)} options={STOCK_SORTS} />
+                  {docked && countButton}
+                </>
+              }
+            >
+              <FilterSelect
+                label="Category"
+                value={cat}
+                onChange={setCat}
+                options={[
+                  { value: 'all', label: `All categories (${rows.length})` },
+                  ...categories.map(([c, n]) => ({ value: c, label: `${c} (${n})` })),
+                ]}
+              />
+              <FilterSelect
+                label="Supplier"
+                value={more.sup}
+                onChange={(v) => setM('sup', v)}
+                options={[
+                  { value: 'all', label: 'All suppliers' },
+                  { value: 'none', label: 'No supplier yet' },
+                  ...suppliers.map((x) => ({ value: String(x.supplier_id), label: x.name })),
+                ]}
+              />
+              <FilterSelect
+                label="Storage"
+                value={more.storage}
+                onChange={(v) => setM('storage', v)}
+                options={[{ value: 'all', label: 'Any storage' }, ...Object.entries(STORAGE_LABEL).map(([value, label]) => ({ value, label }))]}
+              />
+              <FilterSelect
+                label="Trust"
+                value={more.trust}
+                onChange={(v) => setM('trust', v)}
+                options={[{ value: 'all', label: 'Any trust' }, ...TRUST_KEYS.map((t) => ({ value: t, label: TRUST_WORD[t] }))]}
+              />
+              <FilterSelect
+                label="Counted in"
+                value={more.unit}
+                onChange={(v) => setM('unit', v)}
+                options={[{ value: 'all', label: 'Any unit' }, ...units.map((u) => ({ value: u, label: `In ${UNIT_LABEL[u] ?? u}` }))]}
+              />
+              <FilterSelect
+                label="Used in"
+                value={more.use}
+                onChange={(v) => setM('use', v)}
+                options={[{ value: 'all', label: 'Used or not' }, ...Object.entries(USE_LABEL).map(([value, label]) => ({ value, label }))]}
+              />
+              <Segmented<TierFilter>
+                label="Tier"
+                showLabel
+                value={tierF}
+                onChange={setTierF}
+                options={[
+                  { value: 'all', label: 'All' },
+                  { value: 'A', label: 'A', ariaLabel: 'Tier A' },
+                  { value: 'B', label: 'B', ariaLabel: 'Tier B' },
+                  { value: 'C', label: 'C', ariaLabel: 'Tier C' },
+                ]}
+              />
+              <FilterToggle active={more.est} onToggle={() => setM('est', !more.est)}>
+                Estimated prices only
+              </FilterToggle>
+              <FilterToggle active={grouped} onToggle={() => setGrouped((v) => !v)}>
+                Group by category
+              </FilterToggle>
+            </FilterBar>
             {!docked && <div className="flex">{countButton}</div>}
             <FilterChipRow label="Show">
               {FILTERS.map((f) => (
@@ -410,14 +400,14 @@ function SoonLine({ rows, summary, onShow }: { rows: StockRow[]; summary: StockS
     rows.reduce((a, r) => a + r.batches.filter((b) => b.days_left !== null && b.days_left <= 3).length, 0)
   if (n === 0) {
     return (
-      <button type="button" onClick={onShow} className="font-semibold text-ink-2 hover:text-ink">
+      <button type="button" onClick={onShow} className="min-h-6 text-left font-semibold text-ink-2 hover:text-ink">
         Nothing goes out of date in the next 3 days
       </button>
     )
   }
   const value = summary.expiring_value_pence
   return (
-    <button type="button" onClick={onShow} className="font-semibold text-bad-ink hover:underline">
+    <button type="button" onClick={onShow} className="min-h-6 text-left font-semibold text-bad-ink hover:underline">
       {n} {plural(n, 'batch', 'batches')} go out of date in 3 days ·{' '}
       {value === null ? 'value unknown (unpriced batch)' : <span className="fig">{gbp(value)}</span>}
     </button>

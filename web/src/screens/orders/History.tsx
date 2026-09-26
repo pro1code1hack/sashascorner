@@ -98,6 +98,7 @@ export function History() {
   return (
     <div className="flex flex-col gap-3">
       <FilterBar
+        activeCount={chips.length}
         label="Filter orders"
         search={<SearchInput label="Search orders" placeholder="Supplier, ingredient or #id" value={q} onChange={(e) => setQ(e.target.value)} />}
         trailing={<FilterSelect label="Sort" value={sort} allValue={sort} onChange={(v) => setSort(v as Sort)} options={SORTS} />}

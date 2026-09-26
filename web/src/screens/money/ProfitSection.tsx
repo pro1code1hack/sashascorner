@@ -20,8 +20,8 @@ import { usePL } from '../../lib/finance-api'
 import type { PLResponse, PeriodFigures } from '../../lib/types/finance'
 import { Caveats, gbp0, pctBp } from './shared'
 
-const TAKINGS = '#4a6fd1'
-const COSTS = '#b87a1f'
+const TAKINGS = 'var(--color-chart-card)'
+const COSTS = 'var(--color-chart-costs)'
 
 /** Everything that comes off takings before net profit; null when not known. */
 function costsOf(f: PeriodFigures): number | null {

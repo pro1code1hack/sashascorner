@@ -10,7 +10,7 @@
  * keeps the draft and offers a reload.
  */
 import { useEffect, useMemo, useState } from 'react'
-import { Button, IconButton, Input, Select, Toggle, cx } from '../../components/ui'
+import { Button, IconButton, Input, Select, TitleInput, Toggle, cx } from '../../components/ui'
 import { useOperator } from '../../lib/operator'
 import { recipeApi, useIngredients, useInvalidateMenu, useSeasons } from '../../lib/menu-api'
 import type {
@@ -127,11 +127,11 @@ export function RecipeEditorView({
       {/* ------------------------------------------------ editor column --- */}
       <div className="min-w-0 px-4 pb-8 pt-5 sm:px-[22px] compact:flex-1 compact:overflow-y-auto">
         <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
-          <input
+          <TitleInput
             aria-label="Recipe name"
             value={draft.name}
             onChange={(e) => set((d) => ({ ...d, name: e.target.value }))}
-            className="min-w-0 flex-1 border-b border-line bg-transparent py-0.5 text-3xl font-extrabold tracking-[-.01em] outline-none focus-visible:border-brand"
+            className="flex-1"
           />
           {editor.category && <span className="whitespace-nowrap text-base text-ink-2">{editor.category}</span>}
         </div>

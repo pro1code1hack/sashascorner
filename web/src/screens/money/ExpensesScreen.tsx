@@ -181,6 +181,7 @@ export function ExpensesScreen() {
       <PeriodBar period={period} months={months} onPeriod={setPeriod} range={range} onRange={setRange} />
       <div className="flex flex-none flex-col gap-2 border-b border-line px-4 py-2.5 sm:px-5">
         <FilterBar
+          activeCount={chips.length}
           label="Filter expenses"
           search={
             <SearchInput

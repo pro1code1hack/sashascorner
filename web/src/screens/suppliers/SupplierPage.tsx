@@ -126,7 +126,8 @@ function Page({ data, onSaved }: { data: SupplierProductsResponse; onSaved: (s: 
             if (n === '') setName(s.name)
             else if (n !== s.name) void patch({ name: n })
           }}
-          className="min-w-0 flex-[1_1_14rem] border-line py-0.5 text-[24px]!"
+          variant="compact"
+          className="flex-[1_1_14rem]"
         />
         {s.terms_are_placeholders ? <Pill tone="warn">Terms are a guess</Pill> : <Pill tone="ok">Terms confirmed</Pill>}
         <ConfirmTwiceButton

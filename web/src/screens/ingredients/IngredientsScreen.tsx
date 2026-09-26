@@ -182,7 +182,7 @@ export function IngredientsScreen() {
 
   const showList = id === null && !creating
   const rangeCls =
-    'fig h-[34px] w-[64px] rounded-full border border-line-control bg-surface px-2.5 text-right text-base outline-none focus-visible:border-brand focus-visible:ring-3 focus-visible:ring-brand-wash'
+    'fig h-[34px] w-[64px] rounded-full border border-line-control bg-surface px-2.5 text-right text-base outline-none focus-visible:edge-brand'
 
   return (
     <>
@@ -199,6 +199,7 @@ export function IngredientsScreen() {
       {showList && (
         <div className="flex-none border-b border-line bg-surface px-4 pb-2.5 pt-3 sm:px-5">
           <FilterBar
+            activeCount={chips.length}
             label="Filter ingredients"
             search={
               <SearchInput label="Search ingredients" placeholder="Search name or note" value={f.q} onChange={(e) => set('q', e.target.value)} />

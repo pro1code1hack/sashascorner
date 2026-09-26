@@ -35,7 +35,7 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
 }
 
 const BOX =
-  'h-10 w-full min-w-0 rounded-control border border-line-control bg-surface px-2.5 text-md placeholder:text-ink-3 outline-none focus-visible:border-brand focus-visible:ring-3 focus-visible:ring-brand-wash sm:w-52'
+  'h-10 w-full min-w-0 rounded-control border border-line-control bg-surface px-2.5 text-md placeholder:text-ink-3 outline-none focus-visible:edge-brand sm:w-52'
 
 function PasswordRow({ data }: { data: SettingsResponse }) {
   const qc = useQueryClient()
@@ -149,7 +149,7 @@ function LightspeedRow({ data }: { data: SettingsResponse }) {
       <div className="flex flex-col gap-1">
         <div>Not connected.</div>
         <div className="text-sm text-ink-2">
-          Set <span className="break-words font-mono text-[13px]">{ls.env_vars.join(', ')}</span> on the server.
+          Set <span className="break-words font-mono text-sm">{ls.env_vars.join(', ')}</span> on the server.
           Connecting is an ops task, not a web form: the refresh token is a long-lived credential.
         </div>
       </div>

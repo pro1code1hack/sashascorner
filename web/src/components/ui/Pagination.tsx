@@ -33,7 +33,7 @@ export function Pagination({
   const btn =
     'flex h-8 min-w-8 items-center justify-center rounded-control border border-line-control bg-surface px-2.5 text-base ' +
     'hover:bg-canvas disabled:cursor-default disabled:opacity-40 disabled:hover:bg-surface ' +
-    'outline-none focus-visible:border-brand focus-visible:ring-3 focus-visible:ring-brand-wash'
+    'outline-none focus-visible:edge-brand'
   return (
     <nav aria-label="Pages" className={cx('flex flex-wrap items-center gap-x-3 gap-y-2 text-base', className)}>
       <span className="fig text-ink-2">
@@ -45,7 +45,7 @@ export function Pagination({
             aria-label="Rows per page"
             value={pageSize}
             onChange={(e) => onPageSize(Number(e.target.value))}
-            className="mr-1.5 h-8 rounded-control border border-line-control bg-surface px-1.5 text-sm outline-none focus-visible:border-brand"
+            className="mr-1.5 h-8 rounded-control border border-line-control bg-surface px-1.5 text-sm outline-none focus-visible:edge-brand"
           >
             {sizes.map((s) => (
               <option key={s} value={s}>

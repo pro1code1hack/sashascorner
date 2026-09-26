@@ -61,7 +61,7 @@ export function CountFlow({
   if (row === undefined) {
     return (
       <div className="min-h-0 flex-1 overflow-y-auto p-6">
-        <p className="px-4 py-15 text-center text-[17px]">
+        <p className="px-4 py-15 text-center text-lg">
           Count finished: {counted} {counted === 1 ? 'ingredient' : 'ingredients'} counted.{' '}
           <button type="button" className="underline" onClick={finish}>
             Back to stock
@@ -168,7 +168,7 @@ export function CountFlow({
                 if (e.key === 'Enter') void save()
               }}
               placeholder="What you can see"
-              className="fig h-[50px] w-full min-w-0 flex-1 rounded-button border border-line px-2.5 text-center text-2xl outline-none placeholder:text-ink-3 focus-visible:border-brand focus-visible:ring-3 focus-visible:ring-brand-wash"
+              className="fig h-[50px] w-full min-w-0 flex-1 rounded-button border border-line px-2.5 text-center text-2xl outline-none placeholder:text-ink-3 focus-visible:edge-brand"
             />
           </Stepper>
           <span className="text-lg text-ink-2">{unitWord(unit)}</span>

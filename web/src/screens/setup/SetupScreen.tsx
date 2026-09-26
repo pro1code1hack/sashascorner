@@ -16,7 +16,7 @@ function CopyBlock({ text }: { text: string }) {
   const [copied, setCopied] = useState(false)
   return (
     <div className="mt-2 flex min-w-0 items-center gap-2">
-      <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap rounded-control bg-canvas px-2.5 py-1.5 font-mono text-[13px] text-ink">
+      <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap rounded-control bg-canvas px-2.5 py-1.5 font-mono text-sm text-ink">
         {text}
       </code>
       <Button
