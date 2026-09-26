@@ -28,6 +28,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from cafeops.api import areas
 from cafeops.api.errors import ComponentSupersededError
 from cafeops.api.routers import open_router, router
 from cafeops.db.repositories.par import AutoOrderGrantRefused
@@ -42,12 +43,14 @@ __all__ = ["create_app"]
 HTTP_422 = 422
 
 DESCRIPTION = """
-Read-only back-office API for Sasha's Corner.
+Back-office API for Sasha's Corner.
 
-**Every route is a GET except two**: `POST /api/templates/{id}/preview`, which writes
-nothing, and `POST /api/templates/{id}/apply`, the composition editor's commit. There is
-no route that creates, confirms or sends a purchase order -- invariant 1 says that needs
-a human in Telegram.
+**Writes go through services.** Stock counts, deliveries, write-offs, supplier and
+recipe edits, finance entries and agent-proposal decisions are all POST/PUT/PATCH/DELETE
+routes in `cafeops/api/areas/`, each delegating to one service that enforces the
+invariants. Recipe and price edits are preview-then-apply and effective-dated. There is
+still **no route that creates, confirms or sends a purchase order** -- invariant 1 says
+that needs a human in Telegram (owner decision, docs/design/specs/DECISIONS.md §1).
 
 **Encoding.** Money is integer pence where the database stores an integer, and an exact
 decimal *string* of pence where the figure is derived and fractional. Quantities are
@@ -55,9 +58,11 @@ always strings. A missing cost is `null`, never `0`. A low-confidence forecast h
 `qty: null` and its reasons populated -- render the reasons *in place of* the number,
 because the number is not in the payload. See `GET /api/meta`.
 
-**Auth.** One shared password (spec 1: no user management). Send it as `X-API-Key` or
-`Authorization: Bearer`. With `CAFEOPS_API_PASSWORD` unset every route but
-`/api/health` answers 503.
+**Auth.** One shared password (spec 1: no user management). `POST /api/auth/session`
+exchanges it for a session token, sent as `Authorization: Bearer <token>`; the raw
+password still works as `X-API-Key` (CLI, fixtures). A password changed in Settings is
+stored hashed and wins over `CAFEOPS_API_PASSWORD`. With neither set every route but
+`/api/health` and sign-in answers 503.
 """
 
 
@@ -94,7 +99,7 @@ def create_app() -> FastAPI:
             "http://localhost:4173",
         ],
         allow_credentials=False,
-        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allow_headers=["X-API-Key", "Authorization", "Content-Type"],
     )
 
@@ -119,6 +124,12 @@ def create_app() -> FastAPI:
 
     app.include_router(open_router)
     app.include_router(router)
+    app.include_router(areas.shell.open_router)
+    # /media/<sha>.<ext>: menu photos. Caddy serves the files directly in production;
+    # this route is the dev/fallback path.
+    app.include_router(areas.menu.open_router)
+    for area in (areas.shell, areas.stock, areas.menu, areas.finance):
+        app.include_router(area.router)
     return app
 
 

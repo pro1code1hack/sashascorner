@@ -2069,3 +2069,62 @@ to the same rules as `channels/browser_source.py`:
 * the plan is navigate-and-download only, and `TakingsPlan` is inert. `cafeops
   payments browser-plan` prints it and contacts nothing (invariant 10: the agent
   emits a proposal, it does not act).
+
+## §8U — The 2026-09 back-office redesign: what changed underneath the screens
+
+The owner supplied a finished design (`docs/design/`) and asked for every screen in it,
+backend and frontend. Specs, owner decisions and the data model are in
+`docs/design/specs/` — **read `DECISIONS.md` before changing anything it covers.** Where
+the design contradicted an invariant, the invariant won; each spec's "Conflicts"
+section records the resolution. The decisions below changed behaviour outside the
+screens, so they are recorded here.
+
+* **The web still never creates or confirms an order** (owner, DECISIONS §1). The design's
+  "Send to Telegram to confirm" was dropped. Receive, cancel and mark-sent on an order
+  that already exists are web actions; creation and confirmation stay in Telegram.
+* **Never-counted ingredients are no longer ordered** (`OrderNoteKind.NOT_COUNTED`,
+  `domain/ordering.size_line`). Their on-hand is a ledger sum with no physical count
+  under it, so `need = forecast - on_hand` was a guess presented as a quantity
+  (invariant 6). They are also kept out of the top-up pool and the Tesco emergency
+  list. This reaches the Telegram drafts too. On the data at the time no quantity
+  moved, because every tracked ingredient had a count.
+* **Auth moved from "the password on every request" to sessions.** The shared password
+  is exchanged for a token (`POST /api/auth/session`, stored as sha256, revocable).
+  A password changed in Settings is stored as an scrypt hash and takes precedence
+  over `CAFEOPS_API_PASSWORD`, which remains the bootstrap and the break-glass value
+  (`cafeops password reset`). The raw password still works as `X-API-Key` for the CLI
+  and fixtures, but no longer as a Bearer value. Sign-in is rate limited in-process
+  per client IP, and `X-Forwarded-For` is trusted only from `CAFEOPS_TRUSTED_PROXIES`.
+  Under docker compose that must include the compose network, or everyone shares
+  Caddy's bucket.
+* **The previous shell unlocked with any password.** It checked `/api/meta`, which is
+  unauthenticated. A second form turned up: a static server answering `/api/*` with
+  `index.html` and a 200. Sign-in now requires a JSON answer from an authenticated
+  route.
+* **Sync history is its own table (`sync_run`).** The stale-sales banner reads the last
+  successful LIVE run, never `max(sale.sold_at)`: the sync runs at 02:30 and the café
+  closes in the evening, so the newest sale is always over 12 h old by breakfast. The
+  scheduled job pulls live when all four Lightspeed variables are set; before this it
+  always replayed fixtures. `Settings.lightspeed_configured` now requires all four.
+* **Takings are one source per day and method**, chosen by `PAYMENT_SOURCE_PRECEDENCE`
+  (POS_API > CSV_UPLOAD > MANUAL > LEGACY_WORKBOOK). Before, `read_takings` summed every
+  source, so a workbook row and a CSV row for the same day doubled takings.
+* **Finance sheets are imported from the workbook** (`cafeops import-finance`). Capital
+  injections are shown apart from "owed" (owner, DECISIONS §4). A drawing is stored
+  once, as an expense mirrored into `director_entry`. Deleting an imported day in the
+  app and then re-running the import brings the day back; whether deletions should
+  stick is still the owner's call.
+* **Effective dating widened.** Sell prices (`menu_item_price`, with `menu_item.price_pence`
+  as a cache of the open row) and modifier behaviour (`modifier_version`) are dated.
+  The resolver reads the modifier version in force at `sold_at`. `resolve_recipe` stays
+  pure; the dating lives in the repository.
+* **`add_price` now converts the pack unit into the ingredient's unit.** It divided by the
+  raw pack size, so a 1 kg pack of a gram-counted ingredient cost 1000× too much per
+  gram. No stored price was affected: every existing row was already in its
+  ingredient's unit. A non-positive pack size now raises rather than writing a cost of 0.
+* **One write path into `stock_movement` still holds.** `MovementSpec` carries
+  `reason_code` and `recorded_by`; `create_batch` carries `expiry_source` and
+  `received_by`. Write-offs and deliveries go through the repository rather than
+  setting ORM columns after the fact.
+* **Known gap:** `rebuild_batches` (only `seed --demo` calls it) does not carry
+  `expiry_source` or `received_by` through a rebuild.

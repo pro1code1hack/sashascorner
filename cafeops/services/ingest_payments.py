@@ -17,9 +17,10 @@ from datetime import date
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from cafeops.db.models.enums import PaymentSourceKind
+from cafeops.db.models.enums import PaymentBasis, PaymentSourceKind
 from cafeops.db.models.payment import PaymentDay
 from cafeops.integrations.payments.base import PaymentReport
+from cafeops.services.finance.takings import resolve_takings
 
 
 @dataclass
@@ -110,18 +111,29 @@ class TakingsWindow:
 def read_takings(session: Session, *, since: date, until: date) -> TakingsWindow:
     """Sum the window, and say what could not be summed.
 
+    Each (day, method) is resolved to ONE row by `PAYMENT_SOURCE_PRECEDENCE`
+    (`services/finance/takings.py`): a MANUAL figure and a CSV figure for the same day
+    are two reports of the same money, and summing them doubled the day. Lower-precedence
+    rows are ignored, and a disagreement over £1 is stated as a caveat.
+
     A deduction missing on any single day makes the window's net unknowable rather
     than merely smaller: subtracting only the days that reported fees would produce
     a net that is too high and looks entirely plausible.
     """
-    rows = list(
-        session.scalars(
-            select(PaymentDay).where(
-                PaymentDay.business_date >= since, PaymentDay.business_date <= until
-            )
+    resolved, disagreements = resolve_takings(session, since=since, until=until)
+    rows = [fig.row for day in resolved.values() for fig in day.by_method.values()]
+    shadowed = sum(len(fig.shadowed) for day in resolved.values() for fig in day.by_method.values())
+    caveats: list[str] = list(disagreements)
+    if shadowed:
+        caveats.append(
+            f"{shadowed} row(s) from a lower-precedence source were ignored: one figure per "
+            "day and method is used, never the sum of several reports of the same money"
         )
-    )
-    caveats: list[str] = []
+    if any(r.basis is PaymentBasis.BANK_DEPOSIT for r in rows):
+        caveats.append(
+            "some card figures are bank deposits on their deposit date (the legacy workbook), "
+            "not what the till took that day"
+        )
     gross: int | None = sum(r.gross_pence for r in rows) if rows else None
     by_method: dict[str, int] = {}
     for r in rows:

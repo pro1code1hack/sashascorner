@@ -6,12 +6,12 @@ from datetime import datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Float, ForeignKey, Index, Integer, String
+from sqlalchemy import CheckConstraint, Float, ForeignKey, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from cafeops.db.base import Base
 from cafeops.db.models._common import Qty, UTCDateTime, enum_col
-from cafeops.db.models.enums import MovementType
+from cafeops.db.models.enums import MovementType, WriteOffReason
 
 if TYPE_CHECKING:
     from cafeops.db.models.ingredient import Ingredient
@@ -58,10 +58,25 @@ class StockMovement(Base):
     ref_type: Mapped[str | None] = mapped_column(String(40))
     ref_id: Mapped[int | None] = mapped_column(Integer)
     note: Mapped[str | None] = mapped_column(String(400))
+    #: Why a human wrote stock off (spec C11). Only on WASTE (WENT_OFF, SPILLED, OTHER)
+    #: and STAFF (STAFF) movements; NULL on everything else, and on pre-existing rows.
+    #: A code, not a note prefix, because attribution and the bot branch on it.
+    reason_code: Mapped[WriteOffReason | None] = mapped_column(enum_col(WriteOffReason))
+    #: Operator name for human-entered movements -- write-offs, deliveries,
+    #: adjustments (DECISIONS.md 6). NULL for system-derived SALE/EXPIRED rows.
+    recorded_by: Mapped[str | None] = mapped_column(String(120))
 
     ingredient: Mapped[Ingredient] = relationship()
 
     __table_args__ = (
+        CheckConstraint(
+            "reason_code IS NULL "
+            "OR (type = 'STAFF' AND reason_code = 'STAFF') "
+            "OR (type = 'WASTE' AND reason_code IN ('WENT_OFF', 'SPILLED', 'OTHER'))",
+            name="reason_matches_type",
+        ),
+        CheckConstraint("reason_code IS NULL OR recorded_by IS NOT NULL", name="write_off_signed"),
+        CheckConstraint("reason_code <> 'OTHER' OR note IS NOT NULL", name="other_needs_note"),
         Index("ix_stock_movement_ing_at", "ingredient_id", "occurred_at"),
         Index("ix_stock_movement_batch", "batch_id"),
         # The expiry-vs-measurement drift split (spec 5.2) filters by type over a

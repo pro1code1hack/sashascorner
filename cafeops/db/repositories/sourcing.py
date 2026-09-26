@@ -21,7 +21,7 @@ from __future__ import annotations
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import select
+from sqlalchemy import Select, select
 from sqlalchemy.orm import Session
 
 from cafeops.db.models import Supplier, SupplierProduct, TescoRouting
@@ -79,6 +79,19 @@ def _truncated(text: str, limit: int = _REASON_MAX) -> str:
     return text[: limit - 4].rstrip() + " ..."
 
 
+def _active_products() -> Select[tuple[SupplierProduct]]:
+    """Products that can still be bought: neither unlinked nor at an archived supplier.
+
+    Spec C12: archiving is how a supplier or a link is "deleted", because purchase orders,
+    prices and routings reference both. The rows stay for history and drop out here.
+    """
+    return (
+        select(SupplierProduct)
+        .join(Supplier, Supplier.id == SupplierProduct.supplier_id)
+        .where(SupplierProduct.archived_at.is_(None), Supplier.archived_at.is_(None))
+    )
+
+
 class SqlSourcingRepository:
     def __init__(self, session: Session) -> None:
         self.session = session
@@ -94,7 +107,7 @@ class SqlSourcingRepository:
         """
         rows = list(
             self.session.scalars(
-                select(SupplierProduct).where(SupplierProduct.ingredient_id == ingredient_id)
+                _active_products().where(SupplierProduct.ingredient_id == ingredient_id)
             )
         )
         rows.sort(key=lambda r: (not r.is_preferred, r.price_pence, r.id))
@@ -106,7 +119,7 @@ class SqlSourcingRepository:
             return {}
         rows = list(
             self.session.scalars(
-                select(SupplierProduct).where(SupplierProduct.ingredient_id.in_(ingredient_ids))
+                _active_products().where(SupplierProduct.ingredient_id.in_(ingredient_ids))
             )
         )
         rows.sort(key=lambda r: (r.ingredient_id, not r.is_preferred, r.price_pence, r.id))
@@ -122,7 +135,14 @@ class SqlSourcingRepository:
         return None if row is None else _terms(row)
 
     def all_terms(self) -> list[SupplierTerms]:
-        return [_terms(r) for r in self.session.scalars(select(Supplier).order_by(Supplier.name))]
+        """Active suppliers only: an archived one is out of ordering and out of the
+        "N of M suppliers' terms are guesses" count. `terms()` still reads it by id."""
+        return [
+            _terms(r)
+            for r in self.session.scalars(
+                select(Supplier).where(Supplier.archived_at.is_(None)).order_by(Supplier.name)
+            )
+        ]
 
     def terms_by_id(self) -> dict[int, SupplierTerms]:
         return {t.supplier_id: t for t in self.all_terms()}

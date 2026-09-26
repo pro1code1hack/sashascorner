@@ -1,0 +1,504 @@
+{
+  "months": [
+    "2025-10",
+    "2025-11",
+    "2025-12",
+    "2026-01",
+    "2026-02",
+    "2026-03",
+    "2026-04"
+  ],
+  "columns": [
+    {
+      "period": "2025-10",
+      "label": "October 2025",
+      "short_label": "Oct 25",
+      "trading_days": 1,
+      "expense_count": 5,
+      "card_pence": 98,
+      "cash_till_pence": 0,
+      "cash_off_till_pence": 0,
+      "delivery_gross_pence": null,
+      "delivery_missing": [
+        "Deliveroo: Oct 25",
+        "Just Eat: Oct 25"
+      ],
+      "revenue_pence": 98,
+      "cogs_by_category": [],
+      "stock_bought_pence": 0,
+      "written_off_pence": 0,
+      "written_off_is_estimate": false,
+      "cogs_pence": 0,
+      "stock_pct_bp": 0,
+      "stock_pct_warn": false,
+      "gross_profit_pence": 98,
+      "opex_by_category": [
+        {
+          "category": "Utilities",
+          "pence": 9213
+        }
+      ],
+      "opex_pence": 9213,
+      "delivery_commission_pence": null,
+      "delivery_ads_pence": null,
+      "net_profit_pence": -9115,
+      "net_warn": true,
+      "capital_pence": 166117,
+      "drawings_pence": 20000,
+      "expenses_missing": false,
+      "card_is_bank_deposits": true,
+      "incomplete": true,
+      "caveats": [
+        "Card takings before April 2026 are bank deposits on the day they landed, from the finance workbook, not till takings.",
+        "Deliveroo not uploaded for Oct 25: missing, not zero.",
+        "Just Eat not uploaded for Oct 25: missing, not zero."
+      ]
+    },
+    {
+      "period": "2025-11",
+      "label": "November 2025",
+      "short_label": "Nov 25",
+      "trading_days": 20,
+      "expense_count": 29,
+      "card_pence": 174447,
+      "cash_till_pence": 0,
+      "cash_off_till_pence": 0,
+      "delivery_gross_pence": 2962,
+      "delivery_missing": [
+        "Deliveroo: Nov 25"
+      ],
+      "revenue_pence": 177409,
+      "cogs_by_category": [
+        {
+          "category": "Stock — food",
+          "pence": 78347
+        },
+        {
+          "category": "Stock — other",
+          "pence": 15491
+        }
+      ],
+      "stock_bought_pence": 93838,
+      "written_off_pence": 0,
+      "written_off_is_estimate": false,
+      "cogs_pence": 93838,
+      "stock_pct_bp": 5289,
+      "stock_pct_warn": true,
+      "gross_profit_pence": 83571,
+      "opex_by_category": [
+        {
+          "category": "Rent",
+          "pence": 62500
+        },
+        {
+          "category": "Utilities",
+          "pence": 14191
+        }
+      ],
+      "opex_pence": 76691,
+      "delivery_commission_pence": null,
+      "delivery_ads_pence": null,
+      "net_profit_pence": 6880,
+      "net_warn": false,
+      "capital_pence": 85800,
+      "drawings_pence": 18675,
+      "expenses_missing": false,
+      "card_is_bank_deposits": true,
+      "incomplete": true,
+      "caveats": [
+        "Card takings before April 2026 are bank deposits on the day they landed, from the finance workbook, not till takings.",
+        "Deliveroo not uploaded for Nov 25: missing, not zero.",
+        "Just Eat commission not reported for Nov 25; left out, not counted as zero.",
+        "Just Eat ad spend not reported for Nov 25; left out, not counted as zero."
+      ]
+    },
+    {
+      "period": "2025-12",
+      "label": "December 2025",
+      "short_label": "Dec 25",
+      "trading_days": 29,
+      "expense_count": 13,
+      "card_pence": 159232,
+      "cash_till_pence": 0,
+      "cash_off_till_pence": 0,
+      "delivery_gross_pence": 1568,
+      "delivery_missing": [
+        "Deliveroo: Dec 25"
+      ],
+      "revenue_pence": 160800,
+      "cogs_by_category": [
+        {
+          "category": "Stock — coffee",
+          "pence": 9500
+        },
+        {
+          "category": "Stock — food",
+          "pence": 24845
+        },
+        {
+          "category": "Stock — other",
+          "pence": 20958
+        }
+      ],
+      "stock_bought_pence": 55303,
+      "written_off_pence": 0,
+      "written_off_is_estimate": false,
+      "cogs_pence": 55303,
+      "stock_pct_bp": 3439,
+      "stock_pct_warn": true,
+      "gross_profit_pence": 105497,
+      "opex_by_category": [
+        {
+          "category": "Rent",
+          "pence": 62500
+        },
+        {
+          "category": "Utilities",
+          "pence": 46442
+        }
+      ],
+      "opex_pence": 108942,
+      "delivery_commission_pence": null,
+      "delivery_ads_pence": null,
+      "net_profit_pence": -3445,
+      "net_warn": true,
+      "capital_pence": 183286,
+      "drawings_pence": 5195,
+      "expenses_missing": false,
+      "card_is_bank_deposits": true,
+      "incomplete": true,
+      "caveats": [
+        "Card takings before April 2026 are bank deposits on the day they landed, from the finance workbook, not till takings.",
+        "Deliveroo not uploaded for Dec 25: missing, not zero.",
+        "Just Eat commission not reported for Dec 25; left out, not counted as zero.",
+        "Just Eat ad spend not reported for Dec 25; left out, not counted as zero."
+      ]
+    },
+    {
+      "period": "2026-01",
+      "label": "January 2026",
+      "short_label": "Jan 26",
+      "trading_days": 30,
+      "expense_count": 24,
+      "card_pence": 178980,
+      "cash_till_pence": 0,
+      "cash_off_till_pence": 0,
+      "delivery_gross_pence": 1773,
+      "delivery_missing": [
+        "Deliveroo: Jan 26"
+      ],
+      "revenue_pence": 180753,
+      "cogs_by_category": [
+        {
+          "category": "Stock — coffee",
+          "pence": 3800
+        },
+        {
+          "category": "Stock — food",
+          "pence": 46216
+        },
+        {
+          "category": "Stock — other",
+          "pence": 56017
+        }
+      ],
+      "stock_bought_pence": 106033,
+      "written_off_pence": 0,
+      "written_off_is_estimate": false,
+      "cogs_pence": 106033,
+      "stock_pct_bp": 5866,
+      "stock_pct_warn": true,
+      "gross_profit_pence": 74720,
+      "opex_by_category": [
+        {
+          "category": "Rent",
+          "pence": 62500
+        },
+        {
+          "category": "Utilities",
+          "pence": 38500
+        },
+        {
+          "category": "Other",
+          "pence": 899
+        }
+      ],
+      "opex_pence": 101899,
+      "delivery_commission_pence": null,
+      "delivery_ads_pence": null,
+      "net_profit_pence": -27179,
+      "net_warn": true,
+      "capital_pence": 0,
+      "drawings_pence": 1170,
+      "expenses_missing": false,
+      "card_is_bank_deposits": true,
+      "incomplete": true,
+      "caveats": [
+        "Card takings before April 2026 are bank deposits on the day they landed, from the finance workbook, not till takings.",
+        "Deliveroo not uploaded for Jan 26: missing, not zero.",
+        "Just Eat commission not reported for Jan 26; left out, not counted as zero.",
+        "Just Eat ad spend not reported for Jan 26; left out, not counted as zero."
+      ]
+    },
+    {
+      "period": "2026-02",
+      "label": "February 2026",
+      "short_label": "Feb 26",
+      "trading_days": 28,
+      "expense_count": 32,
+      "card_pence": 171270,
+      "cash_till_pence": 0,
+      "cash_off_till_pence": 0,
+      "delivery_gross_pence": 2012,
+      "delivery_missing": [
+        "Deliveroo: Feb 26"
+      ],
+      "revenue_pence": 173282,
+      "cogs_by_category": [
+        {
+          "category": "Stock — coffee",
+          "pence": 11400
+        },
+        {
+          "category": "Stock — food",
+          "pence": 37518
+        },
+        {
+          "category": "Stock — other",
+          "pence": 30916
+        }
+      ],
+      "stock_bought_pence": 79834,
+      "written_off_pence": 0,
+      "written_off_is_estimate": false,
+      "cogs_pence": 79834,
+      "stock_pct_bp": 4607,
+      "stock_pct_warn": true,
+      "gross_profit_pence": 93448,
+      "opex_by_category": [
+        {
+          "category": "Rent",
+          "pence": 62500
+        },
+        {
+          "category": "Utilities",
+          "pence": 58868
+        },
+        {
+          "category": "Other",
+          "pence": 899
+        }
+      ],
+      "opex_pence": 122267,
+      "delivery_commission_pence": null,
+      "delivery_ads_pence": null,
+      "net_profit_pence": -28819,
+      "net_warn": true,
+      "capital_pence": 0,
+      "drawings_pence": 3520,
+      "expenses_missing": false,
+      "card_is_bank_deposits": true,
+      "incomplete": true,
+      "caveats": [
+        "Card takings before April 2026 are bank deposits on the day they landed, from the finance workbook, not till takings.",
+        "Deliveroo not uploaded for Feb 26: missing, not zero.",
+        "Just Eat commission not reported for Feb 26; left out, not counted as zero.",
+        "Just Eat ad spend not reported for Feb 26; left out, not counted as zero."
+      ]
+    },
+    {
+      "period": "2026-03",
+      "label": "March 2026",
+      "short_label": "Mar 26",
+      "trading_days": 31,
+      "expense_count": 46,
+      "card_pence": 240544,
+      "cash_till_pence": 0,
+      "cash_off_till_pence": 0,
+      "delivery_gross_pence": 3177,
+      "delivery_missing": [
+        "Deliveroo: Mar 26"
+      ],
+      "revenue_pence": 243721,
+      "cogs_by_category": [
+        {
+          "category": "Stock — coffee",
+          "pence": 7600
+        },
+        {
+          "category": "Stock — food",
+          "pence": 41048
+        },
+        {
+          "category": "Stock — other",
+          "pence": 39307
+        }
+      ],
+      "stock_bought_pence": 87955,
+      "written_off_pence": 0,
+      "written_off_is_estimate": false,
+      "cogs_pence": 87955,
+      "stock_pct_bp": 3609,
+      "stock_pct_warn": true,
+      "gross_profit_pence": 155766,
+      "opex_by_category": [
+        {
+          "category": "Rent",
+          "pence": 62500
+        },
+        {
+          "category": "Utilities",
+          "pence": 44613
+        },
+        {
+          "category": "Other",
+          "pence": 58148
+        }
+      ],
+      "opex_pence": 165261,
+      "delivery_commission_pence": null,
+      "delivery_ads_pence": null,
+      "net_profit_pence": -9495,
+      "net_warn": true,
+      "capital_pence": 25000,
+      "drawings_pence": 7794,
+      "expenses_missing": false,
+      "card_is_bank_deposits": true,
+      "incomplete": true,
+      "caveats": [
+        "Card takings before April 2026 are bank deposits on the day they landed, from the finance workbook, not till takings.",
+        "Deliveroo not uploaded for Mar 26: missing, not zero.",
+        "Just Eat commission not reported for Mar 26; left out, not counted as zero.",
+        "Just Eat ad spend not reported for Mar 26; left out, not counted as zero."
+      ]
+    },
+    {
+      "period": "2026-04",
+      "label": "April 2026",
+      "short_label": "Apr 26",
+      "trading_days": 21,
+      "expense_count": 0,
+      "card_pence": 129305,
+      "cash_till_pence": 0,
+      "cash_off_till_pence": 0,
+      "delivery_gross_pence": null,
+      "delivery_missing": [
+        "Deliveroo: Apr 26",
+        "Just Eat: Apr 26"
+      ],
+      "revenue_pence": 129305,
+      "cogs_by_category": [],
+      "stock_bought_pence": 0,
+      "written_off_pence": 0,
+      "written_off_is_estimate": false,
+      "cogs_pence": 0,
+      "stock_pct_bp": null,
+      "stock_pct_warn": false,
+      "gross_profit_pence": null,
+      "opex_by_category": [],
+      "opex_pence": 0,
+      "delivery_commission_pence": null,
+      "delivery_ads_pence": null,
+      "net_profit_pence": null,
+      "net_warn": false,
+      "capital_pence": 0,
+      "drawings_pence": 0,
+      "expenses_missing": true,
+      "card_is_bank_deposits": false,
+      "incomplete": true,
+      "caveats": [
+        "No running costs entered for April 2026: stock, rent and the rest are missing, so there is no profit figure for it yet.",
+        "Deliveroo not uploaded for Apr 26: missing, not zero.",
+        "Just Eat not uploaded for Apr 26: missing, not zero."
+      ]
+    }
+  ],
+  "total": {
+    "period": "all",
+    "label": "Everything so far",
+    "short_label": "Total",
+    "trading_days": 160,
+    "expense_count": 149,
+    "card_pence": 1053876,
+    "cash_till_pence": 0,
+    "cash_off_till_pence": 0,
+    "delivery_gross_pence": 11492,
+    "delivery_missing": [
+      "Deliveroo: Oct 25 to Apr 26 (7 months)",
+      "Just Eat: Oct 25, Apr 26"
+    ],
+    "revenue_pence": 1065368,
+    "cogs_by_category": [
+      {
+        "category": "Stock — coffee",
+        "pence": 32300
+      },
+      {
+        "category": "Stock — food",
+        "pence": 227974
+      },
+      {
+        "category": "Stock — other",
+        "pence": 162689
+      }
+    ],
+    "stock_bought_pence": 422963,
+    "written_off_pence": 0,
+    "written_off_is_estimate": false,
+    "cogs_pence": 422963,
+    "stock_pct_bp": 3970,
+    "stock_pct_warn": true,
+    "gross_profit_pence": 642405,
+    "opex_by_category": [
+      {
+        "category": "Rent",
+        "pence": 312500
+      },
+      {
+        "category": "Utilities",
+        "pence": 211827
+      },
+      {
+        "category": "Other",
+        "pence": 59946
+      }
+    ],
+    "opex_pence": 584273,
+    "delivery_commission_pence": null,
+    "delivery_ads_pence": null,
+    "net_profit_pence": 58132,
+    "net_warn": false,
+    "capital_pence": 460203,
+    "drawings_pence": 56354,
+    "expenses_missing": false,
+    "card_is_bank_deposits": true,
+    "incomplete": true,
+    "caveats": [
+      "April 2026 has takings but no running costs entered; this total counts its takings without its costs.",
+      "Card takings before April 2026 are bank deposits on the day they landed, from the finance workbook, not till takings.",
+      "Deliveroo not uploaded for Oct 25 to Apr 26 (7 months): missing, not zero.",
+      "Just Eat not uploaded for Oct 25, Apr 26: missing, not zero.",
+      "Just Eat commission not reported for Nov 25 to Mar 26 (5 months); left out, not counted as zero.",
+      "Just Eat ad spend not reported for Nov 25 to Mar 26 (5 months); left out, not counted as zero."
+    ]
+  },
+  "cogs_categories": [
+    "Stock — coffee",
+    "Stock — food",
+    "Stock — other"
+  ],
+  "opex_categories": [
+    "Rent",
+    "Utilities",
+    "Other"
+  ],
+  "threshold_bp": 3200,
+  "caveats": [
+    "April 2026 has takings but no running costs entered; this total counts its takings without its costs.",
+    "Card takings before April 2026 are bank deposits on the day they landed, from the finance workbook, not till takings.",
+    "Deliveroo not uploaded for Oct 25 to Apr 26 (7 months): missing, not zero.",
+    "Just Eat not uploaded for Oct 25, Apr 26: missing, not zero.",
+    "Just Eat commission not reported for Nov 25 to Mar 26 (5 months); left out, not counted as zero.",
+    "Just Eat ad spend not reported for Nov 25 to Mar 26 (5 months); left out, not counted as zero."
+  ]
+}

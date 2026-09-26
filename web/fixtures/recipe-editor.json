@@ -1,0 +1,536 @@
+{
+  "template_id": 1,
+  "name": "Flavoured Latte",
+  "category": "Latte / flavoured latte",
+  "version": "058241bb1b9b7250",
+  "as_of": "2026-09-26T10:26:38.913132Z",
+  "sizes": [
+    "S",
+    "M",
+    "XL"
+  ],
+  "prep_seconds_by_size": {
+    "S": 75,
+    "M": 85,
+    "XL": 100
+  },
+  "prep_is_estimate": true,
+  "base_price_by_size": {
+    "S": 320,
+    "M": 360,
+    "XL": 410
+  },
+  "base_price_disagrees": [
+    "S",
+    "M",
+    "XL"
+  ],
+  "loaded_hourly_rate_pence": 1450,
+  "components": [
+    {
+      "component_id": 1,
+      "role": "COFFEE",
+      "ingredient_id": 8,
+      "ingredient_name": "Coffee beans (house blend)",
+      "unit": "KG",
+      "qty_by_size": {
+        "M": "0.018",
+        "S": "0.018",
+        "XL": "0.027"
+      },
+      "is_substitutable": false,
+      "is_required": true,
+      "unit_cost": {
+        "pence": "1900",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      }
+    },
+    {
+      "component_id": 3,
+      "role": "FLAVOUR",
+      "ingredient_id": null,
+      "ingredient_name": null,
+      "unit": null,
+      "qty_by_size": {
+        "M": "20",
+        "S": "15",
+        "XL": "25"
+      },
+      "is_substitutable": false,
+      "is_required": true,
+      "unit_cost": null
+    },
+    {
+      "component_id": 2,
+      "role": "MILK",
+      "ingredient_id": 1,
+      "ingredient_name": "Whole milk",
+      "unit": "L",
+      "qty_by_size": {
+        "M": "0.18",
+        "S": "0.12",
+        "XL": "0.25"
+      },
+      "is_substitutable": true,
+      "is_required": true,
+      "unit_cost": {
+        "pence": "69.705882",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      }
+    },
+    {
+      "component_id": 5,
+      "role": "PACKAGING",
+      "ingredient_id": 46,
+      "ingredient_name": "8oz paper cup",
+      "unit": "EACH",
+      "qty_by_size": {
+        "S": "1"
+      },
+      "is_substitutable": false,
+      "is_required": false,
+      "unit_cost": {
+        "pence": "8.508",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      }
+    },
+    {
+      "component_id": 6,
+      "role": "PACKAGING",
+      "ingredient_id": 47,
+      "ingredient_name": "8oz cup lid",
+      "unit": "EACH",
+      "qty_by_size": {
+        "S": "1"
+      },
+      "is_substitutable": false,
+      "is_required": false,
+      "unit_cost": {
+        "pence": "2.574",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      }
+    },
+    {
+      "component_id": 7,
+      "role": "PACKAGING",
+      "ingredient_id": 48,
+      "ingredient_name": "12oz paper cup",
+      "unit": "EACH",
+      "qty_by_size": {
+        "M": "1"
+      },
+      "is_substitutable": false,
+      "is_required": false,
+      "unit_cost": {
+        "pence": "9.588",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      }
+    },
+    {
+      "component_id": 8,
+      "role": "PACKAGING",
+      "ingredient_id": 49,
+      "ingredient_name": "12oz cup lid",
+      "unit": "EACH",
+      "qty_by_size": {
+        "M": "1"
+      },
+      "is_substitutable": false,
+      "is_required": false,
+      "unit_cost": {
+        "pence": "2.574",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      }
+    },
+    {
+      "component_id": 9,
+      "role": "PACKAGING",
+      "ingredient_id": 50,
+      "ingredient_name": "16oz paper cup",
+      "unit": "EACH",
+      "qty_by_size": {
+        "XL": "1"
+      },
+      "is_substitutable": false,
+      "is_required": false,
+      "unit_cost": {
+        "pence": "10.335",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      }
+    },
+    {
+      "component_id": 10,
+      "role": "PACKAGING",
+      "ingredient_id": 51,
+      "ingredient_name": "16oz cup lid",
+      "unit": "EACH",
+      "qty_by_size": {
+        "XL": "1"
+      },
+      "is_substitutable": false,
+      "is_required": false,
+      "unit_cost": {
+        "pence": "2.874",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      }
+    },
+    {
+      "component_id": 4,
+      "role": "SUNDRY",
+      "ingredient_id": 54,
+      "ingredient_name": "Napkin",
+      "unit": "EACH",
+      "qty_by_size": {
+        "M": "1",
+        "S": "1",
+        "XL": "1"
+      },
+      "is_substitutable": false,
+      "is_required": true,
+      "unit_cost": {
+        "pence": "0.8",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      }
+    }
+  ],
+  "axes": [
+    {
+      "axis_id": 1,
+      "name": "Flavour",
+      "role": "FLAVOUR",
+      "options": [
+        {
+          "option_id": 2,
+          "axis_id": 1,
+          "name": "Caramel",
+          "ingredient_id": 11,
+          "ingredient_name": "Caramel syrup (Monin)",
+          "unit": "ML",
+          "qty_by_size": null,
+          "price_delta_pence": 0,
+          "season_id": null,
+          "season_name": null,
+          "active": true,
+          "missing_ingredient": false,
+          "menu_item_ids": {
+            "S": 318,
+            "M": 319,
+            "XL": 320
+          }
+        },
+        {
+          "option_id": 3,
+          "axis_id": 1,
+          "name": "Pistachio",
+          "ingredient_id": 21,
+          "ingredient_name": "Pistachio syrup (Monin)",
+          "unit": "ML",
+          "qty_by_size": null,
+          "price_delta_pence": 30,
+          "season_id": 1,
+          "season_name": "Spring seasonal drinks",
+          "active": true,
+          "missing_ingredient": false,
+          "menu_item_ids": {
+            "S": 205,
+            "M": 204,
+            "XL": 206
+          }
+        },
+        {
+          "option_id": 1,
+          "axis_id": 1,
+          "name": "Vanilla",
+          "ingredient_id": 10,
+          "ingredient_name": "Vanilla syrup (Monin)",
+          "unit": "ML",
+          "qty_by_size": null,
+          "price_delta_pence": 0,
+          "season_id": null,
+          "season_name": null,
+          "active": true,
+          "missing_ingredient": false,
+          "menu_item_ids": {
+            "S": 315,
+            "M": 316,
+            "XL": 317
+          }
+        }
+      ]
+    }
+  ],
+  "items": [
+    {
+      "menu_item_id": 318,
+      "name": "Caramel Latte",
+      "size_code": "S",
+      "option_id": 2,
+      "price_pence": 320,
+      "active": true,
+      "on_till": false,
+      "cost": {
+        "pence": "67.946706",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "prep_seconds": 75,
+      "prep_is_estimate": true,
+      "availability": "AVAILABLE"
+    },
+    {
+      "menu_item_id": 319,
+      "name": "Caramel Latte",
+      "size_code": "M",
+      "option_id": 2,
+      "price_pence": 360,
+      "active": true,
+      "on_till": false,
+      "cost": {
+        "pence": "77.709059",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "prep_seconds": 85,
+      "prep_is_estimate": true,
+      "availability": "AVAILABLE"
+    },
+    {
+      "menu_item_id": 320,
+      "name": "Caramel Latte",
+      "size_code": "XL",
+      "option_id": 2,
+      "price_pence": 410,
+      "active": true,
+      "on_till": false,
+      "cost": {
+        "pence": "105.235471",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "prep_seconds": 100,
+      "prep_is_estimate": true,
+      "availability": "AVAILABLE"
+    },
+    {
+      "menu_item_id": 205,
+      "name": "Pistachio Latte",
+      "size_code": "S",
+      "option_id": 3,
+      "price_pence": 390,
+      "active": true,
+      "on_till": false,
+      "cost": {
+        "pence": "67.946706",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "prep_seconds": 75,
+      "prep_is_estimate": true,
+      "availability": "OUT_OF_SEASON"
+    },
+    {
+      "menu_item_id": 204,
+      "name": "Pistachio Latte",
+      "size_code": "M",
+      "option_id": 3,
+      "price_pence": 410,
+      "active": true,
+      "on_till": false,
+      "cost": {
+        "pence": "77.709059",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "prep_seconds": 85,
+      "prep_is_estimate": true,
+      "availability": "OUT_OF_SEASON"
+    },
+    {
+      "menu_item_id": 206,
+      "name": "Pistachio Latte",
+      "size_code": "XL",
+      "option_id": 3,
+      "price_pence": 430,
+      "active": true,
+      "on_till": false,
+      "cost": {
+        "pence": "105.235471",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "prep_seconds": 135,
+      "prep_is_estimate": true,
+      "availability": "OUT_OF_SEASON"
+    },
+    {
+      "menu_item_id": 315,
+      "name": "Vanilla Latte",
+      "size_code": "S",
+      "option_id": 1,
+      "price_pence": 320,
+      "active": true,
+      "on_till": false,
+      "cost": {
+        "pence": "67.946706",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "prep_seconds": 75,
+      "prep_is_estimate": true,
+      "availability": "AVAILABLE"
+    },
+    {
+      "menu_item_id": 316,
+      "name": "Vanilla Latte",
+      "size_code": "M",
+      "option_id": 1,
+      "price_pence": 360,
+      "active": true,
+      "on_till": false,
+      "cost": {
+        "pence": "77.709059",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "prep_seconds": 85,
+      "prep_is_estimate": true,
+      "availability": "AVAILABLE"
+    },
+    {
+      "menu_item_id": 317,
+      "name": "Vanilla Latte",
+      "size_code": "XL",
+      "option_id": 1,
+      "price_pence": 410,
+      "active": true,
+      "on_till": false,
+      "cost": {
+        "pence": "105.235471",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "prep_seconds": 100,
+      "prep_is_estimate": true,
+      "availability": "AVAILABLE"
+    }
+  ],
+  "swaps": [
+    {
+      "modifier_id": 2,
+      "name": "Almond milk",
+      "action": "SUBSTITUTE",
+      "target_role": "MILK",
+      "ingredient_id": 4,
+      "ingredient_name": "Almond milk (barista)",
+      "qty_delta": null,
+      "qty_multiplier": null,
+      "price_pence": 40,
+      "price_is_estimate": null,
+      "is_active": true,
+      "applies_here": true,
+      "version_from": "2026-07-25T07:04:27Z"
+    },
+    {
+      "modifier_id": 1,
+      "name": "Oat milk",
+      "action": "SUBSTITUTE",
+      "target_role": "MILK",
+      "ingredient_id": 3,
+      "ingredient_name": "Oat milk (barista)",
+      "qty_delta": null,
+      "qty_multiplier": null,
+      "price_pence": 40,
+      "price_is_estimate": null,
+      "is_active": true,
+      "applies_here": true,
+      "version_from": "2026-07-25T07:04:27Z"
+    },
+    {
+      "modifier_id": 3,
+      "name": "Soy milk",
+      "action": "SUBSTITUTE",
+      "target_role": "MILK",
+      "ingredient_id": 5,
+      "ingredient_name": "Soy milk (barista)",
+      "qty_delta": null,
+      "qty_multiplier": null,
+      "price_pence": 40,
+      "price_is_estimate": null,
+      "is_active": true,
+      "applies_here": true,
+      "version_from": "2026-07-25T07:04:27Z"
+    }
+  ],
+  "history": {
+    "template_id": 1,
+    "baseline_from": "2025-11-01T00:00:00Z",
+    "entries": []
+  },
+  "item_name_pattern": "{flavour} Latte",
+  "warnings": [
+    "The items of this recipe do not share one base price at S, M, XL: the most common one is shown. Setting a base price makes them agree."
+  ]
+}

@@ -207,7 +207,7 @@ def expand_pending(
             expanded_ids.append(sale.sale_id)
             continue
 
-        modifiers = composition_repo.modifiers(list(sale.modifier_ids))
+        modifiers = composition_repo.modifiers(list(sale.modifier_ids), sale.sold_at)
         try:
             recipe = resolve_recipe(spec, modifiers, sale.sold_at, ingredients=snapshots)
         except SubstitutionError as exc:

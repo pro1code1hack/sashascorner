@@ -1,0 +1,276 @@
+{
+  "row": {
+    "ingredient_id": 49,
+    "name": "12oz cup lid",
+    "tier": "A",
+    "unit": "EACH",
+    "tracking_enabled": true,
+    "waste_factor": "0.01",
+    "unit_cost": {
+      "pence": "2.574",
+      "source": "ESTIMATE",
+      "is_estimate": true,
+      "is_missing": false,
+      "excluded_from_aggregates": false,
+      "note": null
+    },
+    "on_hand": {
+      "qty": "12",
+      "unit": "EACH",
+      "as_of": "2026-09-26T22:59:59Z",
+      "is_theoretical": true,
+      "has_count_basis": true,
+      "basis_count_qty": "12",
+      "basis_counted_at": "2026-09-23T22:24:06.840850Z",
+      "movement_sum": "0",
+      "movement_count": 0,
+      "basis_label": "counted + ledger",
+      "is_negative": false
+    },
+    "shelf_life": {
+      "storage": "AMBIENT",
+      "shelf_life_days": null,
+      "open_life_days": null,
+      "transit_buffer_days": 0,
+      "usable_days": null,
+      "is_perishable": false,
+      "source": "ESTIMATE"
+    },
+    "batches": [
+      {
+        "batch_id": 113,
+        "qty_remaining": "12",
+        "unit": "EACH",
+        "received_at": "2026-08-11T06:30:00Z",
+        "expires_at": null,
+        "opened_at": null,
+        "effective_expiry": null,
+        "days_left": null,
+        "unit_cost_pence": "2.574",
+        "value_pence": "30.888",
+        "qty_received": "1000",
+        "expiry_assumed": false,
+        "received_by": null
+      }
+    ],
+    "batch_qty": "12",
+    "batch_coverage_gap": "0",
+    "soonest_expiry_days": null,
+    "is_short_dated": false,
+    "drift": {
+      "has_observation": true,
+      "observed_at": "2026-09-23T22:24:06.840850Z",
+      "theoretical_qty": "47.162",
+      "counted_qty": "12",
+      "drift_pct": 293.017,
+      "verdict": "FORCE_MANUAL",
+      "mean_abs_drift_pct": 51.413,
+      "observation_count": 6,
+      "auto_order_enabled": false,
+      "auto_order_reason": "drift +293.02% exceeds 15.0%: auto-ordering refused and revoked immediately, theoretical stock is not trustworthy",
+      "clean_streak": 0,
+      "required_streak": 2,
+      "gate_action": "HOLD",
+      "trust_status": "excluded",
+      "attribution": {
+        "cause": "MEASUREMENT",
+        "headline": "RECIPE OR WASTE FACTOR",
+        "action": "only 0% of the loss is expiry, so the stock left unrecorded. FIX THE RECIPE or tune waste_factor: order size is not the problem, and cutting it would cause a stockout while the real gap stayed.",
+        "gap_qty": "35.162",
+        "expired_qty": "0",
+        "measurement_qty": "35.162",
+        "expiry_qty": "0",
+        "expiry_share": 0.0,
+        "unexplained_loss_qty": "35.162",
+        "surplus_qty": "0",
+        "surplus_note": null,
+        "loss_pct_of_consumption": 60.024
+      }
+    },
+    "run_out": {
+      "forecast": {
+        "qty": "210.270850",
+        "unit": "EACH",
+        "window_days": 28,
+        "is_low_confidence": false,
+        "reasons": [],
+        "used_flat_average": false,
+        "history_days": 28
+      },
+      "daily_rate_qty": "7.509673",
+      "days": "1.60",
+      "on": "2026-09-27",
+      "is_out_of_stock": false,
+      "note": null
+    },
+    "category": "Packaging",
+    "trust_label": "excluded",
+    "checklist": null,
+    "since_count": {
+      "counted_at": "2026-09-23T22:24:06.840850Z",
+      "delivered": "0",
+      "sold": "0",
+      "wasted": "0",
+      "expired": "0",
+      "adjusted": "0",
+      "days": 3
+    },
+    "par": {
+      "min_qty": "41.679",
+      "max_qty": "1375.114",
+      "safety_days": "2",
+      "min_qty_set_by": null,
+      "min_qty_set_at": null
+    }
+  },
+  "drift_history": [
+    {
+      "observed_at": "2026-09-23T22:24:06.840850Z",
+      "theoretical_qty": "47.162",
+      "counted_qty": "12",
+      "drift_pct": 293.017,
+      "waste_factor_at_count": "0.01",
+      "expired_qty_in_window": "0"
+    },
+    {
+      "observed_at": "2026-09-19T20:00:00Z",
+      "theoretical_qty": "109.012",
+      "counted_qty": "105.742",
+      "drift_pct": 3.092,
+      "waste_factor_at_count": "0.01",
+      "expired_qty_in_window": "0"
+    },
+    {
+      "observed_at": "2026-09-12T20:00:00Z",
+      "theoretical_qty": "271.693",
+      "counted_qty": "263.542",
+      "drift_pct": 3.093,
+      "waste_factor_at_count": "0.01",
+      "expired_qty_in_window": "0"
+    },
+    {
+      "observed_at": "2026-09-05T20:00:00Z",
+      "theoretical_qty": "431.075",
+      "counted_qty": "418.143",
+      "drift_pct": 3.093,
+      "waste_factor_at_count": "0.01",
+      "expired_qty_in_window": "0"
+    },
+    {
+      "observed_at": "2026-08-29T20:00:00Z",
+      "theoretical_qty": "598.51",
+      "counted_qty": "580.555",
+      "drift_pct": 3.093,
+      "waste_factor_at_count": "0.01",
+      "expired_qty_in_window": "0"
+    },
+    {
+      "observed_at": "2026-08-22T20:00:00Z",
+      "theoretical_qty": "766.959",
+      "counted_qty": "743.95",
+      "drift_pct": 3.093,
+      "waste_factor_at_count": "0.01",
+      "expired_qty_in_window": "0"
+    },
+    {
+      "observed_at": "2026-08-15T20:00:00Z",
+      "theoretical_qty": "938.535",
+      "counted_qty": "910.379",
+      "drift_pct": 3.093,
+      "waste_factor_at_count": "0.01",
+      "expired_qty_in_window": "0"
+    },
+    {
+      "observed_at": "2026-08-08T20:00:00Z",
+      "theoretical_qty": "79.283",
+      "counted_qty": "76.905",
+      "drift_pct": 3.092,
+      "waste_factor_at_count": "0.01",
+      "expired_qty_in_window": "0"
+    },
+    {
+      "observed_at": "2026-08-01T20:00:00Z",
+      "theoretical_qty": "220.22",
+      "counted_qty": "213.613",
+      "drift_pct": 3.093,
+      "waste_factor_at_count": "0.01",
+      "expired_qty_in_window": "0"
+    }
+  ],
+  "suggested_waste_factor": null,
+  "templates_using": [
+    "1"
+  ],
+  "counts": [
+    {
+      "stock_count_id": 127,
+      "counted_at": "2026-09-23T22:24:06.840850Z",
+      "counted_qty": "12",
+      "counted_by": "telegram:sasha",
+      "drift_pct": 293.017
+    },
+    {
+      "stock_count_id": 102,
+      "counted_at": "2026-09-19T20:00:00Z",
+      "counted_qty": "105.742",
+      "counted_by": "demo-seed",
+      "drift_pct": 3.092
+    },
+    {
+      "stock_count_id": 101,
+      "counted_at": "2026-09-12T20:00:00Z",
+      "counted_qty": "263.542",
+      "counted_by": "demo-seed",
+      "drift_pct": 3.093
+    },
+    {
+      "stock_count_id": 100,
+      "counted_at": "2026-09-05T20:00:00Z",
+      "counted_qty": "418.143",
+      "counted_by": "demo-seed",
+      "drift_pct": 3.093
+    },
+    {
+      "stock_count_id": 99,
+      "counted_at": "2026-08-29T20:00:00Z",
+      "counted_qty": "580.555",
+      "counted_by": "demo-seed",
+      "drift_pct": 3.093
+    },
+    {
+      "stock_count_id": 98,
+      "counted_at": "2026-08-22T20:00:00Z",
+      "counted_qty": "743.95",
+      "counted_by": "demo-seed",
+      "drift_pct": 3.093
+    },
+    {
+      "stock_count_id": 97,
+      "counted_at": "2026-08-15T20:00:00Z",
+      "counted_qty": "910.379",
+      "counted_by": "demo-seed",
+      "drift_pct": 3.093
+    },
+    {
+      "stock_count_id": 96,
+      "counted_at": "2026-08-08T20:00:00Z",
+      "counted_qty": "76.905",
+      "counted_by": "demo-seed",
+      "drift_pct": 3.092
+    },
+    {
+      "stock_count_id": 95,
+      "counted_at": "2026-08-01T20:00:00Z",
+      "counted_qty": "213.613",
+      "counted_by": "demo-seed",
+      "drift_pct": 3.093
+    },
+    {
+      "stock_count_id": 49,
+      "counted_at": "2026-07-25T06:00:00Z",
+      "counted_qty": "400",
+      "counted_by": "demo-seed",
+      "drift_pct": null
+    }
+  ]
+}

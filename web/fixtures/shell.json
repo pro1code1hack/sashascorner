@@ -1,0 +1,31 @@
+{
+  "sync": {
+    "lightspeed_configured": false,
+    "last_ok_finished_at": null,
+    "last_attempt": null,
+    "last_sale_at": "2026-09-22T15:39:07Z",
+    "stale_after_hours": 12,
+    "is_stale": false
+  },
+  "badges": {
+    "orders_waiting": 0,
+    "proposals_waiting": 0
+  },
+  "banners": [
+    {
+      "id": "lightspeed_not_connected",
+      "instance_key": "lightspeed_not_connected",
+      "tone": "stale",
+      "text": "Lightspeed isn't connected, so sales aren't coming in by themselves. Stock is worked out from what was imported by hand.",
+      "action": {
+        "label": "Settings",
+        "kind": "navigate",
+        "route": "#/settings"
+      }
+    }
+  ],
+  "setup": {
+    "empty_install": false,
+    "open_steps": 3
+  }
+}

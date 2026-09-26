@@ -4,7 +4,16 @@ from datetime import datetime, time
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import Boolean, ForeignKey, Integer, String, Text, Time, UniqueConstraint
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    Time,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import JSON
 
@@ -58,8 +67,23 @@ class Supplier(Base):
     agent_instructions: Mapped[str | None] = mapped_column(Text)
     channel_config: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
 
+    # --- back-office profile (stock-orders-suppliers spec 4.3) ------------------
+    #: Free text: "Wholesale", "Bakery", "Retail"... Display only; ordering never
+    #: branches on it (that is `order_channel`).
+    kind: Mapped[str | None] = mapped_column(String(40))
+    notes: Mapped[str | None] = mapped_column(Text)
+    #: "Delete supplier" archives (spec C12): POs, prices and routings reference it.
+    #: Archived suppliers and their products drop out of sourcing. Refused while an
+    #: open PO exists (service rule).
+    archived_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+    archived_by: Mapped[str | None] = mapped_column(String(120))
+
     products: Mapped[list[SupplierProduct]] = relationship(
         back_populates="supplier", cascade="all, delete-orphan"
+    )
+
+    __table_args__ = (
+        CheckConstraint("archived_at IS NULL OR archived_by IS NOT NULL", name="archive_signed"),
     )
 
     def __repr__(self) -> str:
@@ -87,10 +111,15 @@ class SupplierProduct(Base):
     #: different kind of fact from one off last week's invoice.
     last_seen_price_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
 
+    #: Unlinking a product archives it (open POs reference `po_line.supplier_product_id`).
+    archived_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+    archived_by: Mapped[str | None] = mapped_column(String(120))
+
     supplier: Mapped[Supplier] = relationship(back_populates="products")
     ingredient: Mapped[Ingredient] = relationship()
 
     __table_args__ = (
+        CheckConstraint("archived_at IS NULL OR archived_by IS NOT NULL", name="archive_signed"),
         UniqueConstraint(
             "supplier_id", "ingredient_id", "sku", name="uq_supplier_product_sup_ing_sku"
         ),

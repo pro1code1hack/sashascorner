@@ -312,6 +312,9 @@ def _candidate(
         forecast=forecast,
         shelf_life=shelf_life,
         season=season,
+        # Spec C8: a candidate never counted is reported, not sized. `latest_count` is
+        # read at the start of the order date, the same instant on-hand is.
+        has_count_basis=on_hand.has_count_basis,
     )
 
 
@@ -611,6 +614,10 @@ def _emergency_requests(
         for outcome in plan.outcomes:
             candidate = outcome.candidate
             if candidate.ingredient_id in seen:
+                continue
+            if not candidate.has_count_basis:
+                # Spec C8: "runs out before the van" computed from a figure nobody has
+                # counted is not a reason to walk to a shop. It is listed to count.
                 continue
             seen.add(candidate.ingredient_id)
             available = options.get(candidate.ingredient_id, [])

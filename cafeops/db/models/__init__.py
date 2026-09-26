@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from cafeops.db.base import Base
+from cafeops.db.models.agent_proposal import AgentProposal
+from cafeops.db.models.auth import AuthAudit, AuthCredential, AuthSession
 from cafeops.db.models.batch import Season, StockBatch
 from cafeops.db.models.channel import (
     AgentActionLog,
@@ -14,6 +16,8 @@ from cafeops.db.models.composition import (
     DrinkTemplate,
     LegacyStagedRecipe,
     Modifier,
+    ModifierVersion,
+    RecipeChange,
     SizeProfile,
     TemplateComponent,
     VariantAxis,
@@ -21,58 +25,123 @@ from cafeops.db.models.composition import (
 )
 from cafeops.db.models.enums import (
     AgentToolOutcome,
+    AuthEvent,
     ChannelSourceKind,
     ChecklistStatus,
     ComponentRole,
+    DirectorEntryType,
+    ExpenseGroup,
+    ExpenseKind,
+    ExpenseMethod,
+    ExpirySource,
+    FinanceSource,
+    MenuKind,
+    MenuPriceSource,
     ModifierAction,
     MovementType,
     OrderChannel,
+    PaymentBasis,
     POStatus,
     PriceSource,
+    ProposalConfidence,
+    ProposalKind,
+    ProposalStatus,
     SaleChannel,
     SalesChannelName,
     SizeCode,
     Storage,
+    SyncSource,
+    SyncStatus,
+    SyncTrigger,
     Tier,
     Unit,
+    WriteOffReason,
 )
-from cafeops.db.models.ingredient import Ingredient, IngredientPrice
-from cafeops.db.models.menu import ManualRecipeLine, MenuItem, MenuItemCost
+from cafeops.db.models.finance import (
+    CardPayout,
+    CashCount,
+    ChannelStatement,
+    DirectorEntry,
+    Expense,
+    ExpenseCategory,
+    FinanceSetting,
+    TradingDay,
+)
+from cafeops.db.models.ingredient import Ingredient, IngredientPrice, IngredientTierChange
+from cafeops.db.models.media import MediaAsset
+from cafeops.db.models.menu import (
+    ManualRecipeLine,
+    MenuCategory,
+    MenuItem,
+    MenuItemCost,
+    MenuItemPrice,
+)
 from cafeops.db.models.par import ParLevel
 from cafeops.db.models.payment import PaymentDay
 from cafeops.db.models.purchase_order import ChecklistResponse, POLine, PurchaseOrder
 from cafeops.db.models.sale import Sale
 from cafeops.db.models.stock import DriftObservation, StockCount, StockMovement
 from cafeops.db.models.supplier import Supplier, SupplierProduct
+from cafeops.db.models.sync_run import SyncRun
 
 __all__ = [
     "AgentActionLog",
+    "AgentProposal",
     "AgentToolOutcome",
+    "AuthAudit",
+    "AuthCredential",
+    "AuthEvent",
+    "AuthSession",
     "Base",
+    "CardPayout",
+    "CashCount",
     "ChannelItemMetric",
     "ChannelMetric",
     "ChannelSourceKind",
+    "ChannelStatement",
     "ChecklistResponse",
     "ChecklistStatus",
     "ComponentRole",
+    "DirectorEntry",
+    "DirectorEntryType",
     "DriftObservation",
     "DrinkTemplate",
+    "Expense",
+    "ExpenseCategory",
+    "ExpenseGroup",
+    "ExpenseKind",
+    "ExpenseMethod",
+    "ExpirySource",
+    "FinanceSetting",
+    "FinanceSource",
     "Ingredient",
     "IngredientPrice",
+    "IngredientTierChange",
     "LegacyStagedRecipe",
     "ManualRecipeLine",
+    "MediaAsset",
+    "MenuCategory",
     "MenuItem",
     "MenuItemCost",
+    "MenuItemPrice",
+    "MenuKind",
+    "MenuPriceSource",
     "Modifier",
     "ModifierAction",
+    "ModifierVersion",
     "MovementType",
     "OrderChannel",
     "POLine",
     "POStatus",
     "ParLevel",
+    "PaymentBasis",
     "PaymentDay",
     "PriceSource",
+    "ProposalConfidence",
+    "ProposalKind",
+    "ProposalStatus",
     "PurchaseOrder",
+    "RecipeChange",
     "Sale",
     "SaleChannel",
     "SalesChannelName",
@@ -85,10 +154,16 @@ __all__ = [
     "Storage",
     "Supplier",
     "SupplierProduct",
+    "SyncRun",
+    "SyncSource",
+    "SyncStatus",
+    "SyncTrigger",
     "TemplateComponent",
     "TescoRouting",
     "Tier",
+    "TradingDay",
     "Unit",
     "VariantAxis",
     "VariantOption",
+    "WriteOffReason",
 ]

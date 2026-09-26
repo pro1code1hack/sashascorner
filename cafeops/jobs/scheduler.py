@@ -50,7 +50,6 @@ from cafeops.bot.notify import Notifier, notifier_for_settings
 from cafeops.bot.views import build_digest, build_order_view
 from cafeops.config import settings
 from cafeops.db.base import SessionFactory, session_scope
-from cafeops.jobs.daily_sync import run_daily_sync
 from cafeops.jobs.drift_report import run_drift_report
 from cafeops.jobs.expiry_sweep import sweep_expiry
 from cafeops.jobs.nightly_expand import run_nightly_expand
@@ -119,10 +118,35 @@ async def _to_thread[T](
 
 
 async def job_daily_sync(factory: sessionmaker[Session] | None = None) -> None:
-    report = await _to_thread(run_daily_sync, factory)
-    log.info(report.summary())
-    for warning in report.warnings:
-        log.warning(warning)
+    """The nightly POS pull, recorded in `sync_run` (shell-agents spec 3.1).
+
+    Live when Lightspeed is configured, the recorded fixtures otherwise -- the latter
+    is what this job always did (`run_daily_sync`'s default), and it is recorded as a
+    FIXTURES run so the stale-sync banner never mistakes a replay for real sales.
+    Expansion is NOT run here: `nightly_expand` follows at 03:00 on its own trigger.
+    """
+    from cafeops.db.models import SyncTrigger
+    from cafeops.services.sync_runs import lightspeed_ready, run_recorded_sync
+
+    view = await asyncio.to_thread(
+        run_recorded_sync,
+        trigger=SyncTrigger.SCHEDULED,
+        fixtures=not lightspeed_ready(),
+        requested_by="scheduler",
+        factory=factory,
+    )
+    log.info(
+        "daily_sync run %s %s (%s): %s..%s, %s receipt(s), %s new line(s)",
+        view.id,
+        view.status,
+        view.source,
+        view.window_since,
+        view.window_until,
+        view.receipts_seen,
+        view.lines_ingested,
+    )
+    if view.detail:
+        log.warning(view.detail)
 
 
 async def job_nightly_expand(factory: sessionmaker[Session] | None = None) -> None:

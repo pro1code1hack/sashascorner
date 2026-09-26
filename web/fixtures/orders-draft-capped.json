@@ -1,6 +1,6 @@
 {
   "order_date": "2026-09-17",
-  "computed_at": "2026-09-24T20:02:35.964883Z",
+  "computed_at": "2026-09-26T10:26:32.689906Z",
   "reorder_cadence_days": null,
   "tiers": [
     "A",
@@ -25,7 +25,13 @@
         "cutoff_time": null,
         "delivery_fee_pence": 0,
         "free_delivery_threshold_pence": null,
-        "terms_are_placeholders": false
+        "terms_are_placeholders": false,
+        "kind": null,
+        "contact": null,
+        "order_url": null,
+        "notes": null,
+        "product_count": null,
+        "archived": false
       },
       "target_delivery_date": "2026-09-19",
       "cover_window_days": 6,
@@ -43,7 +49,12 @@
       "capped_line_count": 0,
       "low_confidence_line_count": 0,
       "status": "DRAFT",
-      "notes": []
+      "notes": [],
+      "order_by_date": "2026-09-17",
+      "next_delivery_date": "2026-09-21",
+      "fee_applies": false,
+      "top_up_candidates": [],
+      "persisted": null
     },
     {
       "supplier": {
@@ -59,7 +70,13 @@
         "cutoff_time": "12:00:00",
         "delivery_fee_pence": 0,
         "free_delivery_threshold_pence": 6000,
-        "terms_are_placeholders": true
+        "terms_are_placeholders": true,
+        "kind": null,
+        "contact": null,
+        "order_url": null,
+        "notes": null,
+        "product_count": null,
+        "archived": false
       },
       "target_delivery_date": "2026-09-22",
       "cover_window_days": 7,
@@ -99,7 +116,10 @@
           "cap_detail": null,
           "is_capped": false,
           "is_top_up": false,
-          "clamped": null
+          "clamped": null,
+          "cap_kind": null,
+          "daily_rate_qty": "379.382019",
+          "supplier_product_id": 11
         }
       ],
       "skipped": [
@@ -129,7 +149,12 @@
         "INVARIANT 5: 34 tier-B item(s) were NOT used as top-up because they are perishable: Almond milk (barista), Apple syrup (Monin), Banana syrup (Monin), Butterfly pea flowers, Butterfly syrup (Monin), Chai concentrate, Cinnamon bun syrup (Monin), Citrus / lime syrup (Monin), Coconut milk (barista), Coconut syrup (Monin), Coffee beans (decaf), Dark chocolate sauce, Decaf coffee pod, Honey, Lavender syrup (Monin), Lemon syrup (Monin), Loose-leaf tea (black), Mango syrup/puree (Monin), Mint syrup (Monin), Oat milk (barista), Orange syrup (Monin), Peach syrup (Monin), Pistachio syrup (Monin), Pumpkin spice syrup (Monin), Raspberry syrup (Monin), Rose syrup (Monin), Salted caramel syrup (Monin), Soy milk (barista), Strawberry syrup (Monin), Tea bag (standard), Toffee nut syrup (Monin), Toffee syrup (Monin), Vanilla syrup (Monin), White chocolate sauce. Buying something that spoils in order to clear a supplier's minimum or save a delivery fee is buying waste, so these are excluded however short their cover is.",
         "no non-perishable tier-B item with measured consumption was available to top up with.",
         "Booker: THESE TERMS ARE INVENTED PLACEHOLDERS. Lead time 2d, delivery days, cutoff 12:00:00, minimum £50.00 and the free-delivery threshold were never confirmed with this supplier (ARCHITECTURE.md 8F.4). The cover window above -- and therefore every quantity on this order -- is only as good as they are. Confirm them before trusting the numbers."
-      ]
+      ],
+      "order_by_date": "2026-09-20",
+      "next_delivery_date": "2026-09-24",
+      "fee_applies": false,
+      "top_up_candidates": [],
+      "persisted": null
     },
     {
       "supplier": {
@@ -146,7 +171,13 @@
         "cutoff_time": "16:00:00",
         "delivery_fee_pence": 0,
         "free_delivery_threshold_pence": 10000,
-        "terms_are_placeholders": true
+        "terms_are_placeholders": true,
+        "kind": null,
+        "contact": null,
+        "order_url": null,
+        "notes": null,
+        "product_count": null,
+        "archived": false
       },
       "target_delivery_date": "2026-09-18",
       "cover_window_days": 7,
@@ -186,7 +217,10 @@
           "cap_detail": "Whole milk: SHELF-LIFE CAP (invariant 4). 7-day life less a 2-day transit buffer leaves 5 usable day(s), against a 6-day cover window. Forecast over 6 days was 43.979 L; over 5 usable day(s) it is 37.937 L, so 6.042 L was deliberately NOT ordered. This under-order is on purpose: the difference would have spoiled before it could be used. Raising it recreates exactly the waste the cap prevents -- order again sooner instead.",
           "is_capped": true,
           "is_top_up": false,
-          "clamped": null
+          "clamped": null,
+          "cap_kind": "SHELF_LIFE",
+          "daily_rate_qty": "7.236847",
+          "supplier_product_id": 1
         }
       ],
       "skipped": [
@@ -229,7 +263,12 @@
         "INVARIANT 5: 2 tier-B item(s) were NOT used as top-up because they are perishable: Semi-skimmed milk, Whipping cream. Buying something that spoils in order to clear a supplier's minimum or save a delivery fee is buying waste, so these are excluded however short their cover is.",
         "no non-perishable tier-B item with measured consumption was available to top up with.",
         "Brakes: THESE TERMS ARE INVENTED PLACEHOLDERS. Lead time 1d, delivery days, cutoff 16:00:00, minimum £75.00 and the free-delivery threshold were never confirmed with this supplier (ARCHITECTURE.md 8F.4). The cover window above -- and therefore every quantity on this order -- is only as good as they are. Confirm them before trusting the numbers."
-      ]
+      ],
+      "order_by_date": "2026-09-17",
+      "next_delivery_date": "2026-09-21",
+      "fee_applies": false,
+      "top_up_candidates": [],
+      "persisted": null
     },
     {
       "supplier": {
@@ -245,7 +284,13 @@
         "cutoff_time": "14:00:00",
         "delivery_fee_pence": 0,
         "free_delivery_threshold_pence": 7500,
-        "terms_are_placeholders": true
+        "terms_are_placeholders": true,
+        "kind": null,
+        "contact": null,
+        "order_url": null,
+        "notes": null,
+        "product_count": null,
+        "archived": false
       },
       "target_delivery_date": "2026-09-22",
       "cover_window_days": 5,
@@ -267,7 +312,12 @@
         "Cakesmiths: nothing is needed, so the £50.00 minimum does not apply -- a minimum is a condition on placing an order, not a reason to place one.",
         "Cakesmiths: THESE TERMS ARE INVENTED PLACEHOLDERS. Lead time 2d, delivery days, cutoff 14:00:00, minimum £50.00 and the free-delivery threshold were never confirmed with this supplier (ARCHITECTURE.md 8F.4). The cover window above -- and therefore every quantity on this order -- is only as good as they are. Confirm them before trusting the numbers.",
         "Cakesmiths stocks 20 product(s) but none is a tracked tier A/B ingredient with a par level, so there is nothing here to calculate. Cakesmiths is the real case: its 20 products are all tier C cake, which is a yes/no checklist (spec 4.5), not a forecast."
-      ]
+      ],
+      "order_by_date": "2026-09-20",
+      "next_delivery_date": "2026-09-25",
+      "fee_applies": false,
+      "top_up_candidates": [],
+      "persisted": null
     },
     {
       "supplier": {
@@ -286,7 +336,13 @@
         "cutoff_time": "15:00:00",
         "delivery_fee_pence": 595,
         "free_delivery_threshold_pence": 7500,
-        "terms_are_placeholders": true
+        "terms_are_placeholders": true,
+        "kind": null,
+        "contact": null,
+        "order_url": null,
+        "notes": null,
+        "product_count": null,
+        "archived": false
       },
       "target_delivery_date": "2026-09-21",
       "cover_window_days": 7,
@@ -326,7 +382,10 @@
           "cap_detail": null,
           "is_capped": false,
           "is_top_up": false,
-          "clamped": null
+          "clamped": null,
+          "cap_kind": null,
+          "daily_rate_qty": "48.019310",
+          "supplier_product_id": 54
         }
       ],
       "skipped": [],
@@ -344,7 +403,12 @@
         "no non-perishable tier-B item with measured consumption was available to top up with.",
         "Cups Direct: PAYING THE £5.95 DELIVERY FEE. The order is £4.00 and free delivery starts at £75.00, so clearing it would mean buying £71.00 of stock nobody asked for to save £5.95. That is not a saving, so the fee is paid. (A free-delivery threshold is a price break, not a minimum -- this order ships either way.)",
         "Cups Direct: THESE TERMS ARE INVENTED PLACEHOLDERS. Lead time 3d, delivery days, cutoff 15:00:00, minimum £30.00 and the free-delivery threshold were never confirmed with this supplier (ARCHITECTURE.md 8F.4). The cover window above -- and therefore every quantity on this order -- is only as good as they are. Confirm them before trusting the numbers."
-      ]
+      ],
+      "order_by_date": "2026-09-18",
+      "next_delivery_date": "2026-09-22",
+      "fee_applies": true,
+      "top_up_candidates": [],
+      "persisted": null
     },
     {
       "supplier": {
@@ -359,7 +423,13 @@
         "cutoff_time": "11:00:00",
         "delivery_fee_pence": 0,
         "free_delivery_threshold_pence": null,
-        "terms_are_placeholders": true
+        "terms_are_placeholders": true,
+        "kind": null,
+        "contact": null,
+        "order_url": null,
+        "notes": null,
+        "product_count": null,
+        "archived": false
       },
       "target_delivery_date": "2026-09-23",
       "cover_window_days": 13,
@@ -382,7 +452,12 @@
         "Monolith: THESE TERMS ARE INVENTED PLACEHOLDERS. Lead time 3d, delivery days, cutoff 11:00:00, minimum £100.00 and the free-delivery threshold were never confirmed with this supplier (ARCHITECTURE.md 8F.4). The cover window above -- and therefore every quantity on this order -- is only as good as they are. Confirm them before trusting the numbers.",
         "Monolith: SOURCING MOVED 1 line(s) off this order: Coffee beans (house blend) (£126.00) -> Booker. The reason is on each sourcing choice. This order was then re-sized, so its minimum and any top-up were re-decided against what is left.",
         "Coffee beans (house blend): KEPT Booker (5 KG) at 1900.00p/KG. dearer alternates: Monolith (3 KG) at 2100.00p/KG"
-      ]
+      ],
+      "order_by_date": "2026-09-20",
+      "next_delivery_date": "2026-09-30",
+      "fee_applies": false,
+      "top_up_candidates": [],
+      "persisted": null
     },
     {
       "supplier": {
@@ -395,7 +470,13 @@
         "cutoff_time": null,
         "delivery_fee_pence": 0,
         "free_delivery_threshold_pence": null,
-        "terms_are_placeholders": true
+        "terms_are_placeholders": true,
+        "kind": null,
+        "contact": null,
+        "order_url": null,
+        "notes": null,
+        "product_count": null,
+        "archived": false
       },
       "target_delivery_date": "2026-09-22",
       "cover_window_days": 6,
@@ -416,7 +497,12 @@
       "notes": [
         "Nataly (custom): THESE TERMS ARE INVENTED PLACEHOLDERS. Lead time 5d, delivery days, cutoff unknown, minimum £0.00 and the free-delivery threshold were never confirmed with this supplier (ARCHITECTURE.md 8F.4). The cover window above -- and therefore every quantity on this order -- is only as good as they are. Confirm them before trusting the numbers.",
         "Nataly (custom) has no supplier products on file at all, so nothing can be ordered from it. For Nataly that is spec 15 question 5 still unanswered -- what this supplier covers, and through what channel, is unknown (ARCHITECTURE.md 8F.4)."
-      ]
+      ],
+      "order_by_date": "2026-09-17",
+      "next_delivery_date": "2026-09-23",
+      "fee_applies": false,
+      "top_up_candidates": [],
+      "persisted": null
     },
     {
       "supplier": {
@@ -429,7 +515,13 @@
         "cutoff_time": null,
         "delivery_fee_pence": 0,
         "free_delivery_threshold_pence": null,
-        "terms_are_placeholders": false
+        "terms_are_placeholders": false,
+        "kind": null,
+        "contact": null,
+        "order_url": null,
+        "notes": null,
+        "product_count": null,
+        "archived": false
       },
       "target_delivery_date": "2026-09-17",
       "cover_window_days": 4,
@@ -463,7 +555,12 @@
         "1 item(s) are below their par floor min_qty with nothing forecast to move them, and were NOT ordered: Semi-skimmed milk. Either the par floor or the tier is wrong. Ordering against a floor that nothing is consuming would be spending money on a data error.",
         "Tesco: SOURCING MOVED 1 line(s) off this order: Whole milk (£6.60) -> Brakes. The reason is on each sourcing choice. This order was then re-sized, so its minimum and any top-up were re-decided against what is left.",
         "Whole milk: KEPT Brakes (3.4 L) at 69.71p/L. dearer alternates: Tesco (2 L) at 82.50p/L"
-      ]
+      ],
+      "order_by_date": "2026-09-17",
+      "next_delivery_date": "2026-09-18",
+      "fee_applies": false,
+      "top_up_candidates": [],
+      "persisted": null
     }
   ],
   "sourcing_choices": [
@@ -515,5 +612,8 @@
     "Caramel syrup (Monin): runs out in 4.797 day(s), before the next delivery in 5, and Tesco does not stock it either. Nothing can bridge this gap -- it is a stockout unless the proper supplier can be hurried.",
     "Napkin: runs out in 3.443 day(s), before the next delivery in 4, and Tesco does not stock it either. Nothing can bridge this gap -- it is a stockout unless the proper supplier can be hurried."
   ],
-  "writes_nothing": true
+  "writes_nothing": true,
+  "uncounted": [],
+  "unsourced": [],
+  "supplier_count": 8
 }

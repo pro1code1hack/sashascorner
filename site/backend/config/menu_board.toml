@@ -316,8 +316,8 @@ items = [
   { n = "Extra shot", p = "+50p" },
 ]
 
-# Board name -> ops menu_item name, for `sashasite doctor`'s drift report only
-# (the website never reads ops for the menu). Only pairs that are plainly the same
+# Board name -> ops menu_item name, for the drift report and `menu-meta-seed`
+# (which copies board descriptions to the ops name too). Only pairs that are plainly the same
 # drink under a different POS name; anything doubtful is left to show as drift.
 [aliases]
 "Single espresso con panna" = "Single Espresso Con Pana"

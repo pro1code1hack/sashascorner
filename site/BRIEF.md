@@ -22,6 +22,8 @@ Source: the café's Google Business Profile, its TV menu boards, and the owner.
 - Instagram: https://www.instagram.com/sashascorner_uk
 - Dine-in, takeaway, no-contact delivery. Sells through **Deliveroo** and **Just Eat**.
 - Google rating 4.9 from 54 reviews. Profile attributes: women-owned, LGBTQ+ friendly.
+- Owner-confirmed 2026-09-26: **pet friendly** (dogs welcome), **24 seats**, Facebook page
+  https://www.facebook.com/p/Sashas-Corner-61582666970753.
 - What reviewers single out: the huge variety of drinks ("by far the biggest
   selection of drinks in Dundee"), matcha made fresh in front of you, Raff coffee,
   rose latte, friendly service, cosy atmosphere, a good selection of cakes.
@@ -37,7 +39,7 @@ Source: the café's Google Business Profile, its TV menu boards, and the owner.
 
 **Not known, so do not state:** who Sasha is, the owners' backgrounds or nationality,
 bean origin or roaster, "ceremonial" grade, awards, vegan or gluten-free claims,
-parking, wheelchair access, wifi, dog policy, prices not in menu.json, delivery
+parking, wheelchair access, wifi, prices not in menu.json, delivery
 radius. If a page needs one of these, leave a clearly marked
 `<!-- OWNER TO CONFIRM: ... -->` comment and write around it. Don't fake it.
 

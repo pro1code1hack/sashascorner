@@ -1,0 +1,4418 @@
+{
+  "rows": [
+    {
+      "ingredient_id": 49,
+      "name": "12oz cup lid",
+      "category": "Packaging",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "2.574",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1000",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 2574,
+        "source": "ESTIMATE",
+        "supplier_id": 4,
+        "supplier_name": "Cups Direct",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Assumed same as S lid (notebook didn't list M lid)"
+      },
+      "note": "Assumed same as S lid (notebook didn't list M lid)",
+      "suppliers": [
+        {
+          "supplier_id": 4,
+          "name": "Cups Direct",
+          "is_preferred": true
+        },
+        {
+          "supplier_id": 7,
+          "name": "Amazon",
+          "is_preferred": false
+        }
+      ],
+      "used_in_count": 103,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": null,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 48,
+      "name": "12oz paper cup",
+      "category": "Packaging",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "9.588",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "500",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 4794,
+        "source": "INVOICE",
+        "supplier_id": 4,
+        "supplier_name": "Cups Direct",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — M takeaway cup £47.94/500"
+      },
+      "note": "Real invoice — M takeaway cup £47.94/500",
+      "suppliers": [
+        {
+          "supplier_id": 4,
+          "name": "Cups Direct",
+          "is_preferred": true
+        },
+        {
+          "supplier_id": 7,
+          "name": "Amazon",
+          "is_preferred": false
+        }
+      ],
+      "used_in_count": 103,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": null,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 51,
+      "name": "16oz cup lid",
+      "category": "Packaging",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "2.874",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1000",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 2874,
+        "source": "INVOICE",
+        "supplier_id": 4,
+        "supplier_name": "Cups Direct",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — XL lid £28.74/1000"
+      },
+      "note": "Real invoice — XL lid £28.74/1000",
+      "suppliers": [
+        {
+          "supplier_id": 4,
+          "name": "Cups Direct",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 102,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": null,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 50,
+      "name": "16oz paper cup",
+      "category": "Packaging",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "10.335",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "400",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 4134,
+        "source": "INVOICE",
+        "supplier_id": 4,
+        "supplier_name": "Cups Direct",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — XL takeaway cup £41.34/400"
+      },
+      "note": "Real invoice — XL takeaway cup £41.34/400",
+      "suppliers": [
+        {
+          "supplier_id": 4,
+          "name": "Cups Direct",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 102,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": null,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 45,
+      "name": "4oz / small cup",
+      "category": "Packaging",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "6",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "100",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 600,
+        "source": "ESTIMATE",
+        "supplier_id": 4,
+        "supplier_name": "Cups Direct",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Babyccino cup"
+      },
+      "note": "Babyccino cup",
+      "suppliers": [
+        {
+          "supplier_id": 4,
+          "name": "Cups Direct",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 0,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": null,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 47,
+      "name": "8oz cup lid",
+      "category": "Packaging",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "2.574",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1000",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 2574,
+        "source": "INVOICE",
+        "supplier_id": 4,
+        "supplier_name": "Cups Direct",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — S lid £25.74/1000"
+      },
+      "note": "Real invoice — S lid £25.74/1000",
+      "suppliers": [
+        {
+          "supplier_id": 4,
+          "name": "Cups Direct",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 63,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": null,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 46,
+      "name": "8oz paper cup",
+      "category": "Packaging",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "8.508",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "500",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 4254,
+        "source": "INVOICE",
+        "supplier_id": 4,
+        "supplier_name": "Cups Direct",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — S takeaway cup £42.54/500"
+      },
+      "note": "Real invoice — S takeaway cup £42.54/500",
+      "suppliers": [
+        {
+          "supplier_id": 4,
+          "name": "Cups Direct",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 63,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": null,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 4,
+      "name": "Almond milk (barista)",
+      "category": "Dairy alt",
+      "unit": "L",
+      "unit_cost": {
+        "pence": "250",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "L",
+        "pack_cost_pence": 250,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — alt-milk £2.50/L"
+      },
+      "note": "Real invoice — alt-milk £2.50/L",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 0,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 270,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 92,
+      "name": "Apple juice carton",
+      "category": "Bottled",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "73",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 73,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — £34.98/48 (Brakes)"
+      },
+      "note": "Real invoice — £34.98/48 (Brakes)",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 2,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 270,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 31,
+      "name": "Apple syrup (Monin)",
+      "category": "Syrup",
+      "unit": "ML",
+      "unit_cost": {
+        "pence": "0.9",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "pack_cost_pence": 900,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — Monin £9/L"
+      },
+      "note": "Real invoice — Monin £9/L",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 2,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 730,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 65,
+      "name": "Banana pecan muffin",
+      "category": "Cake",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "130",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 130,
+        "source": "ESTIMATE",
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "ESTIMATE"
+      },
+      "note": "ESTIMATE",
+      "suppliers": [
+        {
+          "supplier_id": 1,
+          "name": "Cakesmiths",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 1,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 4,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 27,
+      "name": "Banana syrup (Monin)",
+      "category": "Syrup",
+      "unit": "ML",
+      "unit_cost": {
+        "pence": "0.9",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "pack_cost_pence": 900,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — Monin £9/L"
+      },
+      "note": "Real invoice — Monin £9/L",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 3,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 730,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 68,
+      "name": "Billionaire's shortbread",
+      "category": "Cake",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "121",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 121,
+        "source": "INVOICE",
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — £16.95/14"
+      },
+      "note": "Real invoice — £16.95/14",
+      "suppliers": [
+        {
+          "supplier_id": 1,
+          "name": "Cakesmiths",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 1,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 4,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 106,
+      "name": "Black Cola",
+      "category": "Bottled",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "53",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 53,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — £12.66/24 (Brakes)"
+      },
+      "note": "Real invoice — £12.66/24 (Brakes)",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 0,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 270,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 100,
+      "name": "Blood orange cake (slice)",
+      "category": "Cake",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "155",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 155,
+        "source": "INVOICE",
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — £27.95/18"
+      },
+      "note": "Real invoice — £27.95/18",
+      "suppliers": [
+        {
+          "supplier_id": 1,
+          "name": "Cakesmiths",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 0,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 4,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 112,
+      "name": "Blue chocolate wafer",
+      "category": "Bottled",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "50",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 50,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — £14.97/30 (Amazon)"
+      },
+      "note": "Real invoice — £14.97/30 (Amazon)",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 0,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 270,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 66,
+      "name": "Blueberry muffin",
+      "category": "Cake",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "176",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 176,
+        "source": "INVOICE",
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — £21.15/12"
+      },
+      "note": "Real invoice — £21.15/12",
+      "suppliers": [
+        {
+          "supplier_id": 1,
+          "name": "Cakesmiths",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 1,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 4,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 80,
+      "name": "Bread (toastie)",
+      "category": "Food",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "150",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 150,
+        "source": "ESTIMATE",
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "~12 slices"
+      },
+      "note": "~12 slices",
+      "suppliers": [
+        {
+          "supplier_id": 2,
+          "name": "Brakes",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 2,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 4,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 82,
+      "name": "Bread roll",
+      "category": "Food",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "35",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 35,
+        "source": "ESTIMATE",
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "ESTIMATE"
+      },
+      "note": "ESTIMATE",
+      "suppliers": [
+        {
+          "supplier_id": 2,
+          "name": "Brakes",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 2,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 4,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 63,
+      "name": "Brownie bar",
+      "category": "Cake",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "109",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 109,
+        "source": "INVOICE",
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — £19.58/18"
+      },
+      "note": "Real invoice — £19.58/18",
+      "suppliers": [
+        {
+          "supplier_id": 1,
+          "name": "Cakesmiths",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 1,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 4,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 57,
+      "name": "Bubble tea straw (wide)",
+      "category": "Sundries",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "1.5",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "500",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 750,
+        "source": "ESTIMATE",
+        "supplier_id": 4,
+        "supplier_name": "Cups Direct",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "ESTIMATE"
+      },
+      "note": "ESTIMATE",
+      "suppliers": [
+        {
+          "supplier_id": 4,
+          "name": "Cups Direct",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 5,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": null,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 84,
+      "name": "Butter",
+      "category": "Food",
+      "unit": "KG",
+      "unit_cost": {
+        "pence": "700",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "KG",
+        "pack_cost_pence": 700,
+        "source": "ESTIMATE",
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "ESTIMATE"
+      },
+      "note": "ESTIMATE",
+      "suppliers": [
+        {
+          "supplier_id": 2,
+          "name": "Brakes",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 5,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 4,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 36,
+      "name": "Butterfly pea flowers",
+      "category": "Tea",
+      "unit": "KG",
+      "unit_cost": {
+        "pence": "4000",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "KG",
+        "pack_cost_pence": 4000,
+        "source": "ESTIMATE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "ESTIMATE"
+      },
+      "note": "ESTIMATE",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 9,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 730,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 24,
+      "name": "Butterfly syrup (Monin)",
+      "category": "Syrup",
+      "unit": "ML",
+      "unit_cost": {
+        "pence": "0.9",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "pack_cost_pence": 900,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — Monin £9/L"
+      },
+      "note": "Real invoice — Monin £9/L",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 2,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 730,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 102,
+      "name": "Cajun chicken panini (premade)",
+      "category": "Food",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "202",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 202,
+        "source": "INVOICE",
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — £48.45/24"
+      },
+      "note": "Real invoice — £48.45/24",
+      "suppliers": [
+        {
+          "supplier_id": 2,
+          "name": "Brakes",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 0,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 4,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 94,
+      "name": "Capri-Sun pouch",
+      "category": "Bottled",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "33",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 33,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — £5/15 (Amazon)"
+      },
+      "note": "Real invoice — £5/15 (Amazon)",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 1,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 270,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 11,
+      "name": "Caramel syrup (Monin)",
+      "category": "Syrup",
+      "unit": "ML",
+      "unit_cost": {
+        "pence": "0.9",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "pack_cost_pence": 900,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — Monin £9/L"
+      },
+      "note": "Real invoice — Monin £9/L",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 2,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 730,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 33,
+      "name": "Chai concentrate",
+      "category": "Syrup",
+      "unit": "ML",
+      "unit_cost": {
+        "pence": "1",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "pack_cost_pence": 1000,
+        "source": "ESTIMATE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "ESTIMATE"
+      },
+      "note": "ESTIMATE",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 3,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 730,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 83,
+      "name": "Cheese (toastie)",
+      "category": "Food",
+      "unit": "KG",
+      "unit_cost": {
+        "pence": "800",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "KG",
+        "pack_cost_pence": 800,
+        "source": "ESTIMATE",
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "ESTIMATE"
+      },
+      "note": "ESTIMATE",
+      "suppliers": [
+        {
+          "supplier_id": 2,
+          "name": "Brakes",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 6,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 4,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 37,
+      "name": "Chocolate powder",
+      "category": "Chocolate",
+      "unit": "KG",
+      "unit_cost": {
+        "pence": "700",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "KG",
+        "pack_cost_pence": 700,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — £7/kg"
+      },
+      "note": "Real invoice — £7/kg",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 17,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 540,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 97,
+      "name": "Chocolate wafer",
+      "category": "Bottled",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "45",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 45,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — dark wafers £13.49/30 (Amazon)"
+      },
+      "note": "Real invoice — dark wafers £13.49/30 (Amazon)",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 1,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 270,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 22,
+      "name": "Cinnamon bun syrup (Monin)",
+      "category": "Syrup",
+      "unit": "ML",
+      "unit_cost": {
+        "pence": "0.9",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "pack_cost_pence": 900,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — Monin £9/L"
+      },
+      "note": "Real invoice — Monin £9/L",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 3,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 730,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 71,
+      "name": "Cinnamon classic bun",
+      "category": "Cake",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "174",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 174,
+        "source": "INVOICE",
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — £13.95/8"
+      },
+      "note": "Real invoice — £13.95/8",
+      "suppliers": [
+        {
+          "supplier_id": 1,
+          "name": "Cakesmiths",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 1,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 4,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 29,
+      "name": "Citrus / lime syrup (Monin)",
+      "category": "Syrup",
+      "unit": "ML",
+      "unit_cost": {
+        "pence": "0.9",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "pack_cost_pence": 900,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — Monin £9/L"
+      },
+      "note": "Real invoice — Monin £9/L",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 1,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 730,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 89,
+      "name": "Coca-Cola",
+      "category": "Bottled",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "61",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 61,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — £14.69/24 (Brakes)"
+      },
+      "note": "Real invoice — £14.69/24 (Brakes)",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 1,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 270,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 6,
+      "name": "Coconut milk (barista)",
+      "category": "Dairy alt",
+      "unit": "L",
+      "unit_cost": {
+        "pence": "250",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "L",
+        "pack_cost_pence": 250,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — alt-milk £2.50/L"
+      },
+      "note": "Real invoice — alt-milk £2.50/L",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 1,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 270,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 28,
+      "name": "Coconut syrup (Monin)",
+      "category": "Syrup",
+      "unit": "ML",
+      "unit_cost": {
+        "pence": "0.9",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "pack_cost_pence": 900,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — Monin £9/L"
+      },
+      "note": "Real invoice — Monin £9/L",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 3,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 730,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 44,
+      "name": "Coconut water",
+      "category": "Specialty",
+      "unit": "L",
+      "unit_cost": {
+        "pence": "250",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "L",
+        "pack_cost_pence": 250,
+        "source": "ESTIMATE",
+        "supplier_id": 5,
+        "supplier_name": "Monolith",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "ESTIMATE"
+      },
+      "note": "ESTIMATE",
+      "suppliers": [
+        {
+          "supplier_id": 5,
+          "name": "Monolith",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 0,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 540,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 9,
+      "name": "Coffee beans (decaf)",
+      "category": "Coffee",
+      "unit": "KG",
+      "unit_cost": {
+        "pence": "2400",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "KG",
+        "pack_cost_pence": 2400,
+        "source": "ESTIMATE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "ESTIMATE"
+      },
+      "note": "ESTIMATE",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 0,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 365,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 8,
+      "name": "Coffee beans (house blend)",
+      "category": "Coffee",
+      "unit": "KG",
+      "unit_cost": {
+        "pence": "1900",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "5",
+        "pack_unit": "KG",
+        "pack_cost_pence": 9500,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — £95 per 5kg"
+      },
+      "note": "Real invoice — £95 per 5kg",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        },
+        {
+          "supplier_id": 5,
+          "name": "Monolith",
+          "is_preferred": false
+        }
+      ],
+      "used_in_count": 58,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 365,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 78,
+      "name": "Cream cheese",
+      "category": "Food",
+      "unit": "KG",
+      "unit_cost": {
+        "pence": "600",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "KG",
+        "pack_cost_pence": 600,
+        "source": "ESTIMATE",
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "ESTIMATE"
+      },
+      "note": "ESTIMATE",
+      "suppliers": [
+        {
+          "supplier_id": 2,
+          "name": "Brakes",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 1,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 4,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 39,
+      "name": "Dark chocolate sauce",
+      "category": "Chocolate",
+      "unit": "ML",
+      "unit_cost": {
+        "pence": "0.9",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "pack_cost_pence": 900,
+        "source": "ESTIMATE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "ESTIMATE"
+      },
+      "note": "ESTIMATE",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 0,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 540,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 113,
+      "name": "Decaf coffee pod",
+      "category": "Coffee",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "41.666667",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "18",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 750,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — 18 pods = £7.50 (£0.42/pod). Use 1 pod for S, 2 for M, 3 for L."
+      },
+      "note": "Real invoice — 18 pods = £7.50 (£0.42/pod). Use 1 pod for S, 2 for M, 3 for L.",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 0,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 365,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 105,
+      "name": "Diet Coke",
+      "category": "Bottled",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "40",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 40,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — £9.69/24 (Amazon)"
+      },
+      "note": "Real invoice — £9.69/24 (Amazon)",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 0,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 270,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 90,
+      "name": "Fanta",
+      "category": "Bottled",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "44",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 44,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — £10.50/24 (Amazon)"
+      },
+      "note": "Real invoice — £10.50/24 (Amazon)",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 1,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 270,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 111,
+      "name": "Fruit Shoot",
+      "category": "Bottled",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "28",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 28,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — £6.75/24 (Amazon)"
+      },
+      "note": "Real invoice — £6.75/24 (Amazon)",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 0,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 270,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 104,
+      "name": "Ham & cheese toastie (premade)",
+      "category": "Food",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "249",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 249,
+        "source": "INVOICE",
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — £49.89/20 (use this if you buy in instead of making)"
+      },
+      "note": "Real invoice — £49.89/20 (use this if you buy in instead of making)",
+      "suppliers": [
+        {
+          "supplier_id": 2,
+          "name": "Brakes",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 0,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 4,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 76,
+      "name": "Ham (sliced)",
+      "category": "Food",
+      "unit": "KG",
+      "unit_cost": {
+        "pence": "1000",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "KG",
+        "pack_cost_pence": 1000,
+        "source": "ESTIMATE",
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "ESTIMATE"
+      },
+      "note": "ESTIMATE",
+      "suppliers": [
+        {
+          "supplier_id": 2,
+          "name": "Brakes",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 4,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 4,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 32,
+      "name": "Honey",
+      "category": "Syrup",
+      "unit": "ML",
+      "unit_cost": {
+        "pence": "1.12",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "pack_cost_pence": 1120,
+        "source": "ESTIMATE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "ESTIMATE — £8/kg converted to ml (honey density ~1.4 g/ml)"
+      },
+      "note": "ESTIMATE — £8/kg converted to ml (honey density ~1.4 g/ml)",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 4,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 730,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 108,
+      "name": "Irn-Bru",
+      "category": "Bottled",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "44",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 44,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — £10.50/24 (Amazon)"
+      },
+      "note": "Real invoice — £10.50/24 (Amazon)",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 0,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 270,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 87,
+      "name": "Jam sachet",
+      "category": "Food",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "8",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "100",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 800,
+        "source": "ESTIMATE",
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "ESTIMATE"
+      },
+      "note": "ESTIMATE",
+      "suppliers": [
+        {
+          "supplier_id": 2,
+          "name": "Brakes",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 1,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 4,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 72,
+      "name": "Kyiv cake (slice)",
+      "category": "Cake",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "160",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 160,
+        "source": "ESTIMATE",
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "ESTIMATE"
+      },
+      "note": "ESTIMATE",
+      "suppliers": [
+        {
+          "supplier_id": 1,
+          "name": "Cakesmiths",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 1,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 4,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 73,
+      "name": "Kyiv cake (whole)",
+      "category": "Cake",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "1000",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 1000,
+        "source": "ESTIMATE",
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "ESTIMATE"
+      },
+      "note": "ESTIMATE",
+      "suppliers": [
+        {
+          "supplier_id": 1,
+          "name": "Cakesmiths",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 2,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 4,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 20,
+      "name": "Lavender syrup (Monin)",
+      "category": "Syrup",
+      "unit": "ML",
+      "unit_cost": {
+        "pence": "0.9",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "pack_cost_pence": 900,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — Monin £9/L"
+      },
+      "note": "Real invoice — Monin £9/L",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 6,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 730,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 69,
+      "name": "Lemon & pistachio cake",
+      "category": "Cake",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "132",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 132,
+        "source": "INVOICE",
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — £18.50/14"
+      },
+      "note": "Real invoice — £18.50/14",
+      "suppliers": [
+        {
+          "supplier_id": 1,
+          "name": "Cakesmiths",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 1,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 4,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 64,
+      "name": "Lemon drizzle bar",
+      "category": "Cake",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "91",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 91,
+        "source": "INVOICE",
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — £16.41/18"
+      },
+      "note": "Real invoice — £16.41/18",
+      "suppliers": [
+        {
+          "supplier_id": 1,
+          "name": "Cakesmiths",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 1,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 4,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 101,
+      "name": "Lemon muffin",
+      "category": "Cake",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "175",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 175,
+        "source": "INVOICE",
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — £21/12"
+      },
+      "note": "Real invoice — £21/12",
+      "suppliers": [
+        {
+          "supplier_id": 1,
+          "name": "Cakesmiths",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 0,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 4,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 30,
+      "name": "Lemon syrup (Monin)",
+      "category": "Syrup",
+      "unit": "ML",
+      "unit_cost": {
+        "pence": "0.9",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "pack_cost_pence": 900,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — Monin £9/L"
+      },
+      "note": "Real invoice — Monin £9/L",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 0,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 730,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 35,
+      "name": "Loose-leaf tea (black)",
+      "category": "Tea",
+      "unit": "KG",
+      "unit_cost": {
+        "pence": "3000",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "KG",
+        "pack_cost_pence": 3000,
+        "source": "ESTIMATE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "ESTIMATE"
+      },
+      "note": "ESTIMATE",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 5,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 730,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 26,
+      "name": "Mango syrup/puree (Monin)",
+      "category": "Syrup",
+      "unit": "ML",
+      "unit_cost": {
+        "pence": "0.9",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "pack_cost_pence": 900,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — Monin £9/L"
+      },
+      "note": "Real invoice — Monin £9/L",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 3,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 730,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 103,
+      "name": "Margarita panini (premade)",
+      "category": "Food",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "202",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 202,
+        "source": "INVOICE",
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — £48.45/24"
+      },
+      "note": "Real invoice — £48.45/24",
+      "suppliers": [
+        {
+          "supplier_id": 2,
+          "name": "Brakes",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 0,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 4,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 56,
+      "name": "Marshmallow",
+      "category": "Sundries",
+      "unit": "KG",
+      "unit_cost": {
+        "pence": "800",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "KG",
+        "pack_cost_pence": 800,
+        "source": "INVOICE",
+        "supplier_id": 4,
+        "supplier_name": "Cups Direct",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — £8/kg (recipes adjusted to grams)"
+      },
+      "note": "Real invoice — £8/kg (recipes adjusted to grams)",
+      "suppliers": [
+        {
+          "supplier_id": 4,
+          "name": "Cups Direct",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 2,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": null,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 40,
+      "name": "Matcha powder",
+      "category": "Specialty",
+      "unit": "KG",
+      "unit_cost": {
+        "pence": "20000",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "0.05",
+        "pack_unit": "KG",
+        "pack_cost_pence": 1000,
+        "source": "INVOICE",
+        "supplier_id": 5,
+        "supplier_name": "Monolith",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — £10 per 50g = £200/kg (user uses #10 'cheaper' matcha for all drinks)"
+      },
+      "note": "Real invoice — £10 per 50g = £200/kg (user uses #10 'cheaper' matcha for all drinks)",
+      "suppliers": [
+        {
+          "supplier_id": 5,
+          "name": "Monolith",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 13,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 540,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 70,
+      "name": "Mini cookie",
+      "category": "Cake",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "140",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 140,
+        "source": "ESTIMATE",
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "ESTIMATE"
+      },
+      "note": "ESTIMATE",
+      "suppliers": [
+        {
+          "supplier_id": 1,
+          "name": "Cakesmiths",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 1,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 4,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 18,
+      "name": "Mint syrup (Monin)",
+      "category": "Syrup",
+      "unit": "ML",
+      "unit_cost": {
+        "pence": "0.9",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "pack_cost_pence": 900,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — Monin £9/L"
+      },
+      "note": "Real invoice — Monin £9/L",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 3,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 730,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 99,
+      "name": "Morello cake (slice)",
+      "category": "Cake",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "123",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 123,
+        "source": "INVOICE",
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — £17.25/14"
+      },
+      "note": "Real invoice — £17.25/14",
+      "suppliers": [
+        {
+          "supplier_id": 1,
+          "name": "Cakesmiths",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 0,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 4,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 54,
+      "name": "Napkin",
+      "category": "Sundries",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "0.8",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "500",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 400,
+        "source": "ESTIMATE",
+        "supplier_id": 4,
+        "supplier_name": "Cups Direct",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "ESTIMATE"
+      },
+      "note": "ESTIMATE",
+      "suppliers": [
+        {
+          "supplier_id": 4,
+          "name": "Cups Direct",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 124,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": null,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 3,
+      "name": "Oat milk (barista)",
+      "category": "Dairy alt",
+      "unit": "L",
+      "unit_cost": {
+        "pence": "250",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "L",
+        "pack_cost_pence": 250,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — alt-milk £2.50/L"
+      },
+      "note": "Real invoice — alt-milk £2.50/L",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        },
+        {
+          "supplier_id": 6,
+          "name": "Tesco",
+          "is_preferred": false
+        }
+      ],
+      "used_in_count": 1,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 270,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 93,
+      "name": "Orange juice carton",
+      "category": "Bottled",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "73",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 73,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — £34.84/48 (Brakes)"
+      },
+      "note": "Real invoice — £34.84/48 (Brakes)",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 1,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 270,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 19,
+      "name": "Orange syrup (Monin)",
+      "category": "Syrup",
+      "unit": "ML",
+      "unit_cost": {
+        "pence": "0.9",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "pack_cost_pence": 900,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — Monin £9/L"
+      },
+      "note": "Real invoice — Monin £9/L",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 3,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 730,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 85,
+      "name": "Pancake mix",
+      "category": "Food",
+      "unit": "KG",
+      "unit_cost": {
+        "pence": "300",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "KG",
+        "pack_cost_pence": 300,
+        "source": "ESTIMATE",
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "ESTIMATE"
+      },
+      "note": "ESTIMATE",
+      "suppliers": [
+        {
+          "supplier_id": 2,
+          "name": "Brakes",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 1,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 4,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 81,
+      "name": "Panini bread",
+      "category": "Food",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "40",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 40,
+        "source": "ESTIMATE",
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "ESTIMATE"
+      },
+      "note": "ESTIMATE",
+      "suppliers": [
+        {
+          "supplier_id": 2,
+          "name": "Brakes",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 3,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 4,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 25,
+      "name": "Peach syrup (Monin)",
+      "category": "Syrup",
+      "unit": "ML",
+      "unit_cost": {
+        "pence": "0.9",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "pack_cost_pence": 900,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — Monin £9/L"
+      },
+      "note": "Real invoice — Monin £9/L",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 2,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 730,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 21,
+      "name": "Pistachio syrup (Monin)",
+      "category": "Syrup",
+      "unit": "ML",
+      "unit_cost": {
+        "pence": "0.9",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "pack_cost_pence": 900,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — Monin £9/L"
+      },
+      "note": "Real invoice — Monin £9/L",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 3,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 730,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 74,
+      "name": "Plain croissant",
+      "category": "Food",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "65",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 65,
+        "source": "ESTIMATE",
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "ESTIMATE"
+      },
+      "note": "ESTIMATE",
+      "suppliers": [
+        {
+          "supplier_id": 2,
+          "name": "Brakes",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 5,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 4,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 95,
+      "name": "Pom-Bear crisps",
+      "category": "Bottled",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "43",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 43,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — £15.40/36 (Brakes)"
+      },
+      "note": "Real invoice — £15.40/36 (Brakes)",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 1,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 270,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 96,
+      "name": "Pringles can",
+      "category": "Bottled",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "62",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 62,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — £7.40/12 (Brakes)"
+      },
+      "note": "Real invoice — £7.40/12 (Brakes)",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 1,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 270,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 23,
+      "name": "Pumpkin spice syrup (Monin)",
+      "category": "Syrup",
+      "unit": "ML",
+      "unit_cost": {
+        "pence": "0.9",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "pack_cost_pence": 900,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — Monin £9/L"
+      },
+      "note": "Real invoice — Monin £9/L",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 3,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 730,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 67,
+      "name": "Raspberry almond muffin",
+      "category": "Cake",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "130",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 130,
+        "source": "ESTIMATE",
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "ESTIMATE"
+      },
+      "note": "ESTIMATE",
+      "suppliers": [
+        {
+          "supplier_id": 1,
+          "name": "Cakesmiths",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 1,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 4,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 58,
+      "name": "Raspberry brownie cheesecake",
+      "category": "Cake (CakeSmiths)",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "160",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 160,
+        "source": "ESTIMATE",
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "CakeSmiths ESTIMATE"
+      },
+      "note": "CakeSmiths ESTIMATE",
+      "suppliers": [
+        {
+          "supplier_id": 1,
+          "name": "Cakesmiths",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 1,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 4,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 59,
+      "name": "Raspberry matcha cheesecake",
+      "category": "Cake (CakeSmiths)",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "150",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 150,
+        "source": "ESTIMATE",
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "CakeSmiths"
+      },
+      "note": "CakeSmiths",
+      "suppliers": [
+        {
+          "supplier_id": 1,
+          "name": "Cakesmiths",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 1,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 4,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 14,
+      "name": "Raspberry syrup (Monin)",
+      "category": "Syrup",
+      "unit": "ML",
+      "unit_cost": {
+        "pence": "0.9",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "pack_cost_pence": 900,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — Monin £9/L"
+      },
+      "note": "Real invoice — Monin £9/L",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 4,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 730,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 13,
+      "name": "Rose syrup (Monin)",
+      "category": "Syrup",
+      "unit": "ML",
+      "unit_cost": {
+        "pence": "0.9",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "pack_cost_pence": 900,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — Monin £9/L"
+      },
+      "note": "Real invoice — Monin £9/L",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 8,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 730,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 75,
+      "name": "Salami (sliced)",
+      "category": "Food",
+      "unit": "KG",
+      "unit_cost": {
+        "pence": "1800",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "KG",
+        "pack_cost_pence": 1800,
+        "source": "ESTIMATE",
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "ESTIMATE"
+      },
+      "note": "ESTIMATE",
+      "suppliers": [
+        {
+          "supplier_id": 2,
+          "name": "Brakes",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 2,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 4,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 62,
+      "name": "Salted caramel bar",
+      "category": "Cake (CakeSmiths)",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "75",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 75,
+        "source": "INVOICE",
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — £13.50/18"
+      },
+      "note": "Real invoice — £13.50/18",
+      "suppliers": [
+        {
+          "supplier_id": 1,
+          "name": "Cakesmiths",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 1,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 4,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 60,
+      "name": "Salted caramel brownie",
+      "category": "Cake (CakeSmiths)",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "130",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 130,
+        "source": "ESTIMATE",
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "CakeSmiths"
+      },
+      "note": "CakeSmiths",
+      "suppliers": [
+        {
+          "supplier_id": 1,
+          "name": "Cakesmiths",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 1,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 4,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 12,
+      "name": "Salted caramel syrup (Monin)",
+      "category": "Syrup",
+      "unit": "ML",
+      "unit_cost": {
+        "pence": "0.9",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "pack_cost_pence": 900,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — Monin £9/L"
+      },
+      "note": "Real invoice — Monin £9/L",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 5,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 730,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 2,
+      "name": "Semi-skimmed milk",
+      "category": "Dairy",
+      "unit": "L",
+      "unit_cost": {
+        "pence": "69.705882",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "3.4",
+        "pack_unit": "L",
+        "pack_cost_pence": 237,
+        "source": "ESTIMATE",
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Same as whole — assumed"
+      },
+      "note": "Same as whole — assumed",
+      "suppliers": [
+        {
+          "supplier_id": 2,
+          "name": "Brakes",
+          "is_preferred": true
+        },
+        {
+          "supplier_id": 6,
+          "name": "Tesco",
+          "is_preferred": false
+        }
+      ],
+      "used_in_count": 0,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 7,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 77,
+      "name": "Smoked salmon",
+      "category": "Food",
+      "unit": "KG",
+      "unit_cost": {
+        "pence": "2800",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "KG",
+        "pack_cost_pence": 2800,
+        "source": "ESTIMATE",
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "ESTIMATE"
+      },
+      "note": "ESTIMATE",
+      "suppliers": [
+        {
+          "supplier_id": 2,
+          "name": "Brakes",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 1,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 4,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 5,
+      "name": "Soy milk (barista)",
+      "category": "Dairy alt",
+      "unit": "L",
+      "unit_cost": {
+        "pence": "250",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "L",
+        "pack_cost_pence": 250,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — alt-milk £2.50/L"
+      },
+      "note": "Real invoice — alt-milk £2.50/L",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 0,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 270,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 110,
+      "name": "Sparkling water",
+      "category": "Bottled",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "34",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 34,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — £8.06/24 (Brakes)"
+      },
+      "note": "Real invoice — £8.06/24 (Brakes)",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 0,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 270,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 107,
+      "name": "Sprite",
+      "category": "Bottled",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "47",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 47,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — £11.33/24 (Amazon)"
+      },
+      "note": "Real invoice — £11.33/24 (Amazon)",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 0,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 270,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 61,
+      "name": "Sticky toffee Biscoff",
+      "category": "Cake (CakeSmiths)",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "130",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 130,
+        "source": "ESTIMATE",
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "CakeSmiths"
+      },
+      "note": "CakeSmiths",
+      "suppliers": [
+        {
+          "supplier_id": 1,
+          "name": "Cakesmiths",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 1,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 4,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 88,
+      "name": "Still water (bottle)",
+      "category": "Bottled",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "32",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 32,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — £7.70/24 (Brakes)"
+      },
+      "note": "Real invoice — £7.70/24 (Brakes)",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 2,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 270,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 86,
+      "name": "Strawberries (fresh)",
+      "category": "Food",
+      "unit": "KG",
+      "unit_cost": {
+        "pence": "600",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "KG",
+        "pack_cost_pence": 600,
+        "source": "ESTIMATE",
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "ESTIMATE"
+      },
+      "note": "ESTIMATE",
+      "suppliers": [
+        {
+          "supplier_id": 2,
+          "name": "Brakes",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 1,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 4,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 17,
+      "name": "Strawberry syrup (Monin)",
+      "category": "Syrup",
+      "unit": "ML",
+      "unit_cost": {
+        "pence": "0.9",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "pack_cost_pence": 900,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — Monin £9/L"
+      },
+      "note": "Real invoice — Monin £9/L",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 12,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 730,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 53,
+      "name": "Sugar sachet",
+      "category": "Sundries",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "1.2",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1000",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 1200,
+        "source": "ESTIMATE",
+        "supplier_id": 4,
+        "supplier_name": "Cups Direct",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "ESTIMATE"
+      },
+      "note": "ESTIMATE",
+      "suppliers": [
+        {
+          "supplier_id": 4,
+          "name": "Cups Direct",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 0,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": null,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 109,
+      "name": "Sugar-free Irn-Bru",
+      "category": "Bottled",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "44",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 44,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — £10.50/24 (Brakes)"
+      },
+      "note": "Real invoice — £10.50/24 (Brakes)",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 0,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 270,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 52,
+      "name": "Takeaway bag",
+      "category": "Packaging",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "6",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "250",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 1500,
+        "source": "ESTIMATE",
+        "supplier_id": 4,
+        "supplier_name": "Cups Direct",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "ESTIMATE"
+      },
+      "note": "ESTIMATE",
+      "suppliers": [
+        {
+          "supplier_id": 4,
+          "name": "Cups Direct",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 0,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": null,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 41,
+      "name": "Tapioca pearls",
+      "category": "Specialty",
+      "unit": "KG",
+      "unit_cost": {
+        "pence": "800",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "KG",
+        "pack_cost_pence": 800,
+        "source": "ESTIMATE",
+        "supplier_id": 5,
+        "supplier_name": "Monolith",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "ESTIMATE"
+      },
+      "note": "ESTIMATE",
+      "suppliers": [
+        {
+          "supplier_id": 5,
+          "name": "Monolith",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 5,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 540,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 34,
+      "name": "Tea bag (standard)",
+      "category": "Tea",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "5.9875",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "320",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 1916,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — breakfast/decaf/earl grey ~£19/320 bags"
+      },
+      "note": "Real invoice — breakfast/decaf/earl grey ~£19/320 bags",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 15,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 730,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 79,
+      "name": "Tinned tuna",
+      "category": "Food",
+      "unit": "KG",
+      "unit_cost": {
+        "pence": "900",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "KG",
+        "pack_cost_pence": 900,
+        "source": "ESTIMATE",
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "ESTIMATE"
+      },
+      "note": "ESTIMATE",
+      "suppliers": [
+        {
+          "supplier_id": 2,
+          "name": "Brakes",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 1,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 4,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 98,
+      "name": "Tiramisu cake (slice)",
+      "category": "Cake",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "135",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 135,
+        "source": "INVOICE",
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — £19/14"
+      },
+      "note": "Real invoice — £19/14",
+      "suppliers": [
+        {
+          "supplier_id": 1,
+          "name": "Cakesmiths",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 0,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 4,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 15,
+      "name": "Toffee nut syrup (Monin)",
+      "category": "Syrup",
+      "unit": "ML",
+      "unit_cost": {
+        "pence": "0.9",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "pack_cost_pence": 900,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — Monin £9/L"
+      },
+      "note": "Real invoice — Monin £9/L",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 1,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 730,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 16,
+      "name": "Toffee syrup (Monin)",
+      "category": "Syrup",
+      "unit": "ML",
+      "unit_cost": {
+        "pence": "0.9",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "pack_cost_pence": 900,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — Monin £9/L"
+      },
+      "note": "Real invoice — Monin £9/L",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 2,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 730,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 43,
+      "name": "Tonic water",
+      "category": "Specialty",
+      "unit": "L",
+      "unit_cost": {
+        "pence": "400",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "L",
+        "pack_cost_pence": 400,
+        "source": "INVOICE",
+        "supplier_id": 5,
+        "supplier_name": "Monolith",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — 200ml × 24 = £19.19, so ~£4/L (Brakes)"
+      },
+      "note": "Real invoice — 200ml × 24 = £19.19, so ~£4/L (Brakes)",
+      "suppliers": [
+        {
+          "supplier_id": 5,
+          "name": "Monolith",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 1,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 540,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 91,
+      "name": "Tropicana OJ carton",
+      "category": "Bottled",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "80",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 80,
+        "source": "ESTIMATE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "ESTIMATE"
+      },
+      "note": "ESTIMATE",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 1,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 270,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 42,
+      "name": "Vanilla ice cream",
+      "category": "Specialty",
+      "unit": "L",
+      "unit_cost": {
+        "pence": "400",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "L",
+        "pack_cost_pence": 400,
+        "source": "ESTIMATE",
+        "supplier_id": 5,
+        "supplier_name": "Monolith",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "ESTIMATE"
+      },
+      "note": "ESTIMATE",
+      "suppliers": [
+        {
+          "supplier_id": 5,
+          "name": "Monolith",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 9,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 540,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 10,
+      "name": "Vanilla syrup (Monin)",
+      "category": "Syrup",
+      "unit": "ML",
+      "unit_cost": {
+        "pence": "0.9",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "pack_cost_pence": 900,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — Monin £9/L"
+      },
+      "note": "Real invoice — Monin £9/L",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 8,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 730,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 7,
+      "name": "Whipping cream",
+      "category": "Dairy",
+      "unit": "L",
+      "unit_cost": {
+        "pence": "350",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1",
+        "pack_unit": "L",
+        "pack_cost_pence": 350,
+        "source": "ESTIMATE",
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "ESTIMATE"
+      },
+      "note": "ESTIMATE",
+      "suppliers": [
+        {
+          "supplier_id": 2,
+          "name": "Brakes",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 3,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 14,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 38,
+      "name": "White chocolate sauce",
+      "category": "Chocolate",
+      "unit": "ML",
+      "unit_cost": {
+        "pence": "0.6",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "pack_cost_pence": 600,
+        "source": "INVOICE",
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — £6/kg (used as sauce-equivalent in ml)"
+      },
+      "note": "Real invoice — £6/kg (used as sauce-equivalent in ml)",
+      "suppliers": [
+        {
+          "supplier_id": 3,
+          "name": "Booker",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 6,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": 540,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 1,
+      "name": "Whole milk",
+      "category": "Dairy",
+      "unit": "L",
+      "unit_cost": {
+        "pence": "69.705882",
+        "source": "INVOICE",
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "3.4",
+        "pack_unit": "L",
+        "pack_cost_pence": 237,
+        "source": "INVOICE",
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "Real invoice — 3.4L = £2.37"
+      },
+      "note": "Real invoice — 3.4L = £2.37",
+      "suppliers": [
+        {
+          "supplier_id": 2,
+          "name": "Brakes",
+          "is_preferred": true
+        },
+        {
+          "supplier_id": 6,
+          "name": "Tesco",
+          "is_preferred": false
+        }
+      ],
+      "used_in_count": 101,
+      "retired": false,
+      "storage": "CHILLED",
+      "shelf_life_days": 7,
+      "shelf_life_source": "ESTIMATE"
+    },
+    {
+      "ingredient_id": 55,
+      "name": "Wooden stirrer",
+      "category": "Sundries",
+      "unit": "EACH",
+      "unit_cost": {
+        "pence": "0.4",
+        "source": "ESTIMATE",
+        "is_estimate": true,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      },
+      "pack": {
+        "pack_size": "1000",
+        "pack_unit": "EACH",
+        "pack_cost_pence": 400,
+        "source": "ESTIMATE",
+        "supplier_id": 4,
+        "supplier_name": "Cups Direct",
+        "effective_from": "2025-11-01T00:00:00Z",
+        "recorded_by": null,
+        "note": "ESTIMATE"
+      },
+      "note": "ESTIMATE",
+      "suppliers": [
+        {
+          "supplier_id": 4,
+          "name": "Cups Direct",
+          "is_preferred": true
+        }
+      ],
+      "used_in_count": 0,
+      "retired": false,
+      "storage": "AMBIENT",
+      "shelf_life_days": null,
+      "shelf_life_source": "ESTIMATE"
+    }
+  ],
+  "categories": [
+    [
+      "Packaging",
+      8
+    ],
+    [
+      "Dairy alt",
+      4
+    ],
+    [
+      "Bottled",
+      18
+    ],
+    [
+      "Syrup",
+      24
+    ],
+    [
+      "Cake",
+      15
+    ],
+    [
+      "Food",
+      17
+    ],
+    [
+      "Sundries",
+      5
+    ],
+    [
+      "Tea",
+      3
+    ],
+    [
+      "Chocolate",
+      3
+    ],
+    [
+      "Specialty",
+      5
+    ],
+    [
+      "Coffee",
+      3
+    ],
+    [
+      "Cake (CakeSmiths)",
+      5
+    ],
+    [
+      "Dairy",
+      3
+    ]
+  ],
+  "estimated_count": 42,
+  "total": 113,
+  "suppliers": [
+    {
+      "supplier_id": 7,
+      "name": "Amazon"
+    },
+    {
+      "supplier_id": 3,
+      "name": "Booker"
+    },
+    {
+      "supplier_id": 2,
+      "name": "Brakes"
+    },
+    {
+      "supplier_id": 1,
+      "name": "Cakesmiths"
+    },
+    {
+      "supplier_id": 4,
+      "name": "Cups Direct"
+    },
+    {
+      "supplier_id": 5,
+      "name": "Monolith"
+    },
+    {
+      "supplier_id": 8,
+      "name": "Nataly (custom)"
+    },
+    {
+      "supplier_id": 6,
+      "name": "Tesco"
+    }
+  ]
+}

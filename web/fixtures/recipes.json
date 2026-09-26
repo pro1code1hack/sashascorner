@@ -1,0 +1,954 @@
+{
+  "templates": [
+    {
+      "template_id": 1,
+      "name": "Flavoured Latte",
+      "category": "Latte / flavoured latte",
+      "sizes": [
+        "S",
+        "M",
+        "XL"
+      ],
+      "item_count": 9
+    }
+  ],
+  "proposals": [
+    {
+      "proposal_id": "e40fcc3bd7dd",
+      "name": "Flavoured Latte (Coffee beans (house blend))",
+      "category": null,
+      "menu_item_count": 66,
+      "is_hollow": false,
+      "name_is_ambiguous": false,
+      "blocked_reason": "2 conflict(s): the imported rows disagree about a quantity"
+    },
+    {
+      "proposal_id": "5e3f104f73af",
+      "name": "Flavoured Chocolate",
+      "category": null,
+      "menu_item_count": 33,
+      "is_hollow": false,
+      "name_is_ambiguous": false,
+      "blocked_reason": null
+    },
+    {
+      "proposal_id": "01aa8c40fc81",
+      "name": "Mixed Americano group",
+      "category": null,
+      "menu_item_count": 24,
+      "is_hollow": false,
+      "name_is_ambiguous": false,
+      "blocked_reason": "6 conflict(s): the imported rows disagree about a quantity"
+    },
+    {
+      "proposal_id": "ad11963b0085",
+      "name": "Flavoured Matcha (Butterfly pea flowers)",
+      "category": "Spring saesonal drinks",
+      "menu_item_count": 19,
+      "is_hollow": false,
+      "name_is_ambiguous": false,
+      "blocked_reason": "2 conflict(s): the imported rows disagree about a quantity"
+    },
+    {
+      "proposal_id": "97575c82d2e2",
+      "name": "Flavoured Matcha (Matcha powder)",
+      "category": null,
+      "menu_item_count": 18,
+      "is_hollow": false,
+      "name_is_ambiguous": true,
+      "blocked_reason": "2 conflict(s): the imported rows disagree about a quantity"
+    },
+    {
+      "proposal_id": "4a022eaa3e85",
+      "name": "Tea range",
+      "category": "Teas",
+      "menu_item_count": 9,
+      "is_hollow": false,
+      "name_is_ambiguous": false,
+      "blocked_reason": null
+    },
+    {
+      "proposal_id": "25a62acc0516",
+      "name": "Flavoured Latte (Whole milk)",
+      "category": null,
+      "menu_item_count": 8,
+      "is_hollow": false,
+      "name_is_ambiguous": false,
+      "blocked_reason": "3 conflict(s): the imported rows disagree about a quantity"
+    },
+    {
+      "proposal_id": "b4acf9f0a9cc",
+      "name": "Espresso range",
+      "category": null,
+      "menu_item_count": 7,
+      "is_hollow": false,
+      "name_is_ambiguous": false,
+      "blocked_reason": "1 conflict(s): the imported rows disagree about a quantity"
+    },
+    {
+      "proposal_id": "97718b030a5a",
+      "name": "Flavoured Fruit",
+      "category": null,
+      "menu_item_count": 7,
+      "is_hollow": false,
+      "name_is_ambiguous": false,
+      "blocked_reason": null
+    },
+    {
+      "proposal_id": "899c97c18076",
+      "name": "Flavoured Milkshake (Coffee beans (house blend))",
+      "category": null,
+      "menu_item_count": 7,
+      "is_hollow": false,
+      "name_is_ambiguous": false,
+      "blocked_reason": "2 conflict(s): the imported rows disagree about a quantity"
+    },
+    {
+      "proposal_id": "9684672024a1",
+      "name": "Matcha range",
+      "category": null,
+      "menu_item_count": 7,
+      "is_hollow": false,
+      "name_is_ambiguous": false,
+      "blocked_reason": "1 conflict(s): the imported rows disagree about a quantity"
+    },
+    {
+      "proposal_id": "ffc65b57fc83",
+      "name": "Flavoured Tea (Loose-leaf tea (black))",
+      "category": null,
+      "menu_item_count": 6,
+      "is_hollow": false,
+      "name_is_ambiguous": true,
+      "blocked_reason": null
+    },
+    {
+      "proposal_id": "979a83c4e264",
+      "name": "Flavoured Tea (Tea bag (standard))",
+      "category": null,
+      "menu_item_count": 6,
+      "is_hollow": false,
+      "name_is_ambiguous": false,
+      "blocked_reason": null
+    },
+    {
+      "proposal_id": "ae48a45bb128",
+      "name": "Mocha range",
+      "category": null,
+      "menu_item_count": 6,
+      "is_hollow": false,
+      "name_is_ambiguous": false,
+      "blocked_reason": "2 conflict(s): the imported rows disagree about a quantity"
+    },
+    {
+      "proposal_id": "774c428d88d4",
+      "name": "Flavoured Bliss",
+      "category": null,
+      "menu_item_count": 5,
+      "is_hollow": false,
+      "name_is_ambiguous": false,
+      "blocked_reason": null
+    },
+    {
+      "proposal_id": "857e2cf2da21",
+      "name": "Flavoured Matcha (Matcha powder)",
+      "category": null,
+      "menu_item_count": 5,
+      "is_hollow": false,
+      "name_is_ambiguous": true,
+      "blocked_reason": "2 conflict(s): the imported rows disagree about a quantity"
+    },
+    {
+      "proposal_id": "d66f71ce64c8",
+      "name": "Mixed Zest group",
+      "category": null,
+      "menu_item_count": 5,
+      "is_hollow": false,
+      "name_is_ambiguous": false,
+      "blocked_reason": null
+    },
+    {
+      "proposal_id": "86658cb603d9",
+      "name": "Flavoured Milkshake (Whole milk)",
+      "category": null,
+      "menu_item_count": 4,
+      "is_hollow": false,
+      "name_is_ambiguous": false,
+      "blocked_reason": null
+    },
+    {
+      "proposal_id": "76e2af930b67",
+      "name": "Flavoured Mocha",
+      "category": "Spring saesonal drinks",
+      "menu_item_count": 4,
+      "is_hollow": false,
+      "name_is_ambiguous": false,
+      "blocked_reason": null
+    },
+    {
+      "proposal_id": "7ceb2cab71ec",
+      "name": "Flavoured Tea (Loose-leaf tea (black))",
+      "category": null,
+      "menu_item_count": 4,
+      "is_hollow": false,
+      "name_is_ambiguous": true,
+      "blocked_reason": null
+    },
+    {
+      "proposal_id": "b8b1921eeb5c",
+      "name": "Flavoured (Add-On)",
+      "category": null,
+      "menu_item_count": 3,
+      "is_hollow": false,
+      "name_is_ambiguous": false,
+      "blocked_reason": null
+    },
+    {
+      "proposal_id": "ae8dc652037c",
+      "name": "Cake range",
+      "category": null,
+      "menu_item_count": 2,
+      "is_hollow": true,
+      "name_is_ambiguous": false,
+      "blocked_reason": "no components and no axes: the imported rows carry no ingredient lines, so there is no recipe here to confirm"
+    },
+    {
+      "proposal_id": "8b57a2ae4597",
+      "name": "Flavoured Pana",
+      "category": null,
+      "menu_item_count": 2,
+      "is_hollow": false,
+      "name_is_ambiguous": false,
+      "blocked_reason": "1 conflict(s): the imported rows disagree about a quantity"
+    },
+    {
+      "proposal_id": "5be157e525e7",
+      "name": "Flavoured Wafer",
+      "category": null,
+      "menu_item_count": 2,
+      "is_hollow": false,
+      "name_is_ambiguous": false,
+      "blocked_reason": null
+    },
+    {
+      "proposal_id": "7da2feae42d0",
+      "name": "Juice range",
+      "category": null,
+      "menu_item_count": 2,
+      "is_hollow": true,
+      "name_is_ambiguous": false,
+      "blocked_reason": "no components and no axes: the imported rows carry no ingredient lines, so there is no recipe here to confirm"
+    },
+    {
+      "proposal_id": "73f58d6f8d2f",
+      "name": "Panini range",
+      "category": null,
+      "menu_item_count": 2,
+      "is_hollow": true,
+      "name_is_ambiguous": false,
+      "blocked_reason": "no components and no axes: the imported rows carry no ingredient lines, so there is no recipe here to confirm"
+    },
+    {
+      "proposal_id": "a979d948366a",
+      "name": "Water range",
+      "category": null,
+      "menu_item_count": 2,
+      "is_hollow": true,
+      "name_is_ambiguous": false,
+      "blocked_reason": "no components and no axes: the imported rows carry no ingredient lines, so there is no recipe here to confirm"
+    }
+  ],
+  "one_offs": [
+    {
+      "menu_item_id": 276,
+      "name": "'card' (£3.00)"
+    },
+    {
+      "menu_item_id": 267,
+      "name": "Afternoon Deal"
+    },
+    {
+      "menu_item_id": 268,
+      "name": "Apple Juice"
+    },
+    {
+      "menu_item_id": 269,
+      "name": "Babyccino"
+    },
+    {
+      "menu_item_id": 3,
+      "name": "Banana and Pecan Muffin"
+    },
+    {
+      "menu_item_id": 1,
+      "name": "Banana Milkshake"
+    },
+    {
+      "menu_item_id": 4,
+      "name": "Berry Breeze Lemonade"
+    },
+    {
+      "menu_item_id": 6,
+      "name": "Berry Tea"
+    },
+    {
+      "menu_item_id": 270,
+      "name": "Billionaire's shortbread"
+    },
+    {
+      "menu_item_id": 271,
+      "name": "BKK Kyiv cake"
+    },
+    {
+      "menu_item_id": 7,
+      "name": "Black Americano"
+    },
+    {
+      "menu_item_id": 10,
+      "name": "Black Honey"
+    },
+    {
+      "menu_item_id": 12,
+      "name": "Blue Honey Matcha"
+    },
+    {
+      "menu_item_id": 15,
+      "name": "Blue Lavender Matcha"
+    },
+    {
+      "menu_item_id": 18,
+      "name": "Blue Vanilla Matcha"
+    },
+    {
+      "menu_item_id": 272,
+      "name": "Blueberry Muffin"
+    },
+    {
+      "menu_item_id": 273,
+      "name": "Brownie Bar"
+    },
+    {
+      "menu_item_id": 21,
+      "name": "Butterfly (lavender) Latte"
+    },
+    {
+      "menu_item_id": 24,
+      "name": "Butterfly Hot Chocolate"
+    },
+    {
+      "menu_item_id": 27,
+      "name": "Cappuccino"
+    },
+    {
+      "menu_item_id": 274,
+      "name": "Capri-Sun"
+    },
+    {
+      "menu_item_id": 275,
+      "name": "Caramel syrup (add-on)"
+    },
+    {
+      "menu_item_id": 30,
+      "name": "Chai Latte"
+    },
+    {
+      "menu_item_id": 33,
+      "name": "Chocolate Coffee Milkshake"
+    },
+    {
+      "menu_item_id": 35,
+      "name": "Chocolate Milkshake"
+    },
+    {
+      "menu_item_id": 38,
+      "name": "Cinnamon Bun Hot Chocolate"
+    },
+    {
+      "menu_item_id": 41,
+      "name": "Cinnamon Bun Latte"
+    },
+    {
+      "menu_item_id": 37,
+      "name": "Cinnamon classic"
+    },
+    {
+      "menu_item_id": 277,
+      "name": "Coca-Cola"
+    },
+    {
+      "menu_item_id": 278,
+      "name": "Coconut milk (+upcharge)"
+    },
+    {
+      "menu_item_id": 44,
+      "name": "Coffee Milkshake"
+    },
+    {
+      "menu_item_id": 46,
+      "name": "Cortado"
+    },
+    {
+      "menu_item_id": 279,
+      "name": "Croissant with Jam"
+    },
+    {
+      "menu_item_id": 280,
+      "name": "Dark Blue Wafer"
+    },
+    {
+      "menu_item_id": 47,
+      "name": "Decaf Tea"
+    },
+    {
+      "menu_item_id": 48,
+      "name": "Double Espresso"
+    },
+    {
+      "menu_item_id": 49,
+      "name": "Double Espresso Con Pana"
+    },
+    {
+      "menu_item_id": 50,
+      "name": "Double Macchiato"
+    },
+    {
+      "menu_item_id": 51,
+      "name": "Earl Grey"
+    },
+    {
+      "menu_item_id": 52,
+      "name": "Emerald Zest"
+    },
+    {
+      "menu_item_id": 54,
+      "name": "English Breakfast"
+    },
+    {
+      "menu_item_id": 55,
+      "name": "Espresso Tonic"
+    },
+    {
+      "menu_item_id": 281,
+      "name": "Extra shot"
+    },
+    {
+      "menu_item_id": 282,
+      "name": "Fanta"
+    },
+    {
+      "menu_item_id": 57,
+      "name": "Flat White"
+    },
+    {
+      "menu_item_id": 58,
+      "name": "Forest Fruits Tea"
+    },
+    {
+      "menu_item_id": 59,
+      "name": "Ginger and Lemongrass Tea"
+    },
+    {
+      "menu_item_id": 60,
+      "name": "Green"
+    },
+    {
+      "menu_item_id": 61,
+      "name": "Green Apple Bubble Tea"
+    },
+    {
+      "menu_item_id": 283,
+      "name": "Ham and Cheese Panini"
+    },
+    {
+      "menu_item_id": 284,
+      "name": "Ham and Cheese Toastie"
+    },
+    {
+      "menu_item_id": 285,
+      "name": "Ham Croissant"
+    },
+    {
+      "menu_item_id": 286,
+      "name": "Homemade Panini"
+    },
+    {
+      "menu_item_id": 287,
+      "name": "Homemade Roll"
+    },
+    {
+      "menu_item_id": 63,
+      "name": "Honey Bubble Tea"
+    },
+    {
+      "menu_item_id": 65,
+      "name": "Honey Vanilla Latte"
+    },
+    {
+      "menu_item_id": 288,
+      "name": "Hot banana matcha"
+    },
+    {
+      "menu_item_id": 289,
+      "name": "Hot blue matcha"
+    },
+    {
+      "menu_item_id": 68,
+      "name": "Hot Chocolate"
+    },
+    {
+      "menu_item_id": 71,
+      "name": "Hot Lavender Matcha"
+    },
+    {
+      "menu_item_id": 74,
+      "name": "Hot Matcha"
+    },
+    {
+      "menu_item_id": 77,
+      "name": "Hot Rose Matcha"
+    },
+    {
+      "menu_item_id": 80,
+      "name": "Hot Strawberry Matcha"
+    },
+    {
+      "menu_item_id": 83,
+      "name": "Hot Vanilla Matcha"
+    },
+    {
+      "menu_item_id": 86,
+      "name": "Hot White Choc Matcha"
+    },
+    {
+      "menu_item_id": 137,
+      "name": "Iced Banana Matcha"
+    },
+    {
+      "menu_item_id": 139,
+      "name": "Iced Black Americano"
+    },
+    {
+      "menu_item_id": 89,
+      "name": "Iced Butterfly Latte"
+    },
+    {
+      "menu_item_id": 141,
+      "name": "Iced Cappuccino"
+    },
+    {
+      "menu_item_id": 143,
+      "name": "Iced Chai Latte"
+    },
+    {
+      "menu_item_id": 91,
+      "name": "Iced Cinnamon Bun Latte"
+    },
+    {
+      "menu_item_id": 93,
+      "name": "Iced Citrus Blue Matcha"
+    },
+    {
+      "menu_item_id": 145,
+      "name": "Iced Coconut Matcha"
+    },
+    {
+      "menu_item_id": 95,
+      "name": "Iced Coconut Water Blue Matcha"
+    },
+    {
+      "menu_item_id": 97,
+      "name": "Iced Coconut Water Latte"
+    },
+    {
+      "menu_item_id": 147,
+      "name": "Iced Flat White"
+    },
+    {
+      "menu_item_id": 99,
+      "name": "Iced Honey Blue Matcha"
+    },
+    {
+      "menu_item_id": 101,
+      "name": "Iced Honey Vanilla Latte"
+    },
+    {
+      "menu_item_id": 149,
+      "name": "Iced Latte"
+    },
+    {
+      "menu_item_id": 103,
+      "name": "Iced Lavender Blue Matcha"
+    },
+    {
+      "menu_item_id": 105,
+      "name": "Iced Lavender Latte"
+    },
+    {
+      "menu_item_id": 151,
+      "name": "Iced Lemon & Honey Tea"
+    },
+    {
+      "menu_item_id": 107,
+      "name": "Iced Mango Matcha"
+    },
+    {
+      "menu_item_id": 290,
+      "name": "Iced matcha (plain)"
+    },
+    {
+      "menu_item_id": 109,
+      "name": "Iced Mint Latte"
+    },
+    {
+      "menu_item_id": 153,
+      "name": "Iced Mocha"
+    },
+    {
+      "menu_item_id": 111,
+      "name": "Iced Orange Latte"
+    },
+    {
+      "menu_item_id": 155,
+      "name": "Iced Peach Matcha"
+    },
+    {
+      "menu_item_id": 113,
+      "name": "Iced Pistachio Latte"
+    },
+    {
+      "menu_item_id": 115,
+      "name": "Iced Pumpkin Spice Latte"
+    },
+    {
+      "menu_item_id": 117,
+      "name": "Iced Raspberry Mocha"
+    },
+    {
+      "menu_item_id": 119,
+      "name": "Iced Rose Latte"
+    },
+    {
+      "menu_item_id": 121,
+      "name": "Iced Rose Mocha"
+    },
+    {
+      "menu_item_id": 123,
+      "name": "Iced Rose Tea"
+    },
+    {
+      "menu_item_id": 125,
+      "name": "Iced Rose White Mocha"
+    },
+    {
+      "menu_item_id": 127,
+      "name": "Iced Salted Caramel Latte"
+    },
+    {
+      "menu_item_id": 129,
+      "name": "Iced Strawberry Matcha"
+    },
+    {
+      "menu_item_id": 131,
+      "name": "Iced Toffee Latte"
+    },
+    {
+      "menu_item_id": 133,
+      "name": "Iced Vanilla Blue Matcha"
+    },
+    {
+      "menu_item_id": 157,
+      "name": "Iced White Americano"
+    },
+    {
+      "menu_item_id": 159,
+      "name": "Iced White Mocha"
+    },
+    {
+      "menu_item_id": 135,
+      "name": "Iced White Raspberry Mocha"
+    },
+    {
+      "menu_item_id": 161,
+      "name": "Jasmine and Mint Green Tea"
+    },
+    {
+      "menu_item_id": 162,
+      "name": "Juice (generic)"
+    },
+    {
+      "menu_item_id": 163,
+      "name": "Kiwi Bubble Tea"
+    },
+    {
+      "menu_item_id": 291,
+      "name": "Kyiv cake (slice)"
+    },
+    {
+      "menu_item_id": 165,
+      "name": "Kyiv cake (whole)"
+    },
+    {
+      "menu_item_id": 166,
+      "name": "Latte"
+    },
+    {
+      "menu_item_id": 169,
+      "name": "Lavender Hot Chocolate"
+    },
+    {
+      "menu_item_id": 172,
+      "name": "Lemon and Pistachio"
+    },
+    {
+      "menu_item_id": 292,
+      "name": "Lemon Drizzle Bar"
+    },
+    {
+      "menu_item_id": 293,
+      "name": "Lunch Deal"
+    },
+    {
+      "menu_item_id": 294,
+      "name": "Marshmallow"
+    },
+    {
+      "menu_item_id": 295,
+      "name": "Mini Cookie"
+    },
+    {
+      "menu_item_id": 173,
+      "name": "Mint"
+    },
+    {
+      "menu_item_id": 174,
+      "name": "Mint Hot Chocolate"
+    },
+    {
+      "menu_item_id": 177,
+      "name": "Mint Latte"
+    },
+    {
+      "menu_item_id": 180,
+      "name": "Mocha"
+    },
+    {
+      "menu_item_id": 183,
+      "name": "Mocha Cortado"
+    },
+    {
+      "menu_item_id": 296,
+      "name": "Oat milk (+upcharge)"
+    },
+    {
+      "menu_item_id": 190,
+      "name": "Orange Americano"
+    },
+    {
+      "menu_item_id": 184,
+      "name": "Orange Hot Chocolate"
+    },
+    {
+      "menu_item_id": 297,
+      "name": "Orange Juice"
+    },
+    {
+      "menu_item_id": 187,
+      "name": "Orange Latte"
+    },
+    {
+      "menu_item_id": 193,
+      "name": "Passion Fruit"
+    },
+    {
+      "menu_item_id": 195,
+      "name": "Passion Fruit Bubble Tea"
+    },
+    {
+      "menu_item_id": 197,
+      "name": "Peach Iced Tea"
+    },
+    {
+      "menu_item_id": 199,
+      "name": "Pineapple & Passion Fruit"
+    },
+    {
+      "menu_item_id": 201,
+      "name": "Pistachio Hot Chocolate"
+    },
+    {
+      "menu_item_id": 298,
+      "name": "Pom-Bear crisps"
+    },
+    {
+      "menu_item_id": 299,
+      "name": "Pringles"
+    },
+    {
+      "menu_item_id": 207,
+      "name": "Pumpkin Spice Hot Chocolate"
+    },
+    {
+      "menu_item_id": 210,
+      "name": "Pumpkin Spice Latte"
+    },
+    {
+      "menu_item_id": 213,
+      "name": "Raff Coffee"
+    },
+    {
+      "menu_item_id": 300,
+      "name": "Raspberry and Almond Muffin"
+    },
+    {
+      "menu_item_id": 302,
+      "name": "Raspberry and matcha cheesecake"
+    },
+    {
+      "menu_item_id": 301,
+      "name": "Raspberry Brownie Cheesecake"
+    },
+    {
+      "menu_item_id": 216,
+      "name": "Raspberry Hot Chocolate"
+    },
+    {
+      "menu_item_id": 219,
+      "name": "Rose Hot Chocolate"
+    },
+    {
+      "menu_item_id": 222,
+      "name": "Rose Latte"
+    },
+    {
+      "menu_item_id": 225,
+      "name": "Rose White Mocha"
+    },
+    {
+      "menu_item_id": 303,
+      "name": "Salami Croissant"
+    },
+    {
+      "menu_item_id": 304,
+      "name": "Salami Roll"
+    },
+    {
+      "menu_item_id": 305,
+      "name": "Salmon Croissant"
+    },
+    {
+      "menu_item_id": 306,
+      "name": "Salted Caramel Bar"
+    },
+    {
+      "menu_item_id": 228,
+      "name": "Salted Caramel Brownie"
+    },
+    {
+      "menu_item_id": 229,
+      "name": "Salted Caramel Coffee Milkshake"
+    },
+    {
+      "menu_item_id": 231,
+      "name": "Salted Caramel Hot Chocolate"
+    },
+    {
+      "menu_item_id": 234,
+      "name": "Salted Caramel Latte"
+    },
+    {
+      "menu_item_id": 237,
+      "name": "Salted Caramel Milkshake"
+    },
+    {
+      "menu_item_id": 239,
+      "name": "Single Espresso"
+    },
+    {
+      "menu_item_id": 240,
+      "name": "Single Espresso Con Pana"
+    },
+    {
+      "menu_item_id": 241,
+      "name": "Single Macchiato"
+    },
+    {
+      "menu_item_id": 242,
+      "name": "Spiced Apple Chai"
+    },
+    {
+      "menu_item_id": 243,
+      "name": "Sticky Toffee Biscoff"
+    },
+    {
+      "menu_item_id": 307,
+      "name": "Still Water"
+    },
+    {
+      "menu_item_id": 244,
+      "name": "Strawberry"
+    },
+    {
+      "menu_item_id": 246,
+      "name": "Strawberry Black"
+    },
+    {
+      "menu_item_id": 308,
+      "name": "Strawberry bliss"
+    },
+    {
+      "menu_item_id": 247,
+      "name": "Strawberry Bubble Tea"
+    },
+    {
+      "menu_item_id": 309,
+      "name": "Strawberry Pancake"
+    },
+    {
+      "menu_item_id": 310,
+      "name": "Strawberry syrup (add-on)"
+    },
+    {
+      "menu_item_id": 311,
+      "name": "Syrup Gift Set"
+    },
+    {
+      "menu_item_id": 249,
+      "name": "Toffee Hot Chocolate"
+    },
+    {
+      "menu_item_id": 252,
+      "name": "Toffee Nut Latte"
+    },
+    {
+      "menu_item_id": 255,
+      "name": "Tropical Mint Bliss"
+    },
+    {
+      "menu_item_id": 312,
+      "name": "Tropicana"
+    },
+    {
+      "menu_item_id": 313,
+      "name": "Tuna Toastie"
+    },
+    {
+      "menu_item_id": 314,
+      "name": "Vanilla syrup (add-on)"
+    },
+    {
+      "menu_item_id": 257,
+      "name": "Water"
+    },
+    {
+      "menu_item_id": 258,
+      "name": "White Americano"
+    },
+    {
+      "menu_item_id": 261,
+      "name": "White Hot Chocolate"
+    },
+    {
+      "menu_item_id": 264,
+      "name": "White Mocha"
+    }
+  ]
+}

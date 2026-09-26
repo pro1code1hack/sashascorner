@@ -8,9 +8,9 @@ from collections.abc import Callable
 from pathlib import Path
 
 import typer
-from sqlalchemy import func, text
+from sqlalchemy import func, select, text
 
-from sashasite.config import BACKEND_ROOT, get_cafe, get_settings
+from sashasite.config import BACKEND_ROOT, get_settings
 
 app = typer.Typer(no_args_is_help=True, add_completion=False)
 
@@ -64,22 +64,45 @@ def bookings(
 
 @app.command("menu-export")
 def menu_export(out: Path = typer.Option(..., help="Where to write the /api/menu JSON")) -> None:
-    """Write the public menu JSON (the Astro build renders it as crawlable HTML)."""
-    from sashasite.menu import build_menu
+    """Write the public menu JSON (the Astro build renders it as crawlable HTML).
+    Same source rules as /api/menu: ops when it has categories, else the board."""
+    from sashasite.menu_source import build_menu
 
     menu = build_menu()
     _write_json(out, menu.model_dump_json(indent=2))
+    n = sum(len(c.items) for c in menu.categories)
+    typer.echo(f"  source {menu.source}, version {menu.version}, {n} items")
     for c in menu.categories:
         typer.echo(f"  {c.slug:<14} {len(c.items):>3} items")
     typer.echo(f"  extras: {len(menu.extras.items)}")
 
 
+@app.command("menu-meta-seed")
+def menu_meta_seed() -> None:
+    """Copy the board's blurbs, descriptions and signature flags into the website
+    menu overlay. Idempotent: names that already have a row are left alone."""
+    from sashasite.menu_source import seed_overlay
+
+    try:
+        res = seed_overlay()
+    except RuntimeError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(1) from exc
+    typer.echo(
+        f"categories added: {res.categories_added}; items added: {res.items_added}, "
+        f"already set: {res.items_existing}"
+    )
+    for board_name, ops_name in res.mapped_to_ops:
+        typer.echo(f"  also under the ops name: {board_name} -> {ops_name}")
+
+
 @app.command("info-export")
 def info_export(out: Path = typer.Option(..., help="Where to write the /api/info JSON")) -> None:
-    """Write the café info JSON."""
+    """Write the café info JSON (from the DB settings, as /api/info serves it)."""
     from sashasite.app import info_out
+    from sashasite.settings_store import live_cafe
 
-    _write_json(out, info_out(get_cafe()).model_dump_json(indent=2))
+    _write_json(out, info_out(live_cafe()).model_dump_json(indent=2))
 
 
 @app.command("media-add")
@@ -177,7 +200,7 @@ def doctor(
 
     from sashasite.db import get_engine
     from sashasite.drift import format_report, menu_drift
-    from sashasite.menu import build_menu, load_board
+    from sashasite.menu import load_board
 
     failed = False
 
@@ -213,12 +236,13 @@ def doctor(
 
     try:
         board = load_board()
-        menu = build_menu()
-        counts = ", ".join(f"{c.slug}={len(c.items)}" for c in menu.categories)
-        line(True, f"menu_board.toml valid: {len(menu.categories)} categories ({counts})")
+        line(True, f"menu_board.toml valid: {len(board.category)} categories")
     except Exception as exc:
         line(False, f"menu_board.toml invalid: {exc}")
         board = None
+
+    if board is not None:
+        _doctor_menu(line)
 
     # Drift is a report: it never changes the exit code.
     if board is not None:
@@ -230,7 +254,31 @@ def doctor(
 
     _doctor_media(line)
 
-    cafe = get_cafe()
+    from sashasite.auth import password_source
+    from sashasite.db import SiteAdminSession, SiteSetting, session_scope
+    from sashasite.settings_store import live_cafe
+
+    try:
+        cafe = live_cafe()
+        with session_scope() as session:
+            stamps = session.scalars(select(SiteSetting.updated_at)).all()
+            source = password_source(session)
+            n_sessions = (
+                session.scalar(
+                    select(func.count())
+                    .select_from(SiteAdminSession)
+                    .where(SiteAdminSession.expires_at > dt.datetime.now(dt.UTC))
+                )
+                or 0
+            )
+        line(
+            True,
+            f"cafe settings in site_setting (last edit {max(stamps):%Y-%m-%d %H:%M} UTC); "
+            f"{len(cafe.closures)} closure(s); {cafe.booking.covers_per_slot} covers per slot",
+        )
+    except Exception as exc:
+        line(False, f"cafe settings unreadable: {type(exc).__name__}: {exc}")
+        raise typer.Exit(1) from exc
     line(bool(cafe.email), f"cafe email: {cafe.email or '(empty -- no mailbox yet)'}", hard=False)
     line(
         cafe.confirmed,
@@ -239,11 +287,17 @@ def doctor(
         else f"cafe facts UNCONFIRMED placeholders: {', '.join(cafe.unconfirmed_fields)}",
         hard=False,
     )
+    source_note = {
+        "db": "admin password: set in the DB (SITE_ADMIN_PASSWORD is ignored)",
+        "env": "admin password: bootstrap from SITE_ADMIN_PASSWORD; "
+        "set a real one with `sashasite admin-password`",
+    }
     line(
-        bool(s.admin_password),
-        "admin password " + ("set" if s.admin_password else "NOT set: /api/admin/* answers 503"),
+        source is not None,
+        source_note.get(source or "", "admin password NOT set: admin sign-in answers 503"),
         hard=False,
     )
+    typer.echo(f"[info] active admin sessions: {n_sessions}")
     line(
         s.telegram_configured,
         "telegram configured: "
@@ -252,6 +306,42 @@ def doctor(
     )
     if failed:
         raise typer.Exit(1)
+
+
+def _doctor_menu(line: Callable[..., None]) -> None:
+    """Which source the website menu is served from, what the public sees, and
+    what the admin should look at (unassigned items, orphaned overlay rows)."""
+    from sashasite.menu_source import build_snapshot, orphans, public_menu
+
+    try:
+        snap = build_snapshot()
+        menu = public_menu(snap)
+    except Exception as exc:
+        line(False, f"website menu unbuildable: {type(exc).__name__}: {exc}")
+        return
+    counts = ", ".join(f"{c.slug}={len(c.items)}" for c in menu.categories)
+    n = sum(len(c.items) for c in menu.categories)
+    line(
+        True,
+        f"website menu source: {snap.source} (version {menu.version}); "
+        f"{len(menu.categories)} categories, {n} public items ({counts})",
+    )
+    for w in snap.warnings:
+        line(False, w, hard=False)
+    if snap.unassigned:
+        typer.echo(
+            "  unassigned (no category, not on the website): "
+            + ", ".join(i.name for i in snap.unassigned[:30])
+            + (" ..." if len(snap.unassigned) > 30 else "")
+        )
+    if snap.overlay_ready:
+        orph = orphans()
+        line(
+            not (orph.categories or orph.items),
+            "overlay rows for names no longer on any menu: "
+            + (", ".join([*orph.categories, *orph.items]) or "none"),
+            hard=False,
+        )
 
 
 def _doctor_media(line: Callable[..., None]) -> None:
@@ -305,6 +395,67 @@ def _doctor_media(line: Callable[..., None]) -> None:
         "missing variant files: " + (", ".join(f"{i}-{w}.webp" for i, w in missing[:20]) or "none"),
     )
     line(not no_alt, f"photos without alt text: {list(no_alt) or 'none'}", hard=False)
+
+
+@app.command("admin-password")
+def admin_password(
+    clear: bool = typer.Option(
+        False, "--clear", help="Remove the DB password: SITE_ADMIN_PASSWORD bootstraps again"
+    ),
+) -> None:
+    """Set the owner's admin password (prompts twice). Signs out every session."""
+    import getpass
+
+    from sashasite import auth
+    from sashasite.db import session_scope
+
+    if clear:
+        with session_scope(immediate=True) as session:
+            had = auth.clear_password(session)
+            if had:
+                auth.audit("password.clear", ip="cli", session=session)
+        typer.echo("DB password removed; all sessions signed out." if had else "no DB password")
+        return
+    new = getpass.getpass("New admin password: ")
+    if len(new) < auth.MIN_PASSWORD_LENGTH:
+        typer.echo(f"refused: at least {auth.MIN_PASSWORD_LENGTH} characters", err=True)
+        raise typer.Exit(1)
+    if getpass.getpass("Again: ") != new:
+        typer.echo("refused: the two entries differ", err=True)
+        raise typer.Exit(1)
+    with session_scope(immediate=True) as session:
+        revoked = auth.set_password(session, new)
+        auth.audit("password.change", {"sessions_revoked": revoked}, ip="cli", session=session)
+    typer.echo(f"admin password set in the DB; {revoked} session(s) signed out")
+
+
+@app.command("admin-sessions")
+def admin_sessions(
+    revoke_all: bool = typer.Option(False, "--revoke-all", help="Sign every browser out"),
+) -> None:
+    """List admin sessions, or revoke them all."""
+    from sashasite import auth
+    from sashasite.db import SiteAdminSession, session_scope
+
+    if revoke_all:
+        with session_scope(immediate=True) as session:
+            n = auth.revoke_all_sessions(session)
+            auth.audit("sessions.revoke_all", {"revoked": n}, ip="cli", session=session)
+        typer.echo(f"revoked {n} session(s)")
+        return
+    with session_scope() as session:
+        rows = list(
+            session.scalars(select(SiteAdminSession).order_by(SiteAdminSession.last_used_at))
+        )
+    if not rows:
+        typer.echo("no sessions")
+        return
+    typer.echo(f"{'id':>4}  {'created':<16}  {'last used':<16}  {'expires':<16}  {'ip':<15}  agent")
+    for r in rows:
+        typer.echo(
+            f"{r.id:>4}  {r.created_at:%Y-%m-%d %H:%M}  {r.last_used_at:%Y-%m-%d %H:%M}  "
+            f"{r.expires_at:%Y-%m-%d %H:%M}  {(r.ip or ''):<15}  {(r.user_agent or '')[:50]}"
+        )
 
 
 @app.callback()

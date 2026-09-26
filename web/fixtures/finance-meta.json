@@ -1,0 +1,124 @@
+{
+  "categories": [
+    {
+      "id": 1,
+      "name": "Stock — coffee",
+      "group": "COGS",
+      "sort": 1,
+      "active": true
+    },
+    {
+      "id": 2,
+      "name": "Stock — dairy",
+      "group": "COGS",
+      "sort": 2,
+      "active": true
+    },
+    {
+      "id": 3,
+      "name": "Stock — syrups",
+      "group": "COGS",
+      "sort": 3,
+      "active": true
+    },
+    {
+      "id": 4,
+      "name": "Stock — cakes",
+      "group": "COGS",
+      "sort": 4,
+      "active": true
+    },
+    {
+      "id": 5,
+      "name": "Stock — food",
+      "group": "COGS",
+      "sort": 5,
+      "active": true
+    },
+    {
+      "id": 6,
+      "name": "Stock — packaging",
+      "group": "COGS",
+      "sort": 6,
+      "active": true
+    },
+    {
+      "id": 7,
+      "name": "Stock — other",
+      "group": "COGS",
+      "sort": 7,
+      "active": true
+    },
+    {
+      "id": 8,
+      "name": "Rent",
+      "group": "OPEX",
+      "sort": 8,
+      "active": true
+    },
+    {
+      "id": 9,
+      "name": "Utilities",
+      "group": "OPEX",
+      "sort": 9,
+      "active": true
+    },
+    {
+      "id": 10,
+      "name": "Wages",
+      "group": "OPEX",
+      "sort": 10,
+      "active": true
+    },
+    {
+      "id": 11,
+      "name": "Marketing",
+      "group": "OPEX",
+      "sort": 11,
+      "active": true
+    },
+    {
+      "id": 12,
+      "name": "Card fees",
+      "group": "OPEX",
+      "sort": 12,
+      "active": true
+    },
+    {
+      "id": 13,
+      "name": "Other",
+      "group": "OPEX",
+      "sort": 13,
+      "active": true
+    }
+  ],
+  "methods": [
+    "CARD",
+    "BANK_TRANSFER",
+    "DIRECT_DEBIT",
+    "STANDING_ORDER",
+    "CASH",
+    "CASH_WITHDRAWAL",
+    "OTHER"
+  ],
+  "kinds": [
+    "OPERATING",
+    "CAPITAL",
+    "DRAWINGS"
+  ],
+  "director_types": [
+    "CAPITAL_INJECTION",
+    "LOAN_TO_COMPANY",
+    "DRAWINGS",
+    "REPAYMENT"
+  ],
+  "settings": {
+    "payout_lag_working_days": 2,
+    "card_fee_bp": 175,
+    "cash_tolerance_pence": 500,
+    "payout_tolerance_pence": 100,
+    "stock_pct_threshold_bp": 3200,
+    "updated_at": "2026-09-26T10:12:44.670273Z",
+    "updated_by": null
+  }
+}

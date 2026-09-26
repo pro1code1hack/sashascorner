@@ -1,6 +1,8 @@
-// Transport for the photo admin. `realApi` talks to /api; `?mock=1` swaps in an
+// Transport for the photo admin. `realApi` talks to /api through the shared admin
+// client (admin-core/api.ts); `?mock=1` swaps in an
 // in-memory stand-in (mock.ts) so the page can be built and checked before the
 // backend exists. Both return the normalised shapes in types.ts.
+import { adminHeaders, ApiError as CoreError, friendlyMessage, request } from '../admin-core/api';
 import { ApiError, type DraftItem, type Focal, type Media, type Slot, type SlotItem } from './types';
 
 export interface UploadResult {
@@ -16,38 +18,6 @@ export interface Api {
   slots(): Promise<Slot[]>;
   putSlot(key: string, items: DraftItem[]): Promise<Slot | null>;
 }
-
-// ---- credentials: sessionStorage only --------------------------------------
-
-const KEY = 'sc-admin-auth';
-
-export function basicHeader(password: string): string {
-  // btoa() only takes Latin-1; encode UTF-8 first so any password works.
-  const bytes = new TextEncoder().encode(`owner:${password}`);
-  let bin = '';
-  bytes.forEach((b) => (bin += String.fromCharCode(b)));
-  return `Basic ${btoa(bin)}`;
-}
-
-export const auth = {
-  get(): string | null {
-    try {
-      return sessionStorage.getItem(KEY);
-    } catch {
-      return memo;
-    }
-  },
-  set(header: string | null) {
-    memo = header;
-    try {
-      if (header) sessionStorage.setItem(KEY, header);
-      else sessionStorage.removeItem(KEY);
-    } catch {
-      /* private mode: keep it in memory for this tab */
-    }
-  },
-};
-let memo: string | null = null;
 
 // ---- normalisers -----------------------------------------------------------
 
@@ -136,23 +106,18 @@ export function detailOf(body: unknown, fallback: string): string {
 }
 
 // ---- real transport --------------------------------------------------------
+// Session cookie + `X-Admin: 1` via the shared admin client. A 401 is not
+// redirected here: the photo page keeps the owner's unsaved drafts and offers
+// to sign in again in another tab (main.ts, `adm:unauth`).
 
-async function call(path: string, init: RequestInit = {}, admin = true): Promise<unknown> {
-  const headers = new Headers(init.headers);
-  const a = auth.get();
-  if (admin && a) headers.set('Authorization', a);
-  let r: Response;
+async function call(path: string, init: { method?: 'GET' | 'PUT' | 'PATCH' | 'DELETE'; body?: unknown } = {}): Promise<unknown> {
   try {
-    // credentials: 'omit' keeps the browser from answering the server's
-    // `WWW-Authenticate: Basic` 401 with its own native password prompt; the
-    // Authorization header we set by hand is still sent.
-    r = await fetch(path, { ...init, headers, cache: 'no-store', credentials: 'omit' });
-  } catch {
-    throw new ApiError(0, 'Could not reach the server. Check the connection and try again.');
+    return await request<unknown>(init.method ?? 'GET', path, init.body, { quiet401: true });
+  } catch (e) {
+    if (e instanceof CoreError && e.status === 401) window.dispatchEvent(new CustomEvent('adm:unauth'));
+    if (e instanceof CoreError) throw new ApiError(e.status, e.message, { detail: e.detail });
+    throw e;
   }
-  const body = r.status === 204 ? null : await r.json().catch(() => null);
-  if (!r.ok) throw new ApiError(r.status, detailOf(body, `The server said ${r.status}.`), body);
-  return body;
 }
 
 export const realApi: Api = {
@@ -164,8 +129,8 @@ export const realApi: Api = {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       xhr.open('POST', '/api/admin/media');
-      const a = auth.get();
-      if (a) xhr.setRequestHeader('Authorization', a);
+      xhr.withCredentials = true;
+      for (const [k, v] of Object.entries(adminHeaders(false))) xhr.setRequestHeader(k, v);
       xhr.upload.addEventListener('progress', (e) => {
         if (e.lengthComputable) onProgress(e.loaded / e.total);
       });
@@ -180,7 +145,8 @@ export const realApi: Api = {
           onProgress(1);
           resolve({ media: normMedia(body), duplicate: xhr.status === 200 });
         } else {
-          reject(new ApiError(xhr.status, detailOf(body, `The server said ${xhr.status}.`), body));
+          if (xhr.status === 401) window.dispatchEvent(new CustomEvent('adm:unauth'));
+          reject(new ApiError(xhr.status, detailOf(body, friendlyMessage(xhr.status, null)), body));
         }
       });
       xhr.addEventListener('error', () => reject(new ApiError(0, 'The upload was interrupted. Check the connection and try again.')));
@@ -192,11 +158,7 @@ export const realApi: Api = {
   },
 
   async patchAlt(id, alt) {
-    const body = await call(`/api/admin/media/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ alt }),
-    });
+    const body = await call(`/api/admin/media/${id}`, { method: 'PATCH', body: { alt } });
     return body && typeof body === 'object' ? normMedia(body) : null;
   },
 
@@ -205,20 +167,19 @@ export const realApi: Api = {
   },
 
   async slots() {
-    return slotList(await call('/api/slots', {}, false));
+    return slotList(await call('/api/slots'));
   },
 
   async putSlot(key, items) {
     const body = await call(`/api/admin/slots/${encodeURIComponent(key)}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+      body: {
         items: items.map((i) => ({
           media_id: i.media_id,
           ...(i.alt.trim() ? { alt: i.alt.trim() } : {}),
           focal: { x: round(i.focal.x), y: round(i.focal.y) },
         })),
-      }),
+      },
     });
     const r = body as Raw | null;
     return r && Array.isArray(r.items) ? normSlot(key, r) : null;

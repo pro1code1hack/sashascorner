@@ -1,6 +1,6 @@
 {
-  "as_of": "2026-09-24T20:02:37.286505Z",
-  "local_date": "2026-09-24",
+  "as_of": "2026-09-26T10:26:36.183856Z",
+  "local_date": "2026-09-26",
   "stock": {
     "ingredients": 54,
     "unanchored": 0,
@@ -8,16 +8,30 @@
     "short_dated": 1,
     "unbatched": 0,
     "auto_order_enabled": 5,
-    "forced_manual": 1,
+    "forced_manual": 2,
     "expiring_value_pence": "3354.456159",
-    "notes": []
+    "notes": [],
+    "short_dated_batches": 1,
+    "written_off_month": {
+      "month": "2026-09",
+      "count": 2,
+      "value": {
+        "pence": "504.670586",
+        "source": null,
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      }
+    }
   },
   "short_dated": [
-    "Whole milk (3d)"
+    "Whole milk (1d)"
   ],
   "expiry_write_offs_due": 0,
   "expiry_write_offs_value_pence": "0",
   "drift_forced_manual": [
+    "12oz cup lid",
     "16oz paper cup"
   ],
   "drift_tuning_band": [
@@ -25,8 +39,8 @@
     "Whole milk"
   ],
   "auto_order_enabled_count": 5,
-  "draft_order_total_pence": 17673,
-  "draft_order_supplier_count": 2,
+  "draft_order_total_pence": 7423,
+  "draft_order_supplier_count": 1,
   "capped_line_count": 0,
   "emergency_line_count": 0,
   "unavailable_menu_items": [
@@ -46,8 +60,8 @@
     {
       "kind": "drift",
       "severity": "act",
-      "subject": "16oz paper cup",
-      "message": "1 ingredient(s) are over 15% drift, so auto-ordering is forced off and every quantity sized from their on-hand is wrong from now (spec 5.2). Count them, then read the attribution on the stock screen: over-ordering and a bad recipe have opposite fixes."
+      "subject": "12oz cup lid, 16oz paper cup",
+      "message": "2 ingredient(s) are over 15% drift, so auto-ordering is forced off and every quantity sized from their on-hand is wrong from now (spec 5.2). Count them, then read the attribution on the stock screen: over-ordering and a bad recipe have opposite fixes."
     },
     {
       "kind": "drift",
@@ -58,7 +72,7 @@
     {
       "kind": "expiry",
       "severity": "act",
-      "subject": "Whole milk (3d)",
+      "subject": "Whole milk (1d)",
       "message": "1 ingredient(s) hold stock expiring within 3 days. Still sellable -- this is the window in which it can still be sold through rather than binned."
     },
     {
@@ -71,9 +85,6 @@
   "notes": [
     "Every stock figure on this response is THEORETICAL (invariant 6). Physical counts are the source of truth.",
     "6 of 8 suppliers' terms are INVENTED PLACEHOLDERS: Booker, Brakes, Cakesmiths, Cups Direct, Monolith, Nataly (custom). Lead time, delivery days, cutoff, minimum order and free-delivery threshold were never confirmed with any of them (ARCHITECTURE.md 8F.4), and every cover window below is built on them. Only Tesco and Amazon have terms anybody has checked.",
-    "12oz cup lid: runs out in 3.007 day(s), before the next delivery in 4, and Tesco does not stock it either. Nothing can bridge this gap -- it is a stockout unless the proper supplier can be hurried.",
-    "8oz paper cup: runs out in 2.642 day(s), before the next delivery in 4, and Tesco does not stock it either. Nothing can bridge this gap -- it is a stockout unless the proper supplier can be hurried.",
-    "Almond milk (barista): runs out in 4.383 day(s), before the next delivery in 5, and Tesco does not stock it either. Nothing can bridge this gap -- it is a stockout unless the proper supplier can be hurried.",
-    "Coffee beans (house blend): runs out in 2.891 day(s), before the next delivery in 5, and Tesco does not stock it either. Nothing can bridge this gap -- it is a stockout unless the proper supplier can be hurried."
+    "12oz cup lid: runs out in 1.598 day(s), before the next delivery in 3, and Tesco does not stock it either. Nothing can bridge this gap -- it is a stockout unless the proper supplier can be hurried."
   ]
 }

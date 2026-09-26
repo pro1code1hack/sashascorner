@@ -35,8 +35,16 @@ class Settings(BaseSettings):
     )
 
     database_url: str = f"sqlite+pysqlite:///{REPO_ROOT / 'cafeops.db'}"
-    #: Admin endpoints answer 503 while this is unset: fail closed.
+    #: Bootstrap only: signs the owner in until a password is set in the DB
+    #: (site_admin_credential), which then takes precedence. With neither, the
+    #: admin login answers 503: fail closed.
     admin_password: str | None = None
+    #: Mark the admin cookie Secure even when the request looks like plain http
+    #: (e.g. TLS terminated by a proxy without SITE_TRUST_PROXY).
+    cookie_secure: bool = False
+    admin_session_days: int = 14
+    login_rate_limit_count: int = 5
+    login_rate_limit_window_seconds: int = 60
     #: Comma-separated list.
     cors_origins: str = "http://localhost:4321"
     public_url: str = "http://localhost:4321"
@@ -142,6 +150,14 @@ class BookingRules(BaseModel):
     closed_dates: list[date] = Field(default_factory=list)
 
 
+class Closure(BaseModel):
+    """A date the café is shut (holiday, private event); ``note`` is shown to
+    guests as the availability ``reason``."""
+
+    date: date
+    note: str = Field(default="", max_length=200)
+
+
 UnconfirmedField = Literal["address", "geo", "hours", "phone", "socials", "booking", "email"]
 
 
@@ -156,6 +172,8 @@ class CafeFacts(BaseModel):
     hours: list[OpenDay]
     socials: Socials
     booking: BookingRules
+    #: Filled from the DB settings; cafe.toml uses ``booking.closed_dates``.
+    closures: list[Closure] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def _one_entry_per_weekday(self) -> CafeFacts:
@@ -169,9 +187,18 @@ class CafeFacts(BaseModel):
     def day(self, weekday: int) -> OpenDay:
         return next(h for h in self.hours if h.weekday == weekday)
 
+    def closure(self, day: date) -> Closure | None:
+        found = next((c for c in self.closures if c.date == day), None)
+        if found is None and day in self.booking.closed_dates:
+            found = Closure(date=day)
+        return found
+
 
 @lru_cache(maxsize=1)
-def get_cafe(path: Path | None = None) -> CafeFacts:
+def get_cafe_file(path: Path | None = None) -> CafeFacts:
+    """config/cafe.toml as written. At runtime the café settings live in the DB
+    (``sashasite.settings_store.live_cafe``); this file seeds them the first time
+    and keeps supplying ``confirmed`` / ``unconfirmed_fields`` metadata."""
     p = path or CONFIG_DIR / "cafe.toml"
     with p.open("rb") as fh:
         return CafeFacts.model_validate(tomllib.load(fh))

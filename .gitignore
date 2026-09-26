@@ -14,5 +14,7 @@ wheels/
 *.db
 *.db-wal
 *.db-shm
+# menu photo uploads (dev default of CAFEOPS_MEDIA_DIR)
+/media/
 .ruff_cache/
 .mypy_cache/

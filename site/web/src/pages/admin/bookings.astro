@@ -1,0 +1,571 @@
+---
+// /admin/bookings: one day at a time (seats per slot + the list), or a week.
+// Phone-ins go through "Add booking". The day view prints as a sheet for the counter.
+import Admin from '../../layouts/Admin.astro';
+import AdmBookingStyles from '../../components/AdmBookingStyles.astro';
+---
+
+<Admin title="Bookings" active="bookings" subtitle="tables booked online and by phone">
+  <Fragment slot="actions">
+    <button type="button" class="adm-btn adm-btn--secondary bk-print" data-print>Print day sheet</button>
+    <button type="button" class="adm-btn" data-add>Add booking</button>
+  </Fragment>
+  <AdmBookingStyles />
+
+  <div class="bk-toolbar" role="toolbar" aria-label="Choose the day">
+    <div class="bk-daynav">
+      <button type="button" class="adm-btn adm-btn--secondary bk-arrow" data-prev aria-label="Previous day">‹</button>
+      <button type="button" class="adm-btn adm-btn--secondary" data-today>Today</button>
+      <button type="button" class="adm-btn adm-btn--secondary bk-arrow" data-next aria-label="Next day">›</button>
+      <label class="adm-sr" for="bk-date">Go to date</label>
+      <input class="adm-input bk-date" id="bk-date" type="date" data-date />
+    </div>
+    <div class="adm-seg" role="radiogroup" aria-label="View">
+      <button type="button" role="radio" data-view="day">Day</button>
+      <button type="button" role="radio" data-view="week">Week</button>
+    </div>
+  </div>
+  <div class="bk-search">
+    <label class="adm-sr" for="bk-q">Search bookings by name, reference or phone</label>
+    <span class="bk-search-icon" aria-hidden="true"></span>
+    <input id="bk-q" class="bk-search-input" type="search" placeholder="Search name, reference or phone" autocomplete="off" data-q />
+  </div>
+
+  <p class="adm-err" data-error role="alert" hidden></p>
+
+  <section data-dayview aria-labelledby="bk-day-h">
+    <div class="bk-dayhead">
+      <h2 id="bk-day-h" class="bk-day-title" data-day-title></h2>
+      <p class="adm-muted" data-day-sub></p>
+    </div>
+    <div class="bk-day" aria-busy="true" data-day-body>
+      <div class="bk-day-list">
+        <div class="adm-chips bk-filters" role="group" aria-label="Show" data-filters></div>
+        <ul class="adm-bklist" data-list aria-label="Bookings for this day"></ul>
+      </div>
+      <div class="bk-day-tl">
+        <h3 class="adm-label">Seats taken by time</h3>
+        <p class="adm-hint bk-tl-hint" data-tl-hint></p>
+        <div data-timeline></div>
+      </div>
+    </div>
+  </section>
+
+  <section data-weekview hidden aria-labelledby="bk-week-h">
+    <h2 id="bk-week-h" class="bk-day-title" data-week-title></h2>
+    <div class="bk-week" data-week aria-busy="true"></div>
+  </section>
+
+  <section data-searchview hidden aria-labelledby="bk-search-h">
+    <h2 id="bk-search-h" class="bk-day-title" data-search-title>Search</h2>
+    <ul class="adm-bklist" data-results></ul>
+  </section>
+</Admin>
+
+<style is:global>
+  .bk-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .bk-daynav {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .bk-arrow {
+    width: 44px;
+    padding: 0;
+    font-size: 22px;
+    line-height: 1;
+  }
+  .bk-date {
+    width: auto;
+    min-width: 150px;
+  }
+  .bk-search {
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 12px;
+    border: 1px solid var(--line-control);
+    border-radius: var(--r-button);
+    background: var(--surface);
+    max-width: 480px;
+  }
+  .bk-search:focus-within {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px var(--brand-wash);
+  }
+  .bk-search-icon {
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--ink-3);
+    border-radius: 50%;
+    flex: none;
+  }
+  .bk-search-input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    outline: none;
+    min-height: 44px;
+    font-size: 16px;
+    background: none;
+  }
+  .bk-search-input:focus-visible {
+    outline: none;
+  }
+  .bk-dayhead {
+    margin: 22px 0 10px;
+  }
+  .bk-day-title {
+    font-size: 18px;
+    line-height: 24px;
+  }
+  [data-weekview] .bk-day-title,
+  [data-searchview] .bk-day-title {
+    margin: 22px 0 10px;
+  }
+  .bk-day {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr);
+    gap: 32px;
+    align-items: start;
+  }
+  .bk-day[aria-busy='true'],
+  .bk-week[aria-busy='true'] {
+    opacity: 0.6;
+  }
+  .bk-filters {
+    margin-bottom: 10px;
+  }
+  .bk-day-tl .adm-label {
+    display: block;
+    margin-bottom: 2px;
+  }
+  .bk-tl-hint {
+    margin-bottom: 8px;
+  }
+  .bk-week {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .bk-wday-head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+  }
+  .bk-wday-head a {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--ink);
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .bk-wday-head .adm-muted {
+    font-size: 14px;
+  }
+  .bk-wday-meter {
+    max-width: 240px;
+    flex: 1;
+    min-width: 80px;
+  }
+  .bk-wday.is-today .bk-wday-head a {
+    color: var(--brand-ink);
+  }
+  @media (max-width: 900px) {
+    .bk-day {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 24px;
+    }
+  }
+  @media (max-width: 759.98px) {
+    .bk-print {
+      display: none;
+    }
+    .bk-toolbar .adm-seg {
+      width: 100%;
+    }
+    .bk-toolbar .adm-seg button {
+      flex: 1;
+    }
+    .bk-daynav {
+      width: 100%;
+    }
+    .bk-date {
+      flex: 1;
+      min-width: 0;
+    }
+    .bk-search {
+      max-width: none;
+    }
+  }
+
+  /* Day sheet for the counter */
+  @media print {
+    @page {
+      margin: 12mm;
+    }
+    .adm {
+      font-size: 12pt;
+    }
+    .bk-toolbar,
+    .bk-search,
+    .bk-filters,
+    .adm-bk-actions .adm-btn,
+    [data-weekview],
+    [data-searchview],
+    .adm-drawer,
+    .adm-scrim {
+      display: none !important;
+    }
+    .adm-head .adm-sub {
+      display: none;
+    }
+    .bk-day {
+      display: block;
+    }
+    .bk-day-tl {
+      margin-top: 16px;
+      break-inside: avoid;
+    }
+    .adm-bk {
+      grid-template-columns: 22px 70px 1fr auto;
+      break-inside: avoid;
+      padding: 6px 0;
+    }
+    .adm-bk::before {
+      content: '';
+      width: 14px;
+      height: 14px;
+      border: 1.5px solid #000;
+    }
+    .adm-bk-notes {
+      -webkit-line-clamp: unset;
+      display: block;
+    }
+    .adm-bk--cancelled {
+      display: none;
+    }
+    .adm-meter > span {
+      print-color-adjust: exact;
+      -webkit-print-color-adjust: exact;
+    }
+  }
+</style>
+
+<script>
+  import { api, errorText, ready, h, fill, announce } from '../../scripts/admin-core';
+  import { addDays, clock, longDate, plural, shortDate, todayISO, weekStart, weekday } from '../../scripts/admin-core/format';
+  import { bookingRow, getDay, holds, openAddBooking, openBookingPanel, settings, STATUS_LABEL, timeline } from '../../scripts/admin-core/bookings';
+  import type { Booking, BookingDay, BookingStatus, Settings } from '../../scripts/admin-core/types';
+
+  const $ = <T extends HTMLElement>(sel: string) => document.querySelector<T>(sel)!;
+  type View = 'day' | 'week';
+  type Filter = 'all' | BookingStatus;
+
+  const params = new URLSearchParams(location.search);
+  const state = {
+    date: /^\d{4}-\d{2}-\d{2}$/.test(params.get('date') ?? '') ? params.get('date')! : todayISO(),
+    view: (params.get('view') === 'week' ? 'week' : 'day') as View,
+    q: params.get('q') ?? '',
+    filter: 'all' as Filter,
+  };
+  let cfg: Settings | null = null;
+  let day: BookingDay | null = null;
+  let searchPool: Booking[] | null = null;
+  let seq = 0;
+
+  function syncUrl() {
+    const u = new URL(location.href);
+    u.searchParams.set('date', state.date);
+    if (state.view === 'week') u.searchParams.set('view', 'week');
+    else u.searchParams.delete('view');
+    if (state.q) u.searchParams.set('q', state.q);
+    else u.searchParams.delete('q');
+    u.searchParams.delete('add');
+    history.replaceState(null, '', u.pathname + u.search);
+  }
+
+  function showError(e: unknown) {
+    const el = $('[data-error]');
+    el.textContent = errorText(e);
+    el.hidden = false;
+  }
+
+  function hoursLine(date: string): string {
+    if (!cfg) return '';
+    const closure = cfg.closures.find((c) => c.date === date);
+    if (closure) return `Closed: ${closure.note || 'special closure'}`;
+    const hw = cfg.cafe.hours.find((x) => x.weekday === weekday(date));
+    if (!hw || hw.closed || !hw.open || !hw.close) return 'Closed that day of the week';
+    return `Open ${clock(hw.open)} to ${clock(hw.close)}`;
+  }
+
+  // ---- day ----------------------------------------------------------------------
+
+  async function loadDay() {
+    const mine = ++seq;
+    const body = $('[data-day-body]');
+    body.setAttribute('aria-busy', 'true');
+    $('[data-day-title]').textContent = longDate(state.date);
+    try {
+      const [d, s] = await Promise.all([getDay(state.date), settings()]);
+      if (mine !== seq) return;
+      day = d;
+      cfg = s;
+      $('[data-error]').hidden = true;
+      renderDay();
+    } catch (e) {
+      if (mine === seq) showError(e);
+    } finally {
+      if (mine === seq) body.setAttribute('aria-busy', 'false');
+    }
+  }
+
+  function renderDay() {
+    if (!day) return;
+    const live = day.bookings.filter(holds);
+    const covers = live.reduce((a, b) => a + b.party, 0);
+    const rel = state.date === todayISO() ? 'Today · ' : '';
+    $('[data-day-title]').textContent = `${rel}${longDate(state.date)}`;
+    const hl = hoursLine(state.date);
+    $('[data-day-sub]').textContent = day.closed
+      ? /^Closed/.test(hl) ? hl : `Closed${day.reason ? `: ${day.reason}` : ''}`
+      : `${hl} · ${plural(live.length, 'booking')}, ${plural(covers, 'guest')}`;
+    document.title = `Bookings ${shortDate(state.date)} · Admin · Sasha's Corner`;
+
+    const counts: Record<Filter, number> = { all: day.bookings.length, confirmed: 0, arrived: 0, no_show: 0, cancelled: 0 };
+    for (const b of day.bookings) counts[b.status]++;
+    const opts: Filter[] = ['all', 'confirmed', 'arrived', 'no_show', 'cancelled'];
+    fill(
+      $('[data-filters]'),
+      opts
+        .filter((f) => f === 'all' || counts[f] > 0 || state.filter === f)
+        .map((f) => {
+          const c = h('button', { type: 'button', class: 'adm-chip', 'aria-pressed': String(state.filter === f) }, f === 'all' ? 'All' : STATUS_LABEL[f], h('span', { class: 'adm-chip-count' }, String(counts[f])));
+          c.addEventListener('click', () => {
+            state.filter = f;
+            renderDay();
+          });
+          return c;
+        }),
+    );
+    const shown = day.bookings.filter((b) => state.filter === 'all' || b.status === state.filter);
+    fill(
+      $('[data-list]'),
+      shown.length
+        ? shown.map((b) => bookingRow(b, { onChange, onOpen: (bk) => openBookingPanel(bk, onChange) }))
+        : h('li', { class: 'adm-empty' }, day.closed ? 'Closed. No bookings.' : state.filter === 'all' ? 'No bookings for this day yet.' : 'None with this status.'),
+    );
+    const full = day.slots.filter((s) => s.covers_booked >= s.capacity).length;
+    $('[data-tl-hint]').textContent = day.closed
+      ? ''
+      : `Out of ${day.capacity} seats. A table is held for ${cfg ? cfg.booking.duration_minutes : 90} minutes.${full ? ` ${plural(full, 'time')} full.` : ''}`;
+    fill($('[data-timeline]'), timeline(day));
+  }
+
+  // ---- week ---------------------------------------------------------------------
+
+  async function loadWeek() {
+    const mine = ++seq;
+    const box = $('[data-week]');
+    box.setAttribute('aria-busy', 'true');
+    const from = weekStart(state.date);
+    const to = addDays(from, 6);
+    $('[data-week-title]').textContent = `Week of ${longDate(from)}`;
+    try {
+      const [list, s] = await Promise.all([api.get<Booking[]>('/api/admin/bookings', { from, to }), settings()]);
+      if (mine !== seq) return;
+      cfg = s;
+      $('[data-error]').hidden = true;
+      const today = todayISO();
+      fill(
+        box,
+        Array.from({ length: 7 }, (_, i) => {
+          const d = addDays(from, i);
+          const bs = list.filter((b) => b.date === d).sort((a, b) => a.time.localeCompare(b.time));
+          const live = bs.filter(holds);
+          const covers = live.reduce((a, b) => a + b.party, 0);
+          const link = h('a', { href: `?date=${d}` }, `${d === today ? 'Today, ' : ''}${shortDate(d)}`);
+          link.addEventListener('click', (e) => {
+            e.preventDefault();
+            state.date = d;
+            setView('day');
+          });
+          const hl = hoursLine(d);
+          const closed = /^Closed/.test(hl);
+          return h(
+            'div',
+            { class: `bk-wday${d === today ? ' is-today' : ''}` },
+            h('div', { class: 'bk-wday-head' }, h('h3', {}, link), h('span', { class: 'adm-muted' }, closed ? hl : `${plural(live.length, 'booking')}, ${plural(covers, 'guest')}`)),
+            bs.length
+              ? h(
+                  'ul',
+                  { class: 'adm-bklist' },
+                  bs.map((b) => bookingRow(b, { onChange: () => void loadWeek(), onOpen: (bk) => openBookingPanel(bk, () => void loadWeek()) })),
+                )
+              : null,
+          );
+        }),
+      );
+    } catch (e) {
+      if (mine === seq) showError(e);
+    } finally {
+      if (mine === seq) box.setAttribute('aria-busy', 'false');
+    }
+  }
+
+  // ---- search -------------------------------------------------------------------
+
+  async function runSearch() {
+    const q = state.q.trim().toLowerCase();
+    const title = $('[data-search-title]');
+    const out = $('[data-results]');
+    if (!searchPool) {
+      title.textContent = 'Searching…';
+      try {
+        const t = todayISO();
+        searchPool = await api.get<Booking[]>('/api/admin/bookings', { from: addDays(t, -365), to: addDays(t, 365) });
+      } catch (e) {
+        showError(e);
+        return;
+      }
+    }
+    if (state.q.trim().toLowerCase() !== q) return;
+    const digits = q.replace(/\D/g, '');
+    const hits = searchPool
+      .filter(
+        (b) =>
+          b.name.toLowerCase().includes(q) ||
+          b.reference.toLowerCase().includes(q) ||
+          (b.email ?? '').toLowerCase().includes(q) ||
+          (digits.length >= 4 && (b.phone ?? '').replace(/\D/g, '').includes(digits)),
+      )
+      .sort((a, b) => b.date.localeCompare(a.date) || a.time.localeCompare(b.time));
+    title.textContent = hits.length ? `${plural(hits.length, 'booking')} matching “${state.q.trim()}”` : `Nothing matches “${state.q.trim()}”`;
+    announce(title.textContent);
+    fill(
+      out,
+      hits.slice(0, 100).map((b) =>
+        bookingRow(b, {
+          showDate: true,
+          onChange: (nb) => {
+            const i = searchPool!.findIndex((x) => x.id === nb.id);
+            if (i >= 0) searchPool![i] = nb;
+            void runSearch();
+          },
+          onOpen: (bk) =>
+            openBookingPanel(bk, (nb) => {
+              const i = searchPool!.findIndex((x) => x.id === nb.id);
+              if (i >= 0) searchPool![i] = nb;
+              void runSearch();
+            }),
+        }),
+      ),
+    );
+  }
+
+  // ---- wiring -------------------------------------------------------------------
+
+  function onChange(b: Booking) {
+    if (day) {
+      const i = day.bookings.findIndex((x) => x.id === b.id);
+      if (b.date !== day.date) day.bookings.splice(i, 1);
+      else if (i >= 0) day.bookings[i] = b;
+      else day.bookings.push(b);
+      renderDay();
+    }
+    searchPool = null;
+    void loadDay();
+  }
+
+  function render() {
+    const searching = state.q.trim().length > 0;
+    $('[data-searchview]').hidden = !searching;
+    $('[data-dayview]').hidden = searching || state.view !== 'day';
+    $('[data-weekview]').hidden = searching || state.view !== 'week';
+    $<HTMLButtonElement>('[data-print]').hidden = state.view !== 'day' || searching;
+    document.querySelectorAll<HTMLButtonElement>('[data-view]').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.view === state.view)));
+    $<HTMLInputElement>('[data-date]').value = state.date;
+    const unit = state.view === 'week' ? 'week' : 'day';
+    $('[data-prev]').setAttribute('aria-label', `Previous ${unit}`);
+    $('[data-next]').setAttribute('aria-label', `Next ${unit}`);
+    $('[data-today]').textContent = state.view === 'week' ? 'This week' : 'Today';
+    syncUrl();
+    if (searching) void runSearch();
+    else if (state.view === 'day') void loadDay();
+    else void loadWeek();
+  }
+
+  function setView(v: View) {
+    state.view = v;
+    render();
+  }
+
+  function step(n: number) {
+    state.date = addDays(state.date, state.view === 'week' ? 7 * n : n);
+    state.filter = 'all';
+    render();
+    announce(state.view === 'week' ? `Week of ${longDate(weekStart(state.date))}` : longDate(state.date));
+  }
+
+  $('[data-prev]').addEventListener('click', () => step(-1));
+  $('[data-next]').addEventListener('click', () => step(1));
+  $('[data-today]').addEventListener('click', () => {
+    state.date = todayISO();
+    state.filter = 'all';
+    render();
+  });
+  $<HTMLInputElement>('[data-date]').addEventListener('change', (e) => {
+    const v = (e.target as HTMLInputElement).value;
+    if (!v) return;
+    state.date = v;
+    state.filter = 'all';
+    render();
+  });
+  document.querySelectorAll<HTMLButtonElement>('[data-view]').forEach((b) => b.addEventListener('click', () => setView(b.dataset.view as View)));
+  // Arrow keys move between the two radio segments.
+  $('.bk-toolbar .adm-seg').addEventListener('keydown', (e) => {
+    const ke = e as KeyboardEvent;
+    if (ke.key !== 'ArrowLeft' && ke.key !== 'ArrowRight') return;
+    ke.preventDefault();
+    setView(state.view === 'day' ? 'week' : 'day');
+    document.querySelector<HTMLButtonElement>(`[data-view="${state.view}"]`)?.focus();
+  });
+  let qt = 0;
+  const qInput = $<HTMLInputElement>('[data-q]');
+  qInput.value = state.q;
+  qInput.addEventListener('input', () => {
+    window.clearTimeout(qt);
+    qt = window.setTimeout(() => {
+      state.q = qInput.value;
+      render();
+    }, 200);
+  });
+  $('[data-print]').addEventListener('click', () => window.print());
+  const add = () =>
+    openAddBooking(state.date < todayISO() ? todayISO() : state.date, (b) => {
+      searchPool = null;
+      if (state.view === 'day' && b.date !== state.date) {
+        state.date = b.date;
+      }
+      render();
+    });
+  $('[data-add]').addEventListener('click', add);
+
+  ready().then(() => {
+    render();
+    if (params.get('add') === '1') add();
+  });
+</script>

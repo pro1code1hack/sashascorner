@@ -21,7 +21,8 @@ from sqlalchemy import Boolean, Date, ForeignKey, Index, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from cafeops.db.base import Base
-from cafeops.db.models._common import Qty, UTCDateTime
+from cafeops.db.models._common import Qty, UTCDateTime, enum_col
+from cafeops.db.models.enums import ExpirySource
 
 if TYPE_CHECKING:
     from cafeops.db.models.ingredient import Ingredient
@@ -59,6 +60,12 @@ class StockBatch(Base):
     # idempotent and a late run cannot write the same loss twice.
     expired_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
     note: Mapped[str | None] = mapped_column(String(400))
+    #: ENTERED (read off the carton) or ASSUMED (received_at + shelf life). Replaces
+    #: parsing the `EXPIRY ASSUMED` note prefix; the migration backfills ASSUMED from
+    #: it. NULL = not recorded (no expiry, or a row predating the column).
+    expiry_source: Mapped[ExpirySource | None] = mapped_column(enum_col(ExpirySource))
+    #: Who signed for it (DECISIONS.md 6). Previously only inside `note` prose.
+    received_by: Mapped[str | None] = mapped_column(String(120))
 
     ingredient: Mapped[Ingredient] = relationship(back_populates="batches")
 

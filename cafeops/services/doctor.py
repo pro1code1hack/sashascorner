@@ -130,7 +130,7 @@ def run_doctor(session: Session, *, as_of: datetime | None = None) -> DoctorRepo
     _guarded(r, "seasons", _check_seasons, session, r)
     _guarded(r, "takings", _check_takings, session, r)
     _guarded(r, "input trust", _check_trust_of_inputs, session, r)
-    _guarded(r, "credentials", _check_credentials, r)
+    _guarded(r, "credentials", _check_credentials, session, r)
     return r
 
 
@@ -524,17 +524,28 @@ def _check_trust_of_inputs(session: Session, r: DoctorReport) -> None:
         )
 
 
-def _check_credentials(r: DoctorReport) -> None:
-    if not settings.api_password:
+def _check_credentials(session: Session, r: DoctorReport) -> None:
+    from cafeops.services.auth import credential_source
+
+    source = credential_source(session)
+    if source is None:
         r.add(
             Severity.WARN,
             "api password",
-            "CAFEOPS_API_PASSWORD is unset, so the API refuses to serve anything but "
-            "/api/health. This is the usual reason a dashboard screen is blank",
-            "set it in .env and restart the api service",
+            "no password is set (none stored from Settings, CAFEOPS_API_PASSWORD unset), "
+            "so the API refuses to serve anything but /api/health. This is the usual "
+            "reason a dashboard screen is blank",
+            "set CAFEOPS_API_PASSWORD in .env and restart the api service",
+        )
+    elif source == "database":
+        r.add(
+            Severity.OK,
+            "api password",
+            "set in Settings (stored hashed; it wins over CAFEOPS_API_PASSWORD). "
+            "`cafeops password reset` falls back to the env var",
         )
     else:
-        r.add(Severity.OK, "api password", "set, so the API will serve")
+        r.add(Severity.OK, "api password", "set from CAFEOPS_API_PASSWORD, so the API will serve")
 
     if not settings.lightspeed_configured:
         r.add(

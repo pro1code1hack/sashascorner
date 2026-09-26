@@ -1,0 +1,541 @@
+{
+  "period": "2026-04",
+  "days": [
+    {
+      "date": "2026-04-08",
+      "weekday": "Wed",
+      "card_pence": 6075,
+      "cash_till_pence": null,
+      "cash_off_till_pence": null,
+      "total_pence": 6075,
+      "orders": null,
+      "orders_source": null,
+      "avg_ticket_pence": null,
+      "note": null,
+      "basis": "TILL",
+      "editable": {
+        "card": true,
+        "cash_till": true,
+        "cash_off_till": true
+      },
+      "sources": [
+        {
+          "method": "CARD",
+          "source": "LEGACY_WORKBOOK",
+          "source_ref": "Daily Sales!D225"
+        }
+      ]
+    },
+    {
+      "date": "2026-04-09",
+      "weekday": "Thu",
+      "card_pence": 6730,
+      "cash_till_pence": null,
+      "cash_off_till_pence": null,
+      "total_pence": 6730,
+      "orders": null,
+      "orders_source": null,
+      "avg_ticket_pence": null,
+      "note": null,
+      "basis": "TILL",
+      "editable": {
+        "card": true,
+        "cash_till": true,
+        "cash_off_till": true
+      },
+      "sources": [
+        {
+          "method": "CARD",
+          "source": "LEGACY_WORKBOOK",
+          "source_ref": "Daily Sales!D226"
+        }
+      ]
+    },
+    {
+      "date": "2026-04-10",
+      "weekday": "Fri",
+      "card_pence": 6570,
+      "cash_till_pence": null,
+      "cash_off_till_pence": null,
+      "total_pence": 6570,
+      "orders": null,
+      "orders_source": null,
+      "avg_ticket_pence": null,
+      "note": null,
+      "basis": "TILL",
+      "editable": {
+        "card": true,
+        "cash_till": true,
+        "cash_off_till": true
+      },
+      "sources": [
+        {
+          "method": "CARD",
+          "source": "LEGACY_WORKBOOK",
+          "source_ref": "Daily Sales!D227"
+        }
+      ]
+    },
+    {
+      "date": "2026-04-11",
+      "weekday": "Sat",
+      "card_pence": 5915,
+      "cash_till_pence": null,
+      "cash_off_till_pence": null,
+      "total_pence": 5915,
+      "orders": null,
+      "orders_source": null,
+      "avg_ticket_pence": null,
+      "note": null,
+      "basis": "TILL",
+      "editable": {
+        "card": true,
+        "cash_till": true,
+        "cash_off_till": true
+      },
+      "sources": [
+        {
+          "method": "CARD",
+          "source": "LEGACY_WORKBOOK",
+          "source_ref": "Daily Sales!D228"
+        }
+      ]
+    },
+    {
+      "date": "2026-04-12",
+      "weekday": "Sun",
+      "card_pence": 7890,
+      "cash_till_pence": null,
+      "cash_off_till_pence": null,
+      "total_pence": 7890,
+      "orders": null,
+      "orders_source": null,
+      "avg_ticket_pence": null,
+      "note": null,
+      "basis": "TILL",
+      "editable": {
+        "card": true,
+        "cash_till": true,
+        "cash_off_till": true
+      },
+      "sources": [
+        {
+          "method": "CARD",
+          "source": "LEGACY_WORKBOOK",
+          "source_ref": "Daily Sales!D229"
+        }
+      ]
+    },
+    {
+      "date": "2026-04-13",
+      "weekday": "Mon",
+      "card_pence": 3290,
+      "cash_till_pence": null,
+      "cash_off_till_pence": null,
+      "total_pence": 3290,
+      "orders": null,
+      "orders_source": null,
+      "avg_ticket_pence": null,
+      "note": null,
+      "basis": "TILL",
+      "editable": {
+        "card": true,
+        "cash_till": true,
+        "cash_off_till": true
+      },
+      "sources": [
+        {
+          "method": "CARD",
+          "source": "LEGACY_WORKBOOK",
+          "source_ref": "Daily Sales!D230"
+        }
+      ]
+    },
+    {
+      "date": "2026-04-14",
+      "weekday": "Tue",
+      "card_pence": 2565,
+      "cash_till_pence": null,
+      "cash_off_till_pence": null,
+      "total_pence": 2565,
+      "orders": null,
+      "orders_source": null,
+      "avg_ticket_pence": null,
+      "note": null,
+      "basis": "TILL",
+      "editable": {
+        "card": true,
+        "cash_till": true,
+        "cash_off_till": true
+      },
+      "sources": [
+        {
+          "method": "CARD",
+          "source": "LEGACY_WORKBOOK",
+          "source_ref": "Daily Sales!D231"
+        }
+      ]
+    },
+    {
+      "date": "2026-04-15",
+      "weekday": "Wed",
+      "card_pence": 7755,
+      "cash_till_pence": null,
+      "cash_off_till_pence": null,
+      "total_pence": 7755,
+      "orders": null,
+      "orders_source": null,
+      "avg_ticket_pence": null,
+      "note": null,
+      "basis": "TILL",
+      "editable": {
+        "card": true,
+        "cash_till": true,
+        "cash_off_till": true
+      },
+      "sources": [
+        {
+          "method": "CARD",
+          "source": "LEGACY_WORKBOOK",
+          "source_ref": "Daily Sales!D232"
+        }
+      ]
+    },
+    {
+      "date": "2026-04-16",
+      "weekday": "Thu",
+      "card_pence": 7920,
+      "cash_till_pence": null,
+      "cash_off_till_pence": null,
+      "total_pence": 7920,
+      "orders": null,
+      "orders_source": null,
+      "avg_ticket_pence": null,
+      "note": null,
+      "basis": "TILL",
+      "editable": {
+        "card": true,
+        "cash_till": true,
+        "cash_off_till": true
+      },
+      "sources": [
+        {
+          "method": "CARD",
+          "source": "LEGACY_WORKBOOK",
+          "source_ref": "Daily Sales!D233"
+        }
+      ]
+    },
+    {
+      "date": "2026-04-17",
+      "weekday": "Fri",
+      "card_pence": 3900,
+      "cash_till_pence": null,
+      "cash_off_till_pence": null,
+      "total_pence": 3900,
+      "orders": null,
+      "orders_source": null,
+      "avg_ticket_pence": null,
+      "note": null,
+      "basis": "TILL",
+      "editable": {
+        "card": true,
+        "cash_till": true,
+        "cash_off_till": true
+      },
+      "sources": [
+        {
+          "method": "CARD",
+          "source": "LEGACY_WORKBOOK",
+          "source_ref": "Daily Sales!D234"
+        }
+      ]
+    },
+    {
+      "date": "2026-04-18",
+      "weekday": "Sat",
+      "card_pence": 6960,
+      "cash_till_pence": null,
+      "cash_off_till_pence": null,
+      "total_pence": 6960,
+      "orders": null,
+      "orders_source": null,
+      "avg_ticket_pence": null,
+      "note": null,
+      "basis": "TILL",
+      "editable": {
+        "card": true,
+        "cash_till": true,
+        "cash_off_till": true
+      },
+      "sources": [
+        {
+          "method": "CARD",
+          "source": "LEGACY_WORKBOOK",
+          "source_ref": "Daily Sales!D235"
+        }
+      ]
+    },
+    {
+      "date": "2026-04-19",
+      "weekday": "Sun",
+      "card_pence": 9040,
+      "cash_till_pence": null,
+      "cash_off_till_pence": null,
+      "total_pence": 9040,
+      "orders": null,
+      "orders_source": null,
+      "avg_ticket_pence": null,
+      "note": null,
+      "basis": "TILL",
+      "editable": {
+        "card": true,
+        "cash_till": true,
+        "cash_off_till": true
+      },
+      "sources": [
+        {
+          "method": "CARD",
+          "source": "LEGACY_WORKBOOK",
+          "source_ref": "Daily Sales!D236"
+        }
+      ]
+    },
+    {
+      "date": "2026-04-20",
+      "weekday": "Mon",
+      "card_pence": 7850,
+      "cash_till_pence": null,
+      "cash_off_till_pence": null,
+      "total_pence": 7850,
+      "orders": null,
+      "orders_source": null,
+      "avg_ticket_pence": null,
+      "note": null,
+      "basis": "TILL",
+      "editable": {
+        "card": true,
+        "cash_till": true,
+        "cash_off_till": true
+      },
+      "sources": [
+        {
+          "method": "CARD",
+          "source": "LEGACY_WORKBOOK",
+          "source_ref": "Daily Sales!D237"
+        }
+      ]
+    },
+    {
+      "date": "2026-04-21",
+      "weekday": "Tue",
+      "card_pence": 8770,
+      "cash_till_pence": null,
+      "cash_off_till_pence": null,
+      "total_pence": 8770,
+      "orders": null,
+      "orders_source": null,
+      "avg_ticket_pence": null,
+      "note": null,
+      "basis": "TILL",
+      "editable": {
+        "card": true,
+        "cash_till": true,
+        "cash_off_till": true
+      },
+      "sources": [
+        {
+          "method": "CARD",
+          "source": "LEGACY_WORKBOOK",
+          "source_ref": "Daily Sales!D238"
+        }
+      ]
+    },
+    {
+      "date": "2026-04-22",
+      "weekday": "Wed",
+      "card_pence": 2605,
+      "cash_till_pence": null,
+      "cash_off_till_pence": null,
+      "total_pence": 2605,
+      "orders": null,
+      "orders_source": null,
+      "avg_ticket_pence": null,
+      "note": null,
+      "basis": "TILL",
+      "editable": {
+        "card": true,
+        "cash_till": true,
+        "cash_off_till": true
+      },
+      "sources": [
+        {
+          "method": "CARD",
+          "source": "LEGACY_WORKBOOK",
+          "source_ref": "Daily Sales!D239"
+        }
+      ]
+    },
+    {
+      "date": "2026-04-23",
+      "weekday": "Thu",
+      "card_pence": 5695,
+      "cash_till_pence": null,
+      "cash_off_till_pence": null,
+      "total_pence": 5695,
+      "orders": null,
+      "orders_source": null,
+      "avg_ticket_pence": null,
+      "note": null,
+      "basis": "TILL",
+      "editable": {
+        "card": true,
+        "cash_till": true,
+        "cash_off_till": true
+      },
+      "sources": [
+        {
+          "method": "CARD",
+          "source": "LEGACY_WORKBOOK",
+          "source_ref": "Daily Sales!D240"
+        }
+      ]
+    },
+    {
+      "date": "2026-04-24",
+      "weekday": "Fri",
+      "card_pence": 6300,
+      "cash_till_pence": null,
+      "cash_off_till_pence": null,
+      "total_pence": 6300,
+      "orders": null,
+      "orders_source": null,
+      "avg_ticket_pence": null,
+      "note": null,
+      "basis": "TILL",
+      "editable": {
+        "card": true,
+        "cash_till": true,
+        "cash_off_till": true
+      },
+      "sources": [
+        {
+          "method": "CARD",
+          "source": "LEGACY_WORKBOOK",
+          "source_ref": "Daily Sales!D241"
+        }
+      ]
+    },
+    {
+      "date": "2026-04-25",
+      "weekday": "Sat",
+      "card_pence": 8360,
+      "cash_till_pence": null,
+      "cash_off_till_pence": null,
+      "total_pence": 8360,
+      "orders": null,
+      "orders_source": null,
+      "avg_ticket_pence": null,
+      "note": null,
+      "basis": "TILL",
+      "editable": {
+        "card": true,
+        "cash_till": true,
+        "cash_off_till": true
+      },
+      "sources": [
+        {
+          "method": "CARD",
+          "source": "LEGACY_WORKBOOK",
+          "source_ref": "Daily Sales!D242"
+        }
+      ]
+    },
+    {
+      "date": "2026-04-26",
+      "weekday": "Sun",
+      "card_pence": 6190,
+      "cash_till_pence": null,
+      "cash_off_till_pence": null,
+      "total_pence": 6190,
+      "orders": null,
+      "orders_source": null,
+      "avg_ticket_pence": null,
+      "note": null,
+      "basis": "TILL",
+      "editable": {
+        "card": true,
+        "cash_till": true,
+        "cash_off_till": true
+      },
+      "sources": [
+        {
+          "method": "CARD",
+          "source": "LEGACY_WORKBOOK",
+          "source_ref": "Daily Sales!D243"
+        }
+      ]
+    },
+    {
+      "date": "2026-04-27",
+      "weekday": "Mon",
+      "card_pence": 5185,
+      "cash_till_pence": null,
+      "cash_off_till_pence": null,
+      "total_pence": 5185,
+      "orders": null,
+      "orders_source": null,
+      "avg_ticket_pence": null,
+      "note": null,
+      "basis": "TILL",
+      "editable": {
+        "card": true,
+        "cash_till": true,
+        "cash_off_till": true
+      },
+      "sources": [
+        {
+          "method": "CARD",
+          "source": "LEGACY_WORKBOOK",
+          "source_ref": "Daily Sales!D244"
+        }
+      ]
+    },
+    {
+      "date": "2026-04-28",
+      "weekday": "Tue",
+      "card_pence": 3740,
+      "cash_till_pence": null,
+      "cash_off_till_pence": null,
+      "total_pence": 3740,
+      "orders": null,
+      "orders_source": null,
+      "avg_ticket_pence": null,
+      "note": null,
+      "basis": "TILL",
+      "editable": {
+        "card": true,
+        "cash_till": true,
+        "cash_off_till": true
+      },
+      "sources": [
+        {
+          "method": "CARD",
+          "source": "LEGACY_WORKBOOK",
+          "source_ref": "Daily Sales!D245"
+        }
+      ]
+    }
+  ],
+  "totals": {
+    "days": 21,
+    "card_pence": 129305,
+    "cash_till_pence": 0,
+    "cash_off_till_pence": 0,
+    "total_pence": 129305,
+    "orders": null
+  },
+  "caveats": [
+    "No order counts for these days: average ticket cannot be worked out."
+  ]
+}

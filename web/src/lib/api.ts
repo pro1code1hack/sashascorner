@@ -1,50 +1,22 @@
 /**
  * The data layer.
  *
- * Every screen renders from the static responses in `web/fixtures/` by default
- * (spec §10.10) — those are 19 real responses from `cafeops api-fixtures`, not
- * samples. Set `VITE_API_BASE` to point at a running API instead; auth is one
- * shared password sent as `X-API-Key`, kept in sessionStorage rather than
- * localStorage because it is a shared password on a shared laptop.
+ * Live (`VITE_LIVE=1` or `VITE_API_BASE`): requests go to the API; auth is one
+ * shared password exchanged for a session token (see "auth" below), kept in
+ * sessionStorage rather than localStorage because it is a shared laptop.
  *
- * Fixtures are imported, never fetched, so fixture mode has no network at all
- * and no loading race to design around.
+ * Fixture mode (neither set): every GET through `request()` is answered from
+ * `web/fixtures/` -- real responses recorded by `cafeops api-fixtures`, not
+ * samples -- via `lib/fixtures`, loaded lazily so they never weigh on the live
+ * bundle. Writes answer `offline` and never pretend to have landed.
  */
-import fxTemplates from '../../fixtures/templates.json'
-import fxTemplateDetail from '../../fixtures/template-detail.json'
-import fxPreview from '../../fixtures/template-preview.json'
-import fxStockTierA from '../../fixtures/stock-tier-a.json'
-import fxStockDetail from '../../fixtures/stock-detail.json'
-import fxToday from '../../fixtures/today.json'
-import fxMeta from '../../fixtures/meta.json'
-import fxOrders from '../../fixtures/orders-draft.json'
-import fxMargin from '../../fixtures/margin.json'
-import fxChannels from '../../fixtures/channels.json'
-import fxSuppliers from '../../fixtures/suppliers.json'
-import fxHealth from '../../fixtures/health.json'
-import fxProposals from '../../fixtures/proposals.json'
-import fxTakings from '../../fixtures/takings.json'
-import { cmp, parseDec } from './dec'
+import { getOperator } from './operator'
 import type {
-  ChannelsResponse,
-  TakingsResponse,
-  MaterialiseIn,
-  MaterialiseResponse,
   ProposalsResponse,
   ShelfLifeIn,
   ShelfLifeResponse,
   SupplierTermsIn,
   SupplierTermsResponse,
-  HealthResponse,
-  MarginResponse,
-  MetaResponse,
-  OrdersDraftResponse,
-  Supplier,
-  PreviewResponse,
-  StockDetailResponse,
-  StockResponse,
-  TemplateDetailResponse,
-  TemplateSummary,
 } from './types'
 
 /**
@@ -58,31 +30,159 @@ import type {
  */
 export const API_BASE = (import.meta.env.VITE_API_BASE ?? '').replace(/\/+$/, '')
 export const LIVE = API_BASE !== '' || import.meta.env.VITE_LIVE === '1'
+/** The same decision written so the bundler can fold it: in a live build the
+ *  fixture branch in `request()` is dropped, and no fixture chunk is emitted. */
+const FIXTURE_MODE = !import.meta.env.VITE_API_BASE && import.meta.env.VITE_LIVE !== '1'
 
-const KEY_STORE = 'cafeops.key'
+/* ------------------------------------------------------------- auth ---- *
+ * One place decides how a request proves who it is: `authHeaders()`.
+ *
+ * DECISIONS §3: the shared password is traded for a session token at sign-in
+ * (`POST /api/auth/session` -> `{token, expires_at}`) and the token is sent as
+ * `Authorization: Bearer`. The server stores only its hash and revokes every
+ * session when the password changes, so a stale tab gets a 401 and returns to
+ * Login. The stored credential carries its kind; `signIn()` falls back to the
+ * raw password (`X-API-Key`) only against an older server with no session
+ * endpoint (404/405). The raw-password header is still accepted by the server
+ * for tools (`cafeops api-fixtures`, curl); a raw password sent as Bearer is not.
+ *
+ * Kept in sessionStorage, not localStorage: a shared secret on a shared laptop
+ * should not outlive the tab.
+ */
 
-export function getKey(): string | null {
+export type Credential = { kind: 'password' | 'session'; value: string }
+
+const AUTH_STORE = 'cafeops.auth'
+/** The pre-v2 key: a raw password. Read once for continuity, then migrated. */
+const LEGACY_KEY_STORE = 'cafeops.key'
+
+let memoryCredential: Credential | null = null
+
+export function getCredential(): Credential | null {
   try {
-    return sessionStorage.getItem(KEY_STORE)
+    const raw = sessionStorage.getItem(AUTH_STORE)
+    if (raw !== null) {
+      const c = JSON.parse(raw) as Partial<Credential>
+      if ((c.kind === 'password' || c.kind === 'session') && typeof c.value === 'string') {
+        return { kind: c.kind, value: c.value }
+      }
+    }
+    const legacy = sessionStorage.getItem(LEGACY_KEY_STORE)
+    if (legacy !== null) return { kind: 'password', value: legacy }
   } catch {
-    return null
+    /* private mode or corrupt value: fall through to memory */
+  }
+  return memoryCredential
+}
+
+export function setCredential(c: Credential): void {
+  memoryCredential = c
+  try {
+    sessionStorage.setItem(AUTH_STORE, JSON.stringify(c))
+    sessionStorage.removeItem(LEGACY_KEY_STORE)
+  } catch {
+    /* private mode; the credential lives in memory for this page only */
   }
 }
 
-export function setKey(k: string): void {
+export function clearCredential(): void {
+  memoryCredential = null
   try {
-    sessionStorage.setItem(KEY_STORE, k)
-  } catch {
-    /* private mode; the key stays in memory for this page only */
-  }
-}
-
-export function clearKey(): void {
-  try {
-    sessionStorage.removeItem(KEY_STORE)
+    sessionStorage.removeItem(AUTH_STORE)
+    sessionStorage.removeItem(LEGACY_KEY_STORE)
   } catch {
     /* ignore */
   }
+}
+
+/** The single function that attaches auth to a request. */
+export function authHeaders(c: Credential | null = getCredential()): Record<string, string> {
+  if (c === null) return {}
+  return c.kind === 'session' ? { Authorization: `Bearer ${c.value}` } : { 'X-API-Key': c.value }
+}
+
+/**
+ * Fired on `window` when a live request comes back 401: the credential is no
+ * longer accepted (password changed, session expired or revoked). The app
+ * listens and returns to the login screen with an explanation.
+ */
+export const SIGNED_OUT_EVENT = 'cafeops:signed-out'
+
+export type SignInOutcome =
+  | { kind: 'ok' }
+  | { kind: 'wrong' }
+  | { kind: 'no_password_set' }
+  | { kind: 'rate_limited' }
+  | { kind: 'failed'; message: string }
+
+function statusOutcome(status: number): SignInOutcome | null {
+  if (status === 401 || status === 403) return { kind: 'wrong' }
+  if (status === 503) return { kind: 'no_password_set' }
+  if (status === 429) return { kind: 'rate_limited' }
+  return null
+}
+
+/**
+ * Verify the shared password against an AUTHENTICATED endpoint and store the
+ * resulting credential. Never trusts an open route: the pre-v2 Unlock checked
+ * `/api/meta`, which is unauthenticated, so any password "worked"
+ * (shell-agents.md §0.1).
+ */
+export async function signIn(password: string): Promise<SignInOutcome> {
+  try {
+    // 1. The session endpoint (DECISIONS §3). Absent today -> 404/405.
+    const s = await fetch(`${API_BASE}/api/auth/session`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      // The operator name only labels the audit row (DECISIONS §6); it is not a login.
+      body: JSON.stringify({ password, actor: getOperator() }),
+    })
+    if (s.ok) {
+      const body = (await s.json()) as { token?: unknown }
+      if (typeof body.token === 'string' && body.token !== '') {
+        setCredential({ kind: 'session', value: body.token })
+        return { kind: 'ok' }
+      }
+      return { kind: 'failed', message: 'The server accepted the password but sent no session.' }
+    }
+    const early = statusOutcome(s.status)
+    if (early !== null) return early
+    if (s.status !== 404 && s.status !== 405) {
+      return { kind: 'failed', message: `The server answered ${s.status}.` }
+    }
+
+    // 2. Fallback while sessions do not exist: the raw password against a
+    //    cheap authenticated GET. /api/suppliers is on the guarded router.
+    const candidate: Credential = { kind: 'password', value: password }
+    const r = await fetch(`${API_BASE}/api/suppliers`, { headers: authHeaders(candidate) })
+    // A 200 must be the API's JSON, not an HTML fallback page from a static
+    // server with no API behind it: that would "unlock" on any password.
+    if (r.ok && (r.headers.get('content-type') ?? '').includes('application/json')) {
+      setCredential(candidate)
+      return { kind: 'ok' }
+    }
+    if (r.ok) return { kind: 'failed', message: 'No API answered at this address.' }
+    return statusOutcome(r.status) ?? { kind: 'failed', message: `The server answered ${r.status}.` }
+  } catch (e) {
+    return {
+      kind: 'failed',
+      message: `Could not reach the server. ${e instanceof Error ? e.message : String(e)}`,
+    }
+  }
+}
+
+/** Revoke the session if there is one, forget the credential, reload. */
+export async function signOut(): Promise<void> {
+  const c = getCredential()
+  if (LIVE && c?.kind === 'session') {
+    try {
+      await fetch(`${API_BASE}/api/auth/session`, { method: 'DELETE', headers: authHeaders(c) })
+    } catch {
+      /* signing out locally is what matters */
+    }
+  }
+  clearCredential()
+  location.reload()
 }
 
 export class ApiError extends Error {
@@ -95,13 +195,17 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const key = getKey()
+/** A raw request with auth attached. Throws ApiError on a non-2xx answer. */
+export async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  if (FIXTURE_MODE && !LIVE && (init?.method ?? 'GET').toUpperCase() === 'GET') {
+    const { fixtureResponse } = await import('./fixtures')
+    return (await fixtureResponse(path)) as T
+  }
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
-      ...(key ? { 'X-API-Key': key } : {}),
+      ...authHeaders(),
       ...(init?.headers ?? {}),
     },
   })
@@ -113,6 +217,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     payload = text
   }
   if (!res.ok) {
+    if (res.status === 401 && LIVE && getCredential() !== null) {
+      clearCredential()
+      window.dispatchEvent(new CustomEvent(SIGNED_OUT_EVENT, { detail: { reason: 'rejected' } }))
+    }
     throw new ApiError(res.status, payload, `${res.status} on ${path}`)
   }
   return payload as T
@@ -120,136 +228,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 /* ---------------------------------------------------------------- reads --- */
 
-/**
- * One thing today needs a decision about. `severity` orders the screen:
- * `act` before `watch` before `info`. `subject` is a display string and may be
- * a comma-joined list or null -- the typed arrays on `TodaySummary` are the
- * machine-readable form, so render chips from those, not by splitting this.
- */
-export interface TodayAlert {
-  kind: string
-  severity: 'act' | 'watch' | 'info'
-  subject: string | null
-  message: string
-}
-
-/** The stock half of /api/today. Counts, not money, except where noted. */
-export interface TodayStock {
-  ingredients: number
-  unanchored: number
-  negative: number
-  short_dated: number
-  unbatched: number
-  auto_order_enabled: number
-  forced_manual: number
-  /** null when a batch in the expiring set has no unit cost. A partial total
-   *  would understate the very waste it warns about, so the API withholds it
-   *  rather than summing what it has (invariant 8). */
-  expiring_value_pence: string | null
-  notes: string[]
-}
-
-/**
- * /api/today in full. The four `draft_order_*` fields are null until a draft
- * has been computed for the day -- null means "not computed", never "zero", so
- * the screen must render the difference.
- */
-export interface TodaySummary {
-  as_of: string
-  local_date: string
-  stock: TodayStock
-  /** Display strings like "Whole milk (3d)". `schemas.py` types this
-   *  `tuple[str, ...]`; the fixture is empty today, which is why it was
-   *  originally typed `unknown[]`. Not to be confused with
-   *  `TodayStock.short_dated`, which is a count. */
-  short_dated: string[]
-  expiry_write_offs_due: number
-  /** null when a batch in the write-off set has no price: the total is then
-   *  unknowable, which is not the same as zero. */
-  expiry_write_offs_value_pence: string | null
-  drift_forced_manual: string[]
-  drift_tuning_band: string[]
-  auto_order_enabled_count: number
-  draft_order_total_pence: number | null
-  draft_order_supplier_count: number | null
-  capped_line_count: number | null
-  emergency_line_count: number | null
-  unavailable_menu_items: string[]
-  /** Things needing a decision, already severity-ranked by the backend. */
-  alerts: TodayAlert[]
-  /** Standing caveats about the data itself -- estimate prices, estimate shelf
-   *  lives. True every day, so they are separate from `alerts`. */
-  data_quality: TodayAlert[]
-  /** Whole-response caveats, invariant 6 among them. Print verbatim. */
-  notes: string[]
-}
-
 export const api = {
-  meta: (): Promise<MetaResponse> =>
-    LIVE ? request('/api/meta') : Promise.resolve(fxMeta as unknown as MetaResponse),
-
-  today: (): Promise<TodaySummary> =>
-    LIVE ? request('/api/today') : Promise.resolve(fxToday as unknown as TodaySummary),
-
-  templates: (): Promise<TemplateSummary[]> =>
-    LIVE ? request('/api/templates') : Promise.resolve(fxTemplates as unknown as TemplateSummary[]),
-
-  templateDetail: (id: number): Promise<TemplateDetailResponse> =>
-    LIVE
-      ? request(`/api/templates/${id}`)
-      : Promise.resolve(fxTemplateDetail as unknown as TemplateDetailResponse),
-
-  stock: (tier: string): Promise<StockResponse> =>
-    LIVE
-      ? request(`/api/stock?tier=${encodeURIComponent(tier)}&as_of=today`)
-      : Promise.resolve(fxStockTierA as unknown as StockResponse),
-
-  /** In fixture mode only one ingredient has a recorded detail response, and
-   *  showing Whole milk's count history under another ingredient's name would
-   *  be a lie. So it refuses rather than substitutes. */
-  stockDetail: (id: number): Promise<StockDetailResponse> => {
-    if (LIVE) return request(`/api/stock/${id}`)
-    const fx = fxStockDetail as unknown as StockDetailResponse
-    if (fx.row.ingredient_id === id) return Promise.resolve(fx)
-    return Promise.reject(
-      new ApiError(
-        404,
-        null,
-        'Count history for this ingredient is not in the fixture set — only Whole milk is. Point VITE_API_BASE at a running API to read the rest.',
-      ),
-    )
-  },
-
-  /** The draft purchase order. A pure read: `writes_nothing` is true, and
-   *  nothing is committed until it is confirmed in Telegram. */
-  ordersDraft: (): Promise<OrdersDraftResponse> =>
-    LIVE
-      ? request('/api/orders/draft')
-      : Promise.resolve(fxOrders as unknown as OrdersDraftResponse),
-
-  margin: (): Promise<MarginResponse> =>
-    LIVE ? request('/api/margin') : Promise.resolve(fxMargin as unknown as MarginResponse),
-
-  channels: (): Promise<ChannelsResponse> =>
-    LIVE ? request('/api/channels') : Promise.resolve(fxChannels as unknown as ChannelsResponse),
-
-  suppliers: (): Promise<Supplier[]> =>
-    LIVE ? request('/api/suppliers') : Promise.resolve(fxSuppliers as unknown as Supplier[]),
-
-  health: (): Promise<HealthResponse> =>
-    LIVE ? request('/api/health') : Promise.resolve(fxHealth as unknown as HealthResponse),
-
   /** Template proposals waiting for a human (spec 6). Reading writes nothing. */
-  /** What the cafe took, by day and method. Writes nothing. */
-  takings: (days = 30): Promise<TakingsResponse> =>
-    LIVE
-      ? request(`/api/takings?days=${days}`)
-      : Promise.resolve(fxTakings as unknown as TakingsResponse),
-
-  proposals: (): Promise<ProposalsResponse> =>
-    LIVE
-      ? request('/api/proposals')
-      : Promise.resolve(fxProposals as unknown as ProposalsResponse),
+  proposals: (): Promise<ProposalsResponse> => request('/api/proposals'),
 }
 
 /* ------------------------------------------------------------ the writes --- */
@@ -284,7 +265,15 @@ function refusalMessage(payload: unknown): string | null {
   return null
 }
 
-async function write<T>(path: string, body: unknown): Promise<WriteResult<T>> {
+/**
+ * A write with the refusal handling every screen needs. Exported as `apiWrite`
+ * for screen builders; `method` defaults to POST.
+ */
+async function write<T>(
+  path: string,
+  body: unknown,
+  method: 'POST' | 'PUT' | 'PATCH' | 'DELETE' = 'POST',
+): Promise<WriteResult<T>> {
   if (!LIVE) {
     return {
       kind: 'offline',
@@ -294,7 +283,10 @@ async function write<T>(path: string, body: unknown): Promise<WriteResult<T>> {
     }
   }
   try {
-    const data = await request<T>(path, { method: 'POST', body: JSON.stringify(body) })
+    const data = await request<T>(path, {
+      method,
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    })
     return { kind: 'ok', data }
   } catch (e) {
     if (e instanceof ApiError) {
@@ -319,21 +311,6 @@ export function confirmSupplierTerms(
   return write(`/api/suppliers/${supplierId}/confirm`, body)
 }
 
-/**
- * Confirm one proposal into real composition rows.
- *
- * Addressed by `proposal_id`, never by name: detection names a group after its
- * defining ingredient, so two different recipes can share one. Two pairs do
- * today, and confirming the wrong one attaches the wrong recipe to real drinks.
- * The API refuses an ambiguous name rather than resolving it to the first match.
- */
-export function materialiseProposal(
-  proposalId: string,
-  body: MaterialiseIn,
-): Promise<WriteResult<MaterialiseResponse>> {
-  return write(`/api/proposals/${encodeURIComponent(proposalId)}/materialise`, body)
-}
-
 /** Record a shelf life somebody checked. Changes order size from the next run. */
 export function confirmShelfLife(
   ingredientId: number,
@@ -342,96 +319,4 @@ export function confirmShelfLife(
   return write(`/api/ingredients/${ingredientId}/shelf-life`, body)
 }
 
-/* -------------------------------------------------------------- preview --- */
-
-export type PreviewResult =
-  | { kind: 'ok'; data: PreviewResponse }
-  /** 409. The slot was edited elsewhere; a preview against a closed row would
-   *  honestly answer "0 items affected, no warnings", which reads as *this edit
-   *  is harmless*. ARCHITECTURE.md §8H.4. */
-  | { kind: 'superseded'; currentComponentId: number | null; message: string }
-  /** Fixture mode only, and never dressed up as a real answer. */
-  | { kind: 'unpriced'; recordedComponentId: number; recordedQty: Record<string, string> }
-  | { kind: 'failed'; status: number | null; message: string }
-
-function sameQty(a: Record<string, string>, b: Record<string, string>): boolean {
-  const keys = new Set([...Object.keys(a), ...Object.keys(b)])
-  for (const k of keys) {
-    const x = parseDec(a[k] ?? '')
-    const y = parseDec(b[k] ?? '')
-    if (x === null || y === null) return false
-    if (cmp(x, y) !== 0) return false
-  }
-  return true
-}
-
-const recorded = fxPreview as unknown as PreviewResponse
-
-export async function preview(
-  templateId: number,
-  componentId: number,
-  qtyBySize: Record<string, string>,
-): Promise<PreviewResult> {
-  if (!LIVE) {
-    if (componentId === recorded.component_id && sameQty(qtyBySize, recorded.qty_by_size_after)) {
-      return { kind: 'ok', data: recorded }
-    }
-    return {
-      kind: 'unpriced',
-      recordedComponentId: recorded.component_id,
-      recordedQty: recorded.qty_by_size_after,
-    }
-  }
-  try {
-    const data = await request<PreviewResponse>(`/api/templates/${templateId}/preview`, {
-      method: 'POST',
-      body: JSON.stringify({ component_id: componentId, qty_by_size: qtyBySize }),
-    })
-    return { kind: 'ok', data }
-  } catch (e) {
-    if (e instanceof ApiError && e.status === 409) {
-      const p = e.payload as { detail?: Record<string, unknown> } | null
-      const d = p?.detail ?? {}
-      const current = typeof d['current_component_id'] === 'number' ? d['current_component_id'] : null
-      const msg =
-        typeof d['message'] === 'string'
-          ? d['message']
-          : 'This slot has been superseded by a later edit.'
-      return { kind: 'superseded', currentComponentId: current, message: msg }
-    }
-    return {
-      kind: 'failed',
-      status: e instanceof ApiError ? e.status : null,
-      message: e instanceof Error ? e.message : String(e),
-    }
-  }
-}
-
-/** Invariant 1-adjacent: there is no write endpoint for composition apply in
- *  the fixture layer, and the API's only two POST routes are composition. The
- *  UI therefore never claims a write happened that did not. */
-export async function applyFromToday(
-  templateId: number,
-  componentId: number,
-  qtyBySize: Record<string, string>,
-): Promise<{ ok: boolean; message: string }> {
-  if (!LIVE) {
-    return {
-      ok: false,
-      message:
-        'Fixture mode: nothing was written. The recipe on disk is unchanged. Point VITE_API_BASE at a running API to commit this edit.',
-    }
-  }
-  try {
-    await request(`/api/templates/${templateId}/components/${componentId}`, {
-      method: 'POST',
-      body: JSON.stringify({ qty_by_size: qtyBySize, effective_from: 'today' }),
-    })
-    return { ok: true, message: 'Applied from today.' }
-  } catch (e) {
-    return {
-      ok: false,
-      message: e instanceof Error ? e.message : String(e),
-    }
-  }
-}
+export { write as apiWrite }

@@ -114,6 +114,106 @@ def import_legacy_cmd(
 # --------------------------------------------------------------------------
 
 
+@app.command(name="import-finance")
+def import_finance_cmd(
+    workbook: Annotated[
+        Path | None,
+        typer.Option(
+            "--workbook", help="Finance workbook (.xlsx). Default: sashas_corner_finance.xlsx."
+        ),
+    ] = None,
+    dry_run: Annotated[
+        bool,
+        typer.Option("--dry-run/--commit", help="Report what would change, or write it."),
+    ] = True,
+) -> None:
+    """Import Daily Sales, Expenses and Director Account from the finance workbook.
+
+    Idempotent: a second --commit changes nothing. Rows edited in the app are left alone.
+    Just Eat money in the workbook's cash column becomes Just Eat takings (DECISIONS 4).
+    """
+    from cafeops.config import REPO_ROOT
+    from cafeops.seed.finance_import import check_against_workbook, import_finance, report_lines
+
+    path = (workbook or REPO_ROOT / "sashas_corner_finance.xlsx").expanduser()
+    if not path.exists():
+        raise typer.BadParameter(f"workbook not found: {path}")
+    session = SessionFactory()
+    try:
+        report = import_finance(session, path)
+        for line in report_lines(report):
+            console.print(line, markup=False, highlight=False)
+        for line in check_against_workbook(session, path):
+            console.print(line, markup=False, highlight=False)
+        if dry_run:
+            session.rollback()
+            console.print("\n[yellow]DRY RUN: rolled back. Re-run with --commit to write.[/yellow]")
+        else:
+            session.commit()
+            console.print("\n[green]committed[/green]")
+        if report.refused:
+            raise typer.Exit(code=2)
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
+@app.command(name="menu-import-board")
+def menu_import_board_cmd(
+    board: Annotated[
+        Path | None,
+        typer.Option(
+            "--board",
+            help="Menu boards file. Default: site/backend/config/menu_board.toml.",
+        ),
+    ] = None,
+    prices: Annotated[
+        str | None,
+        typer.Option(
+            "--prices",
+            help="Owner's call on conflicting prices: 'board' (board wins) or 'keep'.",
+        ),
+    ] = None,
+    commit: Annotated[
+        bool, typer.Option("--commit/--dry-run", help="Write through the menu services.")
+    ] = False,
+) -> None:
+    """Bring the ops menu up to the published TV menu boards (categories, products, prices).
+
+    Dry run lists new categories, category assignments, new products, every price
+    conflict (board vs current, with the current price's source), sizes ops lacks,
+    and ops products not on the boards. Writes only with --commit, only through
+    services.menu_catalog, and never decides a price conflict by itself.
+    """
+    from cafeops.config import REPO_ROOT
+    from cafeops.seed.menu_board import apply, plan, report_lines
+
+    path = (board or REPO_ROOT / "site" / "backend" / "config" / "menu_board.toml").expanduser()
+    if not path.exists():
+        raise typer.BadParameter(f"board file not found: {path}")
+    if prices not in (None, "board", "keep"):
+        raise typer.BadParameter("--prices must be 'board' or 'keep'")
+    session = SessionFactory()
+    try:
+        if not commit:
+            for line in report_lines(plan(session, path)):
+                console.print(line, markup=False, highlight=False)
+            console.print("\n[yellow]DRY RUN: nothing written. Re-run with --commit.[/yellow]")
+            return
+        try:
+            done = apply(session, path, prices=prices)  # type: ignore[arg-type]
+        except (RuntimeError, ValueError) as exc:
+            console.print(f"[red]{exc}[/red]")
+            raise typer.Exit(code=2) from exc
+        for line in done:
+            console.print(line, markup=False, highlight=False)
+        console.print(f"\n[green]done: {len(done)} changes[/green]")
+    finally:
+        session.close()
+
+
 def _workbook_path(workbook: Path | None) -> Path:
     path = workbook or settings.finance_workbook_path
     if path is None:
@@ -572,6 +672,20 @@ def sync(
             # that the code path is the real one, including the upsert's own reads of
             # rows this transaction created.
             session.rollback()
+        else:
+            from cafeops.services.sync_runs import record_cli_sync
+
+            record_cli_sync(
+                session,
+                fixtures=fixtures,
+                since=since,
+                until=until,
+                started_at=now,
+                receipts_seen=result.receipts_seen,
+                lines_ingested=result.ingest.inserted if result.ingest else None,
+                unresolved_count=len(result.ingest.unresolved_items) if result.ingest else None,
+                partial_reason=result.partial_reason,
+            )
 
     console.print(f"[bold]cafeops sync[/bold] {since}..{until}")
     for line in result.lines():
@@ -584,6 +698,32 @@ def sync(
         )
     else:
         console.print("[green]done[/green]")
+
+
+password_app = typer.Typer(help="The shared back-office password.", no_args_is_help=True)
+app.add_typer(password_app, name="password")
+
+
+@password_app.command(name="reset")
+def password_reset_cmd(
+    yes: Annotated[bool, typer.Option("--yes", help="Skip the confirmation.")] = False,
+) -> None:
+    """Break-glass: forget the password set in Settings; CAFEOPS_API_PASSWORD rules again.
+
+    Signs out every device. For when nobody remembers the password changed in the app.
+    """
+    from cafeops.services.auth import reset_password
+
+    if not yes:
+        typer.confirm("Forget the stored password and sign out every device?", abort=True)
+    with session_scope() as session:
+        revoked = reset_password(session, actor="cli")
+    source = (
+        "CAFEOPS_API_PASSWORD" if settings.api_password else "nothing (set CAFEOPS_API_PASSWORD)"
+    )
+    console.print(
+        f"[green]reset[/green]: {revoked} session(s) revoked; the password is now {source}"
+    )
 
 
 # --------------------------------------------------------------------------
@@ -1912,7 +2052,10 @@ def set_price_cmd(
         unit = current.pack_unit if current is not None else snapshot.unit
 
         old_per_unit = snapshot.cost_per_unit_pence
-        new_per_unit = Decimal(pack_cost) / size if size else None
+        from cafeops.domain.units import convert
+
+        # Per ingredient unit: the pack may be in kg for an ingredient counted in g.
+        new_per_unit = Decimal(pack_cost) / convert(size, unit, snapshot.unit) if size > 0 else None
         console.print(
             f"[bold]{snapshot.name}[/bold]: {_money(old_per_unit, dp=4)} -> "
             f"{_money(new_per_unit, dp=4)} per {unit.value} "

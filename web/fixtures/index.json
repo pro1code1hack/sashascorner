@@ -224,6 +224,286 @@
       "body": null,
       "status": 200,
       "note": "The schema, for codegen."
+    },
+    {
+      "name": "shell",
+      "file": "shell.json",
+      "method": "GET",
+      "path": "/api/shell",
+      "params": null,
+      "body": null,
+      "status": 200,
+      "note": "Sidebar sync line, badges, banners."
+    },
+    {
+      "name": "settings",
+      "file": "settings.json",
+      "method": "GET",
+      "path": "/api/settings",
+      "params": null,
+      "body": null,
+      "status": 200,
+      "note": ""
+    },
+    {
+      "name": "setup",
+      "file": "setup.json",
+      "method": "GET",
+      "path": "/api/setup",
+      "params": null,
+      "body": null,
+      "status": 200,
+      "note": "The Setup checklist."
+    },
+    {
+      "name": "agent-proposals",
+      "file": "agent-proposals.json",
+      "method": "GET",
+      "path": "/api/agents/proposals",
+      "params": {
+        "limit": "6"
+      },
+      "body": null,
+      "status": 200,
+      "note": ""
+    },
+    {
+      "name": "agent-runs",
+      "file": "agent-runs.json",
+      "method": "GET",
+      "path": "/api/agents/runs",
+      "params": {
+        "limit": "30"
+      },
+      "body": null,
+      "status": 200,
+      "note": ""
+    },
+    {
+      "name": "stock-all",
+      "file": "stock-all.json",
+      "method": "GET",
+      "path": "/api/stock",
+      "params": {
+        "as_of": "today",
+        "include_untracked": "true"
+      },
+      "body": null,
+      "status": 200,
+      "note": "The Stock screen: every ingredient, tracked or not."
+    },
+    {
+      "name": "stock-row",
+      "file": "stock-row.json",
+      "method": "GET",
+      "path": "/api/stock/49",
+      "params": {
+        "as_of": "today",
+        "history": "20"
+      },
+      "body": null,
+      "status": 200,
+      "note": "The Stock drawer for the first row."
+    },
+    {
+      "name": "orders",
+      "file": "orders.json",
+      "method": "GET",
+      "path": "/api/orders",
+      "params": null,
+      "body": null,
+      "status": 200,
+      "note": "Order history, every supplier."
+    },
+    {
+      "name": "shop-runs",
+      "file": "shop-runs.json",
+      "method": "GET",
+      "path": "/api/orders/shop-runs",
+      "params": {
+        "months": "8"
+      },
+      "body": null,
+      "status": 200,
+      "note": ""
+    },
+    {
+      "name": "supplier-products",
+      "file": "supplier-products.json",
+      "method": "GET",
+      "path": "/api/suppliers/7/products",
+      "params": null,
+      "body": null,
+      "status": 200,
+      "note": ""
+    },
+    {
+      "name": "recipes",
+      "file": "recipes.json",
+      "method": "GET",
+      "path": "/api/recipes",
+      "params": null,
+      "body": null,
+      "status": 200,
+      "note": "The Recipes rail."
+    },
+    {
+      "name": "recipe-editor",
+      "file": "recipe-editor.json",
+      "method": "GET",
+      "path": "/api/templates/1/editor",
+      "params": null,
+      "body": null,
+      "status": 200,
+      "note": ""
+    },
+    {
+      "name": "seasons",
+      "file": "seasons.json",
+      "method": "GET",
+      "path": "/api/seasons",
+      "params": null,
+      "body": null,
+      "status": 200,
+      "note": ""
+    },
+    {
+      "name": "menu-items",
+      "file": "menu-items.json",
+      "method": "GET",
+      "path": "/api/menu-items",
+      "params": null,
+      "body": null,
+      "status": 200,
+      "note": ""
+    },
+    {
+      "name": "menu-item",
+      "file": "menu-item.json",
+      "method": "GET",
+      "path": "/api/menu-items/276",
+      "params": null,
+      "body": null,
+      "status": 200,
+      "note": "The item drawer for the first card."
+    },
+    {
+      "name": "ingredients",
+      "file": "ingredients.json",
+      "method": "GET",
+      "path": "/api/ingredients",
+      "params": null,
+      "body": null,
+      "status": 200,
+      "note": ""
+    },
+    {
+      "name": "ingredient",
+      "file": "ingredient.json",
+      "method": "GET",
+      "path": "/api/ingredients/49",
+      "params": null,
+      "body": null,
+      "status": 200,
+      "note": ""
+    },
+    {
+      "name": "finance-months",
+      "file": "finance-months.json",
+      "method": "GET",
+      "path": "/api/finance/months",
+      "params": null,
+      "body": null,
+      "status": 200,
+      "note": ""
+    },
+    {
+      "name": "finance-meta",
+      "file": "finance-meta.json",
+      "method": "GET",
+      "path": "/api/finance/meta",
+      "params": null,
+      "body": null,
+      "status": 200,
+      "note": ""
+    },
+    {
+      "name": "finance-alerts",
+      "file": "finance-alerts.json",
+      "method": "GET",
+      "path": "/api/finance/alerts",
+      "params": null,
+      "body": null,
+      "status": 200,
+      "note": ""
+    },
+    {
+      "name": "finance-pl",
+      "file": "finance-pl.json",
+      "method": "GET",
+      "path": "/api/finance/pl",
+      "params": null,
+      "body": null,
+      "status": 200,
+      "note": ""
+    },
+    {
+      "name": "finance-director",
+      "file": "finance-director.json",
+      "method": "GET",
+      "path": "/api/finance/director",
+      "params": null,
+      "body": null,
+      "status": 200,
+      "note": ""
+    },
+    {
+      "name": "finance-overview",
+      "file": "finance-overview.json",
+      "method": "GET",
+      "path": "/api/finance/overview",
+      "params": {
+        "period": "2026-04"
+      },
+      "body": null,
+      "status": 200,
+      "note": ""
+    },
+    {
+      "name": "finance-sales",
+      "file": "finance-sales.json",
+      "method": "GET",
+      "path": "/api/finance/sales",
+      "params": {
+        "period": "2026-04"
+      },
+      "body": null,
+      "status": 200,
+      "note": ""
+    },
+    {
+      "name": "finance-expenses",
+      "file": "finance-expenses.json",
+      "method": "GET",
+      "path": "/api/finance/expenses",
+      "params": {
+        "period": "2026-04"
+      },
+      "body": null,
+      "status": 200,
+      "note": ""
+    },
+    {
+      "name": "finance-reconcile",
+      "file": "finance-reconcile.json",
+      "method": "GET",
+      "path": "/api/finance/reconcile",
+      "params": {
+        "period": "2026-04"
+      },
+      "body": null,
+      "status": 200,
+      "note": ""
     }
   ]
 }

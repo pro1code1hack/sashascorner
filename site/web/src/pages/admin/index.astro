@@ -1,0 +1,344 @@
+---
+// /admin: the sign-in form when signed out (rendered by the layout), otherwise today.
+// No KPI tiles: today's bookings as a list, seats per slot as quiet bars, the week as
+// one compact row, and three plain notes (messages, photos, menu).
+import Admin from '../../layouts/Admin.astro';
+import AdmBookingStyles from '../../components/AdmBookingStyles.astro';
+---
+
+<Admin title="Today" active="dashboard" subtitle="who is coming, and what needs you">
+  <a slot="actions" class="adm-btn adm-btn--secondary" href="/admin/bookings?add=1">Add booking</a>
+  <AdmBookingStyles />
+
+  <div class="dash" data-dash aria-busy="true">
+    <section class="dash-today" aria-labelledby="dash-today-h">
+      <div class="dash-sechead">
+        <h2 id="dash-today-h" class="adm-section-head" data-today-title>Today</h2>
+        <p class="dash-open" data-today-open></p>
+      </div>
+      <p class="dash-sum" data-today-sum></p>
+      <ul class="adm-bklist" data-today-list aria-label="Today's bookings"></ul>
+      <p class="dash-more" data-today-more hidden></p>
+      <details class="dash-slots" data-slots-wrap open>
+        <summary><span class="adm-label">Seats taken by time</span></summary>
+        <div data-today-slots></div>
+      </details>
+    </section>
+
+    <aside class="dash-side">
+      <section aria-labelledby="dash-week-h">
+        <h2 id="dash-week-h" class="adm-section-head">Next 7 days</h2>
+        <ol class="dash-week" data-week></ol>
+      </section>
+
+      <section class="dash-notes" aria-label="Things to look at">
+        <a class="dash-note" href="/admin/messages" data-note-messages>
+          <span class="dash-note-main" data-msg-text>Messages</span>
+          <span class="dash-note-go" aria-hidden="true">›</span>
+        </a>
+        <a class="dash-note" href="/admin/photos" data-note-photos>
+          <span class="dash-note-main" data-photo-text>Photos</span>
+          <span class="dash-note-go" aria-hidden="true">›</span>
+        </a>
+        <a class="dash-note" href="/admin/menu" data-note-menu>
+          <span class="dash-note-main">
+            <span data-menu-text>Menu</span>
+            <ul class="dash-warn" data-menu-warn></ul>
+          </span>
+          <span class="dash-note-go" aria-hidden="true">›</span>
+        </a>
+      </section>
+    </aside>
+  </div>
+  <p class="adm-err" data-dash-error role="alert" hidden></p>
+</Admin>
+
+<style is:global>
+  .dash {
+    display: grid;
+    grid-template-columns: minmax(0, 1.7fr) minmax(260px, 1fr);
+    gap: 32px;
+    align-items: start;
+  }
+  .dash[aria-busy='true'] {
+    opacity: 0.6;
+  }
+  .dash-sechead {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .dash-sechead .adm-section-head {
+    font-size: 18px;
+  }
+  .dash-open {
+    color: var(--ink-2);
+  }
+  .dash-open strong {
+    color: var(--ink);
+  }
+  .dash-sum {
+    margin: 4px 0 12px;
+    font-size: 15px;
+  }
+  .dash-more {
+    margin-top: 10px;
+    font-size: 14px;
+    color: var(--ink-2);
+  }
+  .dash-slots {
+    margin-top: 22px;
+  }
+  .dash-slots summary {
+    cursor: pointer;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    list-style: none;
+  }
+  .dash-slots summary::-webkit-details-marker {
+    display: none;
+  }
+  /* display:flex drops the native triangle, so say it plainly */
+  .dash-slots summary::after {
+    content: 'Show ▾';
+    font-size: 14px;
+    color: var(--ink-2);
+  }
+  .dash-slots[open] summary::after {
+    content: 'Hide ▴';
+  }
+  .dash-side {
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
+  }
+  .dash-week {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+    margin-top: 10px;
+  }
+  .dash-week a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 8px 2px;
+    min-height: 64px;
+    border-radius: var(--r-button);
+    background: var(--canvas);
+    text-decoration: none;
+    color: var(--ink);
+  }
+  .adm .dash-week a {
+    color: var(--ink);
+  }
+  .dash-week a:hover {
+    background: var(--wash);
+  }
+  .dash-week .wd {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+  }
+  .dash-week .n {
+    font-size: 18px;
+    font-weight: 800;
+  }
+  .dash-week .c {
+    font-size: 12px;
+    color: var(--ink-2);
+  }
+  .dash-week .is-closed .n {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-3);
+    padding-top: 5px;
+  }
+  .dash-week .is-today {
+    background: var(--brand-wash);
+    box-shadow: inset 0 0 0 1px var(--brand-line);
+  }
+  .dash-notes {
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid var(--line);
+  }
+  .dash-note {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 56px;
+    padding: 10px 4px;
+    border-bottom: 1px solid var(--line);
+    text-decoration: none;
+    font-size: 15px;
+  }
+  .adm .dash-note {
+    color: var(--ink);
+  }
+  .dash-note:hover {
+    background: var(--canvas-2);
+  }
+  .dash-note-main {
+    flex: 1;
+    min-width: 0;
+  }
+  .dash-note-go {
+    font-size: 22px;
+    color: var(--ink-3);
+  }
+  .dash-note .num {
+    font-weight: 800;
+  }
+  .dash-note .num--alert {
+    color: var(--alert);
+  }
+  .dash-warn {
+    margin-top: 4px;
+    font-size: 13px;
+    color: var(--bad-ink);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  @media (max-width: 900px) {
+    .dash {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 28px;
+    }
+  }
+</style>
+
+<script>
+  import { api, errorText, ready, setUnread, h, fill } from '../../scripts/admin-core';
+  import { clock, longDate, plural, todayISO, weekday, weekdayShort, nowMinutes, toMinutes } from '../../scripts/admin-core/format';
+  import { bookingRow, getDay, holds, openBookingPanel, settings, timeline } from '../../scripts/admin-core/bookings';
+  import type { Booking, BookingDay, Settings, Summary } from '../../scripts/admin-core/types';
+
+  const $ = <T extends HTMLElement>(sel: string) => document.querySelector<T>(sel)!;
+
+  let day: BookingDay | null = null;
+  let cafe: Settings | null = null;
+  let summary: Summary | null = null;
+
+  async function load() {
+    const root = $('[data-dash]');
+    root.setAttribute('aria-busy', 'true');
+    try {
+      const today = todayISO();
+      [summary, day, cafe] = await Promise.all([api.get<Summary>('/api/admin/summary'), getDay(today), settings(true)]);
+      $('[data-dash-error]').hidden = true;
+      render();
+    } catch (e) {
+      const el = $('[data-dash-error]');
+      el.textContent = errorText(e);
+      el.hidden = false;
+    } finally {
+      root.setAttribute('aria-busy', 'false');
+    }
+  }
+
+  function render() {
+    if (!summary || !day || !cafe) return;
+    const today = summary.today.date || day.date;
+    $('[data-today-title]').textContent = `Today · ${longDate(today)}`;
+
+    // Open / closed
+    const hours = cafe.cafe.hours.find((x) => x.weekday === weekday(today));
+    const closure = cafe.closures.find((c) => c.date === today);
+    const openEl = $('[data-today-open]');
+    if (summary.today.closed || day.closed) {
+      openEl.textContent = closure ? `Closed: ${closure.note || 'special closure'}` : day.reason ? `Closed today. ${day.reason}` : 'Closed today';
+    } else if (hours && hours.open && hours.close) {
+      const now = nowMinutes();
+      const isOpen = now >= toMinutes(hours.open) && now < toMinutes(hours.close);
+      fill(openEl, h('strong', {}, isOpen ? 'Open now' : 'Closed now'), `, ${clock(hours.open)} to ${clock(hours.close)}`);
+    } else openEl.textContent = '';
+
+    // Bookings (everything on today's sheet; cancelled ones at the end)
+    const live = day.bookings.filter(holds);
+    const covers = live.reduce((a, b) => a + b.party, 0);
+    const waiting = day.bookings.filter((b) => b.status === 'confirmed').length;
+    $('[data-today-sum]').textContent = live.length
+      ? `${plural(live.length, 'booking')}, ${plural(covers, 'guest')}. ${waiting ? `${waiting} still to arrive.` : 'Everyone booked has arrived.'}`
+      : day.closed
+        ? 'No bookings.'
+        : 'No bookings yet today.';
+    const list = $('[data-today-list]');
+    const sorted = [...day.bookings].sort((a, b) => Number(a.status === 'cancelled') - Number(b.status === 'cancelled') || a.time.localeCompare(b.time));
+    const shown = sorted.filter((b) => b.status !== 'cancelled');
+    const cancelled = sorted.length - shown.length;
+    fill(
+      list,
+      shown.length
+        ? shown.map((b) => bookingRow(b, { onChange, onOpen: (bk) => openBookingPanel(bk, onChange) }))
+        : h('li', { class: 'adm-empty' }, day.closed ? 'Closed today.' : 'Nobody has booked for today. Walk-ins only.'),
+    );
+    const more = $('[data-today-more]');
+    more.hidden = cancelled === 0;
+    fill(more, `${plural(cancelled, 'cancelled booking')} not shown. `, h('a', { href: `/admin/bookings?date=${today}` }, 'See the whole day'));
+
+    fill($('[data-today-slots]'), timeline(day, { compact: true }));
+    $('[data-slots-wrap]').hidden = day.closed;
+
+    // Week
+    const closedDates = new Set(cafe.closures.map((c) => c.date));
+    fill(
+      $('[data-week]'),
+      summary.week.map((d, i) => {
+        const hw = cafe!.cafe.hours.find((x) => x.weekday === weekday(d.date));
+        const closed = closedDates.has(d.date) || !hw || hw.closed;
+        const label = `${i === 0 ? 'Today' : longDate(d.date)}: ${closed ? 'closed' : `${plural(d.bookings, 'booking')}, ${plural(d.covers, 'guest')}`}`;
+        return h(
+          'li',
+          {},
+          h(
+            'a',
+            { href: `/admin/bookings?date=${d.date}`, class: `${i === 0 ? 'is-today' : ''}${closed ? ' is-closed' : ''}`, 'aria-label': label },
+            h('span', { class: 'wd', 'aria-hidden': 'true' }, weekdayShort(d.date)),
+            h('span', { class: 'n', 'aria-hidden': 'true' }, closed ? 'Closed' : String(d.bookings)),
+            closed ? null : h('span', { class: 'c', 'aria-hidden': 'true' }, `${d.covers} ppl`),
+          ),
+        );
+      }),
+    );
+
+    // Notes
+    const n = summary.messages_new;
+    setUnread(n);
+    fill($('[data-msg-text]'), n ? h('span', { class: 'num' }, String(n)) : null, n ? ` new ${n === 1 ? 'message' : 'messages'} from the contact form` : 'No new messages');
+    const pm = summary.photos_missing;
+    fill(
+      $('[data-photo-text]'),
+      pm ? 'Photos still missing: ' : 'Every photo spot on the website has a photo',
+      pm ? h('span', { class: 'num' }, String(pm)) : null,
+    );
+    const m = summary.menu;
+    $('[data-menu-text]').textContent =
+      m.source === 'ops' ? 'The website menu comes from the till (back office).' : 'The website menu comes from the menu board file, not the till yet.';
+    const w = m.warnings;
+    if (Array.isArray(w)) fill($('[data-menu-warn]'), w.slice(0, 3).map((x) => h('li', {}, x)), w.length > 3 ? h('li', {}, `and ${w.length - 3} more`) : null);
+    else fill($('[data-menu-warn]'), w ? h('li', {}, `${plural(w, 'thing')} to check on the menu page`) : null);
+  }
+
+  function onChange(b: Booking) {
+    if (!day) return;
+    const i = day.bookings.findIndex((x) => x.id === b.id);
+    // Moved off today: drop it; else replace. Slot loads come from the server.
+    if (b.date !== day.date) day.bookings.splice(i, 1);
+    else if (i >= 0) day.bookings[i] = b;
+    render();
+    void load();
+  }
+
+  // On a phone the per-slot bars start folded so the week and messages stay near the top.
+  if (window.matchMedia('(max-width: 759.98px)').matches) $<HTMLDetailsElement>('[data-slots-wrap]').open = false;
+  ready().then(load);
+</script>

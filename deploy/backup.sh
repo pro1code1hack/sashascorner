@@ -16,6 +16,9 @@
 #   CAFEOPS_DB_PATH            path to the live .db file (NOT a sqlite+pysqlite:// URL)
 #   CAFEOPS_BACKUP_DIR         where rotated backups live          [default: ./backups]
 #   CAFEOPS_BACKUP_RETAIN_DAYS local copies kept before pruning     [default: 14]
+#   CAFEOPS_MEDIA_DIR          menu photo directory, shipped with the database when
+#                               REMOTE is set (files are content-addressed, so rsync
+#                               only ever adds)                      [default: unset]
 #   CAFEOPS_BACKUP_REMOTE      rsync destination, e.g. user@host:/srv/cafeops-backups
 #                               (needs an SSH key already set up -- this script carries
 #                               no credential). Unset means LOCAL ONLY and this script
@@ -76,6 +79,10 @@ if [ -n "$REMOTE" ]; then
     echo "[$ts] shipping off-box to $REMOTE"
     rsync -a "$dest" "$REMOTE/"
     echo "[$ts] off-box copy confirmed at $REMOTE"
+    if [ -n "${CAFEOPS_MEDIA_DIR:-}" ] && [ -d "$CAFEOPS_MEDIA_DIR" ]; then
+        rsync -a "$CAFEOPS_MEDIA_DIR/" "$REMOTE/media/"
+        echo "[$ts] menu photos shipped to $REMOTE/media/"
+    fi
 else
     echo "[$ts] WARNING: CAFEOPS_BACKUP_REMOTE is not set. This backup is LOCAL ONLY," >&2
     echo "           on the same disk as the database it protects. Set CAFEOPS_BACKUP_REMOTE" >&2

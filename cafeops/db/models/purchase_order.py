@@ -38,6 +38,14 @@ class PurchaseOrder(Base):
     confirmed_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
     confirmed_by: Mapped[str | None] = mapped_column(String(120))
     sent_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+    #: Who marked it sent (web "Mark sent", DECISIONS.md 1/6). The bot's dispatch path
+    #: may leave it NULL, so no CHECK.
+    sent_by: Mapped[str | None] = mapped_column(String(120))
+    #: Cancellation (spec 4.2). Allowed from DRAFT/PENDING_CONFIRM/CONFIRMED, refused
+    #: from SENT/RECEIVED (service rule). CHECK: CANCELLED needs a name and a time.
+    cancelled_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+    cancelled_by: Mapped[str | None] = mapped_column(String(120))
+    cancel_reason: Mapped[str | None] = mapped_column(String(400))
     total_pence: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
     # Spec 5.4: report that a min-order top-up happened and why. Never silently
@@ -80,6 +88,10 @@ class PurchaseOrder(Base):
         CheckConstraint(
             "(status <> 'SENT') OR (sent_at IS NOT NULL)",
             name="ck_po_sent_requires_sent_at",
+        ),
+        CheckConstraint(
+            "(status <> 'CANCELLED') OR (cancelled_by IS NOT NULL AND cancelled_at IS NOT NULL)",
+            name="cancelled_requires_human",
         ),
         Index("ix_po_supplier_status", "supplier_id", "status"),
         Index("ix_po_target_delivery", "target_delivery_date"),

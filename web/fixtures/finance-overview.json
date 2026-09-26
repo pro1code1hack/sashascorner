@@ -1,0 +1,280 @@
+{
+  "current": {
+    "period": "2026-04",
+    "label": "April 2026",
+    "short_label": "Apr 26",
+    "trading_days": 21,
+    "expense_count": 0,
+    "card_pence": 129305,
+    "cash_till_pence": 0,
+    "cash_off_till_pence": 0,
+    "delivery_gross_pence": null,
+    "delivery_missing": [
+      "Deliveroo: Apr 26",
+      "Just Eat: Apr 26"
+    ],
+    "revenue_pence": 129305,
+    "cogs_by_category": [],
+    "stock_bought_pence": 0,
+    "written_off_pence": 0,
+    "written_off_is_estimate": false,
+    "cogs_pence": 0,
+    "stock_pct_bp": null,
+    "stock_pct_warn": false,
+    "gross_profit_pence": null,
+    "opex_by_category": [],
+    "opex_pence": 0,
+    "delivery_commission_pence": null,
+    "delivery_ads_pence": null,
+    "net_profit_pence": null,
+    "net_warn": false,
+    "capital_pence": 0,
+    "drawings_pence": 0,
+    "expenses_missing": true,
+    "card_is_bank_deposits": false,
+    "incomplete": true,
+    "caveats": [
+      "No running costs entered for April 2026: stock, rent and the rest are missing, so there is no profit figure for it yet.",
+      "Deliveroo not uploaded for Apr 26: missing, not zero.",
+      "Just Eat not uploaded for Apr 26: missing, not zero."
+    ]
+  },
+  "previous": {
+    "period": "2026-03",
+    "label": "March 2026",
+    "short_label": "Mar 26",
+    "trading_days": 31,
+    "expense_count": 46,
+    "card_pence": 240544,
+    "cash_till_pence": 0,
+    "cash_off_till_pence": 0,
+    "delivery_gross_pence": 3177,
+    "delivery_missing": [
+      "Deliveroo: Mar 26"
+    ],
+    "revenue_pence": 243721,
+    "cogs_by_category": [
+      {
+        "category": "Stock — coffee",
+        "pence": 7600
+      },
+      {
+        "category": "Stock — food",
+        "pence": 41048
+      },
+      {
+        "category": "Stock — other",
+        "pence": 39307
+      }
+    ],
+    "stock_bought_pence": 87955,
+    "written_off_pence": 0,
+    "written_off_is_estimate": false,
+    "cogs_pence": 87955,
+    "stock_pct_bp": 3609,
+    "stock_pct_warn": true,
+    "gross_profit_pence": 155766,
+    "opex_by_category": [
+      {
+        "category": "Rent",
+        "pence": 62500
+      },
+      {
+        "category": "Utilities",
+        "pence": 44613
+      },
+      {
+        "category": "Other",
+        "pence": 58148
+      }
+    ],
+    "opex_pence": 165261,
+    "delivery_commission_pence": null,
+    "delivery_ads_pence": null,
+    "net_profit_pence": -9495,
+    "net_warn": true,
+    "capital_pence": 25000,
+    "drawings_pence": 7794,
+    "expenses_missing": false,
+    "card_is_bank_deposits": true,
+    "incomplete": true,
+    "caveats": [
+      "Card takings before April 2026 are bank deposits on the day they landed, from the finance workbook, not till takings.",
+      "Deliveroo not uploaded for Mar 26: missing, not zero.",
+      "Just Eat commission not reported for Mar 26; left out, not counted as zero.",
+      "Just Eat ad spend not reported for Mar 26; left out, not counted as zero."
+    ]
+  },
+  "avg_per_day_pence": 6157,
+  "chart": {
+    "mode": "days",
+    "days_in_month": 30,
+    "first_label": "1st",
+    "last_label": "30th",
+    "day_bars": [
+      {
+        "day": 1,
+        "date": "2026-04-01",
+        "total_pence": null
+      },
+      {
+        "day": 2,
+        "date": "2026-04-02",
+        "total_pence": null
+      },
+      {
+        "day": 3,
+        "date": "2026-04-03",
+        "total_pence": null
+      },
+      {
+        "day": 4,
+        "date": "2026-04-04",
+        "total_pence": null
+      },
+      {
+        "day": 5,
+        "date": "2026-04-05",
+        "total_pence": null
+      },
+      {
+        "day": 6,
+        "date": "2026-04-06",
+        "total_pence": null
+      },
+      {
+        "day": 7,
+        "date": "2026-04-07",
+        "total_pence": null
+      },
+      {
+        "day": 8,
+        "date": "2026-04-08",
+        "total_pence": 6075
+      },
+      {
+        "day": 9,
+        "date": "2026-04-09",
+        "total_pence": 6730
+      },
+      {
+        "day": 10,
+        "date": "2026-04-10",
+        "total_pence": 6570
+      },
+      {
+        "day": 11,
+        "date": "2026-04-11",
+        "total_pence": 5915
+      },
+      {
+        "day": 12,
+        "date": "2026-04-12",
+        "total_pence": 7890
+      },
+      {
+        "day": 13,
+        "date": "2026-04-13",
+        "total_pence": 3290
+      },
+      {
+        "day": 14,
+        "date": "2026-04-14",
+        "total_pence": 2565
+      },
+      {
+        "day": 15,
+        "date": "2026-04-15",
+        "total_pence": 7755
+      },
+      {
+        "day": 16,
+        "date": "2026-04-16",
+        "total_pence": 7920
+      },
+      {
+        "day": 17,
+        "date": "2026-04-17",
+        "total_pence": 3900
+      },
+      {
+        "day": 18,
+        "date": "2026-04-18",
+        "total_pence": 6960
+      },
+      {
+        "day": 19,
+        "date": "2026-04-19",
+        "total_pence": 9040
+      },
+      {
+        "day": 20,
+        "date": "2026-04-20",
+        "total_pence": 7850
+      },
+      {
+        "day": 21,
+        "date": "2026-04-21",
+        "total_pence": 8770
+      },
+      {
+        "day": 22,
+        "date": "2026-04-22",
+        "total_pence": 2605
+      },
+      {
+        "day": 23,
+        "date": "2026-04-23",
+        "total_pence": 5695
+      },
+      {
+        "day": 24,
+        "date": "2026-04-24",
+        "total_pence": 6300
+      },
+      {
+        "day": 25,
+        "date": "2026-04-25",
+        "total_pence": 8360
+      },
+      {
+        "day": 26,
+        "date": "2026-04-26",
+        "total_pence": 6190
+      },
+      {
+        "day": 27,
+        "date": "2026-04-27",
+        "total_pence": 5185
+      },
+      {
+        "day": 28,
+        "date": "2026-04-28",
+        "total_pence": 3740
+      },
+      {
+        "day": 29,
+        "date": "2026-04-29",
+        "total_pence": null
+      },
+      {
+        "day": 30,
+        "date": "2026-04-30",
+        "total_pence": null
+      }
+    ],
+    "month_bars": []
+  },
+  "where_it_went": [],
+  "needs_a_look": {
+    "count": 0,
+    "flagged": [],
+    "flagged_total": 0,
+    "without_receipt": 0
+  },
+  "caveats": [
+    "No running costs entered for April 2026: stock, rent and the rest are missing, so there is no profit figure for it yet.",
+    "Deliveroo not uploaded for Apr 26: missing, not zero.",
+    "Just Eat not uploaded for Apr 26: missing, not zero."
+  ]
+}

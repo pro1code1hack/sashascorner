@@ -68,6 +68,14 @@ def contact_text(*, name: str, email: str, topic: str, message: str) -> str:
     return f"Сообщение с сайта ({_TOPICS.get(topic, topic)}) от {name} <{email}>:\n\n{message}"
 
 
+def password_changed_text(*, ip: str, revoked: int) -> str:
+    return (
+        f"Пароль админки сайта изменён (IP {ip}). "
+        f"Завершено сеансов: {revoked}; вход выполнен заново только на этом устройстве. "
+        "Если это были не вы, смените пароль: uv run sashasite admin-password"
+    )
+
+
 def send_owner(text: str) -> None:
     s = get_settings()
     if not s.telegram_configured:

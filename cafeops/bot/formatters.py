@@ -476,6 +476,11 @@ _ORDER_NOTE: dict[OrderNoteKind, str | None] = {
         "Заказ посчитан против минимума, заданного вручную, а не того, что записан "
         "у поставщика. Это прикидка «что если», а не обычный заказ."
     ),
+    OrderNoteKind.NOT_COUNTED: (
+        "НЕ ЗАКАЗАНО: часть позиций ни разу не пересчитывали, поэтому их остаток — "
+        "сумма по журналу без реального пересчёта под ней. Один пересчёт — и позиция "
+        "попадёт в следующий заказ."
+    ),
     OrderNoteKind.CHECKLIST_REQUEST: None,
     OrderNoteKind.OTHER: None,
 }
@@ -1732,4 +1737,16 @@ def err_fractional_count(name: str) -> str:
     return (
         f"«{name}» считается штуками, а 9.5 штуки не бывает. Пришлите целое число.\n"
         "Округлять за вас я не буду: в журнал попало бы не то, что вы видели на полке."
+    )
+
+
+def password_changed(at: datetime, actor: str | None, revoked: int) -> str:
+    """Owner notice after the back-office web password was changed from Settings."""
+    local = at.astimezone(_tz())
+    who = f" ({actor})" if actor else ""
+    sessions = _plural(revoked, "сеанс", "сеанса", "сеансов")
+    return (
+        f"Пароль веб-панели изменён в {local:%H:%M}, {_d(local)}{who}. "
+        f"Завершено {revoked} {sessions} на других устройствах. "
+        "Если это были не вы — сбросьте пароль на сервере: cafeops password reset."
     )

@@ -43,6 +43,7 @@ from cafeops.db.models.enums import (
     Storage,
     Tier,
     Unit,
+    WriteOffReason,
 )
 
 __all__ = [
@@ -110,6 +111,7 @@ __all__ = [
     "Tier",
     "Unit",
     "VariantOptionSpec",
+    "WriteOffReason",
 ]
 
 #: Guards the drift denominator (spec 5.2).
@@ -427,6 +429,10 @@ class MovementSpec:
     #: through the stock repository. Two writers into one append-only table diverge
     #: eventually, and the ledger is the last place that should happen.
     batch_id: int | None = None
+    #: A hand write-off's reason (WASTE / STAFF only; the table CHECKs the pairing).
+    reason_code: WriteOffReason | None = None
+    #: Who is answerable for this row: the counter, the receiver, the one who binned it.
+    recorded_by: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -33,6 +34,59 @@ class Example:
     params: dict[str, Any] | None = None
     body: dict[str, Any] | None = None
     note: str = ""
+    #: For a response that depends on an earlier one (the recipe the Recipes screen
+    #: opens first, the month the Money tabs default to). Given the payloads written so
+    #: far, by name, it returns the `(path, params)` to request, or None to skip.
+    derive: Callable[[Mapping[str, Any]], tuple[str, dict[str, Any] | None] | None] | None = None
+
+
+def _first(payload: Any, key: str | None, id_key: str) -> Any:
+    rows = payload.get(key) if key is not None and isinstance(payload, dict) else payload
+    if not isinstance(rows, list) or not rows or not isinstance(rows[0], dict):
+        return None
+    return rows[0].get(id_key)
+
+
+def _recipe_editor(seen: Mapping[str, Any]) -> tuple[str, dict[str, Any] | None] | None:
+    # RecipesScreen opens "Flavoured Latte" if it exists, else the first template.
+    templates = (seen.get("recipes") or {}).get("templates") or []
+    chosen = next((t for t in templates if t.get("name") == "Flavoured Latte"), None)
+    chosen = chosen or (templates[0] if templates else None)
+    return None if chosen is None else (f"/api/templates/{chosen['template_id']}/editor", None)
+
+
+def _ingredient(seen: Mapping[str, Any]) -> tuple[str, dict[str, Any] | None] | None:
+    # IngredientsScreen opens the first row sorted A-Z.
+    rows = (seen.get("ingredients") or {}).get("rows") or []
+    if not rows:
+        return None
+    first = sorted(rows, key=lambda r: str(r.get("name", "")).casefold())[0]
+    return f"/api/ingredients/{first['ingredient_id']}", None
+
+
+def _menu_item(seen: Mapping[str, Any]) -> tuple[str, dict[str, Any] | None] | None:
+    anchor = _first(seen.get("menu-items"), "groups", "anchor_id")
+    return None if anchor is None else (f"/api/menu-items/{anchor}", None)
+
+
+def _stock_row(seen: Mapping[str, Any]) -> tuple[str, dict[str, Any] | None] | None:
+    ing = _first(seen.get("stock-all"), "rows", "ingredient_id")
+    return None if ing is None else (f"/api/stock/{ing}", {"as_of": "today", "history": "20"})
+
+
+def _supplier_products(seen: Mapping[str, Any]) -> tuple[str, dict[str, Any] | None] | None:
+    # SuppliersScreen opens the first supplier in the list.
+    sid = _first(seen.get("suppliers"), None, "supplier_id")
+    return None if sid is None else (f"/api/suppliers/{sid}/products", None)
+
+
+def _finance(path: str) -> Callable[[Mapping[str, Any]], tuple[str, dict[str, Any] | None] | None]:
+    # The four month-scoped Money tabs open on the server's default month.
+    def derive(seen: Mapping[str, Any]) -> tuple[str, dict[str, Any] | None] | None:
+        month = (seen.get("finance-months") or {}).get("default_month")
+        return path, {"period": month or "all"}
+
+    return derive
 
 
 #: One per endpoint, plus the variants that carry an invariant's edge shape. `params` is
@@ -155,6 +209,39 @@ EXAMPLES: tuple[Example, ...] = (
         note="The slow variant: includes a full ordering run.",
     ),
     Example("openapi", "GET", "/api/openapi.json", note="The schema, for codegen."),
+    # ---- the back-office redesign: every read the v2 screens make on first render.
+    Example("shell", "GET", "/api/shell", note="Sidebar sync line, badges, banners."),
+    Example("settings", "GET", "/api/settings"),
+    Example("setup", "GET", "/api/setup", note="The Setup checklist."),
+    Example("agent-proposals", "GET", "/api/agents/proposals", params={"limit": "6"}),
+    Example("agent-runs", "GET", "/api/agents/runs", params={"limit": "30"}),
+    Example(
+        "stock-all",
+        "GET",
+        "/api/stock",
+        params={"as_of": "today", "include_untracked": "true"},
+        note="The Stock screen: every ingredient, tracked or not.",
+    ),
+    Example("stock-row", "GET", "", note="The Stock drawer for the first row.", derive=_stock_row),
+    Example("orders", "GET", "/api/orders", note="Order history, every supplier."),
+    Example("shop-runs", "GET", "/api/orders/shop-runs", params={"months": "8"}),
+    Example("supplier-products", "GET", "", derive=_supplier_products),
+    Example("recipes", "GET", "/api/recipes", note="The Recipes rail."),
+    Example("recipe-editor", "GET", "", derive=_recipe_editor),
+    Example("seasons", "GET", "/api/seasons"),
+    Example("menu-items", "GET", "/api/menu-items"),
+    Example("menu-item", "GET", "", note="The item drawer for the first card.", derive=_menu_item),
+    Example("ingredients", "GET", "/api/ingredients"),
+    Example("ingredient", "GET", "", derive=_ingredient),
+    Example("finance-months", "GET", "/api/finance/months"),
+    Example("finance-meta", "GET", "/api/finance/meta"),
+    Example("finance-alerts", "GET", "/api/finance/alerts"),
+    Example("finance-pl", "GET", "/api/finance/pl"),
+    Example("finance-director", "GET", "/api/finance/director"),
+    Example("finance-overview", "GET", "", derive=_finance("/api/finance/overview")),
+    Example("finance-sales", "GET", "", derive=_finance("/api/finance/sales")),
+    Example("finance-expenses", "GET", "", derive=_finance("/api/finance/expenses")),
+    Example("finance-reconcile", "GET", "", derive=_finance("/api/finance/reconcile")),
 )
 
 
@@ -175,6 +262,7 @@ async def _collect(
     headers = {"X-API-Key": password} if password else {}
     written: list[tuple[str, int, int]] = []
     index: list[dict[str, Any]] = []
+    seen: dict[str, Any] = {}
 
     async with httpx.AsyncClient(
         transport=httpx.ASGITransport(app=app),
@@ -182,10 +270,16 @@ async def _collect(
         timeout=600.0,
     ) as client:
         for example in EXAMPLES:
+            path, params = example.path, example.params
+            if example.derive is not None:
+                derived = example.derive(seen)
+                if derived is None:
+                    continue
+                path, params = derived
             response = await client.request(
                 example.method,
-                example.path,
-                params=example.params,
+                path,
+                params=params,
                 json=example.body,
                 headers=headers,
             )
@@ -193,6 +287,7 @@ async def _collect(
                 payload = response.json()
             except ValueError:
                 payload = {"_raw": response.text}
+            seen[example.name] = payload
             target = out_dir / f"{example.name}.json"
             text = json.dumps(payload, indent=2, sort_keys=False, ensure_ascii=False) + "\n"
             target.write_text(text, encoding="utf-8")
@@ -202,8 +297,8 @@ async def _collect(
                     "name": example.name,
                     "file": target.name,
                     "method": example.method,
-                    "path": example.path,
-                    "params": example.params,
+                    "path": path,
+                    "params": params,
                     "body": example.body,
                     "status": response.status_code,
                     "note": example.note,

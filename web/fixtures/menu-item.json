@@ -1,0 +1,74 @@
+{
+  "size": {
+    "menu_item_id": 276,
+    "size_code": "M",
+    "price_pence": 300,
+    "active": true,
+    "on_till": false,
+    "cost": {
+      "pence": null,
+      "source": null,
+      "is_estimate": false,
+      "is_missing": true,
+      "excluded_from_aggregates": true,
+      "note": "no recipe lines, so what this costs is unknown -- not zero"
+    },
+    "margin_pct": null,
+    "labour_cost_pence": null,
+    "manual_recipe": true,
+    "data_quality_flag": "Not a menu item -- a gift card sold at face value. Zero cost is correct."
+  },
+  "group": {
+    "key": "276",
+    "anchor_id": 276,
+    "name": "'card' (£3.00)",
+    "category": null,
+    "kind": "OTHER",
+    "note": null,
+    "template_id": null,
+    "template_name": null,
+    "photo_url": null,
+    "is_active": true,
+    "on_till": false,
+    "sizes": [
+      {
+        "menu_item_id": 276,
+        "size_code": "M",
+        "price_pence": 300,
+        "active": true,
+        "on_till": false,
+        "cost": {
+          "pence": null,
+          "source": null,
+          "is_estimate": false,
+          "is_missing": true,
+          "excluded_from_aggregates": true,
+          "note": "no recipe lines, so what this costs is unknown -- not zero"
+        },
+        "margin_pct": null,
+        "labour_cost_pence": null,
+        "manual_recipe": true,
+        "data_quality_flag": "Not a menu item -- a gift card sold at face value. Zero cost is correct."
+      }
+    ],
+    "lowest_margin": {
+      "pct": null,
+      "is_estimate": false,
+      "is_missing": true,
+      "no_price": false
+    }
+  },
+  "lines": [],
+  "editable_lines": true,
+  "estimate_names": [],
+  "prices": [
+    {
+      "effective_from": "2026-07-25T07:04:27Z",
+      "effective_to": null,
+      "price_pence": 300,
+      "source": "BACKFILL",
+      "set_by": null
+    }
+  ],
+  "history": []
+}

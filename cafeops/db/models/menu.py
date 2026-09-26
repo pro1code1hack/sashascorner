@@ -8,22 +8,25 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     ForeignKey,
     Index,
     Integer,
     String,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import JSON
 
 from cafeops.db.base import Base
 from cafeops.db.models._common import Qty, UTCDateTime, enum_col
-from cafeops.db.models.enums import PriceSource, SizeCode
+from cafeops.db.models.enums import MenuKind, MenuPriceSource, PriceSource, SizeCode
 
 if TYPE_CHECKING:
     from cafeops.db.models.composition import DrinkTemplate
     from cafeops.db.models.ingredient import Ingredient
+    from cafeops.db.models.media import MediaAsset
 
 
 class MenuItem(Base):
@@ -49,6 +52,9 @@ class MenuItem(Base):
     # are always strings; the resolver coerces.
     selected_options: Mapped[dict[str, int]] = mapped_column(JSON, nullable=False, default=dict)
 
+    #: CACHE of the open `menu_item_price` row (spec C-3). Written only by the price
+    #: service, in the same transaction that opens the dated row. Read history from
+    #: `menu_item_price`, never from here.
     price_pence: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     manual_recipe: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
@@ -67,7 +73,18 @@ class MenuItem(Base):
     # item literally named "'card' (£3.00)" with zero cost.
     data_quality_flag: Mapped[str | None] = mapped_column(String(200))
 
+    #: Free-text note shown in the Menu items drawer (spec M11), e.g. "Wholesale cake
+    #: (CakeSmiths or similar)". Applies per product group: the service writes it to
+    #: every size row of the same `name`.
+    note: Mapped[str | None] = mapped_column(String(400))
+    #: Photo (spec A5). Set on every size row of the group; a photo belongs to the
+    #: product. `ON DELETE SET NULL` so an unreferenced-asset sweep cannot orphan rows.
+    photo_asset_id: Mapped[int | None] = mapped_column(
+        ForeignKey("media_asset.id", ondelete="SET NULL")
+    )
+
     template: Mapped[DrinkTemplate | None] = relationship()
+    photo: Mapped[MediaAsset | None] = relationship()
     manual_lines: Mapped[list[ManualRecipeLine]] = relationship(
         back_populates="menu_item", cascade="all, delete-orphan"
     )
@@ -100,6 +117,68 @@ class ManualRecipeLine(Base):
     ingredient: Mapped[Ingredient] = relationship()
 
     __table_args__ = (Index("ix_manual_recipe_item_from", "menu_item_id", "effective_from"),)
+
+
+class MenuItemPrice(Base):
+    """Effective-dated sell price. Spec C-3 (invariant 3 by analogy).
+
+    A price edit closes the open row (`effective_to = at`) and opens a new one from
+    `at` (start of today, never retroactive), then refreshes `menu_item.price_pence`.
+    Margin over a past window reads the price in force at each sale, not today's.
+    At most one open row per item (partial unique index).
+    """
+
+    __tablename__ = "menu_item_price"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    menu_item_id: Mapped[int] = mapped_column(ForeignKey("menu_item.id"), nullable=False)
+    price_pence: Mapped[int] = mapped_column(Integer, nullable=False)
+    effective_from: Mapped[datetime] = mapped_column(UTCDateTime, nullable=False)
+    effective_to: Mapped[datetime | None] = mapped_column(UTCDateTime)
+    source: Mapped[MenuPriceSource] = mapped_column(enum_col(MenuPriceSource), nullable=False)
+    #: Operator name (DECISIONS.md 6). NULL only for BACKFILL / imported rows.
+    set_by: Mapped[str | None] = mapped_column(String(120))
+    note: Mapped[str | None] = mapped_column(String(400))
+
+    menu_item: Mapped[MenuItem] = relationship()
+
+    __table_args__ = (
+        CheckConstraint("price_pence >= 0", name="price_non_negative"),
+        CheckConstraint(
+            "effective_to IS NULL OR effective_to > effective_from", name="window_ordered"
+        ),
+        CheckConstraint("source <> 'MANUAL' OR set_by IS NOT NULL", name="manual_price_signed"),
+        Index("ix_menu_item_price_item_from", "menu_item_id", "effective_from"),
+        Index(
+            "uq_menu_item_price_one_open",
+            "menu_item_id",
+            unique=True,
+            sqlite_where=text("effective_to IS NULL"),
+            postgresql_where=text("effective_to IS NULL"),
+        ),
+    )
+
+    def __repr__(self) -> str:
+        return (
+            f"<MenuItemPrice item={self.menu_item_id} {self.price_pence}p "
+            f"from {self.effective_from}>"
+        )
+
+
+class MenuCategory(Base):
+    """The Menu items rail's categories, with the design's Drinks/Food/Other kind.
+
+    `menu_item.category` stays a string (no FK): many live values are empty or
+    misspelled ("Spring saesonal drinks") and forcing a FK would need a data cleanup
+    the owner has not made. Items whose category has no row here group as OTHER.
+    """
+
+    __tablename__ = "menu_category"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(80), nullable=False, unique=True)
+    kind: Mapped[MenuKind] = mapped_column(enum_col(MenuKind), nullable=False)
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
 
 
 class MenuItemCost(Base):

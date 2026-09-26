@@ -288,7 +288,9 @@ def _emit_correction_adjustment(
     if not line.voided:
         spec = composition_repo.item_spec(existing.menu_item_id, existing.sold_at)
         if spec is not None:
-            modifiers = composition_repo.modifiers(list(line.applied_modifier_ids))
+            modifiers = composition_repo.modifiers(
+                list(line.applied_modifier_ids), existing.sold_at
+            )
             try:
                 recipe = resolve_recipe(spec, modifiers, existing.sold_at, ingredients=snapshots)
             except SubstitutionError as exc:

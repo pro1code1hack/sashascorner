@@ -37,8 +37,8 @@ export async function uploadFiles(files: File[], list: HTMLElement): Promise<Med
   let dups = 0;
   const rows = files.map((f) => {
     const bar = h('progress', { max: '100', value: '0', 'aria-label': `Uploading ${f.name}` });
-    const msg = h('span', { class: 'adm-up__msg' }, 'Waiting…');
-    const row = h('li', { class: 'adm-up' }, h('span', { class: 'adm-up__name' }, f.name), bar, msg);
+    const msg = h('span', { class: 'ph-up__msg' }, 'Waiting…');
+    const row = h('li', { class: 'ph-up' }, h('span', { class: 'ph-up__name' }, f.name), bar, msg);
     list.append(row);
     return { f, bar, msg, row };
   });
@@ -135,10 +135,10 @@ const cards = new Map<number, HTMLElement>();
 const timers = new Map<number, number>();
 
 function usedIn(m: Media) {
-  if (!m.usage.length) return h('p', { class: 'adm-card__used is-free' }, 'Not used on the site yet');
+  if (!m.usage.length) return h('p', { class: 'ph-card__used is-free' }, 'Not used on the site yet');
   return h(
     'p',
-    { class: 'adm-card__used' },
+    { class: 'ph-card__used' },
     'Used in ',
     m.usage.map((k, i) => {
       const s = state.slots.get(k);
@@ -158,7 +158,7 @@ async function saveAlt(m: Media, input: HTMLInputElement, status: HTMLElement) {
     if (next) m.usage = next.usage.length ? next.usage : m.usage;
     status.textContent = 'Saved';
     status.dataset.state = 'ok';
-    input.closest('.adm-card')?.classList.toggle('needs-alt', !m.alt);
+    input.closest('.ph-card')?.classList.toggle('needs-alt', !m.alt);
     emit('media');
   } catch (e) {
     status.textContent = `Couldn't save: ${(e as Error).message}`;
@@ -168,11 +168,11 @@ async function saveAlt(m: Media, input: HTMLInputElement, status: HTMLElement) {
 }
 
 function card(m: Media): HTMLElement {
-  const id = `adm-alt-${m.id}`;
-  const status = h('span', { class: 'adm-card__status', role: 'status' });
+  const id = `ph-alt-${m.id}`;
+  const status = h('span', { class: 'ph-card__status', role: 'status' });
   const input = h('input', {
     id,
-    class: 'input adm-card__alt',
+    class: 'adm-input ph-card__alt',
     type: 'text',
     value: m.alt,
     maxlength: '300',
@@ -194,17 +194,17 @@ function card(m: Media): HTMLElement {
   const meta = [m.original_name, m.width && m.height ? `${m.width} × ${m.height}` : '', kb(m.bytes)].filter(Boolean).join(' · ');
   const el = h(
     'li',
-    { class: `adm-card${m.alt ? '' : ' needs-alt'}`, 'data-media': String(m.id) },
-    h('div', { class: 'adm-card__img' }, thumb(m, '(max-width: 600px) 45vw, 220px')),
+    { class: `ph-card${m.alt ? '' : ' needs-alt'}`, 'data-media': String(m.id) },
+    h('div', { class: 'ph-card__img' }, thumb(m, '(max-width: 600px) 45vw, 220px')),
     h(
       'div',
-      { class: 'adm-card__body' },
-      h('label', { for: id, class: 'adm-card__label' }, 'Description', h('span', { class: 'adm-card__need' }, ' — needed')),
+      { class: 'ph-card__body' },
+      h('label', { for: id, class: 'ph-card__label' }, 'Description', h('span', { class: 'ph-card__need' }, ' — needed')),
       input,
       status,
       h('div', { 'data-used': '' }, usedIn(m)),
-      h('p', { class: 'adm-card__meta' }, meta),
-      h('button', { type: 'button', class: 'adm-link adm-link--danger', onclick: () => confirmDelete(m.id) }, 'Delete photo'),
+      h('p', { class: 'ph-card__meta' }, meta),
+      h('button', { type: 'button', class: 'ph-link ph-link--danger', onclick: () => confirmDelete(m.id) }, 'Delete photo'),
     ),
   );
   return el;
@@ -234,7 +234,7 @@ export function renderLibrary() {
     } else {
       el.querySelector('[data-used]')!.replaceChildren(usedIn(m));
       el.classList.toggle('needs-alt', !m.alt);
-      const input = el.querySelector<HTMLInputElement>('.adm-card__alt')!;
+      const input = el.querySelector<HTMLInputElement>('.ph-card__alt')!;
       if (document.activeElement !== input && !timers.get(id)) input.value = m.alt;
     }
     const want: Element | null = prev ? prev.nextElementSibling : grid.firstElementChild;
@@ -290,28 +290,28 @@ export function confirmDelete(id: number) {
     $('[data-delete-title]', dlg).textContent = 'This photo is on the website';
     body.replaceChildren(
       h('p', {}, 'It is shown in these places. Deleting it will leave them empty until you choose another photo:'),
-      h('ul', { class: 'adm-dlg__list' }, keys.map((k) => {
+      h('ul', { class: 'ph-dlg__list' }, keys.map((k) => {
         const s = state.slots.get(k);
         return h('li', {}, s ? `${s.label} (${pageName(s.page)} page)` : k);
       })),
     );
     $('[data-delete-msg]', dlg).textContent = '';
     actions.replaceChildren(
-      h('button', { type: 'button', class: 'btn btn--caramel', onclick: () => run(true) }, 'Remove from those places and delete'),
-      h('button', { type: 'button', class: 'btn btn--ghost', onclick: close }, 'Keep it'),
+      h('button', { type: 'button', class: 'adm-btn adm-btn--danger', onclick: () => run(true) }, 'Remove from those places and delete'),
+      h('button', { type: 'button', class: 'adm-btn adm-btn--secondary', onclick: close }, 'Keep it'),
     );
     (actions.firstElementChild as HTMLElement).focus();
   };
 
   $('[data-delete-title]', dlg).textContent = 'Delete this photo?';
   body.replaceChildren(
-    h('div', { class: 'adm-dlg__thumb' }, thumb(m, '120px')),
+    h('div', { class: 'ph-dlg__thumb' }, thumb(m, '120px')),
     h('p', {}, `“${m.alt || m.original_name || 'Untitled photo'}” will be removed from your library. This can't be undone, but you can always upload it again.`),
   );
   $('[data-delete-msg]', dlg).textContent = '';
   actions.replaceChildren(
-    h('button', { type: 'button', class: 'btn btn--caramel', onclick: () => run(false) }, 'Delete'),
-    h('button', { type: 'button', class: 'btn btn--ghost', onclick: close }, 'Keep it'),
+    h('button', { type: 'button', class: 'adm-btn adm-btn--danger', onclick: () => run(false) }, 'Delete'),
+    h('button', { type: 'button', class: 'adm-btn adm-btn--secondary', onclick: close }, 'Keep it'),
   );
   dlg.showModal();
   (actions.lastElementChild as HTMLElement).focus();

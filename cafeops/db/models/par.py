@@ -44,6 +44,11 @@ class ParLevel(Base):
     #: recorded, and the count message alone only reaches whoever was holding the clipboard.
     auto_order_revoke_cause: Mapped[RevokeCause | None] = mapped_column(enum_col(RevokeCause))
 
+    #: Who last set the reorder floor `min_qty` from the web ("Reorder at", spec 4.1),
+    #: and when. Setting the floor NEVER touches `auto_order_enabled` (invariant 2).
+    min_qty_set_by: Mapped[str | None] = mapped_column(String(120))
+    min_qty_set_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+
     ingredient: Mapped[Ingredient] = relationship(back_populates="par_level")
 
     def __repr__(self) -> str:

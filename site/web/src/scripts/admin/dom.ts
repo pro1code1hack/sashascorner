@@ -34,7 +34,7 @@ export function $(sel: string, root: ParentNode = document): HTMLElement {
 
 /** Announce to screen readers through the page's polite live region. */
 export function announce(text: string) {
-  const live = document.getElementById('adm-live');
+  const live = document.querySelector<HTMLElement>('[data-live]') ?? document.getElementById('ph-live');
   if (!live) return;
   live.textContent = '';
   // A fresh text node after a tick makes repeated identical messages re-announce.

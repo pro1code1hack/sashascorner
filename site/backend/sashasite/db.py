@@ -1,7 +1,8 @@
 """Engine, session, and the site's own tables (all prefixed ``site_``).
 
 The SQLite file is shared with cafeops. The site WRITES only ``site_*`` tables;
-the ops ``menu_item`` table is read with a Core ``text()`` select in drift.py only.
+the ops menu tables are read with Core ``text()`` selects (menu_source.py, drift.py)
+and never written.
 """
 
 from __future__ import annotations
@@ -13,6 +14,7 @@ from functools import lru_cache
 from typing import Any
 
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     Date,
     DateTime,
@@ -27,6 +29,7 @@ from sqlalchemy import (
     UniqueConstraint,
     create_engine,
     event,
+    false,
 )
 from sqlalchemy.engine import Dialect
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship
@@ -70,7 +73,11 @@ class SiteBooking(Base):
     __tablename__ = "site_booking"
     __table_args__ = (
         CheckConstraint("party > 0", name="ck_site_booking_party_positive"),
-        CheckConstraint("status IN ('confirmed', 'cancelled')", name="ck_site_booking_status"),
+        CheckConstraint(
+            "status IN ('confirmed', 'cancelled', 'arrived', 'no_show')",
+            name="ck_site_booking_status",
+        ),
+        CheckConstraint("source IN ('web', 'admin')", name="ck_site_booking_source"),
         Index("ix_site_booking_date_status", "local_date", "status"),
     )
 
@@ -91,6 +98,9 @@ class SiteBooking(Base):
     notes: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[dt.datetime] = mapped_column(UTCDateTime(), default=utcnow)
     cancelled_at: Mapped[dt.datetime | None] = mapped_column(UTCDateTime())
+    #: ``web`` (the public form) or ``admin`` (a phone-in, entered by the owner).
+    source: Mapped[str] = mapped_column(String(8), default="web", server_default="web")
+    updated_at: Mapped[dt.datetime] = mapped_column(UTCDateTime(), default=utcnow)
 
 
 class SiteContactMessage(Base):
@@ -100,6 +110,9 @@ class SiteContactMessage(Base):
             "topic IN ('general', 'order', 'events', 'feedback', 'press', 'jobs')",
             name="ck_site_contact_message_topic",
         ),
+        CheckConstraint(
+            "status IN ('new', 'handled', 'archived')", name="ck_site_contact_message_status"
+        ),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -108,6 +121,8 @@ class SiteContactMessage(Base):
     topic: Mapped[str] = mapped_column(String(16))
     message: Mapped[str] = mapped_column(Text)
     created_at: Mapped[dt.datetime] = mapped_column(UTCDateTime(), default=utcnow)
+    status: Mapped[str] = mapped_column(String(10), default="new", server_default="new")
+    handled_at: Mapped[dt.datetime | None] = mapped_column(UTCDateTime())
 
 
 class SiteMedia(Base):
@@ -173,6 +188,100 @@ class SiteSlotItem(Base):
     updated_at: Mapped[dt.datetime] = mapped_column(UTCDateTime(), default=utcnow)
 
     media: Mapped[SiteMedia] = relationship(lazy="joined")
+
+
+# --- admin -------------------------------------------------------------------
+
+
+class SiteAdminCredential(Base):
+    """The owner's password, scrypt-hashed. At most one row (id = 1). While the
+    table is empty, SITE_ADMIN_PASSWORD bootstraps the first login."""
+
+    __tablename__ = "site_admin_credential"
+    __table_args__ = (CheckConstraint("id = 1", name="ck_site_admin_credential_single"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    #: ``scrypt$n=..,r=..,p=..$<salt b64>$<hash b64>``: params travel with the hash.
+    password_hash: Mapped[str] = mapped_column(String(255))
+    updated_at: Mapped[dt.datetime] = mapped_column(UTCDateTime(), default=utcnow)
+
+
+class SiteAdminSession(Base):
+    """A signed-in browser. Only the sha256 of the cookie token is stored."""
+
+    __tablename__ = "site_admin_session"
+    __table_args__ = (Index("ix_site_admin_session_expires_at", "expires_at"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    token_sha256: Mapped[str] = mapped_column(String(64), unique=True)
+    created_at: Mapped[dt.datetime] = mapped_column(UTCDateTime(), default=utcnow)
+    last_used_at: Mapped[dt.datetime] = mapped_column(UTCDateTime(), default=utcnow)
+    expires_at: Mapped[dt.datetime] = mapped_column(UTCDateTime())
+    ip: Mapped[str | None] = mapped_column(String(64))
+    user_agent: Mapped[str | None] = mapped_column(String(200))
+
+
+class SiteAdminAudit(Base):
+    """Every admin write, append-only."""
+
+    __tablename__ = "site_admin_audit"
+    __table_args__ = (Index("ix_site_admin_audit_at", "at"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    at: Mapped[dt.datetime] = mapped_column(UTCDateTime(), default=utcnow)
+    action: Mapped[str] = mapped_column(String(60))
+    detail_json: Mapped[str] = mapped_column(Text, default="{}")
+    ip: Mapped[str | None] = mapped_column(String(64))
+
+
+class SiteSetting(Base):
+    """Café settings edited in the admin: keys ``cafe``, ``booking``, ``closures``.
+    Seeded from config/cafe.toml the first time they are read."""
+
+    __tablename__ = "site_setting"
+
+    key: Mapped[str] = mapped_column(String(40), primary_key=True)
+    value_json: Mapped[str] = mapped_column(Text)
+    updated_at: Mapped[dt.datetime] = mapped_column(UTCDateTime(), default=utcnow)
+
+
+# --- website menu presentation (overlay on the ops menu; see menu_source.py) ----------
+
+
+class SiteMenuCategoryMeta(Base):
+    """Website-only presentation of one menu category, keyed by its name as the
+    current source spells it (ops ``menu_item.category`` or the board's ``name``).
+    Nothing here is a price, a name or a size: those belong to ops."""
+
+    __tablename__ = "site_menu_category_meta"
+
+    name: Mapped[str] = mapped_column(String(80), primary_key=True)
+    #: URL slug; NULL means "derive it from the name".
+    slug: Mapped[str | None] = mapped_column(String(80), unique=True)
+    #: NULL means "no override" (the board's blurb, or none).
+    blurb: Mapped[str | None] = mapped_column(Text)
+    hidden: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
+    #: Website order; NULL sorts after every positioned category, in ops order.
+    position: Mapped[int | None] = mapped_column(Integer)
+    updated_at: Mapped[dt.datetime] = mapped_column(UTCDateTime(), default=utcnow)
+
+
+class SiteMenuItemMeta(Base):
+    """Website-only presentation of one menu item, keyed by its name (all its
+    sizes share it). While a row exists its fields win over the board's."""
+
+    __tablename__ = "site_menu_item_meta"
+
+    item_name: Mapped[str] = mapped_column(String(200), primary_key=True)
+    description: Mapped[str | None] = mapped_column(Text)
+    signature: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
+    hidden: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
+    #: Order within its category; NULL sorts after every positioned item.
+    position: Mapped[int | None] = mapped_column(Integer)
+    #: Publish the ops ``menu_item.note`` as the description when ``description``
+    #: is empty. Off by default: that note may be internal.
+    use_ops_note: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
+    updated_at: Mapped[dt.datetime] = mapped_column(UTCDateTime(), default=utcnow)
 
 
 # --- engine -------------------------------------------------------------------

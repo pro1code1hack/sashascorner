@@ -72,7 +72,7 @@ const jsonLd = {
     </ul>
   </nav>
 
-  <div class="wrap mbody">
+  <div class="wrap mbody" data-menu-version={(menu as { version?: string | number }).version ?? ''}>
     {
       groups.map((g) => (
         <section class="mgroup" aria-labelledby={`g-${g.title}`}>
@@ -169,40 +169,167 @@ const jsonLd = {
 </Base>
 
 <script>
-  // Highlight the section being read in the sticky nav, and keep it scrolled into view.
-  const links = new Map<string, HTMLAnchorElement>();
-  document.querySelectorAll<HTMLAnchorElement>('[data-nav]').forEach((a) => links.set(a.dataset.nav!, a));
-  const io = new IntersectionObserver(
-    (entries) => {
-      for (const e of entries) {
-        if (!e.isIntersecting) continue;
-        links.forEach((a) => a.removeAttribute('aria-current'));
-        const a = links.get(e.target.id);
-        if (a) {
-          a.setAttribute('aria-current', 'true');
-          a.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
-        }
-      }
-    },
-    { rootMargin: '-30% 0px -65% 0px' },
-  );
-  document.querySelectorAll('[data-cat]').forEach((s) => io.observe(s));
+  // Live menu: the page is built from menu.json, and this brings it up to date from
+  // /api/menu without a rebuild. When the API's `version` differs from the build's,
+  // the nav chips and category sections are re-rendered in the template's own markup,
+  // section by section: a section whose content is unchanged is left alone, so nothing
+  // shifts that did not change. Any failure leaves the static HTML as it is.
+  import { gbp } from '../lib/format';
 
-  // Prices are baked in at build time; refresh them from the live API in case the
-  // board changed since the last deploy.
-  fetch('/api/menu')
-    .then((r) => (r.ok ? r.json() : null))
-    .then((m) => {
-      if (!m) return;
-      for (const c of m.categories)
-        for (const i of c.items)
-          for (const z of i.sizes) {
-            const el = document.querySelector(`[data-price="${i.id}:${z.code}"]`);
-            if (!el) continue;
-            const txt = `£${Math.floor(z.price_pence / 100)}.${String(z.price_pence % 100).padStart(2, '0')}`;
-            const node = [...el.childNodes].find((n) => n.nodeType === 3 && n.textContent!.trim());
-            if (node && node.textContent!.trim() !== txt) node.textContent = txt;
+  interface ApiSize { code: string; label: string; price_pence: number }
+  interface ApiItem {
+    id: string;
+    name: string;
+    description?: string | null;
+    note?: string | null;
+    signature?: boolean;
+    seasonal?: { name: string } | null;
+    sizes: ApiSize[];
+  }
+  interface ApiCat { slug: string; name: string; blurb?: string | null; kind?: string | null; items: ApiItem[] }
+  interface ApiMenu { version?: string | number | null; categories: ApiCat[] }
+
+  const ORDER = ['S', 'M', 'XL', 'One'];
+  const HEAD: Record<string, string> = { S: 'Small', M: 'Medium', XL: 'Large', One: '' };
+  const FOOD = new Set(['breakfast', 'lunch', 'waffles', 'cakes']);
+
+  const body = document.querySelector<HTMLElement>('.mbody');
+  const navList = document.querySelector<HTMLElement>('.mnav__list');
+
+  // ---- sticky-nav highlight ---------------------------------------------------
+  let io: IntersectionObserver | null = null;
+  function watchNav() {
+    io?.disconnect();
+    const links = new Map<string, HTMLAnchorElement>();
+    document.querySelectorAll<HTMLAnchorElement>('[data-nav]').forEach((a) => links.set(a.dataset.nav!, a));
+    io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          links.forEach((a) => a.removeAttribute('aria-current'));
+          const a = links.get(e.target.id);
+          if (a) {
+            a.setAttribute('aria-current', 'true');
+            a.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
           }
+        }
+      },
+      { rootMargin: '-30% 0px -65% 0px' },
+    );
+    document.querySelectorAll('[data-cat]').forEach((s) => io!.observe(s));
+  }
+  watchNav();
+
+  // ---- rendering in the template's markup --------------------------------------
+  // Astro scopes the page's <style> with a data-astro-cid-* attribute; new nodes need
+  // the same attribute or the styles will not reach them.
+  const cid = body ? [...body.attributes].find((a) => a.name.startsWith('data-astro-cid-'))?.name : undefined;
+
+  function el<K extends keyof HTMLElementTagNameMap>(tag: K, attrs: Record<string, string> = {}, ...kids: (Node | string | null)[]) {
+    const n = document.createElement(tag);
+    if (cid) n.setAttribute(cid, '');
+    for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+    for (const k of kids) if (k !== null) n.append(k);
+    return n;
+  }
+
+  function renderCat(c: ApiCat): HTMLElement {
+    const codes = ORDER.filter((code) => c.items.some((i) => i.sizes.some((z) => z.code === code)));
+    const seasonal = c.items[0]?.seasonal;
+    const h3 = el('h3', { id: `h-${c.slug}` }, c.name, seasonal ? el('span', { class: 'tag' }, seasonal.name) : null);
+    const title = el('div', { class: 'mcat__title' }, h3, el('p', { class: 'mcat__blurb' }, c.blurb ?? ''));
+    const head = el('header', { class: 'mcat__head' }, title);
+    if (codes.length > 1) {
+      head.append(el('div', { class: 'cols', 'aria-hidden': 'true', style: `--n:${codes.length}` }, ...codes.map((code) => el('span', {}, HEAD[code]))));
+    }
+    const list = el('ul', { class: 'mlist' });
+    for (const i of c.items) {
+      const name = el('span', { class: 'mitem__title' }, i.name);
+      if (i.signature) name.append(el('span', { class: 'sig', title: 'Signature' }, el('span', { class: 'sr-only' }, '(signature)')));
+      const desc = i.description || i.note;
+      const nameBox = el('div', { class: 'mitem__name' }, name, desc ? el('span', { class: 'mitem__desc' }, desc) : null);
+      const prices = el('div', { class: 'prices num', style: `--n:${codes.length}` });
+      for (const code of codes) {
+        const z = i.sizes.find((s) => s.code === code);
+        prices.append(
+          z
+            ? el('span', { 'data-price': `${i.id}:${code}` }, el('span', { class: 'sr-only' }, z.code === 'One' ? '' : `${z.label} `), gbp(z.price_pence))
+            : el('span', { 'aria-hidden': 'true', class: 'na' }, '—'),
+        );
+      }
+      list.append(el('li', { class: i.signature ? 'mitem is-sig' : 'mitem', id: i.id }, nameBox, prices));
+    }
+    return el('section', { id: c.slug, class: 'mcat', 'aria-labelledby': `h-${c.slug}`, 'data-cat': '' }, head, list);
+  }
+
+  /** What a reader sees in a section, as a string: equal fingerprints need no redraw. */
+  function fingerprint(sec: Element): string {
+    const t = (sel: string, root: Element = sec) => root.querySelector(sel)?.textContent?.trim() ?? '';
+    const cols = [...sec.querySelectorAll('.cols span')].map((s) => s.textContent).join('|');
+    const items = [...sec.querySelectorAll('.mitem')].map((li) =>
+      [li.id, li.classList.contains('is-sig'), t('.mitem__title', li), t('.mitem__desc', li), [...li.querySelectorAll('.prices > span')].map((s) => s.textContent?.trim()).join('|')].join('~'),
+    );
+    return [t('h3'), t('.mcat__blurb'), cols, ...items].join('\n');
+  }
+
+  function groupOf(title: string): HTMLElement | null {
+    return document.getElementById(`g-${title}`)?.closest('section') ?? null;
+  }
+
+  function apply(m: ApiMenu) {
+    if (!body || !Array.isArray(m.categories) || !m.categories.length) return;
+    const existing = new Map<string, HTMLElement>();
+    body.querySelectorAll<HTMLElement>('[data-cat]').forEach((s) => existing.set(s.id, s));
+    const isFood = (c: ApiCat) => (c.kind ? c.kind.toUpperCase() === 'FOOD' : FOOD.has(c.slug));
+    const plan: [string, ApiCat[]][] = [
+      ['Drinks', m.categories.filter((c) => !isFood(c))],
+      ['Food', m.categories.filter(isFood)],
+    ];
+    const keep = new Set<string>();
+    for (const [title, cats] of plan) {
+      const group = groupOf(title);
+      if (!group) continue;
+      group.style.display = cats.length ? '' : 'none';
+      let prev: Element = group.querySelector('.mgroup__title')!;
+      for (const c of cats) {
+        keep.add(c.slug);
+        const fresh = renderCat(c);
+        const old = existing.get(c.slug);
+        let node: HTMLElement = fresh;
+        if (old && fingerprint(old) === fingerprint(fresh)) node = old;
+        else if (old) {
+          // Keep the category photo the build rendered (and scripts/slots.ts manages).
+          const ph = old.querySelector('.mcat__ph');
+          if (ph) fresh.querySelector('.mcat__head')!.prepend(ph);
+          old.replaceWith(fresh);
+        }
+        if (prev.nextElementSibling !== node) prev.after(node);
+        prev = node;
+      }
+    }
+    existing.forEach((s, slug) => {
+      if (!keep.has(slug)) s.remove();
+    });
+
+    // Nav chips, only when the list of sections changed.
+    if (navList) {
+      const want = plan.flatMap(([, cats]) => cats).map((c) => [c.slug, c.name]);
+      const have = [...navList.querySelectorAll<HTMLAnchorElement>('[data-nav]')].map((a) => [a.dataset.nav, a.textContent?.trim()]);
+      if (JSON.stringify(want) !== JSON.stringify(have)) {
+        navList.replaceChildren(...want.map(([slug, name]) => el('li', {}, el('a', { href: `#${slug}`, 'data-nav': slug }, name))));
+      }
+    }
+    body.dataset.menuVersion = m.version == null ? '' : String(m.version);
+    watchNav();
+  }
+
+  fetch('/api/menu', { cache: 'no-store' })
+    .then((r) => (r.ok ? r.json() : null))
+    .then((m: ApiMenu | null) => {
+      if (!m) return;
+      const built = body?.dataset.menuVersion ?? '';
+      if (m.version != null && built !== '' && String(m.version) === built) return;
+      apply(m);
     })
     .catch(() => undefined);
 </script>

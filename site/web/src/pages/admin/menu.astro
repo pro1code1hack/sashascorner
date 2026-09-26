@@ -1,0 +1,608 @@
+---
+// Website menu admin (site/ADMIN.md, "Website menu"). The menu itself comes from
+// the back office (or the boards file); this edits only how the website shows it.
+// Everything below the toolbar is built in script (scripts/admin/menu.ts).
+// `?mock=1` runs against an in-memory menu; add `&board=1` or `&fail=1`.
+import Admin from '../../layouts/Admin.astro';
+---
+
+<Admin title="Menu" active="menu" subtitle="How the website’s menu page shows what the café sells.">
+  <p slot="actions" class="mn-saved" data-saved role="status" aria-live="polite"></p>
+
+  <div class="mn" data-mn>
+    <div data-banner></div>
+
+    <div class="mn-loading" data-loading role="status">Loading the menu…</div>
+
+    <div class="mn-body" data-body hidden>
+      <p class="mn-summary" data-summary hidden></p>
+
+      <div class="mn-tools">
+        <label class="mn-search">
+          <span class="adm-sr">Find an item or category</span>
+          <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6"></circle><path d="m10.5 10.5 3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg>
+          <input type="search" class="mn-search__input" placeholder="Find an item" autocomplete="off" data-search />
+        </label>
+        <div class="adm-chips mn-chips" role="group" aria-label="Show">
+          <button type="button" class="adm-chip" data-filter="all" aria-pressed="true">All <span class="adm-chip-count adm-fig"></span></button>
+          <button type="button" class="adm-chip" data-filter="sig" aria-pressed="false">Signature <span class="adm-chip-count adm-fig"></span></button>
+          <button type="button" class="adm-chip" data-filter="hidden" aria-pressed="false">Hidden <span class="adm-chip-count adm-fig"></span></button>
+          <button type="button" class="adm-chip" data-filter="nodesc" aria-pressed="false">No description <span class="adm-chip-count adm-fig"></span></button>
+        </div>
+        <div class="adm-seg mn-view" role="group" aria-label="View">
+          <button type="button" data-view="all" aria-pressed="true">Items</button>
+          <button type="button" data-view="cats" aria-pressed="false">Categories only</button>
+        </div>
+      </div>
+
+      <p class="mn-readonly-note">
+        Names, sizes and prices come from the back office and can’t be changed here.{' '}
+        <strong>Change prices in the back office.</strong>
+      </p>
+      <p class="adm-hint mn-filter-note" data-filter-note hidden></p>
+      <p class="adm-hint mn-movehelp" id="mn-move-help" data-move-help hidden>
+        To reorder, drag the dotted handle, or focus it and press the up and down arrow keys.
+      </p>
+
+      <ol class="mn-cats" data-cats aria-label="Menu categories, in website order"></ol>
+
+      <section class="mn-panel" id="mn-unassigned" data-unassigned hidden aria-labelledby="mn-un-t"></section>
+      <section class="mn-panel" id="mn-diff" data-diff aria-labelledby="mn-diff-t"></section>
+    </div>
+  </div>
+</Admin>
+
+<script>
+  import '../../scripts/admin/menu';
+</script>
+
+<style is:global>
+  /* Page-scoped: everything sits under .mn / .mn-*. The rows are built in script. */
+  .mn {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .mn-saved {
+    font-size: 14px;
+    color: var(--ink-3);
+    white-space: nowrap;
+  }
+  .mn-saved[data-state='saving'] {
+    color: var(--ink-2);
+  }
+  .mn-saved[data-state='failed'] {
+    color: var(--bad-ink);
+    font-weight: 700;
+  }
+  .mn-banner p {
+    flex: 1;
+    min-width: 0;
+  }
+  .mn-dot--ok {
+    background: var(--ok);
+  }
+  .mn-warnings {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 13px;
+    color: var(--ink-2);
+  }
+  .mn-warnings li::before {
+    content: '– ';
+  }
+  .mn-loading {
+    padding: 40px 12px;
+    text-align: center;
+    color: var(--ink-2);
+    display: grid;
+    gap: 12px;
+    justify-items: center;
+  }
+  .mn-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .mn-summary {
+    font-size: 14px;
+    color: var(--ink-2);
+  }
+  .mn-summary a {
+    font-weight: 700;
+  }
+
+  /* toolbar */
+  .mn-tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .mn-search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 44px;
+    padding: 0 12px;
+    flex: 1 1 220px;
+    max-width: 320px;
+    border: 1px solid var(--line-control);
+    border-radius: var(--r-button);
+    background: var(--surface);
+    color: var(--ink-3);
+  }
+  .mn-search:focus-within {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px var(--brand-wash);
+  }
+  .mn-search__input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    outline: none;
+    background: none;
+    font-size: 16px;
+    color: var(--ink);
+  }
+  .mn-chips .adm-chip {
+    min-height: 36px;
+  }
+  .mn-view {
+    margin-left: auto;
+  }
+  .mn-readonly-note {
+    font-size: 13px;
+    color: var(--ink-2);
+  }
+  .mn-readonly-note strong {
+    color: var(--ink);
+  }
+  .mn-filter-note,
+  .mn-movehelp {
+    margin-top: -4px;
+  }
+
+  /* categories */
+  .mn-cats {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .mn-cat {
+    border: 1px solid var(--line);
+    border-radius: var(--r-card);
+    background: var(--surface);
+  }
+  .mn-cat.is-dragging {
+    box-shadow: 0 0 0 2px var(--brand);
+    position: relative;
+    z-index: 2;
+  }
+  .mn-cat__head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px 6px 6px;
+  }
+  .is-readonly .mn-cat__head {
+    padding-left: 14px;
+  }
+  .mn-cat__title {
+    flex: 1;
+    min-width: 0;
+  }
+  .mn-cat__title h2 {
+    font-size: 16px;
+    line-height: 22px;
+  }
+  .mn-cat__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 10px;
+    font-size: 13px;
+    color: var(--ink-2);
+  }
+  .mn-cat__ctl,
+  .mn-item__ctl {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .mn-hiddenpill {
+    display: none;
+  }
+  .mn-cat.is-hidden > .mn-cat__head .mn-hiddenpill,
+  .mn-item.is-hidden .mn-hiddenpill {
+    display: inline-flex;
+  }
+  .mn-cat.is-hidden > .mn-cat__head h2 {
+    color: var(--ink-2);
+  }
+  .mn-blurbrow {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 0 14px 10px 50px;
+  }
+  .is-readonly .mn-blurbrow {
+    padding-left: 14px;
+  }
+  .mn textarea.mn-blurb,
+  .mn textarea.mn-desc {
+    min-height: 40px;
+    font-size: 14px;
+    padding: 9px 10px;
+    resize: none;
+    overflow: hidden;
+  }
+  .mn .adm-input:disabled {
+    background: var(--canvas-2);
+    color: var(--ink-2);
+    border-color: var(--line);
+  }
+  .mn-cats.is-compact .mn-items,
+  .mn-cats.is-compact .mn-blurbrow {
+    display: none;
+  }
+  .mn-cats.is-compact .mn-cat__head {
+    padding-bottom: 10px;
+  }
+
+  /* items */
+  .mn-items {
+    border-top: 1px solid var(--line);
+  }
+  .mn-item {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) minmax(0, 1.3fr) auto;
+    grid-template-areas: 'grip main desc ctl';
+    align-items: start;
+    gap: 6px 12px;
+    padding: 8px 14px 8px 6px;
+    border-bottom: 1px solid var(--line-row);
+    background: var(--surface);
+  }
+  .mn-item:last-child {
+    border-bottom: 0;
+    border-radius: 0 0 var(--r-card) var(--r-card);
+  }
+  .is-readonly .mn-item {
+    grid-template-columns: 0 minmax(0, 1fr) minmax(0, 1.3fr) auto;
+    padding-left: 14px;
+    gap: 6px 12px;
+  }
+  .mn-item > .mn-grip,
+  .mn-item > .mn-grip-space {
+    grid-area: grip;
+  }
+  .mn-item__main {
+    grid-area: main;
+    min-width: 0;
+    padding-top: 2px;
+  }
+  .mn-descbox {
+    grid-area: desc;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .mn-item__ctl {
+    grid-area: ctl;
+    min-height: 44px;
+  }
+  .mn-item.is-dragging {
+    box-shadow: 0 0 0 2px var(--brand);
+    position: relative;
+    z-index: 2;
+  }
+  .mn-item.is-hidden .mn-item__main,
+  .mn-item.is-hidden .mn-descbox {
+    opacity: 0.55;
+  }
+  .mn-item__name {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .mn-prices {
+    display: block;
+    font-size: 13px;
+    color: var(--ink-2);
+    margin-top: 2px;
+  }
+  .mn-prices.is-none {
+    font-style: italic;
+  }
+  .mn-size {
+    white-space: nowrap;
+  }
+  .mn-usenote {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 32px;
+    font-size: 13px;
+    color: var(--ink-2);
+    cursor: pointer;
+  }
+  .mn-usenote input {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: var(--brand);
+    flex: none;
+  }
+  .mn-note {
+    font-size: 14px;
+    color: var(--ink);
+    padding: 8px 10px;
+    border-radius: var(--r-control);
+    background: var(--canvas);
+  }
+  .mn-empty {
+    padding: 14px;
+    color: var(--ink-2);
+  }
+
+  /* controls */
+  .mn-grip {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    flex: none;
+    border: 0;
+    border-radius: var(--r-control);
+    background: none;
+    color: var(--ink-3);
+    cursor: grab;
+    touch-action: none;
+  }
+  .mn-grip:hover {
+    background: var(--canvas);
+    color: var(--ink-2);
+  }
+  .is-sorting .mn-grip {
+    cursor: grabbing;
+  }
+  .mn-cats.is-filtering .mn-grip {
+    visibility: hidden;
+  }
+  .mn-star {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: var(--r-control);
+    background: none;
+    color: var(--ink-3);
+    font-size: 20px;
+    line-height: 1;
+    transition: background 0.15s;
+  }
+  .mn-star:hover:not(:disabled) {
+    background: var(--canvas);
+  }
+  .mn-star[aria-pressed='true'] {
+    color: var(--brand);
+  }
+  .mn-star:disabled {
+    cursor: default;
+  }
+  .mn-star:disabled[aria-pressed='false'] {
+    visibility: hidden;
+  }
+  .mn-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 4px;
+    border: 0;
+    background: none;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-2);
+    white-space: nowrap;
+  }
+  .mn-switch:disabled {
+    cursor: default;
+    opacity: 0.6;
+  }
+  .mn-switch__track {
+    position: relative;
+    width: 40px;
+    height: 24px;
+    border-radius: 999px;
+    background: var(--line-strong);
+    transition: background 0.15s;
+    flex: none;
+  }
+  .mn-switch__knob {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.2);
+    transition: left 0.15s;
+  }
+  .mn-switch[aria-checked='true'] .mn-switch__track {
+    background: var(--ok);
+  }
+  .mn-switch[aria-checked='true'] .mn-switch__knob {
+    left: 19px;
+  }
+  .mn-status {
+    font-size: 12px;
+    color: var(--ink-3);
+    min-width: 56px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .mn-status[data-state='editing'],
+  .mn-status[data-state='saving'] {
+    color: var(--ink-2);
+  }
+  .mn-status[data-state='saved'] {
+    color: var(--ok-ink);
+  }
+  .mn-status[data-state='failed'] {
+    color: var(--bad-ink);
+    font-weight: 700;
+  }
+  .mn-retry {
+    border: 1px solid var(--alert);
+    background: var(--surface);
+    color: var(--bad-ink);
+    border-radius: var(--r-control);
+    font-size: 12px;
+    font-weight: 700;
+    min-height: 32px;
+    padding: 0 8px;
+  }
+
+  /* unassigned + differences */
+  .mn-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-top: 20px;
+    margin-top: 8px;
+    border-top: 1px solid var(--line);
+    scroll-margin-top: 16px;
+  }
+  .mn-unlist,
+  .mn-diff__list {
+    border-top: 1px solid var(--line);
+    margin-top: 4px;
+  }
+  .mn-unlist li,
+  .mn-diff__list li {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--line-row);
+    font-size: 14px;
+  }
+  .mn-unlist li {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 2px 16px;
+  }
+  .mn-diff {
+    margin-top: 10px;
+  }
+  .mn-diff__h {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  .mn-diff__n {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ink-2);
+    background: var(--wash);
+    border-radius: 999px;
+    padding: 1px 8px;
+  }
+  .mn-diff__list {
+    columns: 2 340px;
+    column-gap: 28px;
+  }
+  .mn-diff__names {
+    columns: 3 200px;
+  }
+  .mn-diff__list li {
+    break-inside: avoid;
+  }
+  .mn-diff__name {
+    font-weight: 600;
+  }
+  .mn-none {
+    color: var(--ink-2);
+    padding: 8px 0;
+  }
+
+  /* tablet: description drops under the name */
+  @media (max-width: 1100px) {
+    .mn-item {
+      grid-template-columns: 44px minmax(0, 1fr) auto;
+      grid-template-areas: 'grip main ctl' '. desc desc';
+    }
+    .is-readonly .mn-item {
+      grid-template-columns: 0 minmax(0, 1fr) auto;
+    }
+  }
+  /* phone */
+  @media (max-width: 759.98px) {
+    .mn-search {
+      max-width: none;
+      flex-basis: 100%;
+    }
+    .mn-chips {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+      width: 100%;
+    }
+    .mn-view {
+      margin-left: 0;
+    }
+    .mn-cat__head {
+      flex-wrap: wrap;
+      padding-right: 10px;
+    }
+    .mn-cat__title {
+      flex-basis: calc(100% - 60px);
+    }
+    .mn-cat__ctl {
+      width: 100%;
+      justify-content: flex-start;
+      padding-left: 44px;
+    }
+    .is-readonly .mn-cat__ctl {
+      padding-left: 0;
+    }
+    .mn-blurbrow {
+      padding: 0 10px 10px;
+    }
+    .mn-item {
+      grid-template-columns: 40px minmax(0, 1fr);
+      grid-template-areas: 'grip main' '. desc' '. ctl';
+      padding: 8px 10px 8px 2px;
+      gap: 4px 8px;
+    }
+    .mn-grip {
+      width: 40px;
+    }
+    .is-readonly .mn-item {
+      grid-template-columns: 0 minmax(0, 1fr);
+      gap: 4px 0;
+      padding-left: 10px;
+    }
+    .mn-item__ctl {
+      justify-content: flex-start;
+      margin-left: -10px;
+    }
+  }
+</style>

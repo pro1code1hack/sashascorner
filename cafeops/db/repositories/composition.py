@@ -22,6 +22,7 @@ from cafeops.db.models import (
     ManualRecipeLine,
     MenuItem,
     Modifier,
+    ModifierVersion,
     Season,
     TemplateComponent,
     VariantAxis,
@@ -106,6 +107,7 @@ class SqlCompositionRepository:
         template_ids = sorted({i.template_id for i in items if i.template_id is not None})
         components_by_template = self._components(template_ids, at)
         options_by_axis = self._options(template_ids, at)
+        option_names = self._option_names(template_ids)
 
         manual_ids = [i.id for i in items if i.manual_recipe]
         manual_by_item = self._manual_lines(manual_ids, at)
@@ -127,7 +129,7 @@ class SqlCompositionRepository:
                     )
                     for c in components_by_template.get(item.template_id, [])
                 )
-                options = tuple(self._selected_options(item, options_by_axis))
+                options = tuple(self._selected_options(item, options_by_axis, option_names))
 
             out[item.id] = MenuItemSpec(
                 menu_item_id=item.id,
@@ -179,10 +181,30 @@ class SqlCompositionRepository:
             out.setdefault(axis.id, []).append((option, axis))
         return out
 
+    def _option_names(self, template_ids: Sequence[int]) -> dict[int, tuple[int, str]]:
+        """option_id -> (axis_id, name) for EVERY version, open or closed.
+
+        A flavour edit closes its `variant_option` row and opens a successor with a new
+        id (invariant 3), and the recipes screen re-points the menu items at the
+        successor. A sale dated before the edit must still find the version that was in
+        force then, so a selection is followed along its lineage: same axis, same name
+        (`uq_variant_option_axis_name` makes that the version key). A rename renames
+        every version of the lineage, so the key survives it.
+        """
+        if not template_ids:
+            return {}
+        rows = self.session.execute(
+            select(VariantOption.id, VariantOption.axis_id, VariantOption.name)
+            .join(VariantAxis, VariantAxis.id == VariantOption.axis_id)
+            .where(VariantAxis.template_id.in_(list(template_ids)))
+        ).all()
+        return {int(option_id): (int(axis_id), str(name)) for option_id, axis_id, name in rows}
+
     def _selected_options(
         self,
         item: MenuItem,
         options_by_axis: dict[int, list[tuple[VariantOption, VariantAxis]]],
+        option_names: dict[int, tuple[int, str]] | None = None,
     ) -> list[VariantOptionSpec]:
         chosen: list[VariantOptionSpec] = []
         # selected_options keys are stringified ints: JSON object keys always are.
@@ -191,8 +213,23 @@ class SqlCompositionRepository:
                 axis_id = int(axis_key)
             except (TypeError, ValueError):
                 continue
-            for option, axis in options_by_axis.get(axis_id, []):
-                if option.id != option_id:
+            live = options_by_axis.get(axis_id, [])
+            wanted: int | None = int(option_id)
+            if not any(option.id == wanted for option, _axis in live):
+                # Not in force at this date: follow the lineage to the version that is.
+                lineage = (option_names or {}).get(int(option_id))
+                wanted = next(
+                    (
+                        option.id
+                        for option, _axis in live
+                        if lineage is not None
+                        and option.axis_id == lineage[0]
+                        and option.name == lineage[1]
+                    ),
+                    None,
+                )
+            for option, axis in live:
+                if option.id != wanted:
                     continue
                 chosen.append(
                     VariantOptionSpec(
@@ -233,23 +270,46 @@ class SqlCompositionRepository:
 
     # -- modifiers --------------------------------------------------------
 
-    def modifiers(self, modifier_ids: Sequence[int]) -> list[ModifierSpec]:
+    def modifiers(
+        self, modifier_ids: Sequence[int], at: datetime | None = None
+    ) -> list[ModifierSpec]:
+        """The modifiers as they behaved at `at` (spec C-6: `modifier_version`).
+
+        A modifier's behaviour is effective-dated: an Oat milk swap that becomes an ADD
+        next month must not re-resolve last month's sales. With `at`, each modifier is
+        read from the `modifier_version` in force then; the `modifier` row's own
+        columns are only a cache of the OPEN version and are used when `at` is None
+        (today) or when no version covers `at` (a sale older than the version history,
+        whose backfill starts at the earliest sale -- so in practice never).
+        """
         if not modifier_ids:
             return []
-        rows = self.session.scalars(select(Modifier).where(Modifier.id.in_(list(modifier_ids))))
-        return [
-            ModifierSpec(
-                modifier_id=m.id,
-                name=m.name,
-                action=m.action,
-                target_role=m.target_role,
-                ingredient_id=m.ingredient_id,
-                qty_delta=m.qty_delta,
-                qty_multiplier=m.qty_multiplier,
-                price_pence=m.price_pence,
+        ids = list(modifier_ids)
+        rows = list(self.session.scalars(select(Modifier).where(Modifier.id.in_(ids))))
+        versions: dict[int, ModifierVersion] = {}
+        if at is not None:
+            for version in self.session.scalars(
+                select(ModifierVersion)
+                .where(ModifierVersion.modifier_id.in_(ids), *self._live(ModifierVersion, at))
+                .order_by(ModifierVersion.effective_from)
+            ):
+                versions[version.modifier_id] = version
+        out: list[ModifierSpec] = []
+        for m in rows:
+            v = versions.get(m.id)
+            out.append(
+                ModifierSpec(
+                    modifier_id=m.id,
+                    name=m.name,
+                    action=v.action if v is not None else m.action,
+                    target_role=v.target_role if v is not None else m.target_role,
+                    ingredient_id=v.ingredient_id if v is not None else m.ingredient_id,
+                    qty_delta=v.qty_delta if v is not None else m.qty_delta,
+                    qty_multiplier=v.qty_multiplier if v is not None else m.qty_multiplier,
+                    price_pence=v.price_pence if v is not None else m.price_pence,
+                )
             )
-            for m in rows
-        ]
+        return out
 
     # -- reverse lookups for the cost cascade ------------------------------
 

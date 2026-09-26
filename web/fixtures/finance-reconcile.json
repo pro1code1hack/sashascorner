@@ -1,0 +1,288 @@
+{
+  "period": "2026-04",
+  "payout_lag_working_days": 2,
+  "card_fee_bp": 175,
+  "cash_tolerance_pence": 500,
+  "payout_tolerance_pence": 100,
+  "card": {
+    "rows": [
+      {
+        "sold_on": "2026-04-08",
+        "card_pence": 6075,
+        "due_on": "2026-04-10",
+        "expected_pence": 5969,
+        "arrived_pence": null,
+        "arrived_on": null,
+        "diff_pence": null,
+        "status": "not_recorded",
+        "note": "payout not recorded yet"
+      },
+      {
+        "sold_on": "2026-04-09",
+        "card_pence": 6730,
+        "due_on": "2026-04-13",
+        "expected_pence": 6612,
+        "arrived_pence": null,
+        "arrived_on": null,
+        "diff_pence": null,
+        "status": "not_recorded",
+        "note": "payout not recorded yet"
+      },
+      {
+        "sold_on": "2026-04-10",
+        "card_pence": 6570,
+        "due_on": "2026-04-14",
+        "expected_pence": 6455,
+        "arrived_pence": null,
+        "arrived_on": null,
+        "diff_pence": null,
+        "status": "not_recorded",
+        "note": "payout not recorded yet"
+      },
+      {
+        "sold_on": "2026-04-11",
+        "card_pence": 5915,
+        "due_on": "2026-04-14",
+        "expected_pence": 5811,
+        "arrived_pence": null,
+        "arrived_on": null,
+        "diff_pence": null,
+        "status": "not_recorded",
+        "note": "payout not recorded yet"
+      },
+      {
+        "sold_on": "2026-04-12",
+        "card_pence": 7890,
+        "due_on": "2026-04-14",
+        "expected_pence": 7752,
+        "arrived_pence": null,
+        "arrived_on": null,
+        "diff_pence": null,
+        "status": "not_recorded",
+        "note": "payout not recorded yet"
+      },
+      {
+        "sold_on": "2026-04-13",
+        "card_pence": 3290,
+        "due_on": "2026-04-15",
+        "expected_pence": 3232,
+        "arrived_pence": null,
+        "arrived_on": null,
+        "diff_pence": null,
+        "status": "not_recorded",
+        "note": "payout not recorded yet"
+      },
+      {
+        "sold_on": "2026-04-14",
+        "card_pence": 2565,
+        "due_on": "2026-04-16",
+        "expected_pence": 2520,
+        "arrived_pence": null,
+        "arrived_on": null,
+        "diff_pence": null,
+        "status": "not_recorded",
+        "note": "payout not recorded yet"
+      },
+      {
+        "sold_on": "2026-04-15",
+        "card_pence": 7755,
+        "due_on": "2026-04-17",
+        "expected_pence": 7619,
+        "arrived_pence": null,
+        "arrived_on": null,
+        "diff_pence": null,
+        "status": "not_recorded",
+        "note": "payout not recorded yet"
+      },
+      {
+        "sold_on": "2026-04-16",
+        "card_pence": 7920,
+        "due_on": "2026-04-20",
+        "expected_pence": 7781,
+        "arrived_pence": null,
+        "arrived_on": null,
+        "diff_pence": null,
+        "status": "not_recorded",
+        "note": "payout not recorded yet"
+      },
+      {
+        "sold_on": "2026-04-17",
+        "card_pence": 3900,
+        "due_on": "2026-04-21",
+        "expected_pence": 3832,
+        "arrived_pence": null,
+        "arrived_on": null,
+        "diff_pence": null,
+        "status": "not_recorded",
+        "note": "payout not recorded yet"
+      },
+      {
+        "sold_on": "2026-04-18",
+        "card_pence": 6960,
+        "due_on": "2026-04-21",
+        "expected_pence": 6838,
+        "arrived_pence": null,
+        "arrived_on": null,
+        "diff_pence": null,
+        "status": "not_recorded",
+        "note": "payout not recorded yet"
+      },
+      {
+        "sold_on": "2026-04-19",
+        "card_pence": 9040,
+        "due_on": "2026-04-21",
+        "expected_pence": 8882,
+        "arrived_pence": null,
+        "arrived_on": null,
+        "diff_pence": null,
+        "status": "not_recorded",
+        "note": "payout not recorded yet"
+      },
+      {
+        "sold_on": "2026-04-20",
+        "card_pence": 7850,
+        "due_on": "2026-04-22",
+        "expected_pence": 7713,
+        "arrived_pence": null,
+        "arrived_on": null,
+        "diff_pence": null,
+        "status": "not_recorded",
+        "note": "payout not recorded yet"
+      },
+      {
+        "sold_on": "2026-04-21",
+        "card_pence": 8770,
+        "due_on": "2026-04-23",
+        "expected_pence": 8617,
+        "arrived_pence": null,
+        "arrived_on": null,
+        "diff_pence": null,
+        "status": "not_recorded",
+        "note": "payout not recorded yet"
+      },
+      {
+        "sold_on": "2026-04-22",
+        "card_pence": 2605,
+        "due_on": "2026-04-24",
+        "expected_pence": 2559,
+        "arrived_pence": null,
+        "arrived_on": null,
+        "diff_pence": null,
+        "status": "not_recorded",
+        "note": "payout not recorded yet"
+      },
+      {
+        "sold_on": "2026-04-23",
+        "card_pence": 5695,
+        "due_on": "2026-04-27",
+        "expected_pence": 5595,
+        "arrived_pence": null,
+        "arrived_on": null,
+        "diff_pence": null,
+        "status": "not_recorded",
+        "note": "payout not recorded yet"
+      },
+      {
+        "sold_on": "2026-04-24",
+        "card_pence": 6300,
+        "due_on": "2026-04-28",
+        "expected_pence": 6190,
+        "arrived_pence": null,
+        "arrived_on": null,
+        "diff_pence": null,
+        "status": "not_recorded",
+        "note": "payout not recorded yet"
+      },
+      {
+        "sold_on": "2026-04-25",
+        "card_pence": 8360,
+        "due_on": "2026-04-28",
+        "expected_pence": 8214,
+        "arrived_pence": null,
+        "arrived_on": null,
+        "diff_pence": null,
+        "status": "not_recorded",
+        "note": "payout not recorded yet"
+      },
+      {
+        "sold_on": "2026-04-26",
+        "card_pence": 6190,
+        "due_on": "2026-04-28",
+        "expected_pence": 6082,
+        "arrived_pence": null,
+        "arrived_on": null,
+        "diff_pence": null,
+        "status": "not_recorded",
+        "note": "payout not recorded yet"
+      },
+      {
+        "sold_on": "2026-04-27",
+        "card_pence": 5185,
+        "due_on": "2026-04-29",
+        "expected_pence": 5094,
+        "arrived_pence": null,
+        "arrived_on": null,
+        "diff_pence": null,
+        "status": "not_recorded",
+        "note": "payout not recorded yet"
+      },
+      {
+        "sold_on": "2026-04-28",
+        "card_pence": 3740,
+        "due_on": "2026-04-30",
+        "expected_pence": 3675,
+        "arrived_pence": null,
+        "arrived_on": null,
+        "diff_pence": null,
+        "status": "not_recorded",
+        "note": "payout not recorded yet"
+      }
+    ],
+    "expected_total_pence": 127042,
+    "arrived_total_pence": 0,
+    "mismatched_days": 0,
+    "not_recorded_days": 21,
+    "not_yet_due_days": 0,
+    "bank_basis_days": 0
+  },
+  "delivery": [
+    {
+      "month": "2026-04",
+      "label": "04/26",
+      "channel": "DELIVEROO",
+      "channel_label": "Deliveroo",
+      "present": false,
+      "gross_pence": null,
+      "commission_pence": null,
+      "ads_pence": null,
+      "kept_pence": null,
+      "kept_bp": null,
+      "source": null,
+      "note": null
+    },
+    {
+      "month": "2026-04",
+      "label": "04/26",
+      "channel": "JUST_EAT",
+      "channel_label": "Just Eat",
+      "present": false,
+      "gross_pence": null,
+      "commission_pence": null,
+      "ads_pence": null,
+      "kept_pence": null,
+      "kept_bp": null,
+      "source": null,
+      "note": null
+    }
+  ],
+  "cash": {
+    "rows": [],
+    "days_with_cash": 0,
+    "net_diff_pence": 0,
+    "days_out": 0,
+    "days_out_unexplained": 0
+  },
+  "caveats": [
+    "21 past-due payout(s) have not been recorded. They are not assumed to have arrived."
+  ]
+}

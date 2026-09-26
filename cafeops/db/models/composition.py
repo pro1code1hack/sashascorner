@@ -23,6 +23,7 @@ from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     ForeignKey,
     Index,
     Integer,
@@ -35,7 +36,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import JSON
 
 from cafeops.db.base import Base
-from cafeops.db.models._common import Qty, UTCDateTime, enum_col
+from cafeops.db.models._common import Qty, UTCDateTime, enum_col, utcnow
 from cafeops.db.models.enums import ComponentRole, ModifierAction, SizeCode
 
 if TYPE_CHECKING:
@@ -243,11 +244,103 @@ class Modifier(Base):
     qty_multiplier: Mapped[Decimal | None] = mapped_column(Qty())
     price_pence: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    #: Whether `price_pence` is a guess (spec R21: the design's italic charge). Three
+    #: states, like `prep_seconds_is_estimate`: NULL = no provenance recorded (every
+    #: pre-existing row), True = estimate, False = read off the till / confirmed.
+    price_is_estimate: Mapped[bool | None] = mapped_column(Boolean)
+
+    # The columns above (action .. price_pence, price_is_estimate) are the CACHE of
+    # the open `modifier_version` row (spec C-6). Edits go through the version table;
+    # identity (name, lightspeed_modifier_id) stays here so sales keep resolving.
 
     ingredient: Mapped[Ingredient | None] = relationship()
+    versions: Mapped[list[ModifierVersion]] = relationship(
+        back_populates="modifier", order_by="ModifierVersion.effective_from"
+    )
 
     def __repr__(self) -> str:
         return f"<Modifier {self.id} {self.name!r} {self.action.value}/{self.target_role.value}>"
+
+
+class ModifierVersion(Base):
+    """Effective-dated behaviour of a modifier. Spec C-6.
+
+    `modifier` was not effective-dated, so an edit silently re-priced and re-resolved
+    history on any re-expansion (invariant 3). A separate version table rather than
+    `effective_from/to` on `modifier` itself, because `modifier.name` and
+    `lightspeed_modifier_id` are unique and are what sales resolve against: closing and
+    reopening the modifier row would duplicate both. The resolver reads the version
+    valid at `sale.sold_at`; `modifier`'s own columns cache the open version.
+    At most one open version per modifier (partial unique index).
+    """
+
+    __tablename__ = "modifier_version"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    modifier_id: Mapped[int] = mapped_column(ForeignKey("modifier.id"), nullable=False)
+    action: Mapped[ModifierAction] = mapped_column(enum_col(ModifierAction), nullable=False)
+    target_role: Mapped[ComponentRole] = mapped_column(enum_col(ComponentRole), nullable=False)
+    ingredient_id: Mapped[int | None] = mapped_column(ForeignKey("ingredient.id"))
+    qty_delta: Mapped[Decimal | None] = mapped_column(Qty())
+    qty_multiplier: Mapped[Decimal | None] = mapped_column(Qty())
+    price_pence: Mapped[int] = mapped_column(Integer, nullable=False)
+    price_is_estimate: Mapped[bool | None] = mapped_column(Boolean)
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default="1"
+    )
+    effective_from: Mapped[datetime] = mapped_column(UTCDateTime, nullable=False)
+    effective_to: Mapped[datetime | None] = mapped_column(UTCDateTime)
+    #: Operator name (DECISIONS.md 6). NULL for the migration's backfill row.
+    changed_by: Mapped[str | None] = mapped_column(String(120))
+
+    modifier: Mapped[Modifier] = relationship(back_populates="versions")
+    ingredient: Mapped[Ingredient | None] = relationship()
+
+    __table_args__ = (
+        CheckConstraint("price_pence >= 0", name="price_non_negative"),
+        CheckConstraint(
+            "effective_to IS NULL OR effective_to > effective_from", name="window_ordered"
+        ),
+        Index("ix_modifier_version_mod_from", "modifier_id", "effective_from"),
+        Index(
+            "uq_modifier_version_one_open",
+            "modifier_id",
+            unique=True,
+            sqlite_where=text("effective_to IS NULL"),
+            postgresql_where=text("effective_to IS NULL"),
+        ),
+    )
+
+
+class RecipeChange(Base):
+    """One applied composition change, as the history line a person reads.
+
+    Spec R23/A2: `GET /api/templates/{id}/history` returns
+    `{effective_from, actor, lines}`, and the closed component/option rows cannot say
+    WHO made a change. The changeset/manual-lines/price services write one row per
+    apply, in the same transaction. The dated rows remain the source of truth for
+    WHAT changed; this is the signature and the readable summary.
+    """
+
+    __tablename__ = "recipe_change"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    template_id: Mapped[int | None] = mapped_column(ForeignKey("drink_template.id"))
+    menu_item_id: Mapped[int | None] = mapped_column(ForeignKey("menu_item.id"))
+    #: "template_changeset" | "manual_lines" | "menu_price" | "modifier" | "materialise"
+    change_kind: Mapped[str] = mapped_column(String(40), nullable=False)
+    effective_from: Mapped[datetime] = mapped_column(UTCDateTime, nullable=False)
+    actor: Mapped[str] = mapped_column(String(120), nullable=False)
+    summary: Mapped[str] = mapped_column(Text, nullable=False)
+    #: Server-built diff lines (same wording as the preview's `diff`).
+    lines: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime, nullable=False, default=utcnow)
+
+    __table_args__ = (
+        CheckConstraint("template_id IS NOT NULL OR menu_item_id IS NOT NULL", name="has_subject"),
+        Index("ix_recipe_change_template", "template_id", "effective_from"),
+        Index("ix_recipe_change_item", "menu_item_id", "effective_from"),
+    )
 
 
 class LegacyStagedRecipe(Base):

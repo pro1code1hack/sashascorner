@@ -6,7 +6,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, ForeignKey, Index, Integer, String
+from sqlalchemy import Boolean, CheckConstraint, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from cafeops.db.base import Base
@@ -71,6 +71,13 @@ class Ingredient(Base, TimestampedMixin):
     # came from.
     source_note: Mapped[str | None] = mapped_column(String(400))
 
+    #: "Delete" on the Ingredients tab (spec B3/C-5). Movements, prices, batches and
+    #: recipes reference an ingredient, so it is never hard-deleted: a retired
+    #: ingredient drops out of lists, sourcing and ordering but its history stays.
+    #: The service refuses to retire one still used by an open recipe line.
+    retired_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+    retired_by: Mapped[str | None] = mapped_column(String(120))
+
     prices: Mapped[list[IngredientPrice]] = relationship(
         back_populates="ingredient",
         cascade="all, delete-orphan",
@@ -81,8 +88,39 @@ class Ingredient(Base, TimestampedMixin):
         back_populates="ingredient", cascade="all, delete-orphan"
     )
 
+    __table_args__ = (
+        CheckConstraint("retired_at IS NULL OR retired_by IS NOT NULL", name="retire_signed"),
+    )
+
     def __repr__(self) -> str:
         return f"<Ingredient {self.id} {self.name!r} {self.tier.value}/{self.unit.value}>"
+
+
+class IngredientTierChange(Base):
+    """Append-only record of a human moving an ingredient between tiers. Spec C1.
+
+    A->B, A->C, B->C, C->B are free; B->A is a deliberate "Promote to A" with the gate
+    evidence shown. Either way a name and a reason are recorded here. A tier change
+    NEVER flips `par_level.auto_order_enabled` (invariant 2: earned through drift
+    history); `would_clear_gate` records what the gate said at the time.
+    """
+
+    __tablename__ = "ingredient_tier_change"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    ingredient_id: Mapped[int] = mapped_column(ForeignKey("ingredient.id"), nullable=False)
+    tier_before: Mapped[Tier] = mapped_column(enum_col(Tier), nullable=False)
+    tier_after: Mapped[Tier] = mapped_column(enum_col(Tier), nullable=False)
+    changed_at: Mapped[datetime] = mapped_column(UTCDateTime, nullable=False)
+    changed_by: Mapped[str] = mapped_column(String(120), nullable=False)
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    #: `domain.tiers.would_clear_gate` at the moment of the change (None = not evaluated).
+    would_clear_gate: Mapped[bool | None] = mapped_column(Boolean)
+
+    __table_args__ = (
+        CheckConstraint("tier_before <> tier_after", name="tier_changes"),
+        Index("ix_ingredient_tier_change_ing_at", "ingredient_id", "changed_at"),
+    )
 
 
 class IngredientPrice(Base):
@@ -113,6 +151,9 @@ class IngredientPrice(Base):
     effective_to: Mapped[datetime | None] = mapped_column(UTCDateTime)
     source: Mapped[PriceSource] = mapped_column(enum_col(PriceSource), nullable=False)
     note: Mapped[str | None] = mapped_column(String(400))
+    #: Who recorded this price (operator name, DECISIONS.md 6). NULL for seeded and
+    #: imported rows.
+    recorded_by: Mapped[str | None] = mapped_column(String(120))
 
     ingredient: Mapped[Ingredient] = relationship(back_populates="prices")
 

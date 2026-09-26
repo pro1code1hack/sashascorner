@@ -42,6 +42,13 @@ class Settings(BaseSettings):
     #: café's costs and margins to anyone who finds the port.
     api_password: str | None = None
 
+    # --- menu photos (recipes spec A5) --------------------------------------
+    #: Where uploaded menu photos are written, as `<sha256>.<ext>`. Served read-only
+    #: at `/media/<sha256>.<ext>` (by Caddy in production; content-addressed, so the
+    #: cache header can be immutable). NOT inside the database directory: the web
+    #: server gets read access to this and nothing else. In docker: `/media`.
+    media_dir: Path = REPO_ROOT / "media"
+
     # --- telegram -----------------------------------------------------------
     telegram_bot_token: str | None = None
     telegram_owner_chat_id: int | None = None
@@ -110,7 +117,13 @@ class Settings(BaseSettings):
 
     @property
     def lightspeed_configured(self) -> bool:
-        return bool(self.lightspeed_client_id and self.lightspeed_client_secret)
+        # All four: the client refuses to start with any one missing.
+        return bool(
+            self.lightspeed_client_id
+            and self.lightspeed_client_secret
+            and self.lightspeed_refresh_token
+            and self.lightspeed_business_id
+        )
 
 
 settings = Settings()

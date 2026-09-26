@@ -1,150 +1,185 @@
 @import 'tailwindcss';
-@import '@fontsource-variable/inter';
-@import '@fontsource/dm-mono/300.css';
-@import '@fontsource/dm-mono/400.css';
-@import '@fontsource/dm-mono/500.css';
+@import '@fontsource-variable/nunito/wght.css';
+@import '@fontsource-variable/nunito/wght-italic.css';
 
 /*
- * Café Ops — dark surface system.
+ * Café Ops back office: the v2 light system.
  *
- * The palette is the Tailwind zinc ramp on zinc-950, measured from finsepa.com
- * rather than invented: body #09090b, cards #18181b, raised #27272a, hairlines
- * #27272a/#3f3f46, blue-500 as the single accent. The previous build used a warm
- * brown-and-amber palette of my own devising, which is precisely what made it
- * read as arbitrary. A borrowed system is coherent because someone already did
- * the work of making it so.
+ * Every value is taken from docs/design/specs/design-system.md §4, which was
+ * grepped from the v2 design export. Nothing here is invented except where that
+ * spec says "(proposed)": focus, hover and the scrim.
  *
- * Semantics stay vivid and narrow: green for good, red for bad, amber for
- * "needs a human". Colour marks a state the backend has classified, never a mood.
+ * Rules the tokens encode (design-system.md §1.1):
+ *   - red means a threshold was crossed, and nothing else;
+ *   - green only as ok-wash + ok-ink inside a labelled pill, or the toggle track;
+ *   - semantic colour comes as a wash + ink pair;
+ *   - an estimate is italic, a count is upright.
+ *
+ * Screens use these through Tailwind utilities (bg-canvas, text-ink-2,
+ * border-line, rounded-card, shadow-raised ...). Never write a hex in a screen.
  */
 
 @theme {
-  /* ---- surfaces, darkest to lightest ---------------------------------- */
-  --color-canvas: #09090b; /* zinc-950 — the page */
-  --color-surface: #18181b; /* zinc-900 — cards */
-  --color-raised: #27272a; /* zinc-800 — controls, active states, chips */
-  --color-sunk: #0c0c0e; /* wells inside a card */
+  /* surfaces */
+  --color-surface: #ffffff;
+  --color-canvas: #f6f7fa; /* sidebar, login bg, side panels, tiles */
+  --color-canvas-2: #fafbfc; /* meta strips, row hover */
+  --color-wash: #f1f3f7; /* neutral wash: segmented track, close btn, stale banner */
 
-  /* ---- ink, brightest to faintest ------------------------------------- */
-  --color-ink: #fafafa; /* zinc-50  — figures and headings */
-  --color-ink-2: #d4d4d8; /* zinc-300 — body copy */
-  --color-ink-3: #a1a1aa; /* zinc-400 — labels, secondary */
-  --color-ink-4: #71717a; /* zinc-500 — the quietest readable ink */
-  --color-ink-5: #52525b; /* zinc-600 — disabled, rules that must be seen */
+  /* ink */
+  --color-ink: #1f2633;
+  --color-ink-2: #5b6475;
+  --color-ink-3: #8a93a3; /* >= 14px non-essential meta only (contrast 3.2:1) */
 
-  /* ---- hairlines ------------------------------------------------------- */
-  --color-line: #27272a; /* the default card edge */
-  --color-line-2: #3f3f46; /* a rule that must read as a divider */
+  /* lines */
+  --color-line: #e8ebf0; /* default hairline */
+  --color-line-soft: #eef0f4; /* structural: sidebar edge, drawer edge */
+  --color-line-row: #f1f3f6; /* dense-table row divider */
+  --color-line-control: #e2e6ed; /* 38/40px field borders */
+  --color-line-strong: #d5dae3; /* compact control borders, dashed add */
 
-  /* ---- accent ---------------------------------------------------------- */
-  --color-brand: #3b82f6; /* blue-500 */
-  --color-brand-2: #60a5fa; /* blue-400, for ink on dark */
-  --color-brand-wash: #17233d;
+  /* brand */
+  --color-brand: #4a6fd1;
+  --color-brand-ink: #3558b8;
+  --color-brand-deep: #2d3f75;
+  --color-brand-wash: #edf1fc;
+  --color-brand-line: #c9d5f5;
 
-  /* ---- semantic. Each has a wash for pill backgrounds. ----------------- */
-  --color-ok: #22c55e;
-  --color-ok-ink: #4ade80;
-  --color-ok-wash: #0f2417;
-  --color-warn: #f59e0b;
-  --color-warn-ink: #fbbf24;
-  --color-warn-wash: #2a1f08;
-  --color-bad: #ef4444;
-  --color-bad-ink: #f87171;
-  --color-bad-wash: #2a1315;
-  --color-info: #3b82f6;
-  --color-info-ink: #60a5fa;
-  --color-info-wash: #17233d;
+  /* semantic: threshold crossed */
+  --color-alert: #d4554a; /* figure, border or dot on white; >= 14px bold */
+  --color-alert-wash: #fdf1ef; /* flagged row, cash banner, changed cell */
+  --color-bad-ink: #c2453b; /* text on bad-wash; 13px red text */
+  --color-bad-wash: #fdecea;
+  --color-warn-ink: #9a6a12;
+  --color-warn-wash: #fdf3e1;
+  --color-ok: #3fa57a; /* toggle track only */
+  --color-ok-ink: #237a57;
+  --color-ok-wash: #e8f5ee;
+  --color-est-wash: #fdf6e7; /* "italic = estimate" note */
 
-  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
-    Roboto, sans-serif;
-  --font-mono: 'DM Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  /* (proposed) the scrim behind the off-canvas sidebar */
+  --color-scrim: rgb(31 38 51 / 0.24);
 
-  /* The reference's ladder, re-measured: 20px dominates (126 uses), then 12 (113),
-   * 16 (82), a 100px pill (75) and 10 (63). The first pass leaned on 8px, which
-   * read tighter and squarer than the reference at every size. */
-  --radius-surface: 1.25rem; /* 20px -- the largest containers */
-  --radius-card-lg: 1rem; /* 16px -- cards */
-  --radius-card: 0.75rem; /* 12px -- stat cards, panels */
-  --radius-control: 0.625rem; /* 10px -- buttons, inputs */
-  --radius-chip: 0.375rem;
-  --radius-pill: 100px;
+  --font-sans: 'Nunito Variable', 'Nunito', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
+  --text-label: 0.6875rem;
+  --text-label--line-height: 1rem;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.125rem;
+  --text-base: 0.875rem;
+  --text-base--line-height: 1.25rem;
+  --text-md: 0.9375rem;
+  --text-md--line-height: 1.375rem;
+  --text-lg: 1rem;
+  --text-lg--line-height: 1.375rem;
+  --text-xl: 1.125rem;
+  --text-xl--line-height: 1.5rem;
+  --text-2xl: 1.375rem;
+  --text-2xl--line-height: 1.75rem;
+  --text-3xl: 1.625rem;
+  --text-3xl--line-height: 2rem;
+  --text-4xl: 1.875rem;
+  --text-4xl--line-height: 2.25rem;
 
-  /* On a near-black ground a drop shadow does almost nothing; elevation is
-   * carried by the surface step plus a hairline. These stay subtle. */
-  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.5);
-  --shadow-lift: 0 4px 16px rgb(0 0 0 / 0.55);
-  --shadow-pop: 0 16px 40px rgb(0 0 0 / 0.65);
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-control: 10px;
+  --radius-button: 12px;
+  --radius-card: 14px;
+  --radius-card-lg: 16px;
+  --radius-login: 24px;
+
+  --shadow-raised: 0 1px 2px rgb(31 38 51 / 0.06), 0 0 0 1px rgb(31 38 51 / 0.04);
+  --shadow-seg: 0 1px 2px rgb(31 38 51 / 0.08);
+  --shadow-login: 0 1px 2px rgb(31 38 51 / 0.04), 0 12px 32px rgb(31 38 51 / 0.06);
+  --shadow-knob: 0 1px 2px rgb(0 0 0 / 0.2);
+  --shadow-selected: 0 0 0 2px #4a6fd1;
+
+  --ease-ui: ease;
+  --default-transition-duration: 150ms;
+
+  --breakpoint-compact: 56.25rem; /* 900px: sidebar becomes a drawer below this */
+  --breakpoint-wide: 80rem; /* 1280px: 232px sidebar and wide drawers from here */
 }
 
 @layer base {
   :root {
-    color-scheme: dark;
+    color-scheme: light;
   }
-
-  html {
-    background: var(--color-canvas);
-  }
-
+  html,
   body {
-    background: var(--color-canvas);
-    color: var(--color-ink-2);
+    background: var(--color-surface);
+  }
+  body {
+    color: var(--color-ink);
     font-family: var(--font-sans);
-    /* 12px, the reference's workhorse size: measured at 1,459 of its 3,913
-     * elements, and it holds with marketing chrome excluded. The first pass used
-     * 14px on my own judgement about the audience -- that was substituting taste
-     * for the brief, which named the reference twice.
-     *
-     * Line height is pushed to 1.6 to buy back at 12px what the reference gets
-     * from its own font's larger x-height. One token: raise `font-size` here and
-     * the whole scale steps back up together. */
-    font-size: 0.75rem;
-    /* A whole-pixel line box, not a unitless multiplier. The reference's line
-     * heights are 16 / 20 / 24 / 28px; 1.6 x 12px gives 19.2px, which puts every
-     * baseline a fifth of a pixel off the grid and softens the text. */
-    line-height: 20px;
+    font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
+    font-variant-numeric: tabular-nums;
     -webkit-font-smoothing: antialiased;
-    text-rendering: optimizeLegibility;
+  }
+  a {
+    color: var(--color-ink);
+  }
+  a:hover {
+    color: var(--color-brand);
+  }
+  input,
+  select,
+  textarea,
+  button {
+    font: inherit;
+    color: inherit;
+  }
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
   }
 
-  /* Every figure goes through .fig. Tabular by font feature rather than by a
-   * monospace face, so figures align without the copy turning into code. */
+  /* Every figure goes through .fig. Tabular by font feature, not a mono face. */
   .fig {
     font-variant-numeric: tabular-nums lining-nums;
-    font-feature-settings: 'tnum' 1, 'lnum' 1, 'ss01' 1;
-    letter-spacing: -0.01em;
   }
 
-  /* An estimate is marked typographically, never chromatically: 280 of 298
-   * costed items are estimates, so it is the ambient condition, not an alarm. */
+  /* An estimate is italic; a count is upright (design: "Estimates in italic,
+   * counts upright"). Replaces the Phase 4 dotted underline. */
   .est {
-    text-decoration: underline dotted var(--color-ink-5);
-    text-underline-offset: 3px;
+    font-style: italic;
   }
 
-
-  /* Anything too wide scrolls inside itself. The page must never scroll
-   * sideways: a figure sliced mid-digit still reads as a number. */
+  /* Anything too wide scrolls inside itself. The page never scrolls sideways. */
   .scroll-x {
     overflow-x: auto;
     scrollbar-width: thin;
-    scrollbar-color: var(--color-line-2) transparent;
+    scrollbar-color: var(--color-line-strong) transparent;
   }
   .scroll-x::-webkit-scrollbar {
     height: 8px;
   }
   .scroll-x::-webkit-scrollbar-thumb {
-    background: var(--color-line-2);
-    border-radius: var(--radius-pill);
+    background: var(--color-line-strong);
+    border-radius: 999px;
   }
   .scroll-x::-webkit-scrollbar-track {
     background: transparent;
   }
 
+  /* The sidebar scrolls without a visible bar, as designed. */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* (proposed) visible keyboard focus everywhere: CLAUDE.md §10.10. */
   :focus-visible {
     outline: 2px solid var(--color-brand);
     outline-offset: 2px;
-    border-radius: 3px;
   }
 
   @media (prefers-reduced-motion: reduce) {

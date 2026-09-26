@@ -128,8 +128,15 @@ FORBIDDEN_TABLES: frozenset[str] = frozenset(
     }
 )
 
-#: The only table the audit writer may touch.
+#: The only table the audit writer may touch freely.
 AUDIT_TABLE = "agent_action_log"
+
+#: The one other table the audit writer may write -- and only INSERT into. A proposal
+#: is an audit artefact (what the agent suggested), not stock, orders or composition,
+#: so it rides on the audit engine; but status changes are a human's, made through
+#: `services/agent_proposals.py` on the normal engine, so UPDATE and DELETE are refused
+#: here. DECISIONS.md 7, shell-agents spec 6.1.
+PROPOSAL_TABLE = "agent_proposal"
 
 #: Statement keywords that make something not a read, wherever they appear.
 _WRITE_KEYWORDS = re.compile(
@@ -208,7 +215,16 @@ def audit_only_engine(url: str | None = None) -> Engine:
         if verdict == "read":
             return
         lowered = statement.lower()
-        if AUDIT_TABLE not in lowered:
+        if re.search(rf"\b{PROPOSAL_TABLE}\b", lowered):
+            if verdict != "insert" or not re.match(
+                rf"\s*insert\s+into\s+\"?{PROPOSAL_TABLE}\"?[\s(]", lowered
+            ):
+                raise WriteAttemptBlocked(
+                    f"the agent's audit connection may only INSERT into {PROPOSAL_TABLE}; "
+                    f"refused a {verdict.upper()}: {statement.strip()[:200]}. Deciding a "
+                    "proposal is a person's job (DECISIONS.md 7)."
+                )
+        elif AUDIT_TABLE not in lowered:
             raise WriteAttemptBlocked(
                 f"the agent's audit connection may only write {AUDIT_TABLE}; refused a "
                 f"{verdict.upper()}: {statement.strip()[:200]}"

@@ -1,8 +1,10 @@
-"""Public menu, served from config/menu_board.toml -- the café's own boards.
+"""The board menu: config/menu_board.toml, transcribed from the café's own boards.
 
-The ops database is a stale snapshot of a legacy workbook, so it is NOT the menu
-source; `sashasite doctor` compares the two (see drift.py). Prices are pounds in
-the file and integer pence everywhere else, converted with Decimal, never float.
+This is the FALLBACK source. menu_source.py serves the ops back office's menu
+instead once it has categories; until then this file is the menu, and it always
+supplies ``extras``. `sashasite doctor` compares the two (see drift.py). Prices are
+pounds in the file and integer pence everywhere else, converted with Decimal,
+never float.
 """
 
 from __future__ import annotations

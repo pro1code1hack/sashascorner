@@ -1,6 +1,6 @@
 {
-  "as_of": "2026-09-24T20:02:37.001306Z",
-  "local_date": "2026-09-24",
+  "as_of": "2026-09-26T10:26:35.612403Z",
+  "local_date": "2026-09-26",
   "stock": {
     "ingredients": 54,
     "unanchored": 0,
@@ -8,16 +8,30 @@
     "short_dated": 1,
     "unbatched": 0,
     "auto_order_enabled": 5,
-    "forced_manual": 1,
+    "forced_manual": 2,
     "expiring_value_pence": "3354.456159",
-    "notes": []
+    "notes": [],
+    "short_dated_batches": 1,
+    "written_off_month": {
+      "month": "2026-09",
+      "count": 2,
+      "value": {
+        "pence": "504.670586",
+        "source": null,
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      }
+    }
   },
   "short_dated": [
-    "Whole milk (3d)"
+    "Whole milk (1d)"
   ],
   "expiry_write_offs_due": 0,
   "expiry_write_offs_value_pence": "0",
   "drift_forced_manual": [
+    "12oz cup lid",
     "16oz paper cup"
   ],
   "drift_tuning_band": [
@@ -46,8 +60,8 @@
     {
       "kind": "drift",
       "severity": "act",
-      "subject": "16oz paper cup",
-      "message": "1 ingredient(s) are over 15% drift, so auto-ordering is forced off and every quantity sized from their on-hand is wrong from now (spec 5.2). Count them, then read the attribution on the stock screen: over-ordering and a bad recipe have opposite fixes."
+      "subject": "12oz cup lid, 16oz paper cup",
+      "message": "2 ingredient(s) are over 15% drift, so auto-ordering is forced off and every quantity sized from their on-hand is wrong from now (spec 5.2). Count them, then read the attribution on the stock screen: over-ordering and a bad recipe have opposite fixes."
     },
     {
       "kind": "drift",
@@ -58,7 +72,7 @@
     {
       "kind": "expiry",
       "severity": "act",
-      "subject": "Whole milk (3d)",
+      "subject": "Whole milk (1d)",
       "message": "1 ingredient(s) hold stock expiring within 3 days. Still sellable -- this is the window in which it can still be sold through rather than binned."
     },
     {

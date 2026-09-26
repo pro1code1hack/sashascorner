@@ -65,6 +65,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from cafeops.db.models import (
+    ExpirySource,
     Ingredient,
     MovementType,
     POLine,
@@ -265,6 +266,7 @@ def receive_po_line(
         ref_id=line.id,
         note=_batch_note(assumed, note or f"received by {received_by}"),
         warnings=tuple(warnings),
+        received_by=received_by,
     )
 
     line.received_qty = (line.received_qty or Decimal("0")) + qty
@@ -346,6 +348,7 @@ def receive_adhoc(
         ref_id=None,
         note=_batch_note(assumed, note or f"ad-hoc, received by {received_by}"),
         warnings=tuple(warnings),
+        received_by=received_by,
     )
 
 
@@ -412,6 +415,7 @@ def _create_batch_and_movement(
     ref_id: int | None,
     note: str,
     warnings: tuple[ReceiptWarning, ...],
+    received_by: str | None = None,
 ) -> DeliveryReceipt:
     repo = SqlBatchRepository(session)
     batch_id = repo.create_batch(
@@ -422,7 +426,10 @@ def _create_batch_and_movement(
         unit_cost_pence=unit_cost_pence,
         po_line_id=po_line_id,
         note=note,
+        expiry_source=ExpirySource.ASSUMED if expiry_was_assumed else ExpirySource.ENTERED,
+        received_by=received_by,
     )
+    signed = received_by.strip()[:120] if received_by and received_by.strip() else None
     written = repo.append_linked_movements(
         [
             (
@@ -434,6 +441,7 @@ def _create_batch_and_movement(
                     ref_type=ref_type,
                     ref_id=ref_id,
                     note=note,
+                    recorded_by=signed,
                 ),
                 batch_id,
             )

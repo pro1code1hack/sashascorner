@@ -2,11 +2,11 @@
 #
 # Address, phone, geo and hours were checked against the café's Google Business
 # Profile on 2026-09-25 (Maps place id 0x48865de28d402059:0xb002752139d34172).
-# Still unconfirmed: email (no domain registered yet), TikTok/Facebook, and the
-# booking capacity rules -- see `unconfirmed_fields`.
+# Still unconfirmed: email (no domain registered yet) and TikTok. Facebook, pet-friendly
+# and 24 seats confirmed by the owner 2026-09-26 -- see `unconfirmed_fields`.
 
 confirmed = false
-unconfirmed_fields = ["email", "booking"]
+unconfirmed_fields = ["email"]
 
 name = "Sasha's Corner"
 phone = "07398 433317"
@@ -54,11 +54,11 @@ close = "17:00"
 
 [socials]
 instagram = "https://www.instagram.com/sashascorner_uk"
-facebook = ""
+facebook = "https://www.facebook.com/p/Sashas-Corner-61582666970753"   # confirmed by the owner 2026-09-26
 tiktok = ""
 
 [booking]                                # UNCONFIRMED -- capacity is a guess
-covers_per_slot = 16                     # max seated covers at any one moment
+covers_per_slot = 24                     # 24 seats in the café (owner, 2026-09-26)
 max_party = 8                            # larger groups -> contact form
 slot_minutes = 30
 duration_minutes = 90                    # how long a table is held

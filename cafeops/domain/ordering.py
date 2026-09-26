@@ -444,6 +444,13 @@ class OrderCandidate:
     shelf_life: ShelfLifeSpec | None = None
     #: The season this ingredient belongs to, if any (spec 4.3).
     season: SeasonSpec | None = None
+    #: Has this ingredient EVER been physically counted? False means `on_hand_qty` is a
+    #: bare movement sum with no anchor (invariant 6: "not good enough to order
+    #: against"). Such a candidate is never sized -- see `size_line` -- because a need
+    #: computed from a number nobody has seen on a shelf is a guess wearing a quantity.
+    #: Defaults True so a caller that has not been taught about counts keeps its old
+    #: behaviour rather than silently ordering nothing.
+    has_count_basis: bool = True
 
     def pack_qty(self) -> Decimal:
         """Pack size in the ingredient's own stocking unit.
@@ -605,6 +612,9 @@ class SizingOutcome:
     capped: bool = False
     #: Seasonal, and the season is not running. Nothing was ordered, on purpose.
     out_of_season: bool = False
+    #: Never counted, so never ordered (stock-orders-suppliers spec C8). The screen lists
+    #: these as "count these first", which is the action that unblocks them.
+    no_count: bool = False
 
     @property
     def note(self) -> str | None:
@@ -722,6 +732,25 @@ def size_line(candidate: OrderCandidate) -> SizingOutcome:
     the user cannot see the reason for is one they will override.
     """
     name = candidate.ingredient_name
+    if not candidate.has_count_basis:
+        # Spec C8 / invariant 6. The on-hand behind this candidate is a movement sum with
+        # no physical count under it, so `need = forecast - on_hand` would be a guess
+        # dressed as a quantity. Ordering stops here, with the one action that fixes it.
+        return SizingOutcome(
+            candidate,
+            None,
+            (
+                OrderNote(
+                    kind=OrderNoteKind.NOT_COUNTED,
+                    text=(
+                        f"{name}: NOT ORDERED -- it has never been counted, so the stock "
+                        "figure is a ledger sum with nothing under it (invariant 6). Count "
+                        "it once and it is sized from the next run."
+                    ),
+                ),
+            ),
+            no_count=True,
+        )
     par = candidate.par
     pack_qty = candidate.pack_qty()
     if pack_qty <= _ZERO:
@@ -969,6 +998,10 @@ def top_up_pool(candidates: Iterable[OrderCandidate], ordered_ids: frozenset[int
     unknown: list[OrderCandidate] = []
     for candidate in candidates:
         if candidate.tier is not Tier.B or candidate.ingredient_id in ordered_ids:
+            continue
+        if not candidate.has_count_basis:
+            # Its cover is computed from an unanchored figure, so "shortest cover first"
+            # would rank it on a guess. Same rule as `size_line`: count it first.
             continue
         if candidate.is_perishable:
             perishable.append(candidate)
@@ -1241,6 +1274,18 @@ def build_suggestion(
                     f"{', '.join(sorted(below_floor))}. Either the par floor or the tier is "
                     "wrong. Ordering against a floor that nothing is consuming would be "
                     "spending money on a data error."
+                ),
+            )
+        )
+    uncounted = sorted(o.candidate.ingredient_name for o in outcomes if o.no_count)
+    if uncounted:
+        notes.append(
+            OrderNote(
+                kind=OrderNoteKind.NOT_COUNTED,
+                text=(
+                    f"{len(uncounted)} item(s) have never been counted and were NOT ordered: "
+                    f"{', '.join(uncounted)}. Their stock figure has no physical count "
+                    "under it (invariant 6); one count each makes them orderable."
                 ),
             )
         )

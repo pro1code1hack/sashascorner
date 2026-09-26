@@ -1,0 +1,724 @@
+{
+  "row": {
+    "ingredient_id": 49,
+    "name": "12oz cup lid",
+    "category": "Packaging",
+    "unit": "EACH",
+    "unit_cost": {
+      "pence": "2.574",
+      "source": "ESTIMATE",
+      "is_estimate": true,
+      "is_missing": false,
+      "excluded_from_aggregates": false,
+      "note": null
+    },
+    "pack": {
+      "pack_size": "1000",
+      "pack_unit": "EACH",
+      "pack_cost_pence": 2574,
+      "source": "ESTIMATE",
+      "supplier_id": 4,
+      "supplier_name": "Cups Direct",
+      "effective_from": "2025-11-01T00:00:00Z",
+      "recorded_by": null,
+      "note": "Assumed same as S lid (notebook didn't list M lid)"
+    },
+    "note": "Assumed same as S lid (notebook didn't list M lid)",
+    "suppliers": [
+      {
+        "supplier_id": 4,
+        "name": "Cups Direct",
+        "is_preferred": true
+      },
+      {
+        "supplier_id": 7,
+        "name": "Amazon",
+        "is_preferred": false
+      }
+    ],
+    "used_in_count": 103,
+    "retired": false,
+    "storage": "AMBIENT",
+    "shelf_life_days": null,
+    "shelf_life_source": "ESTIMATE"
+  },
+  "offers": [
+    {
+      "supplier_product_id": 49,
+      "supplier_id": 4,
+      "supplier_name": "Cups Direct",
+      "sku": null,
+      "pack_size": "1000",
+      "pack_unit": "EACH",
+      "price_pence": 2574,
+      "unit_cost_pence": "2.574",
+      "vs_cheapest_pct": 0.0,
+      "is_cheapest": true,
+      "is_preferred": true,
+      "last_seen_price_at": null,
+      "terms_are_placeholders": true
+    },
+    {
+      "supplier_product_id": 119,
+      "supplier_id": 7,
+      "supplier_name": "Amazon",
+      "sku": "ALT-AMA",
+      "pack_size": "100",
+      "pack_unit": "EACH",
+      "price_pence": 999,
+      "unit_cost_pence": "9.99",
+      "vs_cheapest_pct": 288.112,
+      "is_cheapest": false,
+      "is_preferred": false,
+      "last_seen_price_at": null,
+      "terms_are_placeholders": false
+    }
+  ],
+  "preferred_supplier": "Cups Direct",
+  "used_in": [
+    {
+      "menu_item_id": 1,
+      "name": "Banana Milkshake",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 4,
+      "name": "Berry Breeze Lemonade",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 7,
+      "name": "Black Americano",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 10,
+      "name": "Black Honey",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 12,
+      "name": "Blue Honey Matcha",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 15,
+      "name": "Blue Lavender Matcha",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 18,
+      "name": "Blue Vanilla Matcha",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 21,
+      "name": "Butterfly (lavender) Latte",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 24,
+      "name": "Butterfly Hot Chocolate",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 27,
+      "name": "Cappuccino",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 318,
+      "name": "Caramel Latte",
+      "via": "recipe",
+      "template_name": "Flavoured Latte"
+    },
+    {
+      "menu_item_id": 30,
+      "name": "Chai Latte",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 33,
+      "name": "Chocolate Coffee Milkshake",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 35,
+      "name": "Chocolate Milkshake",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 38,
+      "name": "Cinnamon Bun Hot Chocolate",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 41,
+      "name": "Cinnamon Bun Latte",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 44,
+      "name": "Coffee Milkshake",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 52,
+      "name": "Emerald Zest",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 55,
+      "name": "Espresso Tonic",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 61,
+      "name": "Green Apple Bubble Tea",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 63,
+      "name": "Honey Bubble Tea",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 65,
+      "name": "Honey Vanilla Latte",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 288,
+      "name": "Hot banana matcha",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 289,
+      "name": "Hot blue matcha",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 68,
+      "name": "Hot Chocolate",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 71,
+      "name": "Hot Lavender Matcha",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 74,
+      "name": "Hot Matcha",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 77,
+      "name": "Hot Rose Matcha",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 80,
+      "name": "Hot Strawberry Matcha",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 83,
+      "name": "Hot Vanilla Matcha",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 86,
+      "name": "Hot White Choc Matcha",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 137,
+      "name": "Iced Banana Matcha",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 139,
+      "name": "Iced Black Americano",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 89,
+      "name": "Iced Butterfly Latte",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 141,
+      "name": "Iced Cappuccino",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 143,
+      "name": "Iced Chai Latte",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 91,
+      "name": "Iced Cinnamon Bun Latte",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 93,
+      "name": "Iced Citrus Blue Matcha",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 145,
+      "name": "Iced Coconut Matcha",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 95,
+      "name": "Iced Coconut Water Blue Matcha",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 97,
+      "name": "Iced Coconut Water Latte",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 147,
+      "name": "Iced Flat White",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 99,
+      "name": "Iced Honey Blue Matcha",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 101,
+      "name": "Iced Honey Vanilla Latte",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 149,
+      "name": "Iced Latte",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 103,
+      "name": "Iced Lavender Blue Matcha",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 105,
+      "name": "Iced Lavender Latte",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 151,
+      "name": "Iced Lemon & Honey Tea",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 107,
+      "name": "Iced Mango Matcha",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 109,
+      "name": "Iced Mint Latte",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 153,
+      "name": "Iced Mocha",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 111,
+      "name": "Iced Orange Latte",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 155,
+      "name": "Iced Peach Matcha",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 113,
+      "name": "Iced Pistachio Latte",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 115,
+      "name": "Iced Pumpkin Spice Latte",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 117,
+      "name": "Iced Raspberry Mocha",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 119,
+      "name": "Iced Rose Latte",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 121,
+      "name": "Iced Rose Mocha",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 123,
+      "name": "Iced Rose Tea",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 125,
+      "name": "Iced Rose White Mocha",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 127,
+      "name": "Iced Salted Caramel Latte",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 129,
+      "name": "Iced Strawberry Matcha",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 131,
+      "name": "Iced Toffee Latte",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 133,
+      "name": "Iced Vanilla Blue Matcha",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 157,
+      "name": "Iced White Americano",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 159,
+      "name": "Iced White Mocha",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 135,
+      "name": "Iced White Raspberry Mocha",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 163,
+      "name": "Kiwi Bubble Tea",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 166,
+      "name": "Latte",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 169,
+      "name": "Lavender Hot Chocolate",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 174,
+      "name": "Mint Hot Chocolate",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 177,
+      "name": "Mint Latte",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 180,
+      "name": "Mocha",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 190,
+      "name": "Orange Americano",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 184,
+      "name": "Orange Hot Chocolate",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 187,
+      "name": "Orange Latte",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 193,
+      "name": "Passion Fruit",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 195,
+      "name": "Passion Fruit Bubble Tea",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 197,
+      "name": "Peach Iced Tea",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 199,
+      "name": "Pineapple & Passion Fruit",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 201,
+      "name": "Pistachio Hot Chocolate",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 204,
+      "name": "Pistachio Latte",
+      "via": "recipe",
+      "template_name": "Flavoured Latte"
+    },
+    {
+      "menu_item_id": 207,
+      "name": "Pumpkin Spice Hot Chocolate",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 210,
+      "name": "Pumpkin Spice Latte",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 213,
+      "name": "Raff Coffee",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 216,
+      "name": "Raspberry Hot Chocolate",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 219,
+      "name": "Rose Hot Chocolate",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 222,
+      "name": "Rose Latte",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 225,
+      "name": "Rose White Mocha",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 229,
+      "name": "Salted Caramel Coffee Milkshake",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 231,
+      "name": "Salted Caramel Hot Chocolate",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 234,
+      "name": "Salted Caramel Latte",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 237,
+      "name": "Salted Caramel Milkshake",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 244,
+      "name": "Strawberry",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 246,
+      "name": "Strawberry Black",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 247,
+      "name": "Strawberry Bubble Tea",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 249,
+      "name": "Toffee Hot Chocolate",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 252,
+      "name": "Toffee Nut Latte",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 255,
+      "name": "Tropical Mint Bliss",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 315,
+      "name": "Vanilla Latte",
+      "via": "recipe",
+      "template_name": "Flavoured Latte"
+    },
+    {
+      "menu_item_id": 258,
+      "name": "White Americano",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 261,
+      "name": "White Hot Chocolate",
+      "via": "one-off",
+      "template_name": null
+    },
+    {
+      "menu_item_id": 264,
+      "name": "White Mocha",
+      "via": "one-off",
+      "template_name": null
+    }
+  ],
+  "price_history": [
+    {
+      "effective_from": "2025-11-01T00:00:00Z",
+      "effective_to": null,
+      "pack_size": "1000",
+      "pack_unit": "EACH",
+      "pack_cost_pence": 2574,
+      "cost_per_unit_pence": "2.574",
+      "source": "ESTIMATE",
+      "supplier_name": "Cups Direct",
+      "recorded_by": null
+    }
+  ],
+  "unit_locked_by": {
+    "stock movements": 1239,
+    "counts": 10,
+    "batches": 2,
+    "prices": 1,
+    "one-off recipe lines": 101,
+    "recipe components": 1,
+    "supplier links": 2
+  },
+  "retire_blocked_by": {
+    "one-off recipe lines": 100,
+    "recipe components": 1
+  }
+}

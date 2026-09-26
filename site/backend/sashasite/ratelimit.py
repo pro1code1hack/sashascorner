@@ -60,3 +60,7 @@ class SlidingWindow:
 rate_limit = SlidingWindow("rate_limit_count", "rate_limit_window_seconds")
 #: Admin photo uploads: separate counters, looser limit.
 upload_rate_limit = SlidingWindow("upload_rate_limit_count", "upload_rate_limit_window_seconds")
+#: Admin sign-in attempts: 5 a minute per IP by default.
+login_rate_limit = SlidingWindow("login_rate_limit_count", "login_rate_limit_window_seconds")
+#: Password changes: the same limit, separate counters (a change must not use up sign-ins).
+password_rate_limit = SlidingWindow("login_rate_limit_count", "login_rate_limit_window_seconds")

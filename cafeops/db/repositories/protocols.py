@@ -17,6 +17,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Protocol, runtime_checkable
 
+from cafeops.db.models.enums import ExpirySource
 from cafeops.domain.types import (
     BatchSpec,
     ChecklistStatus,
@@ -92,7 +93,11 @@ class CompositionRepository(Protocol):
 
     def item_specs(self, menu_item_ids: Sequence[int], at: datetime) -> dict[int, MenuItemSpec]: ...
 
-    def modifiers(self, modifier_ids: Sequence[int]) -> list[ModifierSpec]: ...
+    def modifiers(
+        self, modifier_ids: Sequence[int], at: datetime | None = None
+    ) -> list[ModifierSpec]:
+        """As they behaved at `at` (`modifier_version`); the `modifier` cache when None."""
+        ...
 
     def menu_item_ids_for_template(self, template_id: int) -> list[int]: ...
 
@@ -193,6 +198,8 @@ class StockRepository(Protocol):
         ...
 
     def append_movements(self, movements: Iterable[MovementSpec]) -> int: ...
+
+    def append_movement(self, movement: MovementSpec) -> int: ...
 
     def record_count(
         self,
@@ -408,6 +415,8 @@ class BatchRepository(Protocol):
         unit_cost_pence: Decimal,
         po_line_id: int | None = None,
         note: str | None = None,
+        expiry_source: ExpirySource | None = None,
+        received_by: str | None = None,
     ) -> int: ...
 
     def apply_allocations(

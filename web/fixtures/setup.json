@@ -1,0 +1,97 @@
+{
+  "empty_install": false,
+  "open_steps": 3,
+  "steps": [
+    {
+      "n": 1,
+      "key": "import",
+      "done": true,
+      "remaining": 23,
+      "title": "Bring in the spreadsheet.",
+      "body": "Ingredients, prices, recipes and menu from the finance workbook. It proposes recipes; you confirm them. 23 recipe proposals waiting.",
+      "cta": {
+        "label": "Review recipes",
+        "route": "#/recipes"
+      },
+      "cli_fix": null
+    },
+    {
+      "n": 2,
+      "key": "shelf_life",
+      "done": false,
+      "remaining": 100,
+      "title": "Add shelf lives for fresh stock.",
+      "body": "Not in the workbook. Without them, orders can't be capped to what will keep. 100 are still guesses.",
+      "cta": {
+        "label": "Open Stock",
+        "route": "#/stock?filter=shelf_life"
+      },
+      "cli_fix": "uv run cafeops shelf-life list"
+    },
+    {
+      "n": 3,
+      "key": "supplier_terms",
+      "done": false,
+      "remaining": 6,
+      "title": "Confirm supplier terms.",
+      "body": "Delivery days, cut-offs, minimums and fees. 6 are still guesses.",
+      "cta": {
+        "label": "Open Suppliers",
+        "route": "#/suppliers"
+      },
+      "cli_fix": "uv run cafeops supplier list"
+    },
+    {
+      "n": 4,
+      "key": "lightspeed",
+      "done": false,
+      "remaining": null,
+      "title": "Connect Lightspeed.",
+      "body": "So sales come in by themselves and stock is worked out from them. Connecting is done on the server, not here.",
+      "cta": {
+        "label": "Settings",
+        "route": "#/settings"
+      },
+      "cli_fix": "Set CAFEOPS_LIGHTSPEED_CLIENT_ID, CAFEOPS_LIGHTSPEED_CLIENT_SECRET, CAFEOPS_LIGHTSPEED_REFRESH_TOKEN, CAFEOPS_LIGHTSPEED_BUSINESS_ID in .env"
+    },
+    {
+      "n": 5,
+      "key": "first_count",
+      "done": true,
+      "remaining": 0,
+      "title": "Do a first count.",
+      "body": "Tier A first. Every estimate starts from a real count. 11 of 11 tier A counted.",
+      "cta": {
+        "label": "Start counting",
+        "route": "#/stock?mode=count&tier=A"
+      },
+      "cli_fix": null
+    }
+  ],
+  "warnings": [
+    {
+      "severity": "WARN",
+      "name": "seasons",
+      "detail": "1 of 2 season(s) drive nothing: Pumpkin season. Seasonality is resolved through variant options, so an ingredient reached only by a manual recipe is never treated as seasonal -- its sales stay in the ordinary 28-day baseline and its orders are not capped at the window (spec 4.3). The effect shows up a season LATER, as a forecast inflated by a line that is no longer on the menu",
+      "fix": "confirm the detected templates -- `cafeops proposals` lists them, and the Import review screen confirms one. Materialising a template is what turns its flavour options into variant options the season rules can see"
+    },
+    {
+      "severity": "WARN",
+      "name": "credentials",
+      "detail": "this check could not run: TypeError: _check_credentials() missing 1 required positional argument: 'r'",
+      "fix": "the finding is the crash itself -- the other checks below still apply"
+    },
+    {
+      "severity": "INFO",
+      "name": "takings",
+      "detail": "160 day(s) of takings recorded, but 160 row(s) omit a deduction, so net is withheld rather than computed from the parts that were reported (invariant 8)",
+      "fix": "an export that breaks out refunds, fees AND discounts makes net figures possible; without one, gross is the only honest headline"
+    },
+    {
+      "severity": "INFO",
+      "name": "prices",
+      "detail": "42 current price(s) are ESTIMATE. They stay flagged through every rollup and are excluded from margin aggregates, so nothing is being presented as more certain than it is",
+      "fix": "`cafeops set-price --ingredient <name> --pack-cost <pence> --commit` replaces one with an invoiced price and cascades it to every menu cost"
+    }
+  ]
+}

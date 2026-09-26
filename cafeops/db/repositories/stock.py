@@ -11,11 +11,11 @@ from datetime import date, datetime, time
 from decimal import Decimal
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session
 
 from cafeops.config import settings
-from cafeops.db.models import StockCount, StockMovement
+from cafeops.db.models import StockCount, StockMovement, WriteOffReason
 from cafeops.domain.types import ConsumptionPoint, MovementSpec, MovementType
 
 
@@ -85,7 +85,7 @@ class SqlStockRepository:
     def expired_qty_between(
         self, ingredient_id: int, *, after: datetime | None, until: datetime
     ) -> Decimal:
-        """Magnitude of EXPIRED write-offs over (after, until].
+        """Magnitude of EXPIRED (and WASTE/WENT_OFF) write-offs over (after, until].
 
         Spec 5.2's second diagnostic. Summed in Python for the same reason
         `movement_sum_between` is: the qty column is a scaled integer on SQLite, and
@@ -97,7 +97,16 @@ class SqlStockRepository:
         """
         stmt = select(StockMovement.qty).where(
             StockMovement.ingredient_id == ingredient_id,
-            StockMovement.type == MovementType.EXPIRED,
+            # A human's "went out of date" write-off is the same loss the sweep books
+            # as EXPIRED; it is stored as WASTE/WENT_OFF only because EXPIRED rows are
+            # derived and purged by `rebuild_batches` (DATA-MODEL 3.1, spec C11).
+            or_(
+                StockMovement.type == MovementType.EXPIRED,
+                and_(
+                    StockMovement.type == MovementType.WASTE,
+                    StockMovement.reason_code == WriteOffReason.WENT_OFF,
+                ),
+            ),
             StockMovement.occurred_at <= until,
         )
         if after is not None:
@@ -121,6 +130,9 @@ class SqlStockRepository:
                 ref_type=row.ref_type,
                 ref_id=row.ref_id,
                 note=row.note,
+                batch_id=row.batch_id,
+                reason_code=row.reason_code,
+                recorded_by=row.recorded_by,
             )
             for row in rows
         ]
@@ -132,22 +144,32 @@ class SqlStockRepository:
         second writer. An append-only ledger with two writers diverges eventually,
         and this is the last table where that should be allowed to happen.
         """
-        rows = [
-            StockMovement(
-                ingredient_id=m.ingredient_id,
-                batch_id=m.batch_id,
-                type=m.type,
-                qty=m.qty,
-                occurred_at=m.occurred_at,
-                ref_type=m.ref_type,
-                ref_id=m.ref_id,
-                note=m.note,
-            )
-            for m in movements
-        ]
+        rows = [self._row(m) for m in movements]
         if rows:
             self.session.add_all(rows)
         return len(rows)
+
+    def append_movement(self, movement: MovementSpec) -> int:
+        """`append_movements` for one row, returning its id (flushes)."""
+        row = self._row(movement)
+        self.session.add(row)
+        self.session.flush()
+        return row.id
+
+    @staticmethod
+    def _row(m: MovementSpec) -> StockMovement:
+        return StockMovement(
+            ingredient_id=m.ingredient_id,
+            batch_id=m.batch_id,
+            type=m.type,
+            qty=m.qty,
+            occurred_at=m.occurred_at,
+            ref_type=m.ref_type,
+            ref_id=m.ref_id,
+            note=m.note,
+            reason_code=m.reason_code,
+            recorded_by=m.recorded_by,
+        )
 
     def record_count(
         self,

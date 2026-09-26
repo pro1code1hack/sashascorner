@@ -1,9 +1,9 @@
 """Menu drift: the published board (menu_board.toml) vs the ops ``menu_item`` table.
 
 A report only. Ops is read with a Core ``text()`` select and never written. The
-board is what the website serves; the ops rows are what the POS/costing side
-believes. The two are expected to converge, and this is the list of where they
-have not.
+board is what the website serves until the ops menu has categories (see
+menu_source.py); the ops rows are what the POS/costing side believes. The two are
+expected to converge, and this is the list of where they have not.
 """
 
 from __future__ import annotations

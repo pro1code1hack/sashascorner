@@ -143,6 +143,9 @@ class AgentActionLog(Base):
     run_id: Mapped[str] = mapped_column(String(64), nullable=False)
     tool_name: Mapped[str] = mapped_column(String(120), nullable=False)
     purpose: Mapped[str | None] = mapped_column(String(300))
+    #: Which agent ran: drift_explainer | import_assistant | channel_reporter |
+    #: basket_stager (shell-agents spec 6.1). NULL on rows predating the column.
+    agent: Mapped[str | None] = mapped_column(String(60))
 
     inputs: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
     output: Mapped[str | None] = mapped_column(Text)
@@ -187,6 +190,11 @@ class TescoRouting(Base):
     premium_pence: Mapped[int | None] = mapped_column(Integer)
     #: Which supplier would have supplied it, had there been time.
     would_be_supplier_id: Mapped[int | None] = mapped_column(ForeignKey("supplier.id"))
+    #: "Log as bought" (spec 4.2 / ShopRunIn): where, who, and what was actually paid
+    #: for this line. NULL on rows written by the draft builder before anything was bought.
+    retailer: Mapped[str | None] = mapped_column(String(80))
+    bought_by: Mapped[str | None] = mapped_column(String(120))
+    paid_pence: Mapped[int | None] = mapped_column(Integer)
 
     ingredient: Mapped[Any] = relationship("Ingredient")
 

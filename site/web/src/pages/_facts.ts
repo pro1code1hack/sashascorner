@@ -215,11 +215,21 @@ export const faqs: Faq[] = [
     html: `Call ${phone ? `<a href="tel:+44${phone.replace(/\s+/g, '').replace(/^0/, '')}">${phone}</a>` : 'us'}, or ${a('/visit#contact', 'send a message')} from the website, which goes straight to the owner. We don't have an email address yet. We're also on ${a(INSTAGRAM, 'Instagram', true)}.`,
   },
   {
+    id: 'pets',
+    q: 'Can I bring my dog?',
+    html: "Yes. Sasha's Corner is pet friendly, so well-behaved dogs are welcome inside.",
+  },
+  {
+    id: 'seats',
+    q: 'How big is the café?',
+    html: `There are 24 seats: tables along the wall, round tables in the middle and a chess table by the pillar. Parties of up to ${info?.booking.max_party ?? 8} can ${a('/book', 'book online')}; for bigger groups, ${a('/visit#contact', 'send us a message')}.`,
+  },
+  {
     id: 'not-listed',
-    q: 'Wifi, dogs, step-free access, gluten-free?',
+    q: 'Wifi, step-free access, gluten-free?',
     html: `We haven't put these on the website yet, so please ask before you come: call ${phone || 'us'} or ${a('/visit#contact', 'send a message')}.`,
     pageOnly: true,
-    ownerNote: 'wifi, dog policy, wheelchair / step-free access, toilets, gluten-free and vegan options: confirm each, then give it its own answer',
+    ownerNote: 'wifi, wheelchair / step-free access, toilets, gluten-free and vegan options: confirm each, then give it its own answer',
   },
 ];
 

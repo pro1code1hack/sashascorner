@@ -1,0 +1,994 @@
+---
+// The website admin's shell. Follows the owner's back-office design system
+// (docs/design/specs/design-system.md + DECISIONS.md), not the public brand look:
+// light theme, Nunito, uppercase group heads. Sidebar on desktop, bottom tab bar
+// under 760px. Everything under /admin is noindex.
+//
+// Props:
+//   title    page title, shown in the header bar and the <title>
+//   active   which nav item is current: dashboard | bookings | messages | menu | photos | settings
+//   subtitle optional sentence under the title (what the page is for)
+//   wide     let the content use the full width (tables, the week view)
+//
+// Slots: default (the page), `actions` (right of the title in the header bar).
+//
+// Auth: the shell checks the session before the page's own script runs anything
+// (`ready()` in scripts/admin-core/session.ts). Signed out, every page except
+// /admin sends the owner to /admin?next=<this page>; /admin shows the sign-in form.
+import '@fontsource-variable/nunito';
+import nunito from '@fontsource-variable/nunito/files/nunito-latin-wght-normal.woff2?url';
+import AdmSignIn from '../components/AdmSignIn.astro';
+
+interface Props {
+  title: string;
+  active: 'dashboard' | 'bookings' | 'messages' | 'menu' | 'photos' | 'settings';
+  subtitle?: string;
+  wide?: boolean;
+}
+const { title, active, subtitle, wide = false } = Astro.props;
+
+const NAV = [
+  { key: 'dashboard', href: '/admin', label: 'Today', icon: 'today' },
+  { key: 'bookings', href: '/admin/bookings', label: 'Bookings', icon: 'bookings' },
+  { key: 'messages', href: '/admin/messages', label: 'Messages', icon: 'messages' },
+  { key: 'menu', href: '/admin/menu', label: 'Menu', icon: 'menu' },
+  { key: 'photos', href: '/admin/photos', label: 'Photos', icon: 'photos' },
+  { key: 'settings', href: '/admin/settings', label: 'Settings', icon: 'settings' },
+] as const;
+
+// 24px line icons, stroke = currentColor.
+const ICON: Record<string, string> = {
+  today: '<rect x="4" y="5" width="16" height="15" rx="2.5"/><path d="M4 9.5h16M8.5 3v4M15.5 3v4"/><circle cx="12" cy="14.5" r="1.6" fill="currentColor" stroke="none"/>',
+  bookings: '<path d="M5 20V9M19 20V9M3.5 9h17M8 9V6.5h8V9M5 14h14"/>',
+  messages: '<path d="M4.5 6.5h15a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H10l-4 3v-3H4.5a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1Z"/>',
+  menu: '<path d="M6 4.5h12v15H6zM9 9h6M9 12.5h6M9 16h4"/>',
+  photos: '<rect x="3.5" y="5.5" width="17" height="13" rx="2"/><circle cx="9" cy="10.5" r="1.8"/><path d="m4 17 5-4.5 3.5 3 3-2.5 4.5 4"/>',
+  settings: '<circle cx="12" cy="12" r="3"/><path d="M12 3.5v2.2M12 18.3v2.2M20.5 12h-2.2M5.7 12H3.5M18 6l-1.6 1.6M7.6 16.4 6 18M18 18l-1.6-1.6M7.6 7.6 6 6"/>',
+};
+const isIndex = active === 'dashboard';
+---
+
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{title} · Admin · Sasha's Corner</title>
+    <meta name="theme-color" content="#f6f7fa" />
+    <link rel="preload" href={nunito} as="font" type="font/woff2" crossorigin />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script is:inline>
+      // Keep ?mock=1 across the admin's own links (development only).
+      try {
+        var q = new URLSearchParams(location.search);
+        if (q.get('mock') === '1') sessionStorage.setItem('sc-adm-mock', '1');
+        if (q.get('mock') === '0') sessionStorage.removeItem('sc-adm-mock');
+      } catch (e) {}
+    </script>
+  </head>
+  <body class="adm" data-auth="pending" data-page={active} data-index={isIndex ? '1' : undefined}>
+    <a class="adm-skip" href="#adm-main" data-skip>Skip to content</a>
+
+    <div class="adm-signin-wrap" data-when="out">
+      {isIndex && <AdmSignIn />}
+    </div>
+
+    <div class="adm-app" data-when="in">
+      <aside class="adm-side" aria-label="Admin">
+        <a class="adm-brand" href="/admin" aria-label="Sasha's Corner admin, today">
+          <img src="/brand/logo.svg" alt="" width="112" height="67" />
+          <span class="adm-brand-sub">Website admin</span>
+        </a>
+        <p class="adm-grouphead" id="adm-nav-head">Website</p>
+        <nav aria-labelledby="adm-nav-head">
+          <ul class="adm-nav">
+            {NAV.map((n) => (
+              <li>
+                <a
+                  href={n.href}
+                  class="adm-nav-item"
+                  aria-current={n.key === active ? 'page' : undefined}
+                  data-nav={n.key}
+                >
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={ICON[n.icon]} />
+                  <span class="adm-nav-label">{n.label}</span>
+                  {n.key === 'messages' && <span class="adm-badge" data-unread hidden></span>}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+        <div class="adm-side-foot">
+          <a class="adm-side-link" href="/" target="_blank" rel="noopener">View the website</a>
+          <button type="button" class="adm-side-link" data-signout>Sign out</button>
+          <p class="adm-mockflag" data-mockflag hidden>Mock data (?mock=1)</p>
+        </div>
+      </aside>
+
+      <div class="adm-col">
+        <header class="adm-head">
+          <div class="adm-head-text">
+            <h1 class="adm-title">{title}</h1>
+            {subtitle && <p class="adm-sub">{subtitle}</p>}
+          </div>
+          <div class="adm-head-actions">
+            <slot name="actions" />
+            <button type="button" class="adm-head-signout" data-signout>Sign out</button>
+          </div>
+        </header>
+        <main id="adm-main" class:list={['adm-main', { 'adm-main--wide': wide }]} tabindex="-1">
+          <slot />
+        </main>
+      </div>
+
+      <nav class="adm-tabs" aria-label="Admin sections">
+        {NAV.map((n) => (
+          <a href={n.href} class="adm-tab" aria-current={n.key === active ? 'page' : undefined} data-nav={n.key}>
+            <span class="adm-tab-icon">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={ICON[n.icon]} />
+              {n.key === 'messages' && <span class="adm-badge adm-badge--dot" data-unread hidden></span>}
+            </span>
+            <span class="adm-tab-label">{n.label}</span>
+          </a>
+        ))}
+      </nav>
+    </div>
+
+    <div class="adm-loading" data-when="pending" role="status">Checking you're signed in…</div>
+
+    <div class="adm-toasts" data-toasts aria-live="polite" aria-atomic="false"></div>
+    <div class="adm-sr" data-live aria-live="polite" aria-atomic="true"></div>
+    <div class="adm-sr" data-live-assertive aria-live="assertive" aria-atomic="true"></div>
+
+    <script>
+      import { bootShell } from '../scripts/admin-core/shell';
+      bootShell();
+    </script>
+  </body>
+</html>
+
+<style is:global>
+  /* ---- tokens (design-system.md §4) -------------------------------------- */
+  .adm {
+    --surface: #ffffff;
+    --canvas: #f6f7fa;
+    --canvas-2: #fafbfc;
+    --wash: #f1f3f7;
+    --ink: #1f2633;
+    --ink-2: #5b6475;
+    --ink-3: #8a93a3;
+    --line: #e8ebf0;
+    --line-soft: #eef0f4;
+    --line-row: #f1f3f6;
+    --line-control: #e2e6ed;
+    --line-strong: #d5dae3;
+    --brand: #4a6fd1;
+    --brand-ink: #3558b8;
+    --brand-deep: #2d3f75;
+    --brand-wash: #edf1fc;
+    --brand-line: #c9d5f5;
+    --alert: #d4554a;
+    --alert-wash: #fdf1ef;
+    --bad-ink: #c2453b;
+    --bad-wash: #fdecea;
+    --warn-ink: #9a6a12;
+    --warn-wash: #fdf3e1;
+    --ok: #3fa57a;
+    --ok-ink: #237a57;
+    --ok-wash: #e8f5ee;
+    --est-wash: #fdf6e7;
+    --r-xs: 6px;
+    --r-control: 10px;
+    --r-button: 12px;
+    --r-card: 14px;
+    --r-card-lg: 16px;
+    --r-login: 24px;
+    --shadow-raised: 0 1px 2px rgb(31 38 51 / 0.06), 0 0 0 1px rgb(31 38 51 / 0.04);
+    --shadow-seg: 0 1px 2px rgb(31 38 51 / 0.08);
+    --shadow-login: 0 1px 2px rgb(31 38 51 / 0.04), 0 12px 32px rgb(31 38 51 / 0.06);
+    --tabbar-h: 64px;
+
+    color-scheme: light;
+    margin: 0;
+    background: var(--surface);
+    color: var(--ink);
+    font-family: 'Nunito Variable', 'Nunito', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    font-size: 14px;
+    line-height: 1.4;
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+    -webkit-text-size-adjust: 100%;
+  }
+  .adm *,
+  .adm *::before,
+  .adm *::after {
+    box-sizing: border-box;
+  }
+  .adm :where(h1, h2, h3, h4, p, ul, ol, dl, dd, figure) {
+    margin: 0;
+  }
+  .adm :where(ul, ol) {
+    padding: 0;
+    list-style: none;
+  }
+  .adm :where(input, select, textarea, button) {
+    font: inherit;
+    color: inherit;
+  }
+  .adm :where(button) {
+    cursor: pointer;
+  }
+  .adm a {
+    color: var(--brand-ink);
+  }
+  .adm :where(h1, h2, h3) {
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+  .adm :focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+  }
+  .adm [hidden] {
+    display: none !important;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .adm *,
+    .adm *::before,
+    .adm *::after {
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+    }
+  }
+
+  /* ---- auth states --------------------------------------------------------- */
+  .adm [data-when] {
+    display: none;
+  }
+  .adm[data-auth='pending'] [data-when='pending'],
+  .adm[data-auth='out'] [data-when='out'] {
+    display: block;
+  }
+  .adm[data-auth='in'] [data-when='in'] {
+    display: flex;
+  }
+  .adm-loading {
+    padding: 48px 20px;
+    text-align: center;
+    color: var(--ink-2);
+  }
+  .adm-signin-wrap {
+    min-height: 100vh;
+    min-height: 100dvh;
+    background: var(--canvas);
+  }
+
+  .adm-skip {
+    position: absolute;
+    left: 8px;
+    top: -120px;
+    z-index: 100;
+    background: var(--surface);
+    padding: 10px 14px;
+    border-radius: var(--r-control);
+    box-shadow: var(--shadow-login);
+  }
+  .adm-skip:focus {
+    top: 8px;
+  }
+  .adm-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  /* ---- shell --------------------------------------------------------------- */
+  .adm-app {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  .adm-side {
+    flex: none;
+    width: 232px;
+    background: var(--canvas);
+    border-right: 1px solid var(--line-soft);
+    padding: 18px 10px 14px;
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    height: 100dvh;
+  }
+  .adm-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 0 10px 18px;
+    text-decoration: none;
+    color: var(--ink);
+  }
+  .adm-brand img {
+    width: 112px;
+    height: auto;
+    display: block;
+  }
+  .adm-brand-sub {
+    font-size: 13px;
+    color: var(--ink-2);
+  }
+  .adm-grouphead {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    padding: 6px 10px;
+  }
+  .adm-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .adm-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    padding: 0 10px;
+    border-radius: var(--r-button);
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--ink-2);
+    text-decoration: none;
+    transition: background 0.15s;
+  }
+  .adm .adm-nav-item {
+    color: var(--ink-2);
+  }
+  .adm-nav-item:hover {
+    background: rgb(255 255 255 / 0.6);
+    color: var(--ink);
+  }
+  .adm .adm-nav-item[aria-current='page'] {
+    background: var(--surface);
+    box-shadow: var(--shadow-raised);
+    color: var(--brand-ink);
+    font-weight: 700;
+  }
+  .adm-nav-label {
+    flex: 1;
+  }
+  .adm-badge {
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    background: var(--brand);
+    border-radius: 999px;
+    padding: 2px 7px;
+    min-width: 20px;
+    text-align: center;
+  }
+  .adm-side-foot {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    border-top: 1px solid var(--line-soft);
+    padding-top: 10px;
+  }
+  .adm-side-link {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 10px;
+    border: 0;
+    background: none;
+    border-radius: var(--r-button);
+    font-size: 14px;
+    color: var(--ink-2);
+    text-align: left;
+    text-decoration: none;
+  }
+  .adm .adm-side-link {
+    color: var(--ink-2);
+  }
+  .adm-side-link:hover {
+    background: rgb(255 255 255 / 0.6);
+    color: var(--ink);
+  }
+  .adm-mockflag {
+    font-size: 12px;
+    color: var(--warn-ink);
+    background: var(--warn-wash);
+    border-radius: 999px;
+    padding: 2px 10px;
+    margin: 6px 10px 0;
+    align-self: flex-start;
+  }
+
+  .adm-col {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .adm-head {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--line);
+    min-height: 64px;
+  }
+  .adm-head-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    column-gap: 14px;
+  }
+  .adm-title {
+    font-size: 21px;
+    line-height: 28px;
+  }
+  .adm-sub {
+    font-size: 14px;
+    color: var(--ink-2);
+  }
+  .adm-head-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .adm-head-signout {
+    display: none;
+  }
+  .adm-main {
+    flex: 1;
+    padding: 20px 24px 40px;
+    width: 100%;
+    max-width: 1040px;
+  }
+  .adm-main--wide {
+    max-width: none;
+  }
+  .adm-main:focus {
+    outline: none;
+  }
+  .adm-tabs {
+    display: none;
+  }
+
+  /* Phone: no sidebar, a bottom tab bar, sign-out moves to the header. */
+  @media (max-width: 759.98px) {
+    .adm-side {
+      display: none;
+    }
+    .adm-head {
+      padding: 10px 16px;
+      gap: 10px;
+      flex-wrap: wrap;
+      min-height: 56px;
+    }
+    .adm-title {
+      font-size: 20px;
+    }
+    .adm-head-signout {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+      padding: 0 4px;
+      border: 0;
+      background: none;
+      font-size: 13px;
+      color: var(--ink-2);
+      text-decoration: underline;
+    }
+    .adm-main {
+      padding: 16px 16px calc(var(--tabbar-h) + 28px + env(safe-area-inset-bottom));
+    }
+    .adm-tabs {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 30;
+      background: var(--surface);
+      border-top: 1px solid var(--line);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .adm-tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      min-height: var(--tabbar-h);
+      font-size: 11px;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .adm .adm-tab {
+      color: var(--ink-2);
+    }
+    .adm .adm-tab[aria-current='page'] {
+      color: var(--brand-ink);
+      font-weight: 800;
+    }
+    .adm-tab[aria-current='page'] .adm-tab-icon {
+      background: var(--brand-wash);
+    }
+    .adm-tab-icon {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: 44px;
+      height: 30px;
+      border-radius: 999px;
+    }
+    .adm-badge--dot {
+      position: absolute;
+      top: -2px;
+      right: 2px;
+      font-size: 10px;
+      padding: 1px 5px;
+      min-width: 16px;
+    }
+  }
+  @media print {
+    .adm-side,
+    .adm-tabs,
+    .adm-head-actions,
+    .adm-toasts,
+    .adm-skip {
+      display: none !important;
+    }
+    .adm-main {
+      padding: 0;
+      max-width: none;
+    }
+    .adm-head {
+      padding: 0 0 8px;
+    }
+  }
+
+  /* ---- toasts ------------------------------------------------------------- */
+  .adm-toasts {
+    position: fixed;
+    left: 248px; /* past the sidebar, clear of a drawer's buttons on the right */
+    bottom: 16px;
+    z-index: 60;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+    pointer-events: none;
+    max-width: min(440px, calc(100vw - 32px));
+  }
+  @media (max-width: 759.98px) {
+    .adm-toasts {
+      left: 16px;
+      right: 16px;
+      bottom: calc(var(--tabbar-h) + 12px + env(safe-area-inset-bottom));
+      align-items: stretch;
+    }
+    /* A full-screen panel has its buttons at the bottom: sit above them. */
+    .adm:has(.adm-drawer) .adm-toasts {
+      bottom: calc(84px + env(safe-area-inset-bottom));
+    }
+  }
+  .adm-toast {
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px 10px 16px;
+    border-radius: var(--r-card);
+    background: var(--ink);
+    color: #fff;
+    font-size: 14px;
+    box-shadow: var(--shadow-login);
+    max-width: 440px;
+  }
+  .adm-toast--bad {
+    background: var(--bad-wash);
+    color: var(--bad-ink);
+    box-shadow: 0 0 0 1px #f3c9c4, var(--shadow-login);
+  }
+  .adm-toast button {
+    border: 0;
+    background: none;
+    color: inherit;
+    font-weight: 700;
+    min-height: 36px;
+    min-width: 36px;
+    border-radius: var(--r-control);
+  }
+
+  /* ---- shared primitives (design-system.md §5) ------------------------------ */
+  .adm-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 44px;
+    padding: 0 18px;
+    border-radius: var(--r-button);
+    border: 1px solid transparent;
+    background: var(--brand);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .adm a.adm-btn {
+    color: #fff;
+  }
+  .adm-btn:hover {
+    background: var(--brand-ink);
+  }
+  .adm-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .adm-btn--secondary {
+    background: var(--surface);
+    color: var(--ink);
+    border-color: var(--line-control);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 0 14px;
+    border-radius: var(--r-control);
+  }
+  .adm a.adm-btn--secondary {
+    color: var(--ink);
+  }
+  .adm-btn--secondary:hover {
+    background: var(--canvas);
+  }
+  .adm-btn--danger {
+    background: var(--surface);
+    color: var(--alert);
+    border-color: var(--alert);
+    font-size: 14px;
+    padding: 0 14px;
+  }
+  .adm-btn--danger:hover {
+    background: var(--alert-wash);
+  }
+  .adm-btn--ghost {
+    background: none;
+    color: var(--ink-2);
+    font-weight: 600;
+    font-size: 14px;
+    padding: 0 12px;
+  }
+  .adm-btn--ghost:hover {
+    background: var(--canvas);
+  }
+  .adm-btn--sm {
+    min-height: 36px;
+    padding: 0 12px;
+    font-size: 14px;
+  }
+  .adm-btn--add {
+    background: none;
+    color: var(--brand-ink);
+    border: 1.5px dashed var(--line-strong);
+    border-radius: var(--r-control);
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .adm-btn--add:hover {
+    background: var(--canvas);
+  }
+
+  .adm-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .adm-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+  }
+  .adm-hint {
+    font-size: 13px;
+    color: var(--ink-2);
+  }
+  .adm-err {
+    font-size: 13px;
+    color: var(--bad-ink);
+    font-weight: 600;
+  }
+  .adm-input {
+    width: 100%;
+    min-height: 44px;
+    padding: 0 10px;
+    border-radius: var(--r-control);
+    border: 1px solid var(--line-control);
+    background: var(--surface);
+    font-size: 16px; /* 16px stops iOS zooming on focus */
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  textarea.adm-input {
+    padding: 10px;
+    min-height: 88px;
+    resize: vertical;
+    line-height: 1.4;
+  }
+  .adm-input:focus {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px var(--brand-wash);
+  }
+  .adm-input[aria-invalid='true'] {
+    border-color: var(--alert);
+    background: var(--alert-wash);
+  }
+  .adm-check {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .adm-check input {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--brand);
+    margin: 0;
+    flex: none;
+  }
+
+  .adm-pill {
+    display: inline-flex;
+    align-items: center;
+    height: 24px;
+    padding: 0 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    background: var(--wash);
+    color: var(--ink-2);
+  }
+  .adm-pill--ok {
+    background: var(--ok-wash);
+    color: var(--ok-ink);
+  }
+  .adm-pill--warn {
+    background: var(--warn-wash);
+    color: var(--warn-ink);
+  }
+  .adm-pill--bad {
+    background: var(--bad-wash);
+    color: var(--bad-ink);
+  }
+  .adm-pill--brand {
+    background: var(--brand-wash);
+    color: var(--brand-ink);
+  }
+  .adm-pill--muted {
+    background: var(--wash);
+    color: var(--ink-3);
+  }
+
+  .adm-chips {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .adm-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    padding: 0 14px;
+    border-radius: 999px;
+    border: 1px solid var(--line-control);
+    background: var(--surface);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ink);
+    white-space: nowrap;
+    text-decoration: none;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .adm-chip:hover {
+    background: var(--canvas);
+  }
+  .adm-chip[aria-selected='true'],
+  .adm-chip[aria-pressed='true'],
+  .adm-chip[aria-current='true'] {
+    background: var(--brand-wash);
+    border-color: var(--brand-line);
+    color: var(--brand-ink);
+    font-weight: 700;
+  }
+  .adm-chip-count {
+    font-size: 12px;
+    opacity: 0.6;
+  }
+
+  .adm-seg {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 3px;
+    border-radius: var(--r-button);
+    background: var(--wash);
+  }
+  .adm-seg button {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 9px;
+    background: none;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .adm-seg button[aria-pressed='true'],
+  .adm-seg button[aria-checked='true'] {
+    background: var(--surface);
+    box-shadow: var(--shadow-seg);
+    color: var(--brand-ink);
+    font-weight: 700;
+  }
+
+  .adm-card {
+    border: 1px solid var(--line);
+    border-radius: var(--r-card);
+    padding: 12px 14px;
+    background: var(--surface);
+  }
+  .adm-section-head {
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+  .adm-empty {
+    padding: 28px 12px;
+    text-align: center;
+    color: var(--ink-2);
+    font-size: 15px;
+  }
+  .adm-warnbox {
+    border: 1.5px dashed var(--alert);
+    border-radius: var(--r-button);
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+  .adm-infopanel {
+    border-radius: var(--r-button);
+    background: var(--brand-wash);
+    color: var(--brand-deep);
+    padding: 12px 14px;
+    font-size: 14px;
+  }
+  .adm-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px 10px 16px;
+    border-radius: var(--r-card);
+    background: var(--wash);
+    font-size: 14px;
+  }
+  .adm-banner--alert {
+    background: var(--alert-wash);
+  }
+  .adm-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--ink-3);
+    flex: none;
+  }
+  .adm-banner--alert .adm-dot {
+    background: var(--alert);
+  }
+  .adm-muted {
+    color: var(--ink-2);
+  }
+  .adm-fig {
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+  .adm-meter {
+    position: relative;
+    height: 10px;
+    border: 1px solid var(--line-strong);
+    background: var(--surface);
+    overflow: hidden;
+  }
+  .adm-meter > span {
+    position: absolute;
+    inset: 0 auto 0 0;
+    background: var(--brand);
+  }
+  .adm-meter--full > span {
+    background: var(--alert);
+  }
+
+  /* Drawer: inline on wide screens, a full-screen sheet on phones. */
+  .adm-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(420px, 100vw);
+    z-index: 50;
+    background: var(--surface);
+    border-left: 1px solid var(--line-soft);
+    box-shadow: -12px 0 32px rgb(31 38 51 / 0.08);
+    display: flex;
+    flex-direction: column;
+  }
+  .adm-drawer-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .adm-drawer-head h2 {
+    flex: 1;
+    font-size: 18px;
+  }
+  .adm-drawer-close {
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: var(--r-control);
+    background: var(--wash);
+    color: var(--ink-2);
+    font-size: 20px;
+    line-height: 1;
+  }
+  .adm-drawer-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 18px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .adm-drawer-foot {
+    border-top: 1px solid var(--line-soft);
+    padding: 12px 18px calc(12px + env(safe-area-inset-bottom));
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .adm-drawer-foot > * {
+    flex: 1;
+  }
+  @media (max-width: 759.98px) {
+    .adm-drawer {
+      width: 100vw;
+      border-left: 0;
+      box-shadow: none;
+    }
+  }
+</style>

@@ -28,6 +28,9 @@ class MenuItemOut(BaseModel):
     signature: bool
     seasonal: SeasonalOut | None
     sizes: list[SizeOut]
+    #: Always null for now. TODO: once the ops back office confirms its media URL
+    #: scheme (``/media/<sha256>.<ext>``), map ``menu_item.photo_asset_id`` to it.
+    photo: str | None = None
 
 
 class MenuCategoryOut(BaseModel):
@@ -49,6 +52,10 @@ class ExtrasOut(BaseModel):
 
 class MenuOut(BaseModel):
     generated_at: dt.datetime
+    #: ``ops`` = read from the back office's menu; ``board`` = config/menu_board.toml.
+    source: Literal["ops", "board"] = "board"
+    #: Short hash of everything below except ``generated_at``: re-render when it changes.
+    version: str = ""
     categories: list[MenuCategoryOut]
     extras: ExtrasOut
 
@@ -159,12 +166,149 @@ class BookingOut(BookingCreatedOut):
     created_at: dt.datetime
 
 
-class AdminBookingOut(BookingOut):
+# --- admin: bookings ----------------------------------------------------------------
+
+BookingStatus = Literal["confirmed", "cancelled", "arrived", "no_show"]
+BookingSource = Literal["web", "admin"]
+HHMM = r"^([01]\d|2[0-3]):[0-5]\d$"
+
+
+class AdminBookingOut(BaseModel):
     id: int
-    email: str
+    reference: str
+    name: str
+    #: Null for a phone-in booking taken without an email.
+    email: str | None
     phone: str | None
+    party: int
+    date: dt.date
+    time: str
+    status: BookingStatus
     notes: str | None
+    source: BookingSource
+    created_at: dt.datetime
     cancelled_at: dt.datetime | None
+
+
+def _strip_or_none(v: object) -> object:
+    if isinstance(v, str):
+        return v.strip() or None
+    return v
+
+
+class AdminBookingIn(BaseModel):
+    name: str = Field(min_length=1, max_length=80)
+    phone: str | None = Field(default=None, max_length=30)
+    email: EmailStr | None = None
+    party: int = Field(ge=1, le=500)
+    date: dt.date
+    time: str = Field(pattern=HHMM)
+    notes: str | None = Field(default=None, max_length=500)
+    #: Book even if it takes the slot past covers_per_slot.
+    override_capacity: bool = False
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def _strip_name(cls, v: object) -> object:
+        return v.strip() if isinstance(v, str) else v
+
+    _blank = field_validator("phone", "email", "notes", mode="before")(_strip_or_none)
+
+
+class AdminBookingPatchIn(BaseModel):
+    status: BookingStatus | None = None
+    notes: str | None = Field(default=None, max_length=500)
+    party: int | None = Field(default=None, ge=1, le=500)
+    date: dt.date | None = None
+    time: str | None = Field(default=None, pattern=HHMM)
+    #: Not in the contract's list, but the same escape hatch as creation.
+    override_capacity: bool = False
+
+    _blank = field_validator("notes", mode="before")(_strip_or_none)
+
+
+class SlotCoversOut(BaseModel):
+    time: str
+    #: Covers seated at that moment (bookings whose hold spans it).
+    covers_booked: int
+    capacity: int
+
+
+class DayOut(BaseModel):
+    date: dt.date
+    closed: bool
+    #: The closure note, or why the day is closed; null when open.
+    reason: str | None
+    capacity: int
+    slots: list[SlotCoversOut]
+    bookings: list[AdminBookingOut]
+
+
+# --- admin: auth, messages, summary ---------------------------------------------------
+
+
+class LoginIn(BaseModel):
+    password: str = Field(min_length=1, max_length=256)
+
+
+class MeOut(BaseModel):
+    authenticated: Literal[True] = True
+    password_source: Literal["db", "env"]
+
+
+class PasswordChangeIn(BaseModel):
+    current: str = Field(min_length=1, max_length=256)
+    new: str = Field(min_length=10, max_length=256)
+
+
+MessageStatus = Literal["new", "handled", "archived"]
+
+
+class MessageOut(BaseModel):
+    id: int
+    name: str
+    email: str
+    topic: str
+    message: str
+    created_at: dt.datetime
+    status: MessageStatus
+    handled_at: dt.datetime | None
+
+
+class MessagePatchIn(BaseModel):
+    status: MessageStatus
+
+
+class TodayOut(BaseModel):
+    date: dt.date
+    closed: bool
+    #: Bookings holding covers today (everything but cancellations).
+    bookings: int
+    covers: int
+    #: covers_per_slot: how many can be seated at once.
+    capacity: int
+    #: Confirmed bookings still to start today, earliest first (up to 5).
+    next: list[AdminBookingOut]
+
+
+class WeekDayOut(BaseModel):
+    date: dt.date
+    bookings: int
+    covers: int
+
+
+class MenuSummaryOut(BaseModel):
+    source: Literal["ops", "board"]
+    warnings: int
+
+
+class SummaryOut(BaseModel):
+    today: TodayOut
+    week: list[WeekDayOut]
+    messages_new: int
+    #: Image slots with no photo yet.
+    photos_missing: int
+    menu: MenuSummaryOut
 
 
 # --- contact -------------------------------------------------------------------------

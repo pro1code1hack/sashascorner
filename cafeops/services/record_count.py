@@ -62,7 +62,7 @@ from cafeops.domain.stock import (
     theoretical_on_hand,
 )
 from cafeops.domain.tiers import GateDecision, evaluate_gate
-from cafeops.domain.types import DriftResult, DriftVerdict, IngredientSnapshot, OnHand
+from cafeops.domain.types import DriftResult, DriftVerdict, IngredientSnapshot, OnHand, Unit
 
 #: `StockRepository.latest_count` matches `counted_at <= before`, so finding the count
 #: BEFORE a given one means stepping back the smallest representable amount.
@@ -71,6 +71,10 @@ _A_MOMENT = timedelta(microseconds=1)
 #: How many observations to fetch for the gate. More than `required_consecutive` so the
 #: reason can say "8 consecutive counts under 10%" instead of stopping at 2.
 _HISTORY_DEPTH = 8
+
+
+class CountRefused(ValueError):
+    """The count was not recorded, and the message says why. Shown verbatim."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -163,6 +167,18 @@ def record_count(
     ingredient = ingredients.get(ingredient_id)
     if ingredient is None:
         raise LookupError(f"ingredient {ingredient_id} not found")
+    if not counted_by.strip():
+        raise CountRefused(
+            "counted_by is required: a count is somebody's word about what was on the shelf"
+        )
+    if ingredient.unit is Unit.EACH and counted_qty != counted_qty.to_integral_value():
+        # Refused rather than rounded, by every client: rounding would write a number to
+        # an append-only ledger that nobody saw on the shelf. This used to live only in
+        # the bot's handler (`bot/handlers/count.py`), so the web could have written one.
+        raise CountRefused(
+            f"{ingredient.name} is counted in whole units: {counted_qty} is not a whole "
+            "number. Count opened packs as one each."
+        )
 
     notes: list[str] = []
 

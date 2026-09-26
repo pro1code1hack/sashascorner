@@ -61,8 +61,10 @@ from cafeops.agent.policies import (
     spec_for,
 )
 from cafeops.config import settings
+from cafeops.db.models import AgentActionLog
 from cafeops.db.repositories.agent_log import SqlAgentLogRepository
 from cafeops.domain.types import AgentProposal, AgentToolOutcome
+from cafeops.services.agent_proposals import agent_for, insert_proposal
 
 #: The narration prompt. It explains the boundary because a model that understands
 #: why it must not compute produces better prose -- but nothing here is what ENFORCES
@@ -192,10 +194,19 @@ class AgentRun:
     """
 
     def __init__(
-        self, *, purpose: str, model: str | None = None, run_id: str | None = None
+        self,
+        *,
+        purpose: str,
+        model: str | None = None,
+        run_id: str | None = None,
+        agent: str | None = None,
     ) -> None:
         self.run_id = run_id or uuid.uuid4().hex[:16]
         self.purpose = purpose
+        #: Which agent this is (drift_explainer | import_assistant | channel_reporter |
+        #: basket_stager), stamped on every log row and proposal. Derived from the
+        #: purpose when not given, so existing callers keep working.
+        self.agent = agent or agent_for(purpose)
         self.model = model or settings.agent_model
         self.started_at = datetime.now(UTC)
 
@@ -333,6 +344,19 @@ class AgentRun:
             proposal_ref=proposal_ref,
             model=self.model,
         )
+        self._stamp_agent(log_id)
+        if proposal is not None:
+            # The agent's only write besides its log: a WAITING proposal, INSERT only
+            # (the audit engine refuses anything else on that table). Same commit as
+            # the log row, so a proposal never exists without the call that made it.
+            insert_proposal(
+                self._audit_session,
+                run_id=self.run_id,
+                log_id=log_id,
+                agent=self.agent,
+                proposal=proposal,
+                figures=list(dict.fromkeys(self.figures)),
+            )
         # Commit each row on its own. A refusal that disappeared with a rolled-back
         # transaction would defeat the point of having the table.
         self._audit_session.commit()
@@ -347,6 +371,11 @@ class AgentRun:
         )
         self.calls.append(record)
         return record
+
+    def _stamp_agent(self, log_id: int) -> None:
+        row = self._audit_session.get(AgentActionLog, log_id)
+        if row is not None:
+            row.agent = self.agent
 
     # -- the facts pack ----------------------------------------------------
 
@@ -491,7 +520,7 @@ class AgentRun:
         kept -- a reader needs to see what was said -- but the row says not to trust it.
         """
         outcome = AgentToolOutcome.OK if result.trustworthy else AgentToolOutcome.FAILED
-        self.log.log(
+        log_id = self.log.log(
             run_id=self.run_id,
             tool_name="narrate",
             inputs={
@@ -513,6 +542,7 @@ class AgentRun:
             ),
             model=result.model,
         )
+        self._stamp_agent(log_id)
         self._audit_session.commit()
 
 
@@ -558,7 +588,9 @@ CHANNEL_FACT_CALLS: tuple[tuple[str, dict[str, Any]], ...] = (("read_channel_per
 
 def narrate_drift(*, model: str | None = None) -> NarrationResult:
     """Explain the drift report: which ingredient, how much, and which fix."""
-    with AgentRun(purpose="narrate the drift and waste report", model=model) as run:
+    with AgentRun(
+        purpose="narrate the drift and waste report", model=model, agent="drift_explainer"
+    ) as run:
         facts = run.gather(list(DRIFT_FACT_CALLS))
         return run.narrate(
             "What is the most important thing in this week's stock report, and what "
@@ -569,7 +601,9 @@ def narrate_drift(*, model: str | None = None) -> NarrationResult:
 
 def narrate_channels(*, model: str | None = None) -> NarrationResult:
     """Explain Deliveroo / Just Eat: contribution, ROAS, and the conversion outliers."""
-    with AgentRun(purpose="narrate channel performance", model=model) as run:
+    with AgentRun(
+        purpose="narrate channel performance", model=model, agent="channel_reporter"
+    ) as run:
         facts = run.gather(list(CHANNEL_FACT_CALLS))
         return run.narrate(
             "What should the owner change about Deliveroo and Just Eat this week?",

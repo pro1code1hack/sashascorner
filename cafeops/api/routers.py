@@ -1,9 +1,8 @@
-"""The routes. Thin on purpose: parse, delegate to a view on a thread, return.
+"""The original routes. Thin on purpose: parse, delegate to a view on a thread, return.
 
-Everything except `/api/health` and `/api/meta` requires the shared password. Everything
-except the two composition-editor POSTs is a GET, and `POST /api/templates/{id}/preview`
-writes nothing either -- so `POST /api/templates/{id}/apply` is the only route in this
-module that can change the database.
+Everything except `/api/health` and `/api/meta` requires auth. In THIS module everything
+except the composition-editor and confirm POSTs is a GET. The redesign's write routes
+live in `cafeops/api/areas/` (stock, menu, finance, shell), one module per area.
 
 There is deliberately **no route that creates, confirms or sends a purchase order.**
 Invariant 1: nothing is ordered without human confirmation, and in v1 that confirmation

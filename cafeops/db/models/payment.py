@@ -40,11 +40,15 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from cafeops.db.base import Base
 from cafeops.db.models._common import UTCDateTime, enum_col, utcnow
-from cafeops.db.models.enums import PaymentMethod, PaymentSourceKind
+from cafeops.db.models.enums import PaymentBasis, PaymentMethod, PaymentSourceKind
 
 
 class PaymentDay(Base):
-    """One day's takings for one payment method."""
+    """One day's takings for one payment method.
+
+    Several sources may hold a row for the same (date, method). They are NEVER summed:
+    readers resolve with `enums.PAYMENT_SOURCE_PRECEDENCE` (finance spec 3.5).
+    """
 
     __tablename__ = "payment_day"
     __table_args__ = (
@@ -74,6 +78,16 @@ class PaymentDay(Base):
     discounts_pence: Mapped[int | None] = mapped_column(Integer)
 
     transactions: Mapped[int | None] = mapped_column(Integer)
+
+    #: TILL: what the till took that day. BANK_DEPOSIT: a settlement amount on its
+    #: deposit date (the workbook's Sep-Mar card column). Finance spec 2.1/4.5 -- a
+    #: deposit is never reconciled against itself as if it were takings.
+    basis: Mapped[PaymentBasis] = mapped_column(
+        enum_col(PaymentBasis),
+        nullable=False,
+        default=PaymentBasis.TILL,
+        server_default=PaymentBasis.TILL.name,
+    )
 
     source: Mapped[PaymentSourceKind] = mapped_column(enum_col(PaymentSourceKind), nullable=False)
     #: Which file or endpoint this came from, so a wrong figure is traceable.

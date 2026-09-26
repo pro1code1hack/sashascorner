@@ -1,0 +1,751 @@
+{
+  "supplier": {
+    "supplier_id": 7,
+    "name": "Amazon",
+    "lead_time_days": 2,
+    "delivery_weekdays": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "min_order_pence": 0,
+    "order_channel": "MANUAL",
+    "cutoff_time": null,
+    "delivery_fee_pence": 0,
+    "free_delivery_threshold_pence": null,
+    "terms_are_placeholders": false,
+    "kind": null,
+    "contact": "https://amazon.co.uk",
+    "order_url": null,
+    "notes": null,
+    "product_count": 2,
+    "archived": false
+  },
+  "products": [
+    {
+      "supplier_product_id": 119,
+      "supplier_id": 7,
+      "ingredient_id": 49,
+      "ingredient_name": "12oz cup lid",
+      "ingredient_unit": "EACH",
+      "sku": "ALT-AMA",
+      "pack_size": "100",
+      "pack_unit": "EACH",
+      "price_pence": 999,
+      "unit_price_pence": "9.99",
+      "price_source": null,
+      "is_preferred": false,
+      "moq_packs": 1,
+      "last_seen_price_at": null,
+      "vs_best_other": {
+        "supplier_name": "Cups Direct",
+        "unit_price_pence": "2.574",
+        "diff_pct": 288.1
+      }
+    },
+    {
+      "supplier_product_id": 118,
+      "supplier_id": 7,
+      "ingredient_id": 48,
+      "ingredient_name": "12oz paper cup",
+      "ingredient_unit": "EACH",
+      "sku": "ALT-AMA",
+      "pack_size": "100",
+      "pack_unit": "EACH",
+      "price_pence": 1499,
+      "unit_price_pence": "14.99",
+      "price_source": null,
+      "is_preferred": false,
+      "moq_packs": 1,
+      "last_seen_price_at": null,
+      "vs_best_other": {
+        "supplier_name": "Cups Direct",
+        "unit_price_pence": "9.588",
+        "diff_pct": 56.3
+      }
+    }
+  ],
+  "ingredients": [
+    {
+      "ingredient_id": 49,
+      "name": "12oz cup lid",
+      "unit": "EACH",
+      "category": "Packaging"
+    },
+    {
+      "ingredient_id": 48,
+      "name": "12oz paper cup",
+      "unit": "EACH",
+      "category": "Packaging"
+    },
+    {
+      "ingredient_id": 51,
+      "name": "16oz cup lid",
+      "unit": "EACH",
+      "category": "Packaging"
+    },
+    {
+      "ingredient_id": 50,
+      "name": "16oz paper cup",
+      "unit": "EACH",
+      "category": "Packaging"
+    },
+    {
+      "ingredient_id": 45,
+      "name": "4oz / small cup",
+      "unit": "EACH",
+      "category": "Packaging"
+    },
+    {
+      "ingredient_id": 47,
+      "name": "8oz cup lid",
+      "unit": "EACH",
+      "category": "Packaging"
+    },
+    {
+      "ingredient_id": 46,
+      "name": "8oz paper cup",
+      "unit": "EACH",
+      "category": "Packaging"
+    },
+    {
+      "ingredient_id": 4,
+      "name": "Almond milk (barista)",
+      "unit": "L",
+      "category": "Dairy alt"
+    },
+    {
+      "ingredient_id": 92,
+      "name": "Apple juice carton",
+      "unit": "EACH",
+      "category": "Bottled"
+    },
+    {
+      "ingredient_id": 31,
+      "name": "Apple syrup (Monin)",
+      "unit": "ML",
+      "category": "Syrup"
+    },
+    {
+      "ingredient_id": 65,
+      "name": "Banana pecan muffin",
+      "unit": "EACH",
+      "category": "Cake"
+    },
+    {
+      "ingredient_id": 27,
+      "name": "Banana syrup (Monin)",
+      "unit": "ML",
+      "category": "Syrup"
+    },
+    {
+      "ingredient_id": 68,
+      "name": "Billionaire's shortbread",
+      "unit": "EACH",
+      "category": "Cake"
+    },
+    {
+      "ingredient_id": 106,
+      "name": "Black Cola",
+      "unit": "EACH",
+      "category": "Bottled"
+    },
+    {
+      "ingredient_id": 100,
+      "name": "Blood orange cake (slice)",
+      "unit": "EACH",
+      "category": "Cake"
+    },
+    {
+      "ingredient_id": 112,
+      "name": "Blue chocolate wafer",
+      "unit": "EACH",
+      "category": "Bottled"
+    },
+    {
+      "ingredient_id": 66,
+      "name": "Blueberry muffin",
+      "unit": "EACH",
+      "category": "Cake"
+    },
+    {
+      "ingredient_id": 80,
+      "name": "Bread (toastie)",
+      "unit": "EACH",
+      "category": "Food"
+    },
+    {
+      "ingredient_id": 82,
+      "name": "Bread roll",
+      "unit": "EACH",
+      "category": "Food"
+    },
+    {
+      "ingredient_id": 63,
+      "name": "Brownie bar",
+      "unit": "EACH",
+      "category": "Cake"
+    },
+    {
+      "ingredient_id": 57,
+      "name": "Bubble tea straw (wide)",
+      "unit": "EACH",
+      "category": "Sundries"
+    },
+    {
+      "ingredient_id": 84,
+      "name": "Butter",
+      "unit": "KG",
+      "category": "Food"
+    },
+    {
+      "ingredient_id": 36,
+      "name": "Butterfly pea flowers",
+      "unit": "KG",
+      "category": "Tea"
+    },
+    {
+      "ingredient_id": 24,
+      "name": "Butterfly syrup (Monin)",
+      "unit": "ML",
+      "category": "Syrup"
+    },
+    {
+      "ingredient_id": 102,
+      "name": "Cajun chicken panini (premade)",
+      "unit": "EACH",
+      "category": "Food"
+    },
+    {
+      "ingredient_id": 94,
+      "name": "Capri-Sun pouch",
+      "unit": "EACH",
+      "category": "Bottled"
+    },
+    {
+      "ingredient_id": 11,
+      "name": "Caramel syrup (Monin)",
+      "unit": "ML",
+      "category": "Syrup"
+    },
+    {
+      "ingredient_id": 33,
+      "name": "Chai concentrate",
+      "unit": "ML",
+      "category": "Syrup"
+    },
+    {
+      "ingredient_id": 83,
+      "name": "Cheese (toastie)",
+      "unit": "KG",
+      "category": "Food"
+    },
+    {
+      "ingredient_id": 37,
+      "name": "Chocolate powder",
+      "unit": "KG",
+      "category": "Chocolate"
+    },
+    {
+      "ingredient_id": 97,
+      "name": "Chocolate wafer",
+      "unit": "EACH",
+      "category": "Bottled"
+    },
+    {
+      "ingredient_id": 22,
+      "name": "Cinnamon bun syrup (Monin)",
+      "unit": "ML",
+      "category": "Syrup"
+    },
+    {
+      "ingredient_id": 71,
+      "name": "Cinnamon classic bun",
+      "unit": "EACH",
+      "category": "Cake"
+    },
+    {
+      "ingredient_id": 29,
+      "name": "Citrus / lime syrup (Monin)",
+      "unit": "ML",
+      "category": "Syrup"
+    },
+    {
+      "ingredient_id": 89,
+      "name": "Coca-Cola",
+      "unit": "EACH",
+      "category": "Bottled"
+    },
+    {
+      "ingredient_id": 6,
+      "name": "Coconut milk (barista)",
+      "unit": "L",
+      "category": "Dairy alt"
+    },
+    {
+      "ingredient_id": 28,
+      "name": "Coconut syrup (Monin)",
+      "unit": "ML",
+      "category": "Syrup"
+    },
+    {
+      "ingredient_id": 44,
+      "name": "Coconut water",
+      "unit": "L",
+      "category": "Specialty"
+    },
+    {
+      "ingredient_id": 9,
+      "name": "Coffee beans (decaf)",
+      "unit": "KG",
+      "category": "Coffee"
+    },
+    {
+      "ingredient_id": 8,
+      "name": "Coffee beans (house blend)",
+      "unit": "KG",
+      "category": "Coffee"
+    },
+    {
+      "ingredient_id": 78,
+      "name": "Cream cheese",
+      "unit": "KG",
+      "category": "Food"
+    },
+    {
+      "ingredient_id": 39,
+      "name": "Dark chocolate sauce",
+      "unit": "ML",
+      "category": "Chocolate"
+    },
+    {
+      "ingredient_id": 113,
+      "name": "Decaf coffee pod",
+      "unit": "EACH",
+      "category": "Coffee"
+    },
+    {
+      "ingredient_id": 105,
+      "name": "Diet Coke",
+      "unit": "EACH",
+      "category": "Bottled"
+    },
+    {
+      "ingredient_id": 90,
+      "name": "Fanta",
+      "unit": "EACH",
+      "category": "Bottled"
+    },
+    {
+      "ingredient_id": 111,
+      "name": "Fruit Shoot",
+      "unit": "EACH",
+      "category": "Bottled"
+    },
+    {
+      "ingredient_id": 104,
+      "name": "Ham & cheese toastie (premade)",
+      "unit": "EACH",
+      "category": "Food"
+    },
+    {
+      "ingredient_id": 76,
+      "name": "Ham (sliced)",
+      "unit": "KG",
+      "category": "Food"
+    },
+    {
+      "ingredient_id": 32,
+      "name": "Honey",
+      "unit": "ML",
+      "category": "Syrup"
+    },
+    {
+      "ingredient_id": 108,
+      "name": "Irn-Bru",
+      "unit": "EACH",
+      "category": "Bottled"
+    },
+    {
+      "ingredient_id": 87,
+      "name": "Jam sachet",
+      "unit": "EACH",
+      "category": "Food"
+    },
+    {
+      "ingredient_id": 72,
+      "name": "Kyiv cake (slice)",
+      "unit": "EACH",
+      "category": "Cake"
+    },
+    {
+      "ingredient_id": 73,
+      "name": "Kyiv cake (whole)",
+      "unit": "EACH",
+      "category": "Cake"
+    },
+    {
+      "ingredient_id": 20,
+      "name": "Lavender syrup (Monin)",
+      "unit": "ML",
+      "category": "Syrup"
+    },
+    {
+      "ingredient_id": 69,
+      "name": "Lemon & pistachio cake",
+      "unit": "EACH",
+      "category": "Cake"
+    },
+    {
+      "ingredient_id": 64,
+      "name": "Lemon drizzle bar",
+      "unit": "EACH",
+      "category": "Cake"
+    },
+    {
+      "ingredient_id": 101,
+      "name": "Lemon muffin",
+      "unit": "EACH",
+      "category": "Cake"
+    },
+    {
+      "ingredient_id": 30,
+      "name": "Lemon syrup (Monin)",
+      "unit": "ML",
+      "category": "Syrup"
+    },
+    {
+      "ingredient_id": 35,
+      "name": "Loose-leaf tea (black)",
+      "unit": "KG",
+      "category": "Tea"
+    },
+    {
+      "ingredient_id": 26,
+      "name": "Mango syrup/puree (Monin)",
+      "unit": "ML",
+      "category": "Syrup"
+    },
+    {
+      "ingredient_id": 103,
+      "name": "Margarita panini (premade)",
+      "unit": "EACH",
+      "category": "Food"
+    },
+    {
+      "ingredient_id": 56,
+      "name": "Marshmallow",
+      "unit": "KG",
+      "category": "Sundries"
+    },
+    {
+      "ingredient_id": 40,
+      "name": "Matcha powder",
+      "unit": "KG",
+      "category": "Specialty"
+    },
+    {
+      "ingredient_id": 70,
+      "name": "Mini cookie",
+      "unit": "EACH",
+      "category": "Cake"
+    },
+    {
+      "ingredient_id": 18,
+      "name": "Mint syrup (Monin)",
+      "unit": "ML",
+      "category": "Syrup"
+    },
+    {
+      "ingredient_id": 99,
+      "name": "Morello cake (slice)",
+      "unit": "EACH",
+      "category": "Cake"
+    },
+    {
+      "ingredient_id": 54,
+      "name": "Napkin",
+      "unit": "EACH",
+      "category": "Sundries"
+    },
+    {
+      "ingredient_id": 3,
+      "name": "Oat milk (barista)",
+      "unit": "L",
+      "category": "Dairy alt"
+    },
+    {
+      "ingredient_id": 93,
+      "name": "Orange juice carton",
+      "unit": "EACH",
+      "category": "Bottled"
+    },
+    {
+      "ingredient_id": 19,
+      "name": "Orange syrup (Monin)",
+      "unit": "ML",
+      "category": "Syrup"
+    },
+    {
+      "ingredient_id": 85,
+      "name": "Pancake mix",
+      "unit": "KG",
+      "category": "Food"
+    },
+    {
+      "ingredient_id": 81,
+      "name": "Panini bread",
+      "unit": "EACH",
+      "category": "Food"
+    },
+    {
+      "ingredient_id": 25,
+      "name": "Peach syrup (Monin)",
+      "unit": "ML",
+      "category": "Syrup"
+    },
+    {
+      "ingredient_id": 21,
+      "name": "Pistachio syrup (Monin)",
+      "unit": "ML",
+      "category": "Syrup"
+    },
+    {
+      "ingredient_id": 74,
+      "name": "Plain croissant",
+      "unit": "EACH",
+      "category": "Food"
+    },
+    {
+      "ingredient_id": 95,
+      "name": "Pom-Bear crisps",
+      "unit": "EACH",
+      "category": "Bottled"
+    },
+    {
+      "ingredient_id": 96,
+      "name": "Pringles can",
+      "unit": "EACH",
+      "category": "Bottled"
+    },
+    {
+      "ingredient_id": 23,
+      "name": "Pumpkin spice syrup (Monin)",
+      "unit": "ML",
+      "category": "Syrup"
+    },
+    {
+      "ingredient_id": 67,
+      "name": "Raspberry almond muffin",
+      "unit": "EACH",
+      "category": "Cake"
+    },
+    {
+      "ingredient_id": 58,
+      "name": "Raspberry brownie cheesecake",
+      "unit": "EACH",
+      "category": "Cake (CakeSmiths)"
+    },
+    {
+      "ingredient_id": 59,
+      "name": "Raspberry matcha cheesecake",
+      "unit": "EACH",
+      "category": "Cake (CakeSmiths)"
+    },
+    {
+      "ingredient_id": 14,
+      "name": "Raspberry syrup (Monin)",
+      "unit": "ML",
+      "category": "Syrup"
+    },
+    {
+      "ingredient_id": 13,
+      "name": "Rose syrup (Monin)",
+      "unit": "ML",
+      "category": "Syrup"
+    },
+    {
+      "ingredient_id": 75,
+      "name": "Salami (sliced)",
+      "unit": "KG",
+      "category": "Food"
+    },
+    {
+      "ingredient_id": 62,
+      "name": "Salted caramel bar",
+      "unit": "EACH",
+      "category": "Cake (CakeSmiths)"
+    },
+    {
+      "ingredient_id": 60,
+      "name": "Salted caramel brownie",
+      "unit": "EACH",
+      "category": "Cake (CakeSmiths)"
+    },
+    {
+      "ingredient_id": 12,
+      "name": "Salted caramel syrup (Monin)",
+      "unit": "ML",
+      "category": "Syrup"
+    },
+    {
+      "ingredient_id": 2,
+      "name": "Semi-skimmed milk",
+      "unit": "L",
+      "category": "Dairy"
+    },
+    {
+      "ingredient_id": 77,
+      "name": "Smoked salmon",
+      "unit": "KG",
+      "category": "Food"
+    },
+    {
+      "ingredient_id": 5,
+      "name": "Soy milk (barista)",
+      "unit": "L",
+      "category": "Dairy alt"
+    },
+    {
+      "ingredient_id": 110,
+      "name": "Sparkling water",
+      "unit": "EACH",
+      "category": "Bottled"
+    },
+    {
+      "ingredient_id": 107,
+      "name": "Sprite",
+      "unit": "EACH",
+      "category": "Bottled"
+    },
+    {
+      "ingredient_id": 61,
+      "name": "Sticky toffee Biscoff",
+      "unit": "EACH",
+      "category": "Cake (CakeSmiths)"
+    },
+    {
+      "ingredient_id": 88,
+      "name": "Still water (bottle)",
+      "unit": "EACH",
+      "category": "Bottled"
+    },
+    {
+      "ingredient_id": 86,
+      "name": "Strawberries (fresh)",
+      "unit": "KG",
+      "category": "Food"
+    },
+    {
+      "ingredient_id": 17,
+      "name": "Strawberry syrup (Monin)",
+      "unit": "ML",
+      "category": "Syrup"
+    },
+    {
+      "ingredient_id": 53,
+      "name": "Sugar sachet",
+      "unit": "EACH",
+      "category": "Sundries"
+    },
+    {
+      "ingredient_id": 109,
+      "name": "Sugar-free Irn-Bru",
+      "unit": "EACH",
+      "category": "Bottled"
+    },
+    {
+      "ingredient_id": 52,
+      "name": "Takeaway bag",
+      "unit": "EACH",
+      "category": "Packaging"
+    },
+    {
+      "ingredient_id": 41,
+      "name": "Tapioca pearls",
+      "unit": "KG",
+      "category": "Specialty"
+    },
+    {
+      "ingredient_id": 34,
+      "name": "Tea bag (standard)",
+      "unit": "EACH",
+      "category": "Tea"
+    },
+    {
+      "ingredient_id": 79,
+      "name": "Tinned tuna",
+      "unit": "KG",
+      "category": "Food"
+    },
+    {
+      "ingredient_id": 98,
+      "name": "Tiramisu cake (slice)",
+      "unit": "EACH",
+      "category": "Cake"
+    },
+    {
+      "ingredient_id": 15,
+      "name": "Toffee nut syrup (Monin)",
+      "unit": "ML",
+      "category": "Syrup"
+    },
+    {
+      "ingredient_id": 16,
+      "name": "Toffee syrup (Monin)",
+      "unit": "ML",
+      "category": "Syrup"
+    },
+    {
+      "ingredient_id": 43,
+      "name": "Tonic water",
+      "unit": "L",
+      "category": "Specialty"
+    },
+    {
+      "ingredient_id": 91,
+      "name": "Tropicana OJ carton",
+      "unit": "EACH",
+      "category": "Bottled"
+    },
+    {
+      "ingredient_id": 42,
+      "name": "Vanilla ice cream",
+      "unit": "L",
+      "category": "Specialty"
+    },
+    {
+      "ingredient_id": 10,
+      "name": "Vanilla syrup (Monin)",
+      "unit": "ML",
+      "category": "Syrup"
+    },
+    {
+      "ingredient_id": 7,
+      "name": "Whipping cream",
+      "unit": "L",
+      "category": "Dairy"
+    },
+    {
+      "ingredient_id": 38,
+      "name": "White chocolate sauce",
+      "unit": "ML",
+      "category": "Chocolate"
+    },
+    {
+      "ingredient_id": 1,
+      "name": "Whole milk",
+      "unit": "L",
+      "category": "Dairy"
+    },
+    {
+      "ingredient_id": 55,
+      "name": "Wooden stirrer",
+      "unit": "EACH",
+      "category": "Sundries"
+    }
+  ]
+}

@@ -11,7 +11,6 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from cafeops.api.schemas import Health, Meta
-from cafeops.api.security import api_password
 from cafeops.config import settings
 from cafeops.db.base import engine
 from cafeops.db.models import DrinkTemplate, Ingredient, MenuItem, StockMovement
@@ -28,6 +27,7 @@ from cafeops.domain.types import (
     Tier,
     Unit,
 )
+from cafeops.services.auth import auth_is_configured
 
 __all__ = ["health_view", "meta_view"]
 
@@ -45,7 +45,9 @@ def health_view(session: Session, *, authenticated: bool = False) -> Health:
     base = Health(
         status="ok",
         database_dialect=engine.dialect.name,
-        auth_configured=api_password() is not None,
+        # True for either source: a stored credential (set from Settings) or the env
+        # bootstrap. services/auth.py owns the precedence.
+        auth_configured=auth_is_configured(session),
     )
     if not authenticated:
         return base

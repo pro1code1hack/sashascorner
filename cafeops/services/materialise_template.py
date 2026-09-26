@@ -38,7 +38,7 @@ from datetime import UTC, datetime
 from decimal import Decimal
 
 from sqlalchemy import or_, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, sessionmaker
 
 from cafeops.db.models import (
     ComponentRole,
@@ -47,6 +47,8 @@ from cafeops.db.models import (
     LegacyStagedRecipe,
     ManualRecipeLine,
     MenuItem,
+    MenuItemCost,
+    RecipeChange,
     SizeCode,
     SizeProfile,
     TemplateComponent,
@@ -66,6 +68,7 @@ __all__ = [
     "find_proposal",
     "list_proposals",
     "materialise_proposal",
+    "preview_proposal",
 ]
 
 #: Roles a modifier may swap. MILK only, because that is the one the POS actually
@@ -264,6 +267,18 @@ def materialise_proposal(
             _require_template_id(report),
             at=effective_from,
             trigger=f"template {proposal.name!r} materialised by {actor}",
+        )
+        # The baseline row of the recipe's history (recipes spec V1.8): who confirmed
+        # it and what it holds. Every later change keeps its own date after this one.
+        session.add(
+            RecipeChange(
+                template_id=_require_template_id(report),
+                change_kind="materialise",
+                effective_from=effective_from,
+                actor=actor,
+                summary=f"Confirmed from the workbook import by {actor}",
+                lines=[report.summary(), *report.warnings[:5]],
+            )
         )
         session.commit()
     except Exception:
@@ -620,3 +635,126 @@ def _normalise_sizes(qty_by_size: dict[str, str]) -> dict[str, str]:
 
 def _ingredients_by_name(session: Session) -> dict[str, Ingredient]:
     return {row.name: row for row in session.scalars(select(Ingredient))}
+
+
+# --------------------------------------------------------------------------
+# Preview: what confirming would do, measured, then thrown away
+# --------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class ProposalCostChange:
+    menu_item_id: int
+    name: str
+    size_code: SizeCode | None
+    price_pence: int
+    cost_before: Decimal | None
+    source_before: str | None
+    cost_after: Decimal | None
+    source_after: str | None
+
+
+@dataclass
+class ProposalPreview:
+    proposal_id: str
+    name: str
+    blocked_reason: str | None
+    report: MaterialisationReport | None
+    cost_changes: list[ProposalCostChange] = field(default_factory=list)
+    writes_nothing: bool = True
+
+
+def _costs(session: Session, item_ids: list[int]) -> dict[int, tuple[Decimal | None, str | None]]:
+    if not item_ids:
+        return {}
+    return {
+        row.menu_item_id: (
+            row.cost_pence,
+            row.cost_source.value if row.cost_source is not None else None,
+        )
+        for row in session.scalars(
+            select(MenuItemCost).where(MenuItemCost.menu_item_id.in_(item_ids))
+        )
+    }
+
+
+def preview_proposal(proposal_id: str, *, allow_conflicts: bool = False) -> ProposalPreview:
+    """Run the real materialisation inside a transaction that is always rolled back.
+
+    The one preview here that is NOT computed in memory, deliberately: materialising
+    writes a template, its sizes, slots, axes and options, re-points items and closes
+    their one-off lines, and the honest answer to "what will this do to their costs" is
+    to do exactly that and read the rollup. Re-deriving it would be a second
+    implementation of `_build` waiting to disagree with the first.
+
+    `join_transaction_mode="rollback_only"`, NOT `create_savepoint`: on pysqlite a
+    savepoint RELEASE becomes a real commit and the "preview" writes (ARCHITECTURE 8R,
+    measured). The service's own `session.commit()` is a no-op against the outer
+    transaction, and the outer `rollback()` undoes everything.
+    """
+    from cafeops.db.base import engine
+
+    with engine.connect() as connection:
+        transaction = connection.begin()
+        try:
+            factory = sessionmaker(
+                bind=connection, join_transaction_mode="rollback_only", expire_on_commit=False
+            )
+            session = factory()
+            try:
+                proposal = find_proposal(session, proposal_id)
+                if proposal.proposal_id != proposal_id.strip().casefold():
+                    raise ProposalNotFound(
+                        f"{proposal_id!r} is not a proposal id; confirm and preview by id, "
+                        "because names are not unique"
+                    )
+                items = list(
+                    session.scalars(
+                        select(MenuItem).where(MenuItem.name.in_(proposal.base_item_names))
+                    )
+                )
+                ids = [i.id for i in items]
+                before = _costs(session, ids)
+                preview = ProposalPreview(
+                    proposal_id=proposal.proposal_id,
+                    name=proposal.name,
+                    blocked_reason=None,
+                    report=None,
+                )
+                try:
+                    report = materialise_proposal(
+                        session,
+                        proposal.proposal_id,
+                        actor="preview",
+                        allow_conflicts=allow_conflicts,
+                    )
+                except (ProposalHasConflicts, ProposalAlreadyMaterialised) as exc:
+                    preview.blocked_reason = str(exc)
+                    return preview
+                preview.report = report
+                after = _costs(session, ids)
+                for item in sorted(
+                    items,
+                    key=lambda i: (i.name, _SIZE_SORT.get(i.size_code, 9) if i.size_code else 9),
+                ):
+                    b = before.get(item.id, (None, None))
+                    a = after.get(item.id, (None, None))
+                    if b == a:
+                        continue
+                    preview.cost_changes.append(
+                        ProposalCostChange(
+                            menu_item_id=item.id,
+                            name=item.name,
+                            size_code=item.size_code,
+                            price_pence=item.price_pence,
+                            cost_before=b[0],
+                            source_before=b[1],
+                            cost_after=a[0],
+                            source_after=a[1],
+                        )
+                    )
+                return preview
+            finally:
+                session.close()
+        finally:
+            transaction.rollback()

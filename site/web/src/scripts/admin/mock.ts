@@ -1,5 +1,5 @@
-// In-memory stand-in for the media API, enabled with `/admin?mock=1`.
-// Password "mock" signs in; "down" simulates an unconfigured server (503).
+// In-memory stand-in for the media API, enabled with `/admin/photos?mock=1`.
+// (The admin shell signs in; this only stands in for the photo endpoints.)
 // Uploads fake their progress; files named *fail* are refused with 415.
 import type { Api } from './api';
 import { ApiError, type Media, type Slot } from './types';

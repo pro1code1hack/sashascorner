@@ -16,7 +16,13 @@
     "cutoff_time": null,
     "delivery_fee_pence": 0,
     "free_delivery_threshold_pence": null,
-    "terms_are_placeholders": false
+    "terms_are_placeholders": false,
+    "kind": null,
+    "contact": "https://amazon.co.uk",
+    "order_url": null,
+    "notes": null,
+    "product_count": 2,
+    "archived": false
   },
   {
     "supplier_id": 3,
@@ -31,7 +37,13 @@
     "cutoff_time": "12:00:00",
     "delivery_fee_pence": 0,
     "free_delivery_threshold_pence": 6000,
-    "terms_are_placeholders": true
+    "terms_are_placeholders": true,
+    "kind": null,
+    "contact": "https://booker.example/account",
+    "order_url": null,
+    "notes": null,
+    "product_count": 55,
+    "archived": false
   },
   {
     "supplier_id": 2,
@@ -47,7 +59,13 @@
     "cutoff_time": "16:00:00",
     "delivery_fee_pence": 0,
     "free_delivery_threshold_pence": 10000,
-    "terms_are_placeholders": true
+    "terms_are_placeholders": true,
+    "kind": null,
+    "contact": "https://brakes.example/account",
+    "order_url": null,
+    "notes": null,
+    "product_count": 20,
+    "archived": false
   },
   {
     "supplier_id": 1,
@@ -62,7 +80,13 @@
     "cutoff_time": "14:00:00",
     "delivery_fee_pence": 0,
     "free_delivery_threshold_pence": 7500,
-    "terms_are_placeholders": true
+    "terms_are_placeholders": true,
+    "kind": null,
+    "contact": "https://cakesmiths.example/account",
+    "order_url": "https://cakesmiths.example/order",
+    "notes": null,
+    "product_count": 20,
+    "archived": false
   },
   {
     "supplier_id": 4,
@@ -80,7 +104,13 @@
     "cutoff_time": "15:00:00",
     "delivery_fee_pence": 595,
     "free_delivery_threshold_pence": 7500,
-    "terms_are_placeholders": true
+    "terms_are_placeholders": true,
+    "kind": null,
+    "contact": "https://cupsdirect.example",
+    "order_url": "https://cupsdirect.example/basket",
+    "notes": null,
+    "product_count": 13,
+    "archived": false
   },
   {
     "supplier_id": 5,
@@ -94,7 +124,13 @@
     "cutoff_time": "11:00:00",
     "delivery_fee_pence": 0,
     "free_delivery_threshold_pence": null,
-    "terms_are_placeholders": true
+    "terms_are_placeholders": true,
+    "kind": null,
+    "contact": "orders@monolith.example",
+    "order_url": null,
+    "notes": null,
+    "product_count": 6,
+    "archived": false
   },
   {
     "supplier_id": 8,
@@ -106,7 +142,13 @@
     "cutoff_time": null,
     "delivery_fee_pence": 0,
     "free_delivery_threshold_pence": null,
-    "terms_are_placeholders": true
+    "terms_are_placeholders": true,
+    "kind": null,
+    "contact": "message",
+    "order_url": null,
+    "notes": null,
+    "product_count": 0,
+    "archived": false
   },
   {
     "supplier_id": 6,
@@ -118,6 +160,12 @@
     "cutoff_time": null,
     "delivery_fee_pence": 0,
     "free_delivery_threshold_pence": null,
-    "terms_are_placeholders": false
+    "terms_are_placeholders": false,
+    "kind": null,
+    "contact": "Walk-in, Dundee",
+    "order_url": null,
+    "notes": null,
+    "product_count": 3,
+    "archived": false
   }
 ]

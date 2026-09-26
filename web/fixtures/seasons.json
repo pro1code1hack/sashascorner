@@ -1,0 +1,18 @@
+[
+  {
+    "season_id": 1,
+    "name": "Spring seasonal drinks",
+    "starts_on": "2026-03-01",
+    "ends_on": "2026-05-31",
+    "is_recurring_annually": true,
+    "is_open_today": false
+  },
+  {
+    "season_id": 2,
+    "name": "Pumpkin season",
+    "starts_on": "2026-09-15",
+    "ends_on": "2026-11-30",
+    "is_recurring_annually": true,
+    "is_open_today": true
+  }
+]

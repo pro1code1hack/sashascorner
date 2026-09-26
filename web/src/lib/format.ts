@@ -190,3 +190,32 @@ export function costView(c: Cost | null | undefined): CostView {
   const { head, tail } = pence(c.pence)
   return { kind: 'figure', head, tail, isEstimate: c.is_estimate, source: c.source }
 }
+
+/**
+ * Money as the v2 design writes it: always pounds, two decimals, U+2212 minus
+ * before the symbol (`£12.00`, `−£4.20`). Input is integer pence (number or
+ * the API's exact string). An alias of `poundsOnly`, named for the design's
+ * `gbp()` so screen builders find it.
+ */
+export function gbp(pence: string | number): string {
+  return poundsOnly(pence)
+}
+
+/**
+ * Relative time as the design's `ago()` writes it: "just now", "12 min ago",
+ * "3 hours ago", "2 days ago". Past only; a future or unparseable stamp falls
+ * back to "just now" / "—". `now` is injectable so a caller can tick it.
+ */
+export function ago(iso: string | null, now: number = Date.now()): string {
+  if (!iso) return '—'
+  const t = Date.parse(iso)
+  if (Number.isNaN(t)) return '—'
+  const s = Math.max(0, Math.round((now - t) / 1000))
+  if (s < 60) return 'just now'
+  const m = Math.round(s / 60)
+  if (m < 60) return `${m} min ago`
+  const h = Math.round(m / 60)
+  if (h < 48) return `${h} ${plural(h, 'hour')} ago`
+  const d = Math.round(h / 24)
+  return `${d} ${plural(d, 'day')} ago`
+}

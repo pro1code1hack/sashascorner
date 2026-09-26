@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from cafeops.db.models import Ingredient, IngredientPrice
 from cafeops.domain.types import IngredientSnapshot, PriceSource, Tier, Unit
+from cafeops.domain.units import convert
 
 
 def _snapshot(row: Ingredient) -> IngredientSnapshot:
@@ -114,7 +115,13 @@ class SqlIngredientRepository:
         if current is not None:
             current.effective_to = effective_from
 
-        cost_per_unit = Decimal(pack_cost_pence) / pack_size if pack_size else Decimal("0")
+        if pack_size <= 0:
+            # Not a price: a zero cost would read as "free" in every rollup (invariant 8).
+            raise ValueError(f"pack size must be positive, got {pack_size}")
+        # Per INGREDIENT unit, not per pack unit: a 1 kg bag of an ingredient measured in
+        # grams costs pack/1000 per g. Across dimensions this raises rather than 1:1.
+        pack_in_ingredient_units = convert(pack_size, pack_unit, ingredient.unit)
+        cost_per_unit = Decimal(pack_cost_pence) / pack_in_ingredient_units
         row = IngredientPrice(
             ingredient_id=ingredient_id,
             pack_size=pack_size,

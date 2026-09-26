@@ -16,24 +16,27 @@ from fastapi import (
     Form,
     HTTPException,
     Query,
+    Request,
     Response,
     UploadFile,
 )
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
 from sashasite import booking as bk
 from sashasite import media as md
 from sashasite import slots as sl
-from sashasite.config import CafeFacts, get_cafe, get_settings, warn_unconfirmed
+from sashasite.admin_api import router as admin_router
+from sashasite.auth import audit, require_admin_session
+from sashasite.config import CafeFacts, get_cafe_file, get_settings, warn_unconfirmed
 from sashasite.db import SiteBooking, SiteContactMessage, session_scope, utcnow
 from sashasite.mediaserve import BodyLimit, VariantFiles
-from sashasite.menu import cached_menu, load_board
+from sashasite.menu import load_board
+from sashasite.menu_admin import router as menu_admin_router
+from sashasite.menu_source import cached_menu
 from sashasite.notify import booking_text, contact_text, send_owner
 from sashasite.ratelimit import rate_limit, upload_rate_limit
 from sashasite.schemas import (
     AddressOut,
-    AdminBookingOut,
     AvailabilityOut,
     BookingCreatedOut,
     BookingIn,
@@ -54,13 +57,18 @@ from sashasite.schemas import (
     SlotPutIn,
     SocialsOut,
 )
+from sashasite.settings_store import ensure_seeded, live_cafe
 
 log = logging.getLogger("sashasite")
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
-    cafe = get_cafe()  # validate config at startup, not on first request
+    get_cafe_file()  # validate config at startup, not on first request
+    seeded = ensure_seeded()  # first run: copy cafe.toml into site_setting
+    if seeded:
+        log.info("seeded site_setting from cafe.toml: %s", ", ".join(seeded))
+    cafe = live_cafe()
     load_board()  # a bad price or duplicate id fails startup, loudly
     reg = sl.registry()  # likewise a bad slots.toml
     log.info("slots.toml: %d slot(s); media in %s", len(reg.slot), get_settings().media_dir)
@@ -81,12 +89,14 @@ def create_app() -> FastAPI:
         CORSMiddleware,
         allow_origins=settings.cors_origin_list,
         allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
-        allow_headers=["Content-Type", "Authorization"],
+        allow_headers=["Content-Type", "X-Admin"],
     )
     app.add_middleware(
         BodyLimit, method="POST", path_prefix="/api/admin/media", limit=md.MAX_REQUEST_BYTES
     )
     register(app)
+    app.include_router(menu_admin_router)
+    app.include_router(admin_router)
     media_dir = md.media_dir()
     # Same files twice: /media is canonical (Caddy in prod), /api/media-files is
     # for the Astro dev server, which proxies only /api.
@@ -131,31 +141,14 @@ def _booking_out(b: SiteBooking) -> BookingOut:
     return BookingOut(
         reference=b.reference,
         manage_token=b.manage_token,
-        status="confirmed" if b.status == "confirmed" else "cancelled",
+        # The guest sees only live or cancelled; arrived/no_show are the owner's notes.
+        status="cancelled" if b.status == "cancelled" else "confirmed",
         date=b.local_date,
         time=b.local_time,
         party=b.party,
         name=b.name,
         created_at=b.created_at,
     )
-
-
-_basic = HTTPBasic(auto_error=False)
-
-
-def require_admin(creds: HTTPBasicCredentials | None = Depends(_basic)) -> None:
-    password = get_settings().admin_password
-    if not password:
-        raise HTTPException(503, detail="Admin is disabled: SITE_ADMIN_PASSWORD is not set.")
-    ok = creds is not None and secrets.compare_digest(
-        creds.password.encode("utf-8"), password.encode("utf-8")
-    )
-    if not ok:
-        # Challenge only when no credentials were sent. A wrong password from the
-        # admin page must come back as a plain 401 the page can explain; with the
-        # header, browsers throw their own native password dialog over it.
-        challenge = {"WWW-Authenticate": "Basic"} if creds is None else None
-        raise HTTPException(401, detail="Unauthorised.", headers=challenge)
 
 
 def register(app: FastAPI) -> None:
@@ -165,7 +158,7 @@ def register(app: FastAPI) -> None:
 
     @app.get("/api/info", response_model=InfoOut)
     def info() -> InfoOut:
-        return info_out(get_cafe())
+        return info_out(live_cafe())
 
     @app.get("/api/menu", response_model=MenuOut)
     def menu() -> MenuOut:
@@ -173,7 +166,7 @@ def register(app: FastAPI) -> None:
 
     @app.get("/api/availability", response_model=AvailabilityOut)
     def availability(date: dt.date = Query(...), party: int = Query(..., ge=1)) -> AvailabilityOut:
-        cafe = get_cafe()
+        cafe = live_cafe()
         if party > cafe.booking.max_party:
             raise HTTPException(
                 422,
@@ -202,7 +195,7 @@ def register(app: FastAPI) -> None:
                 party=body.party,
                 name=body.name,
             )
-        cafe = get_cafe()
+        cafe = live_cafe()
         try:
             b = bk.create_booking(cafe, body)
         except bk.NotBookable as exc:
@@ -286,27 +279,6 @@ def register(app: FastAPI) -> None:
         )
         return OkOut()
 
-    @app.get(
-        "/api/admin/bookings",
-        response_model=list[AdminBookingOut],
-        dependencies=[Depends(require_admin)],
-    )
-    def admin_bookings(
-        from_: dt.date | None = Query(None, alias="from"),
-        to: dt.date | None = Query(None),
-    ) -> list[AdminBookingOut]:
-        return [
-            AdminBookingOut(
-                **_booking_out(b).model_dump(),
-                id=b.id,
-                email=b.email,
-                phone=b.phone,
-                notes=b.notes,
-                cancelled_at=b.cancelled_at,
-            )
-            for b in bk.list_bookings(from_, to)
-        ]
-
     # --- media & image slots ---------------------------------------------------------
 
     @app.get("/api/slots", response_model=ImageSlotsOut)
@@ -320,7 +292,7 @@ def register(app: FastAPI) -> None:
     @app.get(
         "/api/admin/media",
         response_model=list[MediaOut],
-        dependencies=[Depends(require_admin)],
+        dependencies=[Depends(require_admin_session)],
     )
     def admin_media_list() -> list[MediaOut]:
         labels = _labels()
@@ -330,10 +302,11 @@ def register(app: FastAPI) -> None:
         "/api/admin/media",
         status_code=201,
         response_model=MediaOut,
-        dependencies=[Depends(require_admin), Depends(upload_rate_limit)],
+        dependencies=[Depends(require_admin_session), Depends(upload_rate_limit)],
         responses={200: {"description": "Identical file already in the library"}},
     )
     def admin_media_upload(
+        request: Request,
         response: Response,
         file: UploadFile = File(...),
         alt: str = Form("", max_length=300),
@@ -346,25 +319,30 @@ def register(app: FastAPI) -> None:
             raise HTTPException(exc.status, detail=str(exc)) from exc
         if not created:
             response.status_code = 200
+        else:
+            audit("media.upload", {"id": m.id, "name": m.original_name}, request=request)
         return md.media_out(m, md.usage_of(m.id), _labels())
 
     @app.patch(
         "/api/admin/media/{media_id}",
         response_model=MediaOut,
-        dependencies=[Depends(require_admin)],
+        dependencies=[Depends(require_admin_session)],
     )
-    def admin_media_patch(media_id: int, body: MediaPatchIn) -> MediaOut:
+    def admin_media_patch(media_id: int, body: MediaPatchIn, request: Request) -> MediaOut:
         m = md.set_alt(media_id, body.alt)
         if m is None:
             raise HTTPException(404, detail="No such photo.")
+        audit("media.update", {"id": m.id, "alt": body.alt}, request=request)
         return md.media_out(m, md.usage_of(m.id), _labels())
 
     @app.delete(
         "/api/admin/media/{media_id}",
         response_model=MediaDeletedOut,
-        dependencies=[Depends(require_admin)],
+        dependencies=[Depends(require_admin_session)],
     )
-    def admin_media_delete(media_id: int, force: bool = Query(False)) -> MediaDeletedOut:
+    def admin_media_delete(
+        media_id: int, request: Request, force: bool = Query(False)
+    ) -> MediaDeletedOut:
         try:
             keys = md.delete_media(media_id, force=force)
         except md.MediaInUse as exc:
@@ -379,18 +357,25 @@ def register(app: FastAPI) -> None:
             ) from exc
         if keys is None:
             raise HTTPException(404, detail="No such photo.")
+        audit("media.delete", {"id": media_id, "unassigned": keys}, request=request)
         return MediaDeletedOut(id=media_id, unassigned=keys)
 
     @app.put(
         "/api/admin/slots/{key}",
         response_model=ImageSlotOut,
-        dependencies=[Depends(require_admin)],
+        dependencies=[Depends(require_admin_session)],
     )
-    def admin_slot_put(key: str, body: SlotPutIn) -> ImageSlotOut:
+    def admin_slot_put(key: str, body: SlotPutIn, request: Request) -> ImageSlotOut:
         try:
-            return sl.replace_slot(key, body.items)
+            out = sl.replace_slot(key, body.items)
         except sl.SlotError as exc:
             raise HTTPException(422, detail=str(exc)) from exc
+        audit(
+            "slot.update",
+            {"key": key, "media_ids": [i.media_id for i in body.items]},
+            request=request,
+        )
+        return out
 
 
 app = create_app()

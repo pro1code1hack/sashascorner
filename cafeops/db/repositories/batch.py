@@ -43,7 +43,7 @@ from decimal import Decimal
 from sqlalchemy import Select, or_, select
 from sqlalchemy.orm import Session
 
-from cafeops.db.models import Ingredient, MovementType, StockBatch, StockMovement
+from cafeops.db.models import ExpirySource, Ingredient, MovementType, StockBatch, StockMovement
 from cafeops.db.repositories.stock import SqlStockRepository
 from cafeops.domain.stock import expiry_movements, find_expiry_losses
 from cafeops.domain.types import (
@@ -241,6 +241,8 @@ class SqlBatchRepository:
         unit_cost_pence: Decimal,
         po_line_id: int | None = None,
         note: str | None = None,
+        expiry_source: ExpirySource | None = None,
+        received_by: str | None = None,
     ) -> int:
         if isinstance(qty, float) or isinstance(unit_cost_pence, float):
             raise TypeError("batch quantities must be Decimal, not float (invariant 11)")
@@ -260,6 +262,8 @@ class SqlBatchRepository:
             expires_at=expires_at,
             unit_cost_pence=unit_cost_pence,
             note=note,
+            expiry_source=expiry_source if expires_at is not None else None,
+            received_by=received_by.strip()[:120] if received_by and received_by.strip() else None,
         )
         self.session.add(row)
         self.session.flush()

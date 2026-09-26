@@ -2688,3 +2688,971 @@
 {"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
 {"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
 {"message":"[console.warn] THREE.WebGLShadowMap: PCFSoftShadowMap has been removed. Using PCFShadowMap instead.","label":"vite","level":"warn"}
+{"message":"[200] / 256ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 5ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[console.warn] THREE.WebGLShadowMap: PCFSoftShadowMap has been removed. Using PCFShadowMap instead.","label":"vite","level":"warn"}
+{"message":"[200] / 13ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[console.warn] THREE.WebGLShadowMap: PCFSoftShadowMap has been removed. Using PCFShadowMap instead.","label":"vite","level":"warn"}
+{"message":"[200] / 51ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[console.warn] THREE.WebGLShadowMap: PCFSoftShadowMap has been removed. Using PCFShadowMap instead.","label":"vite","level":"warn"}
+{"message":"[200] /menu 113ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /menu 70ms","label":null,"level":"info"}
+{"message":"[200] /menu 71ms","label":null,"level":"info"}
+{"message":"[200] /about 208ms","label":null,"level":"info"}
+{"message":"[200] /visit 228ms","label":null,"level":"info"}
+{"message":"[200] /visit 229ms","label":null,"level":"info"}
+{"message":"[200] / 283ms","label":null,"level":"info"}
+{"message":"[200] / 284ms","label":null,"level":"info"}
+{"message":"[200] /menu 11ms","label":null,"level":"info"}
+{"message":"[200] /about 5ms","label":null,"level":"info"}
+{"message":"[200] /visit 4ms","label":null,"level":"info"}
+{"message":"[200] / 14ms","label":null,"level":"info"}
+{"message":"[200] /menu 6ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 7ms","label":null,"level":"info"}
+{"message":"[200] /about 7ms","label":null,"level":"info"}
+{"message":"[200] /order 659ms","label":null,"level":"info"}
+{"message":"[200] /visit 4ms","label":null,"level":"info"}
+{"message":"[200] / 7ms","label":null,"level":"info"}
+{"message":"[200] /menu 11ms","label":null,"level":"info"}
+{"message":"[200] /about 22ms","label":null,"level":"info"}
+{"message":"[200] /order 11ms","label":null,"level":"info"}
+{"message":"[200] /visit 5ms","label":null,"level":"info"}
+{"message":"[200] / 12ms","label":null,"level":"info"}
+{"message":"[200] /menu 104ms","label":null,"level":"info"}
+{"message":"[200] /order 14ms","label":null,"level":"info"}
+{"message":"[200] /menu 84ms","label":null,"level":"info"}
+{"message":"[200] /order 43ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 12ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /slot-line.svg 5ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 5ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 13ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 10ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 3ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 8ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 3ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 16ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /order 8ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /menu 17ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] / 12ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[console.warn] THREE.WebGLShadowMap: PCFSoftShadowMap has been removed. Using PCFShadowMap instead.","label":"vite","level":"warn"}
+{"message":"[200] /menu 296ms","label":null,"level":"info"}
+{"message":"[200] / 344ms","label":null,"level":"info"}
+{"message":"[200] /visit 6ms","label":null,"level":"info"}
+{"message":"[200] / 36ms","label":null,"level":"info"}
+{"message":"[200] / 7ms","label":null,"level":"info"}
+{"message":"[200] /about 34ms","label":null,"level":"info"}
+{"message":"[200] /order 13ms","label":null,"level":"info"}
+{"message":"[200] /menu 7ms","label":null,"level":"info"}
+{"message":"[200] /visit 16ms","label":null,"level":"info"}
+{"message":"[200] / 22ms","label":null,"level":"info"}
+{"message":"[200] /about 13ms","label":null,"level":"info"}
+{"message":"[200] /order 5ms","label":null,"level":"info"}
+{"message":"[200] /menu 7ms","label":null,"level":"info"}
+{"message":"[200] /visit 11ms","label":null,"level":"info"}
+{"message":"[200] / 39ms","label":null,"level":"info"}
+{"message":"[200] /about 8ms","label":null,"level":"info"}
+{"message":"[200] /order 3ms","label":null,"level":"info"}
+{"message":"[200] /menu 20ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 8ms","label":null,"level":"info"}
+{"message":"[200] /visit 34ms","label":null,"level":"info"}
+{"message":"[200] / 8ms","label":null,"level":"info"}
+{"message":"[200] /about 9ms","label":null,"level":"info"}
+{"message":"[200] /order 3ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /menu 13ms","label":null,"level":"info"}
+{"message":"[200] /visit 5ms","label":null,"level":"info"}
+{"message":"[200] /menu 9ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[console.warn] THREE.WebGLShadowMap: PCFSoftShadowMap has been removed. Using PCFShadowMap instead.","label":"vite","level":"warn"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /slot-line.svg 10ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 147ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /slot-line.svg 4ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 15ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 16ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 16ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 6ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 39ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 23ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 28ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 64ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"src/layouts/Base.astro","label":"watch","level":"info"}
+{"message":"[200] /order 982ms","label":null,"level":"info"}
+{"message":"[200] /about 1042ms","label":null,"level":"info"}
+{"message":"[200] /visit 1373ms","label":null,"level":"info"}
+{"message":"[200] /visit 1375ms","label":null,"level":"info"}
+{"message":"[200] / 1726ms","label":null,"level":"info"}
+{"message":"[200] / 1725ms","label":null,"level":"info"}
+{"message":"[200] / 1724ms","label":null,"level":"info"}
+{"message":"[200] /menu 1903ms","label":null,"level":"info"}
+{"message":"[200] /order 5ms","label":null,"level":"info"}
+{"message":"[200] /about 83ms","label":null,"level":"info"}
+{"message":"[200] /visit 5ms","label":null,"level":"info"}
+{"message":"[200] / 48ms","label":null,"level":"info"}
+{"message":"[200] /menu 25ms","label":null,"level":"info"}
+{"message":"[200] /order 5ms","label":null,"level":"info"}
+{"message":"[200] /about 5ms","label":null,"level":"info"}
+{"message":"[200] / 7ms","label":null,"level":"info"}
+{"message":"[200] /visit 9ms","label":null,"level":"info"}
+{"message":"[200] / 78ms","label":null,"level":"info"}
+{"message":"[200] /menu 7ms","label":null,"level":"info"}
+{"message":"[200] /order 8ms","label":null,"level":"info"}
+{"message":"[200] /about 8ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 3ms","label":null,"level":"info"}
+{"message":"[200] /visit 5ms","label":null,"level":"info"}
+{"message":"[200] / 10ms","label":null,"level":"info"}
+{"message":"[200] /menu 8ms","label":null,"level":"info"}
+{"message":"[200] /menu 22ms","label":null,"level":"info"}
+{"message":"[200] /menu 8ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 4ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[console.warn] THREE.WebGLShadowMap: PCFSoftShadowMap has been removed. Using PCFShadowMap instead.","label":"vite","level":"warn"}
+{"message":"[200] / 282ms","label":null,"level":"info"}
+{"message":"[console.error] Astro Error while running audit's match function: TypeError: Failed to fetch","label":"vite","level":"error"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[console.warn] THREE.WebGLShadowMap: PCFSoftShadowMap has been removed. Using PCFShadowMap instead.","label":"vite","level":"warn"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /slot-line.svg 8ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 79ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 76ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 202ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 3ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 3ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 6ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 3ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 175ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 6ms","label":null,"level":"info"}
+{"message":"[200] /about 31ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 4ms","label":null,"level":"info"}
+{"message":"[200] /visit 11ms","label":null,"level":"info"}
+{"message":"[200] /book 25ms","label":null,"level":"info"}
+{"message":"[200] /visit 7ms","label":null,"level":"info"}
+{"message":"[console.warn] THREE.WebGLShadowMap: PCFSoftShadowMap has been removed. Using PCFShadowMap instead.","label":"vite","level":"warn"}
+{"message":"src/pages/admin.astro","label":"watch","level":"info"}
+{"message":"[200] /menu 32ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /menu 17ms","label":null,"level":"info"}
+{"message":"[200] /menu 5ms","label":null,"level":"info"}
+{"message":"[200] / 78ms","label":null,"level":"info"}
+{"message":"[200] /menu 6ms","label":null,"level":"info"}
+{"message":"[200] /visit 114ms","label":null,"level":"info"}
+{"message":"[200] /visit 111ms","label":null,"level":"info"}
+{"message":"[200] / 28ms","label":null,"level":"info"}
+{"message":"[200] /menu 7ms","label":null,"level":"info"}
+{"message":"[200] /visit 6ms","label":null,"level":"info"}
+{"message":"[200] / 17ms","label":null,"level":"info"}
+{"message":"[200] /about 267ms","label":null,"level":"info"}
+{"message":"[200] /menu 6ms","label":null,"level":"info"}
+{"message":"[200] /order 290ms","label":null,"level":"info"}
+{"message":"[200] /visit 3ms","label":null,"level":"info"}
+{"message":"[200] / 5ms","label":null,"level":"info"}
+{"message":"[200] /about 5ms","label":null,"level":"info"}
+{"message":"[200] /order 4ms","label":null,"level":"info"}
+{"message":"[200] /visit 3ms","label":null,"level":"info"}
+{"message":"[200] /about 12ms","label":null,"level":"info"}
+{"message":"[200] /order 3ms","label":null,"level":"info"}
+{"message":"[200] /about 4ms","label":null,"level":"info"}
+{"message":"[200] /order 4ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /slot-line.svg 5ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 5ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 10ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 3ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"Configuration file updated. Restarting...","label":null,"level":"info"}
+{"message":"connected.","label":"vite","level":"info"}
+{"message":"connected.","label":"vite","level":"info"}
+{"message":"Re-optimizing dependencies because lockfile has changed","label":"vite","level":"info"}
+{"message":"server restarted.","label":"vite","level":"info"}
+{"message":"[200] /order 64ms","label":null,"level":"info"}
+{"message":"[200] /menu 65ms","label":null,"level":"info"}
+{"message":"[200] /visit 65ms","label":null,"level":"info"}
+{"message":"[200] / 73ms","label":null,"level":"info"}
+{"message":"[200] /menu 11ms","label":null,"level":"info"}
+{"message":"[200] /order 3ms","label":null,"level":"info"}
+{"message":"[200] /visit 5ms","label":null,"level":"info"}
+{"message":"[200] / 5ms","label":null,"level":"info"}
+{"message":"[200] /menu 6ms","label":null,"level":"info"}
+{"message":"[200] /about 159ms","label":null,"level":"info"}
+{"message":"[200] /order 4ms","label":null,"level":"info"}
+{"message":"[200] /visit 6ms","label":null,"level":"info"}
+{"message":"[200] / 6ms","label":null,"level":"info"}
+{"message":"[200] /about 4ms","label":null,"level":"info"}
+{"message":"[200] /order 5ms","label":null,"level":"info"}
+{"message":"[200] /about 5ms","label":null,"level":"info"}
+{"message":"[200] /about 4ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 3ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 4ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 5ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] / 8ms","label":null,"level":"info"}
+{"message":"src/pages/menu.astro","label":"watch","level":"info"}
+{"message":"[200] /menu 21ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /about 24ms","label":null,"level":"info"}
+{"message":"[200] /menu 7ms","label":null,"level":"info"}
+{"message":"[200] /order 48ms","label":null,"level":"info"}
+{"message":"[200] /menu 6ms","label":null,"level":"info"}
+{"message":"[200] /about 5ms","label":null,"level":"info"}
+{"message":"[200] /order 3ms","label":null,"level":"info"}
+{"message":"[200] /about 5ms","label":null,"level":"info"}
+{"message":"[200] /order 3ms","label":null,"level":"info"}
+{"message":"[200] /about 5ms","label":null,"level":"info"}
+{"message":"[200] /order 2ms","label":null,"level":"info"}
+{"message":"[200] /visit 128ms","label":null,"level":"info"}
+{"message":"[200] /visit 5ms","label":null,"level":"info"}
+{"message":"[200] / 141ms","label":null,"level":"info"}
+{"message":"[200] /visit 3ms","label":null,"level":"info"}
+{"message":"[200] / 8ms","label":null,"level":"info"}
+{"message":"[200] / 5ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 3ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 3ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"src/pages/menu.astro","label":"watch","level":"info"}
+{"message":"[200] /menu 14ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /order 16ms","label":null,"level":"info"}
+{"message":"[200] /menu 4ms","label":null,"level":"info"}
+{"message":"[200] /order 3ms","label":null,"level":"info"}
+{"message":"[200] /menu 4ms","label":null,"level":"info"}
+{"message":"[200] / 54ms","label":null,"level":"info"}
+{"message":"[200] /order 2ms","label":null,"level":"info"}
+{"message":"[200] / 6ms","label":null,"level":"info"}
+{"message":"[200] /order 3ms","label":null,"level":"info"}
+{"message":"[200] / 5ms","label":null,"level":"info"}
+{"message":"[200] /visit 91ms","label":null,"level":"info"}
+{"message":"[200] /visit 2ms","label":null,"level":"info"}
+{"message":"[200] /about 106ms","label":null,"level":"info"}
+{"message":"[200] /visit 2ms","label":null,"level":"info"}
+{"message":"[200] /about 4ms","label":null,"level":"info"}
+{"message":"[200] /about 3ms","label":null,"level":"info"}
+{"message":"[200] /about 4ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 7ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 10ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] / 10ms","label":null,"level":"info"}
+{"message":"[200] /admin/menu 19ms","label":null,"level":"info"}
+{"message":"[404] /admin 14ms","label":null,"level":"info"}
+{"message":"[200] /admin/menu 8ms","label":null,"level":"info"}
+{"message":"[200] /admin 14ms","label":null,"level":"info"}
+{"message":"src/data/menu.json","label":"watch","level":"info"}
+{"message":"[200] /admin 32ms","label":null,"level":"info"}
+{"message":"[200] /menu 42ms","label":null,"level":"info"}
+{"message":"[200] /order 85ms","label":null,"level":"info"}
+{"message":"[200] /about 91ms","label":null,"level":"info"}
+{"message":"[200] /visit 90ms","label":null,"level":"info"}
+{"message":"[200] / 94ms","label":null,"level":"info"}
+{"message":"[200] /menu 15ms","label":null,"level":"info"}
+{"message":"[200] / 8ms","label":null,"level":"info"}
+{"message":"[200] /order 8ms","label":null,"level":"info"}
+{"message":"[200] /visit 38ms","label":null,"level":"info"}
+{"message":"[200] /about 5ms","label":null,"level":"info"}
+{"message":"[200] /menu 12ms","label":null,"level":"info"}
+{"message":"[200] / 6ms","label":null,"level":"info"}
+{"message":"[200] /order 4ms","label":null,"level":"info"}
+{"message":"[200] /visit 3ms","label":null,"level":"info"}
+{"message":"[200] /about 5ms","label":null,"level":"info"}
+{"message":"[200] /about 8ms","label":null,"level":"info"}
+{"message":"[200] /order 4ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 4ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 8ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /admin 5ms","label":null,"level":"info"}
+{"message":"[200] /admin 7ms","label":null,"level":"info"}
+{"message":"[200] /admin/menu 5ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"/src/layouts/Admin.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"[200] /admin 20ms","label":null,"level":"info"}
+{"message":"[200] /admin/menu 13ms","label":null,"level":"info"}
+{"message":"src/pages/admin/menu.astro","label":"watch","level":"info"}
+{"message":"[200] /menu 13ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /menu 5ms","label":null,"level":"info"}
+{"message":"[200] /menu 9ms","label":null,"level":"info"}
+{"message":"[200] /order 55ms","label":null,"level":"info"}
+{"message":"[200] /order 4ms","label":null,"level":"info"}
+{"message":"[200] /about 58ms","label":null,"level":"info"}
+{"message":"[200] /about 5ms","label":null,"level":"info"}
+{"message":"[200] /visit 77ms","label":null,"level":"info"}
+{"message":"[200] / 92ms","label":null,"level":"info"}
+{"message":"[200] /order 5ms","label":null,"level":"info"}
+{"message":"[200] /about 8ms","label":null,"level":"info"}
+{"message":"[200] /visit 41ms","label":null,"level":"info"}
+{"message":"[200] / 8ms","label":null,"level":"info"}
+{"message":"[200] /order 5ms","label":null,"level":"info"}
+{"message":"[200] /about 10ms","label":null,"level":"info"}
+{"message":"[200] /visit 7ms","label":null,"level":"info"}
+{"message":"[200] / 9ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 3ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /admin 25ms","label":null,"level":"info"}
+{"message":"[200] /admin/menu 31ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 18ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 1ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"[200] /admin 3ms","label":null,"level":"info"}
+{"message":"[200] /admin/menu 3ms","label":null,"level":"info"}
+{"message":"[200] /admin 3ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/menu 3ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/menu 2ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"src/scripts/admin/menu.ts","label":"watch","level":"info"}
+{"message":"[200] /admin 5ms","label":null,"level":"info"}
+{"message":"[200] / 9ms","label":null,"level":"info"}
+{"message":"[200] /order 4ms","label":null,"level":"info"}
+{"message":"[200] /menu 6ms","label":null,"level":"info"}
+{"message":"[200] /visit 3ms","label":null,"level":"info"}
+{"message":"[200] /about 9ms","label":null,"level":"info"}
+{"message":"[200] / 5ms","label":null,"level":"info"}
+{"message":"[200] /menu 4ms","label":null,"level":"info"}
+{"message":"[200] /order 3ms","label":null,"level":"info"}
+{"message":"[200] /visit 2ms","label":null,"level":"info"}
+{"message":"[200] /about 5ms","label":null,"level":"info"}
+{"message":"[200] / 5ms","label":null,"level":"info"}
+{"message":"[200] /menu 7ms","label":null,"level":"info"}
+{"message":"[200] /order 4ms","label":null,"level":"info"}
+{"message":"[200] /visit 4ms","label":null,"level":"info"}
+{"message":"[200] /about 5ms","label":null,"level":"info"}
+{"message":"[200] /order 4ms","label":null,"level":"info"}
+{"message":"[200] /about 4ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /slot-line.svg 3ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 4ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 6ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /admin/photos 18ms","label":null,"level":"info"}
+{"message":"/src/pages/admin/photos.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"/src/pages/admin/photos.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"src/scripts/admin/menu-api.ts","label":"watch","level":"info"}
+{"message":"src/scripts/admin/menu-mock.ts","label":"watch","level":"info"}
+{"message":"[200] /about 35ms","label":null,"level":"info"}
+{"message":"[200] /visit 55ms","label":null,"level":"info"}
+{"message":"[200] /order 63ms","label":null,"level":"info"}
+{"message":"[200] /menu 73ms","label":null,"level":"info"}
+{"message":"[200] / 81ms","label":null,"level":"info"}
+{"message":"[200] /about 4ms","label":null,"level":"info"}
+{"message":"[200] /visit 3ms","label":null,"level":"info"}
+{"message":"[200] /order 2ms","label":null,"level":"info"}
+{"message":"[200] /menu 4ms","label":null,"level":"info"}
+{"message":"[200] / 4ms","label":null,"level":"info"}
+{"message":"[200] /about 4ms","label":null,"level":"info"}
+{"message":"[200] /visit 6ms","label":null,"level":"info"}
+{"message":"[200] /order 3ms","label":null,"level":"info"}
+{"message":"[200] /menu 8ms","label":null,"level":"info"}
+{"message":"[200] / 6ms","label":null,"level":"info"}
+{"message":"[200] /about 6ms","label":null,"level":"info"}
+{"message":"[200] /order 3ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /slot-line.svg 6ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 3ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /admin 12ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 12ms","label":null,"level":"info"}
+{"message":"[200] /admin 1ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 2ms","label":null,"level":"info"}
+{"message":"src/scripts/admin/menu.ts","label":"watch","level":"info"}
+{"message":"[200] /admin/bookings 4ms","label":null,"level":"info"}
+{"message":"[200] /order 3ms","label":null,"level":"info"}
+{"message":"[200] /visit 2ms","label":null,"level":"info"}
+{"message":"[200] /order 3ms","label":null,"level":"info"}
+{"message":"[200] / 4ms","label":null,"level":"info"}
+{"message":"[200] /about 4ms","label":null,"level":"info"}
+{"message":"[200] /order 3ms","label":null,"level":"info"}
+{"message":"[200] /menu 4ms","label":null,"level":"info"}
+{"message":"[200] /visit 2ms","label":null,"level":"info"}
+{"message":"[200] / 4ms","label":null,"level":"info"}
+{"message":"[200] /about 3ms","label":null,"level":"info"}
+{"message":"[200] /menu 4ms","label":null,"level":"info"}
+{"message":"[200] /order 2ms","label":null,"level":"info"}
+{"message":"[200] /visit 3ms","label":null,"level":"info"}
+{"message":"[200] / 4ms","label":null,"level":"info"}
+{"message":"[200] /about 5ms","label":null,"level":"info"}
+{"message":"[200] /menu 5ms","label":null,"level":"info"}
+{"message":"[200] /about 4ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 4ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"/src/pages/admin/menu.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"[200] /admin 13ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"/src/components/AdmBookingStyles.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"[200] /admin/menu 14ms","label":null,"level":"info"}
+{"message":"src/data/info.json","label":"watch","level":"info"}
+{"message":"[200] /about 180ms","label":null,"level":"info"}
+{"message":"[200] /menu 252ms","label":null,"level":"info"}
+{"message":"[200] /order 339ms","label":null,"level":"info"}
+{"message":"[200] /visit 383ms","label":null,"level":"info"}
+{"message":"[200] / 440ms","label":null,"level":"info"}
+{"message":"[200] /about 20ms","label":null,"level":"info"}
+{"message":"[200] /menu 23ms","label":null,"level":"info"}
+{"message":"[200] /order 78ms","label":null,"level":"info"}
+{"message":"[200] /visit 4ms","label":null,"level":"info"}
+{"message":"[200] / 15ms","label":null,"level":"info"}
+{"message":"[200] /about 16ms","label":null,"level":"info"}
+{"message":"[200] /menu 7ms","label":null,"level":"info"}
+{"message":"[200] /order 7ms","label":null,"level":"info"}
+{"message":"[200] /visit 5ms","label":null,"level":"info"}
+{"message":"[200] / 12ms","label":null,"level":"info"}
+{"message":"[200] /about 13ms","label":null,"level":"info"}
+{"message":"[200] /order 12ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /slot-line.svg 3ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 7ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 3ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 3ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 13ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 5ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 3ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 9ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 48ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 9ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"src/scripts/admin/menu.ts","label":"watch","level":"info"}
+{"message":"/src/pages/admin/menu.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"[200] / 107ms","label":null,"level":"info"}
+{"message":"[200] /order 134ms","label":null,"level":"info"}
+{"message":"[200] /menu 154ms","label":null,"level":"info"}
+{"message":"[200] /visit 202ms","label":null,"level":"info"}
+{"message":"[200] /about 279ms","label":null,"level":"info"}
+{"message":"[200] / 13ms","label":null,"level":"info"}
+{"message":"[200] /order 13ms","label":null,"level":"info"}
+{"message":"[200] /menu 11ms","label":null,"level":"info"}
+{"message":"[200] /visit 21ms","label":null,"level":"info"}
+{"message":"[200] /about 70ms","label":null,"level":"info"}
+{"message":"[200] / 29ms","label":null,"level":"info"}
+{"message":"[200] /order 6ms","label":null,"level":"info"}
+{"message":"[200] /menu 13ms","label":null,"level":"info"}
+{"message":"[200] /visit 4ms","label":null,"level":"info"}
+{"message":"[200] /about 22ms","label":null,"level":"info"}
+{"message":"[200] /order 6ms","label":null,"level":"info"}
+{"message":"[200] /about 22ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /slot-line.svg 5ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 3ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 14ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /admin/menu 18ms","label":null,"level":"info"}
+{"message":"[200] /admin 13ms","label":null,"level":"info"}
+{"message":"[200] /admin 4ms","label":null,"level":"info"}
+{"message":"[200] /admin/menu 3ms","label":null,"level":"info"}
+{"message":"[200] /admin 4ms","label":null,"level":"info"}
+{"message":"[200] /admin 6ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"[200] /admin 7ms","label":null,"level":"info"}
+{"message":"[200] /admin/menu 3ms","label":null,"level":"info"}
+{"message":"[200] /admin/messages 12ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"[200] /admin 3ms","label":null,"level":"info"}
+{"message":"[200] /admin/settings 14ms","label":null,"level":"info"}
+{"message":"[200] /menu 6ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /menu 7ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"src/scripts/admin-core/mock.ts","label":"watch","level":"info"}
+{"message":"src/pages/admin/index.astro","label":"watch","level":"info"}
+{"message":"[200] /order 48ms","label":null,"level":"info"}
+{"message":"[200] /about 92ms","label":null,"level":"info"}
+{"message":"[200] / 114ms","label":null,"level":"info"}
+{"message":"[200] /visit 133ms","label":null,"level":"info"}
+{"message":"[200] /menu 156ms","label":null,"level":"info"}
+{"message":"[200] /order 4ms","label":null,"level":"info"}
+{"message":"[200] /about 6ms","label":null,"level":"info"}
+{"message":"[200] / 5ms","label":null,"level":"info"}
+{"message":"[200] /visit 8ms","label":null,"level":"info"}
+{"message":"[200] /menu 8ms","label":null,"level":"info"}
+{"message":"[200] /order 4ms","label":null,"level":"info"}
+{"message":"[200] /about 13ms","label":null,"level":"info"}
+{"message":"[200] / 6ms","label":null,"level":"info"}
+{"message":"[200] /visit 3ms","label":null,"level":"info"}
+{"message":"[200] /menu 5ms","label":null,"level":"info"}
+{"message":"[200] /order 2ms","label":null,"level":"info"}
+{"message":"[200] /about 7ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 3ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 3ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 5ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"src/pages/admin/bookings.astro","label":"watch","level":"info"}
+{"message":"src/pages/admin/index.astro","label":"watch","level":"info"}
+{"message":"[200] /order 20ms","label":null,"level":"info"}
+{"message":"[200] /menu 30ms","label":null,"level":"info"}
+{"message":"[200] /visit 38ms","label":null,"level":"info"}
+{"message":"[200] /about 48ms","label":null,"level":"info"}
+{"message":"[200] / 67ms","label":null,"level":"info"}
+{"message":"[200] /order 2ms","label":null,"level":"info"}
+{"message":"[200] /menu 4ms","label":null,"level":"info"}
+{"message":"[200] /visit 3ms","label":null,"level":"info"}
+{"message":"[200] /about 3ms","label":null,"level":"info"}
+{"message":"[200] / 5ms","label":null,"level":"info"}
+{"message":"[200] /order 2ms","label":null,"level":"info"}
+{"message":"[200] /menu 5ms","label":null,"level":"info"}
+{"message":"[200] /visit 3ms","label":null,"level":"info"}
+{"message":"[200] /about 3ms","label":null,"level":"info"}
+{"message":"[200] / 4ms","label":null,"level":"info"}
+{"message":"[200] /order 2ms","label":null,"level":"info"}
+{"message":"[200] /about 3ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 19ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /admin 18ms","label":null,"level":"info"}
+{"message":"[200] /admin 4ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 14ms","label":null,"level":"info"}
+{"message":"[200] /admin/messages 14ms","label":null,"level":"info"}
+{"message":"[200] /admin 3ms","label":null,"level":"info"}
+{"message":"[200] /admin/settings 12ms","label":null,"level":"info"}
+{"message":"[200] /admin 4ms","label":null,"level":"info"}
+{"message":"[200] /admin/photos 19ms","label":null,"level":"info"}
+{"message":"src/scripts/admin-core/bookings.ts","label":"watch","level":"info"}
+{"message":"/src/layouts/Admin.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"[200] /about 55ms","label":null,"level":"info"}
+{"message":"[200] /order 82ms","label":null,"level":"info"}
+{"message":"[200] /menu 102ms","label":null,"level":"info"}
+{"message":"[200] / 136ms","label":null,"level":"info"}
+{"message":"[200] /visit 151ms","label":null,"level":"info"}
+{"message":"[200] /about 5ms","label":null,"level":"info"}
+{"message":"[200] /order 3ms","label":null,"level":"info"}
+{"message":"[200] /menu 4ms","label":null,"level":"info"}
+{"message":"[200] / 5ms","label":null,"level":"info"}
+{"message":"[200] /visit 4ms","label":null,"level":"info"}
+{"message":"[200] /about 13ms","label":null,"level":"info"}
+{"message":"[200] /order 5ms","label":null,"level":"info"}
+{"message":"[200] /menu 5ms","label":null,"level":"info"}
+{"message":"[200] / 5ms","label":null,"level":"info"}
+{"message":"[200] /visit 4ms","label":null,"level":"info"}
+{"message":"[200] /about 10ms","label":null,"level":"info"}
+{"message":"[200] /order 6ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 41ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"/src/layouts/Admin.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"[200] /admin 14ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/menu 12ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/menu 2ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"[200] /admin 1ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/photos 18ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 13ms","label":null,"level":"info"}
+{"message":"[200] /menu 11ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /admin/messages 11ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/settings 10ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/menu 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 2ms","label":null,"level":"info"}
+{"message":"[200] /admin 1ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/menu 4ms","label":null,"level":"info"}
+{"message":"[200] /admin 1ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"[200] /admin 1ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/photos 3ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 2ms","label":null,"level":"info"}
+{"message":"[200] /menu 4ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /admin/messages 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/settings 2ms","label":null,"level":"info"}
+{"message":"[200] /admin 1ms","label":null,"level":"info"}
+{"message":"[200] /admin 3ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 3ms","label":null,"level":"info"}
+{"message":"[200] /admin/messages 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/settings 11ms","label":null,"level":"info"}
+{"message":"/src/layouts/Admin.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"/src/pages/admin/bookings.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"src/pages/admin/index.astro","label":"watch","level":"info"}
+{"message":"[200] /order 32ms","label":null,"level":"info"}
+{"message":"[200] / 51ms","label":null,"level":"info"}
+{"message":"[200] /about 62ms","label":null,"level":"info"}
+{"message":"[200] /visit 76ms","label":null,"level":"info"}
+{"message":"[200] /menu 100ms","label":null,"level":"info"}
+{"message":"[200] /order 3ms","label":null,"level":"info"}
+{"message":"[200] / 8ms","label":null,"level":"info"}
+{"message":"[200] /about 18ms","label":null,"level":"info"}
+{"message":"[200] /visit 5ms","label":null,"level":"info"}
+{"message":"[200] /menu 8ms","label":null,"level":"info"}
+{"message":"[200] /order 5ms","label":null,"level":"info"}
+{"message":"[200] / 9ms","label":null,"level":"info"}
+{"message":"[200] /about 11ms","label":null,"level":"info"}
+{"message":"[200] /visit 23ms","label":null,"level":"info"}
+{"message":"[200] /menu 14ms","label":null,"level":"info"}
+{"message":"[200] /order 14ms","label":null,"level":"info"}
+{"message":"[200] /about 14ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /slot-line.svg 24ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 3ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 3ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 3ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 4ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"src/scripts/admin/menu.ts","label":"watch","level":"info"}
+{"message":"[200] /menu 21ms","label":null,"level":"info"}
+{"message":"[200] /order 23ms","label":null,"level":"info"}
+{"message":"[200] /visit 23ms","label":null,"level":"info"}
+{"message":"[200] /about 24ms","label":null,"level":"info"}
+{"message":"[200] / 29ms","label":null,"level":"info"}
+{"message":"[200] /menu 15ms","label":null,"level":"info"}
+{"message":"[200] /visit 5ms","label":null,"level":"info"}
+{"message":"[200] / 4ms","label":null,"level":"info"}
+{"message":"[200] /about 5ms","label":null,"level":"info"}
+{"message":"[200] /order 4ms","label":null,"level":"info"}
+{"message":"[200] /menu 5ms","label":null,"level":"info"}
+{"message":"[200] /visit 4ms","label":null,"level":"info"}
+{"message":"[200] / 6ms","label":null,"level":"info"}
+{"message":"[200] /about 8ms","label":null,"level":"info"}
+{"message":"[200] /order 13ms","label":null,"level":"info"}
+{"message":"[200] /order 3ms","label":null,"level":"info"}
+{"message":"[200] /about 5ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /slot-line.svg 15ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /slot-line.svg 4ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 4ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 3ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 4ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 3ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 3ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /admin 35ms","label":null,"level":"info"}
+{"message":"[200] /admin 4ms","label":null,"level":"info"}
+{"message":"[200] /admin/settings 25ms","label":null,"level":"info"}
+{"message":"[200] /admin 4ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 14ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"[200] /admin 4ms","label":null,"level":"info"}
+{"message":"[200] /admin 3ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 4ms","label":null,"level":"info"}
+{"message":"[200] /admin/messages 16ms","label":null,"level":"info"}
+{"message":"[200] /admin/settings 3ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 36ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 65ms","label":null,"level":"info"}
+{"message":"[200] /admin 3ms","label":null,"level":"info"}
+{"message":"[200] /admin 3ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/messages 3ms","label":null,"level":"info"}
+{"message":"[200] /admin/settings 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 1ms","label":null,"level":"info"}
+{"message":"[200] / 11ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[console.warn] THREE.WebGLShadowMap: PCFSoftShadowMap has been removed. Using PCFShadowMap instead.","label":"vite","level":"warn"}
+{"message":"[200] /visit 42ms","label":null,"level":"info"}
+{"message":"[200] /order 32ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 42ms","label":null,"level":"info"}
+{"message":"/src/pages/admin/index.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"[200] /visit 17ms","label":null,"level":"info"}
+{"message":"[200] / 20ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[console.warn] THREE.WebGLShadowMap: PCFSoftShadowMap has been removed. Using PCFShadowMap instead.","label":"vite","level":"warn"}
+{"message":"[200] /order 49ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 14ms","label":null,"level":"info"}
+{"message":"[200] /menu 15ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /about 22ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] / 5ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[console.warn] THREE.WebGLShadowMap: PCFSoftShadowMap has been removed. Using PCFShadowMap instead.","label":"vite","level":"warn"}
+{"message":"[200] /book 188ms","label":null,"level":"info"}
+{"message":"[200] / 6ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[console.warn] THREE.WebGLShadowMap: PCFSoftShadowMap has been removed. Using PCFShadowMap instead.","label":"vite","level":"warn"}
+{"message":"[200] /visit 17ms","label":null,"level":"info"}
+{"message":"[200] /about 7ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /book 4ms","label":null,"level":"info"}
+{"message":"[200] /visit 4ms","label":null,"level":"info"}
+{"message":"[200] / 8ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[console.warn] THREE.WebGLShadowMap: PCFSoftShadowMap has been removed. Using PCFShadowMap instead.","label":"vite","level":"warn"}
+{"message":"[200] / 59ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[console.warn] THREE.WebGLShadowMap: PCFSoftShadowMap has been removed. Using PCFShadowMap instead.","label":"vite","level":"warn"}
+{"message":"[200] /order 18ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /menu 5ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] / 10ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[console.warn] THREE.WebGLShadowMap: PCFSoftShadowMap has been removed. Using PCFShadowMap instead.","label":"vite","level":"warn"}
+{"message":"[200] / 24ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[console.warn] THREE.WebGLShadowMap: PCFSoftShadowMap has been removed. Using PCFShadowMap instead.","label":"vite","level":"warn"}
+{"message":"[200] / 254ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[console.warn] THREE.WebGLShadowMap: PCFSoftShadowMap has been removed. Using PCFShadowMap instead.","label":"vite","level":"warn"}
+{"message":"[200] /about 11ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /menu 20ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] / 22ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[console.warn] THREE.WebGLShadowMap: PCFSoftShadowMap has been removed. Using PCFShadowMap instead.","label":"vite","level":"warn"}
+{"message":"[200] / 5ms","label":null,"level":"info"}
+{"message":"[console.error] Astro Error while running audit's match function: TypeError: Failed to fetch","label":"vite","level":"error"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[console.warn] THREE.WebGLShadowMap: PCFSoftShadowMap has been removed. Using PCFShadowMap instead.","label":"vite","level":"warn"}
+{"message":"[200] /visit 3ms","label":null,"level":"info"}
+{"message":"[200] / 6ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[console.warn] THREE.WebGLShadowMap: PCFSoftShadowMap has been removed. Using PCFShadowMap instead.","label":"vite","level":"warn"}
+{"message":"[200] /order 15ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 5ms","label":null,"level":"info"}
+{"message":"[200] /about 10ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /order 10ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 4ms","label":null,"level":"info"}
+{"message":"[200] /menu 10ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /book 4ms","label":null,"level":"info"}
+{"message":"[200] / 28ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[console.warn] THREE.WebGLShadowMap: PCFSoftShadowMap has been removed. Using PCFShadowMap instead.","label":"vite","level":"warn"}

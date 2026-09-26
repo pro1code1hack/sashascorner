@@ -85,6 +85,11 @@ const business = info && {
   geo: { '@type': 'GeoCoordinates', latitude: info.geo.lat, longitude: info.geo.lng },
   hasMap: MAPS_URL,
   areaServed: { '@type': 'City', name: 'Dundee' },
+  // Owner-confirmed 2026-09-26.
+  amenityFeature: [
+    { '@type': 'LocationFeatureSpecification', name: 'Pet friendly', value: true },
+    { '@type': 'LocationFeatureSpecification', name: 'Seating', value: 24 },
+  ],
   ...(info.phone ? { telephone: `+44 ${info.phone.replace(/^0/, '')}` } : {}),
   ...(info.email ? { email: info.email } : {}),
   openingHoursSpecification: [...hourGroups.values()].map((g) => ({

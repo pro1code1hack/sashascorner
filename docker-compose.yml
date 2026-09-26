@@ -33,8 +33,11 @@ services:
     environment:
       # Absolute path inside the container; the volume below is where it lives.
       CAFEOPS_DATABASE_URL: sqlite+pysqlite:////data/cafeops.db
+      # Menu photo uploads. Caddy serves this same volume read-only at /media/*.
+      CAFEOPS_MEDIA_DIR: /media
     volumes:
       - cafeops_data:/data
+      - cafeops_media:/media
     # No `ports:` here on purpose -- see the file header. Reachable only via `caddy`,
     # over this compose project's private network.
     healthcheck:
@@ -120,6 +123,9 @@ services:
       # Change it, rebuild, redeploy.
       - caddy_data:/data
       - caddy_config:/config
+      # Menu photos only -- never the data volume: Caddy must not be able to serve the
+      # database file.
+      - cafeops_media:/srv/media:ro
     depends_on:
       api:
         condition: service_healthy
@@ -142,10 +148,12 @@ services:
     environment:
       CAFEOPS_DB_PATH: /data/cafeops.db
       CAFEOPS_BACKUP_DIR: /backups
+      CAFEOPS_MEDIA_DIR: /media
       # CAFEOPS_BACKUP_REMOTE, an rsync target, is read from .env -- unset means the
       # script loudly logs that the backup is local-only every single night.
     volumes:
       - cafeops_data:/data:ro
+      - cafeops_media:/media:ro
       - cafeops_backups:/backups
       # Mount an SSH key read-only here (and set CAFEOPS_BACKUP_REMOTE) to actually ship
       # off-box, e.g.:
@@ -155,6 +163,7 @@ services:
 
 volumes:
   cafeops_data:
+  cafeops_media:
   cafeops_backups:
   caddy_data:
   caddy_config:

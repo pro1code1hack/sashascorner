@@ -158,6 +158,10 @@ class ChannelSourceKind(enum.Enum):
     BROWSER_AGENT = "BROWSER_AGENT"
     PARTNER_API = "PARTNER_API"
     MANUAL = "MANUAL"
+    #: Imported from the finance workbook (`sashas_corner_finance.xlsx`). Added for the
+    #: Just Eat money the workbook recorded in its cash column (DECISIONS.md 4: Just Eat
+    #: never paid cash), so those figures land as channel revenue, labelled as legacy.
+    LEGACY_WORKBOOK = "LEGACY_WORKBOOK"
 
 
 class AgentToolOutcome(enum.Enum):
@@ -344,6 +348,9 @@ class OrderNoteKind(enum.StrEnum):
     PACK_DATA_ERROR = "PACK_DATA_ERROR"
     #: No par level at all, so the ingredient was skipped.
     SKIPPED_NO_PAR = "SKIPPED_NO_PAR"
+    #: Never physically counted, so its on-hand has nothing under it and it is not
+    #: ordered at all (invariant 6, redesign spec C8). Line and roll-up alike.
+    NOT_COUNTED = "NOT_COUNTED"
 
     # --- the two top-up decisions (spec 5.4, invariant 5) ---------------------
     TOP_UP_APPLIED = "TOP_UP_APPLIED"
@@ -445,7 +452,11 @@ class PaymentMethod(enum.Enum):
     """How the money arrived. `OTHER` exists so an unmapped method is kept and
     labelled rather than dropped or silently folded into CARD."""
 
+    #: Cash rung on the till ("Till cash"; the workbook's "Square cash").
     CASH = "CASH"
+    #: "Own cash": cash taken for sales that were NOT rung on the till. Kept apart from
+    #: CASH because the till cannot vouch for it, but the drawer count still includes it.
+    CASH_OFF_TILL = "CASH_OFF_TILL"
     CARD = "CARD"
     VOUCHER = "VOUCHER"
     ACCOUNT = "ACCOUNT"
@@ -463,3 +474,204 @@ class PaymentSourceKind(enum.Enum):
     CSV_UPLOAD = "CSV_UPLOAD"
     POS_API = "POS_API"
     MANUAL = "MANUAL"
+    #: Imported from the finance workbook's Daily Sales sheet.
+    LEGACY_WORKBOOK = "LEGACY_WORKBOOK"
+
+
+#: Which `payment_day` source wins when several report the same (date, method).
+#: Earlier wins. `payment_day` is unique on (date, method, SOURCE), so a manual row and a
+#: CSV row for the same day can coexist -- summing them doubled the day's takings
+#: (finance spec 3.1/3.5). Readers resolve per (business_date, method) by taking the
+#: highest-precedence source present and IGNORING the rest; a disagreement between
+#: sources is a caveat, never an addition. A rule, deliberately not a stored flag: a
+#: flag would go stale the moment a higher-precedence import lands.
+PAYMENT_SOURCE_PRECEDENCE: tuple[PaymentSourceKind, ...] = (
+    PaymentSourceKind.POS_API,
+    PaymentSourceKind.CSV_UPLOAD,
+    PaymentSourceKind.MANUAL,
+    PaymentSourceKind.LEGACY_WORKBOOK,
+)
+
+
+class PaymentBasis(enum.Enum):
+    """What a `payment_day` figure measures. Finance spec 2.1/4.5.
+
+    The workbook's Sep 2025 - Mar 2026 card column is a BANK DEPOSIT on its deposit
+    date, not what the till took that day. Reconciling deposits against deposits is
+    circular, so the two are never mixed without a label.
+    """
+
+    TILL = "TILL"
+    BANK_DEPOSIT = "BANK_DEPOSIT"
+
+
+# --- finance (back-office redesign, docs/design/specs/finance.md 3.3) ---------------
+
+
+class ExpenseGroup(enum.Enum):
+    """Where an expense category sits in the P&L."""
+
+    COGS = "COGS"
+    OPEX = "OPEX"
+
+
+class ExpenseKind(enum.Enum):
+    """Operating expenses enter the P&L; capital and drawings never do."""
+
+    OPERATING = "OPERATING"
+    CAPITAL = "CAPITAL"
+    #: A director's drawing paid from the business account. Mirrored ONCE into
+    #: `director_entry` via `director_entry.expense_id` -- never entered twice.
+    DRAWINGS = "DRAWINGS"
+
+
+class ExpenseMethod(enum.Enum):
+    CARD = "CARD"
+    BANK_TRANSFER = "BANK_TRANSFER"
+    DIRECT_DEBIT = "DIRECT_DEBIT"
+    STANDING_ORDER = "STANDING_ORDER"
+    CASH = "CASH"
+    CASH_WITHDRAWAL = "CASH_WITHDRAWAL"
+    #: The workbook has free-text methods; an unmapped one is kept and labelled.
+    OTHER = "OTHER"
+
+
+class FinanceSource(enum.Enum):
+    """How a finance row got here. Same rule as `PaymentSourceKind`."""
+
+    MANUAL = "MANUAL"
+    LEGACY_WORKBOOK = "LEGACY_WORKBOOK"
+    BANK_CSV = "BANK_CSV"
+    CSV_UPLOAD = "CSV_UPLOAD"
+
+
+class DirectorEntryType(enum.Enum):
+    """Director's account movements.
+
+    CAPITAL_INJECTION is share capital: equity, NOT a debt. DECISIONS.md 4 -- it is
+    shown separately and never counts toward "company owes you". Only
+    LOAN_TO_COMPANY less REPAYMENT (and DRAWINGS) move what is owed.
+    """
+
+    CAPITAL_INJECTION = "CAPITAL_INJECTION"
+    LOAN_TO_COMPANY = "LOAN_TO_COMPANY"
+    DRAWINGS = "DRAWINGS"
+    REPAYMENT = "REPAYMENT"
+
+
+# --- stock / orders / suppliers (docs/design/specs/stock-orders-suppliers.md) --------
+
+
+class WriteOffReason(enum.Enum):
+    """Why stock was written off by hand. Spec C11.
+
+    `EXPIRED` movements are DERIVED (the expiry sweep writes them and
+    `rebuild_batches(purge=True)` deletes them), so a human "went out of date" is a
+    WASTE movement with reason WENT_OFF -- it must survive a rebuild. Drift
+    attribution counts WENT_OFF as expiry-type loss.
+    Pairs with the movement type: WENT_OFF/SPILLED/OTHER on WASTE, STAFF on STAFF.
+    """
+
+    WENT_OFF = "WENT_OFF"
+    SPILLED = "SPILLED"
+    STAFF = "STAFF"
+    #: Requires a note (CHECK on stock_movement).
+    OTHER = "OTHER"
+
+
+class ExpirySource(enum.Enum):
+    """Where a batch's `expires_at` came from. Replaces the `EXPIRY ASSUMED` note prefix."""
+
+    #: Somebody read it off the carton / entered it.
+    ENTERED = "ENTERED"
+    #: Computed as received_at + shelf life because nobody entered one.
+    ASSUMED = "ASSUMED"
+
+
+# --- recipes / menu (docs/design/specs/recipes-menu-ingredients.md) -----------------
+
+
+class MenuKind(enum.Enum):
+    """The design's Drinks / Food / Other split of menu categories."""
+
+    DRINKS = "DRINKS"
+    FOOD = "FOOD"
+    OTHER = "OTHER"
+
+
+class MenuPriceSource(enum.Enum):
+    """Where a `menu_item_price` row came from."""
+
+    #: Typed in the back office (apply-from-today with preview).
+    MANUAL = "MANUAL"
+    #: Read from the till (Lightspeed product price).
+    POS_SYNC = "POS_SYNC"
+    #: Imported from the legacy workbook.
+    LEGACY_WORKBOOK = "LEGACY_WORKBOOK"
+    #: Carried over from `menu_item.price_pence` when price history began (the
+    #: migration that created this table). Its `effective_from` is NOT the date the
+    #: price was set -- nobody recorded that -- only the start of known history.
+    BACKFILL = "BACKFILL"
+
+
+# --- shell / auth / agents (docs/design/specs/shell-agents.md) -----------------------
+
+
+class AuthEvent(enum.Enum):
+    """`auth_audit` rows. Never carries secret material."""
+
+    LOGIN_OK = "LOGIN_OK"
+    LOGIN_FAILED = "LOGIN_FAILED"
+    LOGIN_RATE_LIMITED = "LOGIN_RATE_LIMITED"
+    SIGN_OUT = "SIGN_OUT"
+    PASSWORD_CHANGED = "PASSWORD_CHANGED"
+    PASSWORD_CHANGE_REFUSED = "PASSWORD_CHANGE_REFUSED"
+    #: `cafeops password reset` deleted the stored credential; env password in force.
+    PASSWORD_RESET = "PASSWORD_RESET"
+    SESSIONS_REVOKED = "SESSIONS_REVOKED"
+
+
+class SyncTrigger(enum.Enum):
+    SCHEDULED = "SCHEDULED"
+    MANUAL_WEB = "MANUAL_WEB"
+    CLI = "CLI"
+
+
+class SyncSource(enum.Enum):
+    LIVE = "LIVE"
+    FIXTURES = "FIXTURES"
+
+
+class SyncStatus(enum.Enum):
+    RUNNING = "RUNNING"
+    OK = "OK"
+    PARTIAL = "PARTIAL"
+    SKIPPED = "SKIPPED"
+    FAILED = "FAILED"
+
+
+class ProposalKind(enum.Enum):
+    WASTE_FACTOR = "WASTE_FACTOR"
+    TEMPLATE_GROUPING = "TEMPLATE_GROUPING"
+    CHANNEL_IMPORT = "CHANNEL_IMPORT"
+    DATA_FIX = "DATA_FIX"
+    SUPPLIER_BASKET = "SUPPLIER_BASKET"
+
+
+class ProposalStatus(enum.Enum):
+    """`agent_proposal.status`. Nothing leaves WAITING without a recorded human."""
+
+    WAITING = "WAITING"
+    ACCEPTED = "ACCEPTED"
+    DECLINED = "DECLINED"
+    #: At accept time the subject no longer matched `payload.current`. Nothing applied.
+    SUPERSEDED = "SUPERSEDED"
+    #: Accepted, but the service raised and rolled back. Error in `applied_result`.
+    APPLY_FAILED = "APPLY_FAILED"
+
+
+class ProposalConfidence(enum.Enum):
+    HIGH = "HIGH"
+    MEDIUM = "MEDIUM"
+    LOW = "LOW"
+    NONE = "NONE"

@@ -68,7 +68,14 @@ class SqlSupplierRepository:
         return None if row is None else _spec(row)
 
     def list_all(self) -> list[SupplierSpec]:
-        return [_spec(r) for r in self.session.scalars(select(Supplier).order_by(Supplier.name))]
+        """Active suppliers. An ARCHIVED one ("deleted" on the Suppliers screen, spec C12)
+        drops out of ordering; `get` still finds it by id, for history."""
+        return [
+            _spec(r)
+            for r in self.session.scalars(
+                select(Supplier).where(Supplier.archived_at.is_(None)).order_by(Supplier.name)
+            )
+        ]
 
     def has_placeholder_terms(self, supplier_id: int) -> bool:
         """True when this supplier's lead time, minimum or schedule were never confirmed.
@@ -93,6 +100,9 @@ class SqlSupplierRepository:
                 select(SupplierProduct).where(
                     SupplierProduct.ingredient_id == ingredient_id,
                     SupplierProduct.supplier_id == supplier_id,
+                    # An unlinked (archived) product is kept for the orders that name it
+                    # and is never ordered again.
+                    SupplierProduct.archived_at.is_(None),
                 )
             )
         )
@@ -104,7 +114,10 @@ class SqlSupplierRepository:
     def packs_for_supplier(self, supplier_id: int) -> list[PackChoice]:
         rows = self.session.scalars(
             select(SupplierProduct)
-            .where(SupplierProduct.supplier_id == supplier_id)
+            .where(
+                SupplierProduct.supplier_id == supplier_id,
+                SupplierProduct.archived_at.is_(None),
+            )
             .order_by(SupplierProduct.ingredient_id, SupplierProduct.id)
         )
         return [_pack(r) for r in rows]

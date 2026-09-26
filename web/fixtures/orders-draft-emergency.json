@@ -1,6 +1,6 @@
 {
   "order_date": "2026-09-21",
-  "computed_at": "2026-09-24T20:02:36.382859Z",
+  "computed_at": "2026-09-26T10:26:33.130298Z",
   "reorder_cadence_days": null,
   "tiers": [
     "A",
@@ -25,7 +25,13 @@
         "cutoff_time": null,
         "delivery_fee_pence": 0,
         "free_delivery_threshold_pence": null,
-        "terms_are_placeholders": false
+        "terms_are_placeholders": false,
+        "kind": null,
+        "contact": null,
+        "order_url": null,
+        "notes": null,
+        "product_count": null,
+        "archived": false
       },
       "target_delivery_date": "2026-09-23",
       "cover_window_days": 5,
@@ -46,7 +52,12 @@
       "notes": [
         "Amazon: SOURCING MOVED 1 line(s) off this order: 12oz cup lid (£9.99) -> Cups Direct. The reason is on each sourcing choice. This order was then re-sized, so its minimum and any top-up were re-decided against what is left.",
         "12oz cup lid: KEPT Cups Direct (1000 EACH) at 2.57p/EACH. dearer alternates: Amazon (100 EACH) at 9.99p/EACH"
-      ]
+      ],
+      "order_by_date": "2026-09-21",
+      "next_delivery_date": "2026-09-24",
+      "fee_applies": false,
+      "top_up_candidates": [],
+      "persisted": null
     },
     {
       "supplier": {
@@ -62,7 +73,13 @@
         "cutoff_time": "12:00:00",
         "delivery_fee_pence": 0,
         "free_delivery_threshold_pence": 6000,
-        "terms_are_placeholders": true
+        "terms_are_placeholders": true,
+        "kind": null,
+        "contact": null,
+        "order_url": null,
+        "notes": null,
+        "product_count": null,
+        "archived": false
       },
       "target_delivery_date": "2026-09-24",
       "cover_window_days": 10,
@@ -102,7 +119,10 @@
           "cap_detail": null,
           "is_capped": false,
           "is_top_up": false,
-          "clamped": null
+          "clamped": null,
+          "cap_kind": null,
+          "daily_rate_qty": "1.092722",
+          "supplier_product_id": 8
         },
         {
           "ingredient_id": 4,
@@ -135,7 +155,10 @@
           "cap_detail": null,
           "is_capped": false,
           "is_top_up": false,
-          "clamped": null
+          "clamped": null,
+          "cap_kind": null,
+          "daily_rate_qty": "0.693990",
+          "supplier_product_id": 4
         },
         {
           "ingredient_id": 11,
@@ -168,7 +191,10 @@
           "cap_detail": null,
           "is_capped": false,
           "is_top_up": false,
-          "clamped": null
+          "clamped": null,
+          "cap_kind": null,
+          "daily_rate_qty": "395.890068",
+          "supplier_product_id": 11
         },
         {
           "ingredient_id": 5,
@@ -201,7 +227,10 @@
           "cap_detail": null,
           "is_capped": false,
           "is_top_up": false,
-          "clamped": null
+          "clamped": null,
+          "cap_kind": null,
+          "daily_rate_qty": "0.788696",
+          "supplier_product_id": 5
         },
         {
           "ingredient_id": 10,
@@ -234,7 +263,10 @@
           "cap_detail": null,
           "is_capped": false,
           "is_top_up": false,
-          "clamped": null
+          "clamped": null,
+          "cap_kind": null,
+          "daily_rate_qty": "331.627414",
+          "supplier_product_id": 10
         }
       ],
       "skipped": [
@@ -263,7 +295,12 @@
         "Booker: THESE TERMS ARE INVENTED PLACEHOLDERS. Lead time 2d, delivery days, cutoff 12:00:00, minimum £50.00 and the free-delivery threshold were never confirmed with this supplier (ARCHITECTURE.md 8F.4). The cover window above -- and therefore every quantity on this order -- is only as good as they are. Confirm them before trusting the numbers.",
         "Booker: SOURCING MOVED 1 line(s) off this order: Oat milk (barista) (£12.50) -> Tesco. The reason is on each sourcing choice. This order was then re-sized, so its minimum and any top-up were re-decided against what is left.",
         "Oat milk (barista): SWITCHED to Tesco (1 L) at 190.00p/L, against Booker (1 L) at 250.00p/L -- 24.00% cheaper per L, £3.00 on this line. Materially cheaper and no other supplier's minimum is broken by moving it."
-      ]
+      ],
+      "order_by_date": "2026-09-22",
+      "next_delivery_date": "2026-09-29",
+      "fee_applies": false,
+      "top_up_candidates": [],
+      "persisted": null
     },
     {
       "supplier": {
@@ -280,7 +317,13 @@
         "cutoff_time": "16:00:00",
         "delivery_fee_pence": 0,
         "free_delivery_threshold_pence": 10000,
-        "terms_are_placeholders": true
+        "terms_are_placeholders": true,
+        "kind": null,
+        "contact": null,
+        "order_url": null,
+        "notes": null,
+        "product_count": null,
+        "archived": false
       },
       "target_delivery_date": "2026-09-23",
       "cover_window_days": 6,
@@ -320,7 +363,10 @@
           "cap_detail": null,
           "is_capped": false,
           "is_top_up": false,
-          "clamped": null
+          "clamped": null,
+          "cap_kind": null,
+          "daily_rate_qty": "8.183764",
+          "supplier_product_id": 1
         }
       ],
       "skipped": [
@@ -361,7 +407,12 @@
         "INVARIANT 5: 2 tier-B item(s) were NOT used as top-up because they are perishable: Semi-skimmed milk, Whipping cream. Buying something that spoils in order to clear a supplier's minimum or save a delivery fee is buying waste, so these are excluded however short their cover is.",
         "no non-perishable tier-B item with measured consumption was available to top up with.",
         "Brakes: THESE TERMS ARE INVENTED PLACEHOLDERS. Lead time 1d, delivery days, cutoff 16:00:00, minimum £75.00 and the free-delivery threshold were never confirmed with this supplier (ARCHITECTURE.md 8F.4). The cover window above -- and therefore every quantity on this order -- is only as good as they are. Confirm them before trusting the numbers."
-      ]
+      ],
+      "order_by_date": "2026-09-22",
+      "next_delivery_date": "2026-09-25",
+      "fee_applies": false,
+      "top_up_candidates": [],
+      "persisted": null
     },
     {
       "supplier": {
@@ -377,7 +428,13 @@
         "cutoff_time": "14:00:00",
         "delivery_fee_pence": 0,
         "free_delivery_threshold_pence": 7500,
-        "terms_are_placeholders": true
+        "terms_are_placeholders": true,
+        "kind": null,
+        "contact": null,
+        "order_url": null,
+        "notes": null,
+        "product_count": null,
+        "archived": false
       },
       "target_delivery_date": "2026-09-25",
       "cover_window_days": 6,
@@ -399,7 +456,12 @@
         "Cakesmiths: nothing is needed, so the £50.00 minimum does not apply -- a minimum is a condition on placing an order, not a reason to place one.",
         "Cakesmiths: THESE TERMS ARE INVENTED PLACEHOLDERS. Lead time 2d, delivery days, cutoff 14:00:00, minimum £50.00 and the free-delivery threshold were never confirmed with this supplier (ARCHITECTURE.md 8F.4). The cover window above -- and therefore every quantity on this order -- is only as good as they are. Confirm them before trusting the numbers.",
         "Cakesmiths stocks 20 product(s) but none is a tracked tier A/B ingredient with a par level, so there is nothing here to calculate. Cakesmiths is the real case: its 20 products are all tier C cake, which is a yes/no checklist (spec 4.5), not a forecast."
-      ]
+      ],
+      "order_by_date": "2026-09-23",
+      "next_delivery_date": "2026-09-29",
+      "fee_applies": false,
+      "top_up_candidates": [],
+      "persisted": null
     },
     {
       "supplier": {
@@ -418,7 +480,13 @@
         "cutoff_time": "15:00:00",
         "delivery_fee_pence": 595,
         "free_delivery_threshold_pence": 7500,
-        "terms_are_placeholders": true
+        "terms_are_placeholders": true,
+        "kind": null,
+        "contact": null,
+        "order_url": null,
+        "notes": null,
+        "product_count": null,
+        "archived": false
       },
       "target_delivery_date": "2026-09-24",
       "cover_window_days": 7,
@@ -458,7 +526,10 @@
           "cap_detail": null,
           "is_capped": false,
           "is_top_up": false,
-          "clamped": null
+          "clamped": null,
+          "cap_kind": null,
+          "daily_rate_qty": "23.624784",
+          "supplier_product_id": 49
         },
         {
           "ingredient_id": 48,
@@ -491,7 +562,10 @@
           "cap_detail": null,
           "is_capped": false,
           "is_top_up": false,
-          "clamped": null
+          "clamped": null,
+          "cap_kind": null,
+          "daily_rate_qty": "23.624784",
+          "supplier_product_id": 48
         },
         {
           "ingredient_id": 46,
@@ -524,7 +598,10 @@
           "cap_detail": null,
           "is_capped": false,
           "is_top_up": false,
-          "clamped": null
+          "clamped": null,
+          "cap_kind": null,
+          "daily_rate_qty": "12.598237",
+          "supplier_product_id": 46
         }
       ],
       "skipped": [],
@@ -539,7 +616,12 @@
       "notes": [
         "Cups Direct: £116.22 clears the £75.00 free-delivery threshold, so the £5.95 delivery fee is waived. Nothing was added to achieve that.",
         "Cups Direct: THESE TERMS ARE INVENTED PLACEHOLDERS. Lead time 3d, delivery days, cutoff 15:00:00, minimum £30.00 and the free-delivery threshold were never confirmed with this supplier (ARCHITECTURE.md 8F.4). The cover window above -- and therefore every quantity on this order -- is only as good as they are. Confirm them before trusting the numbers."
-      ]
+      ],
+      "order_by_date": "2026-09-21",
+      "next_delivery_date": "2026-09-25",
+      "fee_applies": false,
+      "top_up_candidates": [],
+      "persisted": null
     },
     {
       "supplier": {
@@ -554,7 +636,13 @@
         "cutoff_time": "11:00:00",
         "delivery_fee_pence": 0,
         "free_delivery_threshold_pence": null,
-        "terms_are_placeholders": true
+        "terms_are_placeholders": true,
+        "kind": null,
+        "contact": null,
+        "order_url": null,
+        "notes": null,
+        "product_count": null,
+        "archived": false
       },
       "target_delivery_date": "2026-09-30",
       "cover_window_days": 13,
@@ -577,7 +665,12 @@
         "Monolith: THESE TERMS ARE INVENTED PLACEHOLDERS. Lead time 3d, delivery days, cutoff 11:00:00, minimum £100.00 and the free-delivery threshold were never confirmed with this supplier (ARCHITECTURE.md 8F.4). The cover window above -- and therefore every quantity on this order -- is only as good as they are. Confirm them before trusting the numbers.",
         "Monolith: SOURCING MOVED 1 line(s) off this order: Coffee beans (house blend) (£189.00) -> Booker. The reason is on each sourcing choice. This order was then re-sized, so its minimum and any top-up were re-decided against what is left.",
         "Coffee beans (house blend): KEPT Booker (5 KG) at 1900.00p/KG. dearer alternates: Monolith (3 KG) at 2100.00p/KG"
-      ]
+      ],
+      "order_by_date": "2026-09-27",
+      "next_delivery_date": "2026-10-07",
+      "fee_applies": false,
+      "top_up_candidates": [],
+      "persisted": null
     },
     {
       "supplier": {
@@ -590,7 +683,13 @@
         "cutoff_time": null,
         "delivery_fee_pence": 0,
         "free_delivery_threshold_pence": null,
-        "terms_are_placeholders": true
+        "terms_are_placeholders": true,
+        "kind": null,
+        "contact": null,
+        "order_url": null,
+        "notes": null,
+        "product_count": null,
+        "archived": false
       },
       "target_delivery_date": "2026-09-26",
       "cover_window_days": 6,
@@ -611,7 +710,12 @@
       "notes": [
         "Nataly (custom): THESE TERMS ARE INVENTED PLACEHOLDERS. Lead time 5d, delivery days, cutoff unknown, minimum £0.00 and the free-delivery threshold were never confirmed with this supplier (ARCHITECTURE.md 8F.4). The cover window above -- and therefore every quantity on this order -- is only as good as they are. Confirm them before trusting the numbers.",
         "Nataly (custom) has no supplier products on file at all, so nothing can be ordered from it. For Nataly that is spec 15 question 5 still unanswered -- what this supplier covers, and through what channel, is unknown (ARCHITECTURE.md 8F.4)."
-      ]
+      ],
+      "order_by_date": "2026-09-21",
+      "next_delivery_date": "2026-09-27",
+      "fee_applies": false,
+      "top_up_candidates": [],
+      "persisted": null
     },
     {
       "supplier": {
@@ -624,7 +728,13 @@
         "cutoff_time": null,
         "delivery_fee_pence": 0,
         "free_delivery_threshold_pence": null,
-        "terms_are_placeholders": false
+        "terms_are_placeholders": false,
+        "kind": null,
+        "contact": null,
+        "order_url": null,
+        "notes": null,
+        "product_count": null,
+        "archived": false
       },
       "target_delivery_date": "2026-09-21",
       "cover_window_days": 4,
@@ -658,7 +768,12 @@
         "1 item(s) are below their par floor min_qty with nothing forecast to move them, and were NOT ordered: Semi-skimmed milk. Either the par floor or the tier is wrong. Ordering against a floor that nothing is consuming would be spending money on a data error.",
         "Tesco: SOURCING MOVED 1 line(s) off this order: Whole milk (£8.25) -> Brakes. The reason is on each sourcing choice. This order was then re-sized, so its minimum and any top-up were re-decided against what is left.",
         "Whole milk: KEPT Brakes (3.4 L) at 69.71p/L. dearer alternates: Tesco (2 L) at 82.50p/L"
-      ]
+      ],
+      "order_by_date": "2026-09-21",
+      "next_delivery_date": "2026-09-22",
+      "fee_applies": false,
+      "top_up_candidates": [],
+      "persisted": null
     }
   ],
   "sourcing_choices": [
@@ -764,5 +879,8 @@
     "1 line(s) routed to Tesco at retail. Every one is a premium paid for being late rather than a purchase anybody chose, and every one is logged (spec 4.4) -- one is a bad week, a pattern is a broken ordering cadence, and the accumulated premium is the argument for fixing it.",
     "EMERGENCY PREMIUM this run: £1.02 paid over what the scheduled suppliers charge for the same goods. That figure is the argument for fixing the ordering cadence (spec 4.4), and it is logged so it can be summed over a quarter rather than forgotten each week."
   ],
-  "writes_nothing": true
+  "writes_nothing": true,
+  "uncounted": [],
+  "unsourced": [],
+  "supplier_count": 8
 }

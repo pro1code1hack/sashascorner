@@ -394,9 +394,14 @@ import review.
 
 Design: numbers carry it (tabular figures, deliberately set). Resist the traffic
 light — colour only for crossed thresholds. Avoid the KPI card grid, cream/serif/
-terracotta, identical rounded cards, uppercase eyebrow labels, green-good/red-bad as
+terracotta, identical rounded cards, green-good/red-bad as
 the only encoding, decorative sparklines. Estimated or missing costs: shown, flagged,
 excluded from aggregates, never zero.
+
+**2026-09-26 redesign:** the back office is being rebuilt to the owner's design in
+`docs/design/` (light theme, Nunito, uppercase group/table labels — the owner lifted the
+earlier uppercase ban). Specs and owner decisions: `docs/design/specs/` (read
+`DECISIONS.md` first). This supersedes `docs/phase4/DESIGN-LAW.md` where they differ.
 
 ### 10.9 API shapes (from the spec — restored)
 
@@ -489,6 +494,9 @@ uv run cafeops shelf-life list | set <name> --days N [--open-days N] --source su
 #   ^ the operator path for the doctor's two standing warnings. Before these existed
 #     the only remedy on offer was editing a seed file (ARCHITECTURE.md 8O).
 uv run cafeops count / expand / ingredients / info
+uv run cafeops import-finance --dry-run | --commit   # Daily Sales, Expenses, Director sheets
+uv run cafeops password reset                          # forget the Settings password; env rules
+uv run cafeops doctor                                  # is this install operable?
 uv run cafeops simulate [--weeks 8] [--supplier X] [--cadence-days 7]
 uv run cafeops sync --fixtures --from D --to D
 uv run cafeops proposals / materialise-template / templates / components

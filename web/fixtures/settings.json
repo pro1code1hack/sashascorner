@@ -1,0 +1,33 @@
+{
+  "auth": {
+    "source": "environment",
+    "set_at": null,
+    "set_by": null,
+    "active_sessions": 2,
+    "min_length": 10
+  },
+  "lightspeed": {
+    "configured": false,
+    "env_vars": [
+      "CAFEOPS_LIGHTSPEED_CLIENT_ID",
+      "CAFEOPS_LIGHTSPEED_CLIENT_SECRET",
+      "CAFEOPS_LIGHTSPEED_REFRESH_TOKEN",
+      "CAFEOPS_LIGHTSPEED_BUSINESS_ID"
+    ],
+    "last_ok_finished_at": null,
+    "last_sale_at": "2026-09-22T15:39:07Z",
+    "last_attempt": null
+  },
+  "telegram": {
+    "bot_configured": false,
+    "owner_chat_configured": false,
+    "language": "ru"
+  },
+  "agent": {
+    "narration": "template",
+    "model": null
+  },
+  "labour": {
+    "loaded_hourly_rate_pence": 1450
+  }
+}

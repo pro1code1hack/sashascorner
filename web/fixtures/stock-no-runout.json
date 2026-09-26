@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-09-24T20:02:34.889768Z",
+  "as_of": "2026-09-26T10:26:32.100041Z",
   "basis": "THEORETICAL",
   "summary": {
     "ingredients": 11,
@@ -8,9 +8,22 @@
     "short_dated": 1,
     "unbatched": 0,
     "auto_order_enabled": 5,
-    "forced_manual": 1,
+    "forced_manual": 2,
     "expiring_value_pence": "3354.456159",
-    "notes": []
+    "notes": [],
+    "short_dated_batches": 1,
+    "written_off_month": {
+      "month": "2026-09",
+      "count": 2,
+      "value": {
+        "pence": "504.670586",
+        "source": null,
+        "is_estimate": false,
+        "is_missing": false,
+        "excluded_from_aggregates": false,
+        "note": null
+      }
+    }
   },
   "rows": [
     {
@@ -31,11 +44,11 @@
       "on_hand": {
         "qty": "12",
         "unit": "EACH",
-        "as_of": "2026-09-24T20:02:34.889768Z",
+        "as_of": "2026-09-26T10:26:32.100041Z",
         "is_theoretical": true,
         "has_count_basis": true,
         "basis_count_qty": "12",
-        "basis_counted_at": "2026-09-24T15:53:55.324166Z",
+        "basis_counted_at": "2026-09-23T22:24:06.840850Z",
         "movement_sum": "0",
         "movement_count": 0,
         "basis_label": "counted + ledger",
@@ -61,7 +74,10 @@
           "effective_expiry": null,
           "days_left": null,
           "unit_cost_pence": "2.574",
-          "value_pence": "30.888"
+          "value_pence": "30.888",
+          "qty_received": "1000",
+          "expiry_assumed": false,
+          "received_by": null
         }
       ],
       "batch_qty": "12",
@@ -70,32 +86,32 @@
       "is_short_dated": false,
       "drift": {
         "has_observation": true,
-        "observed_at": "2026-09-24T15:53:55.324166Z",
-        "theoretical_qty": "12",
+        "observed_at": "2026-09-23T22:24:06.840850Z",
+        "theoretical_qty": "47.162",
         "counted_qty": "12",
-        "drift_pct": 0.0,
-        "verdict": "ELIGIBLE",
-        "mean_abs_drift_pct": 50.898,
+        "drift_pct": 293.017,
+        "verdict": "FORCE_MANUAL",
+        "mean_abs_drift_pct": 51.413,
         "observation_count": 6,
         "auto_order_enabled": false,
-        "auto_order_reason": "1 of 2 consecutive counts under 10.0% (latest +0.00%): stays manual until the next clean count",
-        "clean_streak": 1,
+        "auto_order_reason": "drift +293.02% exceeds 15.0%: auto-ordering refused and revoked immediately, theoretical stock is not trustworthy",
+        "clean_streak": 0,
         "required_streak": 2,
         "gate_action": "HOLD",
-        "trust_status": "trusted",
+        "trust_status": "excluded",
         "attribution": {
-          "cause": "NEGLIGIBLE",
-          "headline": "NOTHING TO FIX",
-          "action": "no material loss in this window: the count agrees with the ledger and nothing expired. Do not tune anything.",
-          "gap_qty": "0",
+          "cause": "MEASUREMENT",
+          "headline": "RECIPE OR WASTE FACTOR",
+          "action": "only 0% of the loss is expiry, so the stock left unrecorded. FIX THE RECIPE or tune waste_factor: order size is not the problem, and cutting it would cause a stockout while the real gap stayed.",
+          "gap_qty": "35.162",
           "expired_qty": "0",
-          "measurement_qty": "0",
+          "measurement_qty": "35.162",
           "expiry_qty": "0",
-          "expiry_share": null,
-          "unexplained_loss_qty": "0",
+          "expiry_share": 0.0,
+          "unexplained_loss_qty": "35.162",
           "surplus_qty": "0",
           "surplus_note": null,
-          "loss_pct_of_consumption": null
+          "loss_pct_of_consumption": 60.024
         }
       },
       "run_out": {
@@ -105,6 +121,25 @@
         "on": null,
         "is_out_of_stock": false,
         "note": "run-out not computed: the request passed run_out=false. Absent because it was not asked for, which is a different thing from absent because the forecast was withheld -- that case has a forecast with is_low_confidence."
+      },
+      "category": "Packaging",
+      "trust_label": "excluded",
+      "checklist": null,
+      "since_count": {
+        "counted_at": "2026-09-23T22:24:06.840850Z",
+        "delivered": "0",
+        "sold": "0",
+        "wasted": "0",
+        "expired": "0",
+        "adjusted": "0",
+        "days": 3
+      },
+      "par": {
+        "min_qty": "41.679",
+        "max_qty": "1375.114",
+        "safety_days": "2",
+        "min_qty_set_by": null,
+        "min_qty_set_at": null
       }
     },
     {
@@ -125,7 +160,7 @@
       "on_hand": {
         "qty": "106.534",
         "unit": "EACH",
-        "as_of": "2026-09-24T20:02:34.889768Z",
+        "as_of": "2026-09-26T10:26:32.100041Z",
         "is_theoretical": true,
         "has_count_basis": true,
         "basis_count_qty": "165.114",
@@ -155,7 +190,10 @@
           "effective_expiry": null,
           "days_left": null,
           "unit_cost_pence": "9.588",
-          "value_pence": "1021.447992"
+          "value_pence": "1021.447992",
+          "qty_received": "500",
+          "expiry_assumed": false,
+          "received_by": null
         }
       ],
       "batch_qty": "106.534",
@@ -199,6 +237,25 @@
         "on": null,
         "is_out_of_stock": false,
         "note": "run-out not computed: the request passed run_out=false. Absent because it was not asked for, which is a different thing from absent because the forecast was withheld -- that case has a forecast with is_low_confidence."
+      },
+      "category": "Packaging",
+      "trust_label": "trusted",
+      "checklist": null,
+      "since_count": {
+        "counted_at": "2026-09-19T20:00:00Z",
+        "delivered": "0",
+        "sold": "-58.58",
+        "wasted": "0",
+        "expired": "0",
+        "adjusted": "0",
+        "days": 7
+      },
+      "par": {
+        "min_qty": "41.679",
+        "max_qty": "875.114",
+        "safety_days": "2",
+        "min_qty_set_by": null,
+        "min_qty_set_at": null
       }
     },
     {
@@ -219,7 +276,7 @@
       "on_hand": {
         "qty": "412.724",
         "unit": "EACH",
-        "as_of": "2026-09-24T20:02:34.889768Z",
+        "as_of": "2026-09-26T10:26:32.100041Z",
         "is_theoretical": true,
         "has_count_basis": true,
         "basis_count_qty": "454.134",
@@ -249,7 +306,10 @@
           "effective_expiry": null,
           "days_left": null,
           "unit_cost_pence": "2.874",
-          "value_pence": "1186.168776"
+          "value_pence": "1186.168776",
+          "qty_received": "1000",
+          "expiry_assumed": false,
+          "received_by": null
         }
       ],
       "batch_qty": "412.724",
@@ -293,6 +353,25 @@
         "on": null,
         "is_out_of_stock": false,
         "note": "run-out not computed: the request passed run_out=false. Absent because it was not asked for, which is a different thing from absent because the forecast was withheld -- that case has a forecast with is_low_confidence."
+      },
+      "category": "Packaging",
+      "trust_label": "trusted",
+      "checklist": null,
+      "since_count": {
+        "counted_at": "2026-09-19T20:00:00Z",
+        "delivered": "0",
+        "sold": "-41.41",
+        "wasted": "0",
+        "expired": "0",
+        "adjusted": "0",
+        "days": 7
+      },
+      "par": {
+        "min_qty": "25.856",
+        "max_qty": "1232.704",
+        "safety_days": "2",
+        "min_qty_set_by": null,
+        "min_qty_set_at": null
       }
     },
     {
@@ -313,7 +392,7 @@
       "on_hand": {
         "qty": "118.34",
         "unit": "EACH",
-        "as_of": "2026-09-24T20:02:34.889768Z",
+        "as_of": "2026-09-26T10:26:32.100041Z",
         "is_theoretical": true,
         "has_count_basis": true,
         "basis_count_qty": "159.75",
@@ -343,7 +422,10 @@
           "effective_expiry": null,
           "days_left": null,
           "unit_cost_pence": "10.335",
-          "value_pence": "1223.04390"
+          "value_pence": "1223.04390",
+          "qty_received": "400",
+          "expiry_assumed": false,
+          "received_by": null
         }
       ],
       "batch_qty": "118.34",
@@ -387,6 +469,25 @@
         "on": null,
         "is_out_of_stock": false,
         "note": "run-out not computed: the request passed run_out=false. Absent because it was not asked for, which is a different thing from absent because the forecast was withheld -- that case has a forecast with is_low_confidence."
+      },
+      "category": "Packaging",
+      "trust_label": "excluded",
+      "checklist": null,
+      "since_count": {
+        "counted_at": "2026-09-19T20:00:00Z",
+        "delivered": "0",
+        "sold": "-41.41",
+        "wasted": "0",
+        "expired": "0",
+        "adjusted": "0",
+        "days": 7
+      },
+      "par": {
+        "min_qty": "25.856",
+        "max_qty": "632.704",
+        "safety_days": "2",
+        "min_qty_set_by": null,
+        "min_qty_set_at": null
       }
     },
     {
@@ -407,7 +508,7 @@
       "on_hand": {
         "qty": "413.645",
         "unit": "EACH",
-        "as_of": "2026-09-24T20:02:34.889768Z",
+        "as_of": "2026-09-26T10:26:32.100041Z",
         "is_theoretical": true,
         "has_count_basis": true,
         "basis_count_qty": "445.965",
@@ -437,7 +538,10 @@
           "effective_expiry": null,
           "days_left": null,
           "unit_cost_pence": "2.574",
-          "value_pence": "1064.722230"
+          "value_pence": "1064.722230",
+          "qty_received": "1000",
+          "expiry_assumed": false,
+          "received_by": null
         }
       ],
       "batch_qty": "413.645",
@@ -481,6 +585,25 @@
         "on": null,
         "is_out_of_stock": false,
         "note": "run-out not computed: the request passed run_out=false. Absent because it was not asked for, which is a different thing from absent because the forecast was withheld -- that case has a forecast with is_low_confidence."
+      },
+      "category": "Packaging",
+      "trust_label": "trusted",
+      "checklist": null,
+      "since_count": {
+        "counted_at": "2026-09-19T20:00:00Z",
+        "delivered": "0",
+        "sold": "-32.32",
+        "wasted": "0",
+        "expired": "0",
+        "adjusted": "0",
+        "days": 7
+      },
+      "par": {
+        "min_qty": "25.923",
+        "max_qty": "1233.31",
+        "safety_days": "2",
+        "min_qty_set_by": null,
+        "min_qty_set_at": null
       }
     },
     {
@@ -501,7 +624,7 @@
       "on_hand": {
         "qty": "26.755",
         "unit": "EACH",
-        "as_of": "2026-09-24T20:02:34.889768Z",
+        "as_of": "2026-09-26T10:26:32.100041Z",
         "is_theoretical": true,
         "has_count_basis": true,
         "basis_count_qty": "59.075",
@@ -531,7 +654,10 @@
           "effective_expiry": null,
           "days_left": null,
           "unit_cost_pence": "8.508",
-          "value_pence": "227.631540"
+          "value_pence": "227.631540",
+          "qty_received": "500",
+          "expiry_assumed": false,
+          "received_by": null
         }
       ],
       "batch_qty": "26.755",
@@ -575,6 +701,25 @@
         "on": null,
         "is_out_of_stock": false,
         "note": "run-out not computed: the request passed run_out=false. Absent because it was not asked for, which is a different thing from absent because the forecast was withheld -- that case has a forecast with is_low_confidence."
+      },
+      "category": "Packaging",
+      "trust_label": "trusted",
+      "checklist": null,
+      "since_count": {
+        "counted_at": "2026-09-19T20:00:00Z",
+        "delivered": "0",
+        "sold": "-32.32",
+        "wasted": "0",
+        "expired": "0",
+        "adjusted": "0",
+        "days": 7
+      },
+      "par": {
+        "min_qty": "25.923",
+        "max_qty": "733.31",
+        "safety_days": "2",
+        "min_qty_set_by": null,
+        "min_qty_set_at": null
       }
     },
     {
@@ -595,7 +740,7 @@
       "on_hand": {
         "qty": "5",
         "unit": "KG",
-        "as_of": "2026-09-24T20:02:34.889768Z",
+        "as_of": "2026-09-26T10:26:32.100041Z",
         "is_theoretical": true,
         "has_count_basis": true,
         "basis_count_qty": "5",
@@ -623,14 +768,17 @@
           "expires_at": "2028-01-16T06:00:00Z",
           "opened_at": null,
           "effective_expiry": "2028-01-16T06:00:00Z",
-          "days_left": 478,
+          "days_left": 476,
           "unit_cost_pence": "700",
-          "value_pence": "3500"
+          "value_pence": "3500",
+          "qty_received": "5",
+          "expiry_assumed": false,
+          "received_by": null
         }
       ],
       "batch_qty": "5",
       "batch_coverage_gap": "0",
-      "soonest_expiry_days": 478,
+      "soonest_expiry_days": 476,
       "is_short_dated": false,
       "drift": {
         "has_observation": false,
@@ -656,6 +804,25 @@
         "on": null,
         "is_out_of_stock": false,
         "note": "run-out not computed: the request passed run_out=false. Absent because it was not asked for, which is a different thing from absent because the forecast was withheld -- that case has a forecast with is_low_confidence."
+      },
+      "category": "Chocolate",
+      "trust_label": "not_yet_judged",
+      "checklist": null,
+      "since_count": {
+        "counted_at": "2026-07-25T06:00:00Z",
+        "delivered": "0",
+        "sold": "0",
+        "wasted": "0",
+        "expired": "0",
+        "adjusted": "0",
+        "days": 63
+      },
+      "par": {
+        "min_qty": "0.25",
+        "max_qty": "3",
+        "safety_days": "2",
+        "min_qty_set_by": null,
+        "min_qty_set_at": null
       }
     },
     {
@@ -676,7 +843,7 @@
       "on_hand": {
         "qty": "2.28665",
         "unit": "KG",
-        "as_of": "2026-09-24T20:02:34.889768Z",
+        "as_of": "2026-09-26T10:26:32.100041Z",
         "is_theoretical": true,
         "has_count_basis": true,
         "basis_count_qty": "5.15",
@@ -704,14 +871,17 @@
           "expires_at": "2027-09-13T06:30:00Z",
           "opened_at": null,
           "effective_expiry": "2027-09-13T06:30:00Z",
-          "days_left": 353,
+          "days_left": 351,
           "unit_cost_pence": "1900",
-          "value_pence": "4344.63500"
+          "value_pence": "4344.63500",
+          "qty_received": "10",
+          "expiry_assumed": false,
+          "received_by": null
         }
       ],
       "batch_qty": "2.28665",
       "batch_coverage_gap": "0.00000",
-      "soonest_expiry_days": 353,
+      "soonest_expiry_days": 351,
       "is_short_dated": false,
       "drift": {
         "has_observation": true,
@@ -750,6 +920,25 @@
         "on": null,
         "is_out_of_stock": false,
         "note": "run-out not computed: the request passed run_out=false. Absent because it was not asked for, which is a different thing from absent because the forecast was withheld -- that case has a forecast with is_low_confidence."
+      },
+      "category": "Coffee",
+      "trust_label": "trusted",
+      "checklist": null,
+      "since_count": {
+        "counted_at": "2026-09-19T20:00:00Z",
+        "delivered": "0",
+        "sold": "-2.86335",
+        "wasted": "0",
+        "expired": "0",
+        "adjusted": "0",
+        "days": 7
+      },
+      "par": {
+        "min_qty": "1.991",
+        "max_qty": "21.424",
+        "safety_days": "2",
+        "min_qty_set_by": null,
+        "min_qty_set_at": null
       }
     },
     {
@@ -770,7 +959,7 @@
       "on_hand": {
         "qty": "5",
         "unit": "KG",
-        "as_of": "2026-09-24T20:02:34.889768Z",
+        "as_of": "2026-09-26T10:26:32.100041Z",
         "is_theoretical": true,
         "has_count_basis": true,
         "basis_count_qty": "5",
@@ -798,14 +987,17 @@
           "expires_at": "2028-01-16T06:00:00Z",
           "opened_at": null,
           "effective_expiry": "2028-01-16T06:00:00Z",
-          "days_left": 478,
+          "days_left": 476,
           "unit_cost_pence": "20000",
-          "value_pence": "100000"
+          "value_pence": "100000",
+          "qty_received": "5",
+          "expiry_assumed": false,
+          "received_by": null
         }
       ],
       "batch_qty": "5",
       "batch_coverage_gap": "0",
-      "soonest_expiry_days": 478,
+      "soonest_expiry_days": 476,
       "is_short_dated": false,
       "drift": {
         "has_observation": false,
@@ -831,6 +1023,25 @@
         "on": null,
         "is_out_of_stock": false,
         "note": "run-out not computed: the request passed run_out=false. Absent because it was not asked for, which is a different thing from absent because the forecast was withheld -- that case has a forecast with is_low_confidence."
+      },
+      "category": "Specialty",
+      "trust_label": "not_yet_judged",
+      "checklist": null,
+      "since_count": {
+        "counted_at": "2026-07-25T06:00:00Z",
+        "delivered": "0",
+        "sold": "0",
+        "wasted": "0",
+        "expired": "0",
+        "adjusted": "0",
+        "days": 63
+      },
+      "par": {
+        "min_qty": "0.0125",
+        "max_qty": "0.15",
+        "safety_days": "2",
+        "min_qty_set_by": null,
+        "min_qty_set_at": null
       }
     },
     {
@@ -851,7 +1062,7 @@
       "on_hand": {
         "qty": "295.845",
         "unit": "EACH",
-        "as_of": "2026-09-24T20:02:34.889768Z",
+        "as_of": "2026-09-26T10:26:32.100041Z",
         "is_theoretical": true,
         "has_count_basis": true,
         "basis_count_qty": "428.155",
@@ -881,7 +1092,10 @@
           "effective_expiry": null,
           "days_left": null,
           "unit_cost_pence": "0.8",
-          "value_pence": "236.6760"
+          "value_pence": "236.6760",
+          "qty_received": "500",
+          "expiry_assumed": false,
+          "received_by": null
         }
       ],
       "batch_qty": "295.845",
@@ -925,6 +1139,25 @@
         "on": null,
         "is_out_of_stock": false,
         "note": "run-out not computed: the request passed run_out=false. Absent because it was not asked for, which is a different thing from absent because the forecast was withheld -- that case has a forecast with is_low_confidence."
+      },
+      "category": "Sundries",
+      "trust_label": "drifting",
+      "checklist": null,
+      "since_count": {
+        "counted_at": "2026-09-19T20:00:00Z",
+        "delivered": "0",
+        "sold": "-132.31",
+        "wasted": "0",
+        "expired": "0",
+        "adjusted": "0",
+        "days": 7
+      },
+      "par": {
+        "min_qty": "93.459",
+        "max_qty": "1341.128",
+        "safety_days": "2",
+        "min_qty_set_by": null,
+        "min_qty_set_at": null
       }
     },
     {
@@ -945,7 +1178,7 @@
       "on_hand": {
         "qty": "48.123",
         "unit": "L",
-        "as_of": "2026-09-24T20:02:34.889768Z",
+        "as_of": "2026-09-26T10:26:32.100041Z",
         "is_theoretical": true,
         "has_count_basis": true,
         "basis_count_qty": "12.037",
@@ -973,14 +1206,17 @@
           "expires_at": "2026-09-28T06:30:00Z",
           "opened_at": null,
           "effective_expiry": "2026-09-28T06:30:00Z",
-          "days_left": 3,
+          "days_left": 1,
           "unit_cost_pence": "69.705882",
-          "value_pence": "3354.456159"
+          "value_pence": "3354.456159",
+          "qty_received": "51",
+          "expiry_assumed": false,
+          "received_by": null
         }
       ],
       "batch_qty": "48.123",
       "batch_coverage_gap": "0.000",
-      "soonest_expiry_days": 3,
+      "soonest_expiry_days": 1,
       "is_short_dated": true,
       "drift": {
         "has_observation": true,
@@ -1019,6 +1255,25 @@
         "on": null,
         "is_out_of_stock": false,
         "note": "run-out not computed: the request passed run_out=false. Absent because it was not asked for, which is a different thing from absent because the forecast was withheld -- that case has a forecast with is_low_confidence."
+      },
+      "category": "Dairy",
+      "trust_label": "drifting",
+      "checklist": null,
+      "since_count": {
+        "counted_at": "2026-09-19T20:00:00Z",
+        "delivered": "57.8",
+        "sold": "-21.714",
+        "wasted": "0",
+        "expired": "0",
+        "adjusted": "0",
+        "days": 7
+      },
+      "par": {
+        "min_qty": "14.601",
+        "max_qty": "112.905",
+        "safety_days": "2",
+        "min_qty_set_by": null,
+        "min_qty_set_at": null
       }
     }
   ]

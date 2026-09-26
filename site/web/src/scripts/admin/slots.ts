@@ -38,15 +38,15 @@ export function renderSlots() {
       const id = `page-${page.replace(/[^a-z0-9]+/gi, '-') || 'home'}`;
       return h(
         'section',
-        { class: 'adm-page', 'aria-labelledby': id },
+        { class: 'ph-page', 'aria-labelledby': id },
         h(
           'header',
-          { class: 'adm-page__head' },
+          { class: 'ph-page__head' },
           h('h3', { id }, `${pageName(page)} page`),
-          h('a', { href: page, target: '_blank', rel: 'noopener', class: 'adm-link' }, 'Open the live page', h('span', { class: 'sr-only' }, ' (opens in a new tab)'), ' ↗'),
+          h('a', { href: page, target: '_blank', rel: 'noopener', class: 'ph-link' }, 'Open the live page', h('span', { class: 'adm-sr' }, ' (opens in a new tab)'), ' ↗'),
         ),
         byPage.get(page)!.map((s) => {
-          const art = h('article', { class: 'adm-slot', id: slotAnchor(s.key), tabindex: '-1', 'aria-labelledby': `${slotAnchor(s.key)}-t` });
+          const art = h('article', { class: 'ph-slot', id: slotAnchor(s.key), tabindex: '-1', 'aria-labelledby': `${slotAnchor(s.key)}-t` });
           articles.set(s.key, art);
           renderSlot(s.key);
           return art;
@@ -54,7 +54,7 @@ export function renderSlots() {
       );
     }),
   );
-  if (!pages.length) root.append(h('p', { class: 'adm-muted' }, 'No photo places are set up on the site yet.'));
+  if (!pages.length) root.append(h('p', { class: 'ph-muted' }, 'No photo places are set up on the site yet.'));
 }
 
 // ---- one slot ---------------------------------------------------------------------
@@ -73,19 +73,19 @@ function renderSlot(key: string) {
   art.replaceChildren(
     h(
       'header',
-      { class: 'adm-slot__head' },
+      { class: 'ph-slot__head' },
       h('div', {},
         h('h4', { id: `${slotAnchor(key)}-t` }, s.label),
-        s.hint ? h('p', { class: 'adm-slot__hint' }, s.hint) : null,
+        s.hint ? h('p', { class: 'ph-slot__hint' }, s.hint) : null,
       ),
-      h('p', { class: 'adm-slot__meta' },
-        h('span', { class: 'adm-shape', style: `aspect-ratio:${s.aspect}`, 'aria-hidden': 'true' }),
+      h('p', { class: 'ph-slot__meta' },
+        h('span', { class: 'ph-shape', style: `aspect-ratio:${s.aspect}`, 'aria-hidden': 'true' }),
         h('span', {}, `Shape ${aspectLabel(s.aspect)}`),
-        h('span', { class: `adm-fill${isEmpty ? ' is-empty' : ''}` }, fill),
+        h('span', { class: `ph-fill${isEmpty ? ' is-empty' : ''}` }, fill),
       ),
     ),
     s.multiple ? strip(s) : single(s),
-    h('ul', { class: 'adm-uploads', 'data-slot-uploads': '', hidden: true }),
+    h('ul', { class: 'ph-uploads', 'data-slot-uploads': '', hidden: true }),
     footer(s),
   );
 
@@ -94,12 +94,12 @@ function renderSlot(key: string) {
 
 function addButtons(s: Slot) {
   const left = s.multiple ? room(s) : 1;
-  if (left <= 0) return h('p', { class: 'adm-muted adm-slot__full' }, `Full: this place shows up to ${s.max}. Remove one to add another.`);
+  if (left <= 0) return h('p', { class: 'ph-muted ph-slot__full' }, `Full: this place shows up to ${s.max}. Remove one to add another.`);
   const input = h('input', {
     type: 'file',
     accept: 'image/jpeg,image/png,image/webp',
     multiple: s.multiple && left > 1,
-    class: 'sr-only',
+    class: 'adm-sr',
     tabindex: '-1',
     'aria-hidden': 'true',
   }) as HTMLInputElement;
@@ -112,10 +112,10 @@ function addButtons(s: Slot) {
   const verb = s.multiple ? (filled ? `Add up to ${left} more` : `Add up to ${left}`) : filled ? 'Replace' : 'Add a photo';
   return h(
     'div',
-    { class: 'adm-slot__add' },
-    h('span', { class: 'adm-slot__addlabel' }, `${verb}:`),
-    h('button', { type: 'button', class: 'btn btn--ghost adm-btn', 'data-f': 'pick', onclick: () => openPicker(s.key) }, 'Choose from library'),
-    h('button', { type: 'button', class: 'btn btn--ghost adm-btn', 'data-f': 'upload', onclick: () => input.click() }, 'Upload new'),
+    { class: 'ph-slot__add' },
+    h('span', { class: 'ph-slot__addlabel' }, `${verb}:`),
+    h('button', { type: 'button', class: 'adm-btn adm-btn--secondary', 'data-f': 'pick', onclick: () => openPicker(s.key) }, 'Choose from library'),
+    h('button', { type: 'button', class: 'adm-btn adm-btn--secondary', 'data-f': 'upload', onclick: () => input.click() }, 'Upload new'),
     input,
   );
 }
@@ -123,22 +123,22 @@ function addButtons(s: Slot) {
 function emptyFrame(s: Slot) {
   return h(
     'div',
-    { class: 'adm-frame adm-frame--empty', style: `aspect-ratio:${s.aspect}` },
+    { class: 'ph-frame ph-frame--empty', style: `aspect-ratio:${s.aspect}` },
     h('p', {}, h('strong', {}, 'No photo yet'), s.hint ? h('span', {}, s.hint) : null),
   );
 }
 
 function single(s: Slot) {
   const items = draft(s.key);
-  if (!items.length) return h('div', { class: 'adm-slot__body' }, emptyFrame(s), addButtons(s));
+  if (!items.length) return h('div', { class: 'ph-slot__body' }, emptyFrame(s), addButtons(s));
   return h(
     'div',
-    { class: 'adm-slot__body' },
+    { class: 'ph-slot__body' },
     editor(s, 0),
-    h('div', { class: 'adm-slot__row' },
+    h('div', { class: 'ph-slot__row' },
       addButtons(s),
       h('button', {
-        type: 'button', class: 'adm-link adm-link--danger', 'data-f': 'remove-0',
+        type: 'button', class: 'ph-link ph-link--danger', 'data-f': 'remove-0',
         onclick: () => { change(s.key, []); announce('Photo taken out of this place. Save to confirm.'); },
       }, 'Take this photo out'),
     ),
@@ -171,31 +171,31 @@ function strip(s: Slot) {
   if (sel >= items.length) sel = Math.max(0, items.length - 1);
   state.selected.set(s.key, sel);
 
-  const list = h('ol', { class: 'adm-strip', 'aria-label': `${s.label}, in the order shown on the site` });
+  const list = h('ol', { class: 'ph-strip', 'aria-label': `${s.label}, in the order shown on the site` });
   items.forEach((it, i) => {
     const m = imageFor(s.key, it.media_id);
     const name = m?.alt || m?.original_name || `Photo ${i + 1}`;
     list.append(
       h(
         'li',
-        { class: `adm-strip__item${i === sel ? ' is-selected' : ''}`, 'data-idx': String(i) },
+        { class: `ph-strip__item${i === sel ? ' is-selected' : ''}`, 'data-idx': String(i) },
         h(
           'button',
           {
-            type: 'button', class: 'adm-strip__pick', 'data-f': `sel-${i}`, 'aria-pressed': i === sel ? 'true' : 'false',
+            type: 'button', class: 'ph-strip__pick', 'data-f': `sel-${i}`, 'aria-pressed': i === sel ? 'true' : 'false',
             'aria-label': `Photo ${i + 1}: ${name}. Edit focal point and description`,
             style: `aspect-ratio:${s.aspect}`,
             onclick: () => { state.selected.set(s.key, i); renderSlot(s.key); },
           },
           m ? thumb(m, '120px', { 'data-focal-img': String(i), style: `object-position:${pct(it.focal.x)} ${pct(it.focal.y)}` }) : null,
-          h('span', { class: 'adm-strip__n num', 'aria-hidden': 'true' }, String(i + 1)),
+          h('span', { class: 'ph-strip__n adm-fig', 'aria-hidden': 'true' }, String(i + 1)),
         ),
         h(
           'div',
-          { class: 'adm-strip__tools' },
-          h('button', { type: 'button', class: 'adm-icon', 'data-f': `left-${i}`, disabled: i === 0, 'aria-label': `Move photo ${i + 1} left`, onclick: () => move(s.key, i, i - 1, 'left') }, '←'),
+          { class: 'ph-strip__tools' },
+          h('button', { type: 'button', class: 'ph-icon', 'data-f': `left-${i}`, disabled: i === 0, 'aria-label': `Move photo ${i + 1} left`, onclick: () => move(s.key, i, i - 1, 'left') }, '←'),
           h('button', {
-            type: 'button', class: 'adm-icon adm-grip', 'data-f': `grip-${i}`,
+            type: 'button', class: 'ph-icon ph-grip', 'data-f': `grip-${i}`,
             'aria-label': `Drag to reorder photo ${i + 1}, or use the arrow keys`,
             onpointerdown: (e: Event) => startDrag(s.key, i, e as PointerEvent),
             onkeydown: (e: Event) => {
@@ -204,9 +204,9 @@ function strip(s: Slot) {
               if (k === 'ArrowRight' || k === 'ArrowDown') (e.preventDefault(), move(s.key, i, i + 1, 'grip'));
             },
           }, h('span', { 'aria-hidden': 'true' }, '⠿')),
-          h('button', { type: 'button', class: 'adm-icon', 'data-f': `right-${i}`, disabled: i === items.length - 1, 'aria-label': `Move photo ${i + 1} right`, onclick: () => move(s.key, i, i + 1, 'right') }, '→'),
+          h('button', { type: 'button', class: 'ph-icon', 'data-f': `right-${i}`, disabled: i === items.length - 1, 'aria-label': `Move photo ${i + 1} right`, onclick: () => move(s.key, i, i + 1, 'right') }, '→'),
           h('button', {
-            type: 'button', class: 'adm-icon adm-icon--x', 'data-f': `remove-${i}`, 'aria-label': `Take photo ${i + 1} out of this place`,
+            type: 'button', class: 'ph-icon ph-icon--x', 'data-f': `remove-${i}`, 'aria-label': `Take photo ${i + 1} out of this place`,
             onclick: () => {
               const next = draft(s.key).filter((_, j) => j !== i);
               if ((state.selected.get(s.key) ?? 0) >= next.length) state.selected.set(s.key, Math.max(0, next.length - 1));
@@ -222,16 +222,16 @@ function strip(s: Slot) {
   });
   // Empty positions, so the owner sees how many the layout holds.
   for (let i = items.length; i < s.max; i++) {
-    list.append(h('li', { class: 'adm-strip__item is-hole', 'aria-hidden': 'true' }, h('span', { class: 'adm-strip__hole', style: `aspect-ratio:${s.aspect}` }, String(i + 1))));
+    list.append(h('li', { class: 'ph-strip__item is-hole', 'aria-hidden': 'true' }, h('span', { class: 'ph-strip__hole', style: `aspect-ratio:${s.aspect}` }, String(i + 1))));
   }
 
   return h(
     'div',
-    { class: 'adm-slot__body' },
+    { class: 'ph-slot__body' },
     items.length ? null : emptyFrame(s),
     list,
     addButtons(s),
-    items.length ? h('div', { class: 'adm-slot__sel' }, h('p', { class: 'adm-muted' }, `Editing photo ${sel + 1} of ${items.length}`), editor(s, sel)) : null,
+    items.length ? h('div', { class: 'ph-slot__sel' }, h('p', { class: 'ph-muted' }, `Editing photo ${sel + 1} of ${items.length}`), editor(s, sel)) : null,
   );
 }
 
@@ -284,7 +284,7 @@ function startDrag(key: string, from: number, e: PointerEvent) {
 function editor(s: Slot, idx: number) {
   const it = draft(s.key)[idx];
   const m = imageFor(s.key, it.media_id);
-  if (!m) return h('p', { class: 'adm-muted' }, 'This photo is no longer in the library.');
+  if (!m) return h('p', { class: 'ph-muted' }, 'This photo is no longer in the library.');
   const r = m.width && m.height ? m.width / m.height : 4 / 3;
   const ratio = `${m.width || 4}/${m.height || 3}`;
   const pos = `${pct(it.focal.x)} ${pct(it.focal.y)}`;
@@ -292,27 +292,27 @@ function editor(s: Slot, idx: number) {
   const altId = `${slotAnchor(s.key)}-alt-${idx}`;
   const helpId = `${slotAnchor(s.key)}-fhelp`;
 
-  const cross = h('span', { class: 'adm-cross', style: `left:${pct(it.focal.x)};top:${pct(it.focal.y)}`, 'aria-hidden': 'true' });
+  const cross = h('span', { class: 'ph-cross', style: `left:${pct(it.focal.x)};top:${pct(it.focal.y)}`, 'aria-hidden': 'true' });
   const pad = h(
     'div',
     {
-      class: 'adm-focal__pad', style: `aspect-ratio:${ratio};width:min(100%, ${Math.round(420 * r)}px)`, tabindex: '0', role: 'application',
+      class: 'ph-focal__pad', style: `aspect-ratio:${ratio};width:min(100%, ${Math.round(420 * r)}px)`, tabindex: '0', role: 'application',
       'data-f': `focal-${idx}`, 'aria-roledescription': 'focal point picker',
       'aria-label': focalLabel(it.focal), 'aria-describedby': helpId,
     },
-    thumb(m, '(max-width: 700px) 90vw, 420px', { class: 'adm-focal__img' }),
+    thumb(m, '(max-width: 700px) 90vw, 420px', { class: 'ph-focal__img' }),
     cross,
   );
 
   const frames = h(
     'div',
-    { class: 'adm-focal__frames' },
-    h('figure', { class: 'adm-crop' },
-      h('div', { class: 'adm-crop__box', style: `aspect-ratio:${s.aspect}` }, thumb(m, '320px', { 'data-crop': '', style: `object-position:${pos}` })),
+    { class: 'ph-focal__frames' },
+    h('figure', { class: 'ph-crop' },
+      h('div', { class: 'ph-crop__box', style: `aspect-ratio:${s.aspect}` }, thumb(m, '320px', { 'data-crop': '', style: `object-position:${pos}` })),
       h('figcaption', {}, `On the page (${aspectLabel(s.aspect)})`),
     ),
-    h('figure', { class: 'adm-crop adm-crop--phone' },
-      h('div', { class: 'adm-crop__box', style: `aspect-ratio:${phone}` }, thumb(m, '160px', { 'data-crop': '', style: `object-position:${pos}` })),
+    h('figure', { class: 'ph-crop ph-crop--phone' },
+      h('div', { class: 'ph-crop__box', style: `aspect-ratio:${phone}` }, thumb(m, '160px', { 'data-crop': '', style: `object-position:${pos}` })),
       h('figcaption', {}, `Narrow phone crop (${aspectLabel(phone)})`),
     ),
   );
@@ -366,7 +366,7 @@ function editor(s: Slot, idx: number) {
   });
 
   const alt = h('input', {
-    id: altId, class: 'input', type: 'text', maxlength: '300', autocomplete: 'off', 'data-f': `alt-${idx}`,
+    id: altId, class: 'adm-input', type: 'text', maxlength: '300', autocomplete: 'off', 'data-f': `alt-${idx}`,
     value: it.alt,
     placeholder: m.alt ? `Uses the photo's description: “${m.alt}”` : 'Describe the photo as it appears here',
   }) as HTMLInputElement;
@@ -378,23 +378,23 @@ function editor(s: Slot, idx: number) {
 
   return h(
     'div',
-    { class: 'adm-editor' },
+    { class: 'ph-editor' },
     h(
       'div',
-      { class: 'adm-focal' },
-      h('div', { class: 'adm-focal__main' },
-        h('p', { class: 'adm-focal__title' }, 'Tap the most important part of the photo'),
+      { class: 'ph-focal' },
+      h('div', { class: 'ph-focal__main' },
+        h('p', { class: 'ph-focal__title' }, 'Tap the most important part of the photo'),
         pad,
-        h('p', { class: 'adm-muted adm-focal__help', id: helpId },
+        h('p', { class: 'ph-muted ph-focal__help', id: helpId },
           'The crop keeps this spot in view. With a keyboard: arrow keys move it, Shift moves further, C centres it.'),
-        h('button', { type: 'button', class: 'adm-link', 'data-f': `centre-${idx}`, onclick: () => set({ x: 0.5, y: 0.5 }, true) }, 'Centre it'),
+        h('button', { type: 'button', class: 'ph-link', 'data-f': `centre-${idx}`, onclick: () => set({ x: 0.5, y: 0.5 }, true) }, 'Centre it'),
       ),
       frames,
     ),
-    h('div', { class: 'field adm-editor__alt' },
+    h('div', { class: 'ph-field ph-editor__alt' },
       h('label', { for: altId }, h('span', {}, 'Description for this place (optional)')),
       alt,
-      h('p', { class: 'adm-muted' }, !m.alt && !it.alt
+      h('p', { class: 'ph-muted' }, !m.alt && !it.alt
         ? 'This photo has no description yet. Add one here, or in the library below, for people using screen readers.'
         : 'Leave empty to use the description from the library.'),
     ),
@@ -415,10 +415,10 @@ function footer(s: Slot) {
   const st = status.get(s.key) ?? { text: '', state: '' };
   return h(
     'footer',
-    { class: 'adm-slot__foot' },
-    h('button', { type: 'button', class: 'btn btn--caramel adm-btn', 'data-save': '', 'data-f': 'save', disabled: !dirty, onclick: () => void save(s.key) }, 'Save'),
-    h('button', { type: 'button', class: 'adm-link', 'data-undo': '', 'data-f': 'undo', hidden: !dirty, onclick: () => { revert(s.key); status.delete(s.key); renderSlot(s.key); announce('Changes undone.'); } }, 'Undo changes'),
-    h('p', { class: 'adm-status', role: 'status', 'data-status': '', 'data-state': dirty && !st.text ? 'dirty' : st.state }, dirty && !st.text ? 'Not saved yet' : st.text),
+    { class: 'ph-slot__foot' },
+    h('button', { type: 'button', class: 'adm-btn', 'data-save': '', 'data-f': 'save', disabled: !dirty, onclick: () => void save(s.key) }, 'Save'),
+    h('button', { type: 'button', class: 'ph-link', 'data-undo': '', 'data-f': 'undo', hidden: !dirty, onclick: () => { revert(s.key); status.delete(s.key); renderSlot(s.key); announce('Changes undone.'); } }, 'Undo changes'),
+    h('p', { class: 'ph-status', role: 'status', 'data-status': '', 'data-state': dirty && !st.text ? 'dirty' : st.state }, dirty && !st.text ? 'Not saved yet' : st.text),
   );
 }
 
@@ -551,7 +551,7 @@ export function openPicker(key: string) {
           const here = inSlot.has(id);
           return h('li', {},
             h('button', {
-              type: 'button', class: 'adm-pick', 'data-id': String(id), 'aria-pressed': 'false',
+              type: 'button', class: 'ph-pick', 'data-id': String(id), 'aria-pressed': 'false',
               onclick: () => {
                 if (!s.multiple) {
                   dlg.close();
@@ -564,12 +564,12 @@ export function openPicker(key: string) {
                 update();
               },
             },
-            h('span', { class: 'adm-pick__img' }, thumb(m, '160px')),
-            h('span', { class: 'adm-pick__cap' }, here ? 'Already here' : m.alt || m.original_name || `Photo ${id}`),
-            s.multiple ? h('span', { class: 'adm-pick__tick', 'aria-hidden': 'true' }, '✓') : null,
+            h('span', { class: 'ph-pick__img' }, thumb(m, '160px')),
+            h('span', { class: 'ph-pick__cap' }, here ? 'Already here' : m.alt || m.original_name || `Photo ${id}`),
+            s.multiple ? h('span', { class: 'ph-pick__tick', 'aria-hidden': 'true' }, '✓') : null,
             ));
         })
-      : [h('li', { class: 'adm-pick__none' }, 'Your library is empty. Close this and use “Upload new”, or add photos in the library below.')]),
+      : [h('li', { class: 'ph-pick__none' }, 'Your library is empty. Close this and use “Upload new”, or add photos in the library below.')]),
   );
   ok.onclick = () => {
     dlg.close();
@@ -601,33 +601,33 @@ export function renderMissing() {
 
   if (!empty.length && !partial.length && !noAlt) {
     title.textContent = 'Nothing missing';
-    box.replaceChildren(h('p', { class: 'adm-muted' }, 'Every place on the site has a photo, and every photo has a description.'));
+    box.replaceChildren(h('p', { class: 'ph-muted' }, 'Every place on the site has a photo, and every photo has a description.'));
     return;
   }
   title.textContent = "What's missing";
   const link = (s: Slot, extra: string) =>
     h('li', {},
       h('a', { href: `#${slotAnchor(s.key)}`, onclick: (e: Event) => { e.preventDefault(); goTo(s.key); } }, s.label),
-      h('span', { class: 'adm-missing__page' }, ` · ${pageName(s.page)} page${extra}`),
-      s.hint ? h('span', { class: 'adm-missing__hint' }, s.hint) : null,
+      h('span', { class: 'ph-missing__page' }, ` · ${pageName(s.page)} page${extra}`),
+      s.hint ? h('span', { class: 'ph-missing__hint' }, s.hint) : null,
     );
   box.replaceChildren(h('div', {},
-    empty.length ? h('ol', { class: 'adm-missing__list', id: 'adm-missing-list' }, empty.map((s, i) => {
+    empty.length ? h('ol', { class: 'ph-missing__list', id: 'ph-missing-list' }, empty.map((s, i) => {
       const li = link(s, s.multiple ? `, up to ${s.max}` : '');
       if (i >= SHOW && !showAll) li.hidden = true;
       return li;
     })) : null,
     empty.length > SHOW && !showAll ? h('button', {
-      type: 'button', class: 'adm-link', 'aria-controls': 'adm-missing-list',
+      type: 'button', class: 'ph-link', 'aria-controls': 'ph-missing-list',
       onclick: () => {
         showAll = true;
         renderMissing();
-        document.querySelectorAll<HTMLElement>('#adm-missing-list a')[SHOW]?.focus();
+        document.querySelectorAll<HTMLElement>('#ph-missing-list a')[SHOW]?.focus();
       },
     }, `Show all ${empty.length} empty places`) : null,
-    partial.length ? h('div', {}, h('p', { class: 'adm-missing__sub' }, 'Could take more'),
-      h('ul', { class: 'adm-missing__list is-soft' }, partial.map((s) => link(s, `, ${s.items.length} of ${s.max}`)))) : null,
-    noAlt ? h('p', { class: 'adm-missing__alt' }, h('a', { href: '#library' }, `${noAlt} ${noAlt === 1 ? 'photo has' : 'photos have'} no description`), ' — descriptions are read aloud to people who can’t see the photos.') : null,
+    partial.length ? h('div', {}, h('p', { class: 'ph-missing__sub' }, 'Could take more'),
+      h('ul', { class: 'ph-missing__list is-soft' }, partial.map((s) => link(s, `, ${s.items.length} of ${s.max}`)))) : null,
+    noAlt ? h('p', { class: 'ph-missing__alt' }, h('a', { href: '#library' }, `${noAlt} ${noAlt === 1 ? 'photo has' : 'photos have'} no description`), ' — descriptions are read aloud to people who can’t see the photos.') : null,
   ));
 }
 
@@ -645,7 +645,7 @@ function renderBar() {
   bar.hidden = keys.length === 0;
   $('[data-unsaved-text]', bar).textContent =
     keys.length === 1 ? `Unsaved changes in ${state.slots.get(keys[0])?.label ?? 'one place'}` : `Unsaved changes in ${keys.length} places`;
-  document.body.classList.toggle('adm-has-bar', keys.length > 0);
+  document.body.classList.toggle('ph-has-bar', keys.length > 0);
 }
 
 export async function saveAll() {

@@ -475,6 +475,15 @@ class BatchOut(Out):
     days_left: int | None = Field(description="Null when this ingredient does not expire.")
     unit_cost_pence: str | None
     value_pence: str | None
+    qty_received: str | None = Field(default=None, description="What arrived in this lot.")
+    expiry_assumed: bool = Field(
+        default=False,
+        description=(
+            "The date was derived from a shelf life (often an ESTIMATE), not read off the "
+            "carton. Render 'use by ... (assumed)'."
+        ),
+    )
+    received_by: str | None = None
 
 
 class DriftAttributionOut(Out):
@@ -565,6 +574,36 @@ class ShelfLifeOut(Out):
     )
 
 
+class ChecklistStateOut(Out):
+    """The latest tier C answer. Tier C is yes/no, never a number (spec 4.7)."""
+
+    status: str = Field(description="OK | LOW")
+    responded_at: datetime
+    responded_by: str
+
+
+class SinceCountOut(Out):
+    """The ledger since the basis count, split by movement type. Signed as stored:
+    `delivered` positive, `sold`/`wasted`/`expired` negative. The drawer's "how we got
+    here" sentence -- the SALE sum, not a rate times days."""
+
+    counted_at: datetime
+    delivered: str
+    sold: str
+    wasted: str = Field(description="WASTE + STAFF: human write-offs.")
+    expired: str = Field(description="EXPIRED: derived by the expiry sweep.")
+    adjusted: str = Field(description="ADJUSTMENT + COUNT_RESET.")
+    days: int = Field(description="Whole local days from the count to as_of.")
+
+
+class ParOut(Out):
+    min_qty: str = Field(description="'Reorder at': the par floor.")
+    max_qty: str
+    safety_days: str
+    min_qty_set_by: str | None = None
+    min_qty_set_at: datetime | None = None
+
+
 class StockRow(Out):
     ingredient_id: int
     name: str
@@ -588,6 +627,27 @@ class StockRow(Out):
     is_short_dated: bool
     drift: DriftOut
     run_out: RunOut
+    category: str | None = None
+    trust_label: str = Field(
+        default="never_counted",
+        description=(
+            "trusted | drifting | excluded | not_yet_judged | never_counted (spec C2). "
+            "'trusted' needs a clean streak of the required length; 'not_yet_judged' has "
+            "a count but no drift observation yet; 'never_counted' only when there is no "
+            "count at all."
+        ),
+    )
+    checklist: ChecklistStateOut | None = None
+    since_count: SinceCountOut | None = None
+    par: ParOut | None = None
+
+
+class WrittenOffOut(Out):
+    """Human write-offs plus expiry write-offs in the current local month."""
+
+    month: str = Field(description="YYYY-MM, local.")
+    count: int
+    value: Cost
 
 
 class StockSummary(Out):
@@ -600,6 +660,10 @@ class StockSummary(Out):
     forced_manual: int
     expiring_value_pence: str | None
     notes: tuple[str, ...] = ()
+    short_dated_batches: int = Field(
+        default=0, description="Batches with stock left whose effective expiry is <= 3 days."
+    )
+    written_off_month: WrittenOffOut | None = None
 
 
 class StockResponse(Out):
@@ -621,11 +685,22 @@ class DriftHistoryRowOut(Out):
     expired_qty_in_window: str | None
 
 
+class CountHistoryRowOut(Out):
+    stock_count_id: int
+    counted_at: datetime
+    counted_qty: str
+    counted_by: str
+    drift_pct: float | None = Field(
+        description="Null for a count with no observation -- the first count is an anchor."
+    )
+
+
 class StockDetail(Out):
     row: StockRow
     drift_history: tuple[DriftHistoryRowOut, ...]
     suggested_waste_factor: str | None
     templates_using: tuple[str, ...] = ()
+    counts: tuple[CountHistoryRowOut, ...] = ()
 
 
 # ==========================================================================
@@ -651,6 +726,14 @@ class SupplierOut(Out):
             "window built on them is only as good as the guess. This must reach the screen."
         )
     )
+    kind: str | None = None
+    contact: str | None = None
+    order_url: str | None = None
+    notes: str | None = None
+    product_count: int | None = Field(
+        default=None, description="Linked (not archived) products. Null where not computed."
+    )
+    archived: bool = False
 
 
 class ProposalComponentOut(Out):
@@ -927,6 +1010,17 @@ class OrderLineOut(Out):
     clamped: str | None = Field(
         default=None, description="'min_qty' or 'max_qty' when a par clamp moved the number."
     )
+    cap_kind: str | None = Field(
+        default=None,
+        description=(
+            "SHELF_LIFE | SEASON_END | OUT_OF_SEASON | OTHER. Branch on this, not the prose."
+        ),
+    )
+    daily_rate_qty: str | None = Field(
+        default=None,
+        description="The forecast's base daily rate; null when the forecast is withheld.",
+    )
+    supplier_product_id: int | None = None
 
 
 class SkippedOut(Out):
@@ -948,6 +1042,52 @@ class SkippedOut(Out):
     cap_reason: str | None = None
     data_error: str | None = None
     clamp_blocked: str | None = None
+
+
+class TopUpCandidateOut(Out):
+    ingredient_id: int
+    name: str
+    supplier_product_id: int
+    pack_size: str
+    pack_unit: str
+    pack_price_pence: int
+    cover_days: str | None = Field(description="Days current stock lasts; null when nothing moves.")
+
+
+class PersistedLineOut(Out):
+    po_line_id: int
+    ingredient_id: int
+    ingredient_name: str
+    unit: str
+    suggested_packs: int
+    final_packs: int
+    unit_price_pence: int
+    pack_size: str
+    pack_unit: str
+    received_qty: str | None = None
+    received_expires_at: datetime | None = None
+    cap_reason: str | None = None
+    is_top_up: bool = False
+    checklist_requested_by: str | None = None
+
+
+class PersistedOrderOut(Out):
+    po_id: int
+    status: str
+    created_at: datetime
+    target_delivery_date: date
+    confirmed_by: str | None
+    confirmed_at: datetime | None
+    sent_at: datetime | None
+    sent_by: str | None = None
+    total_pence: int
+    delivery_fee_pence: int
+    lines: tuple[PersistedLineOut, ...]
+
+
+class NamedIngredientOut(Out):
+    ingredient_id: int
+    name: str
 
 
 class SupplierOrderOut(Out):
@@ -976,6 +1116,24 @@ class SupplierOrderOut(Out):
         ),
     )
     notes: tuple[str, ...] = ()
+    order_by_date: date | None = Field(
+        default=None, description="target_delivery_date - lead_time_days."
+    )
+    next_delivery_date: date | None = Field(
+        default=None, description="The delivery after the target one."
+    )
+    fee_applies: bool = False
+    top_up_candidates: tuple[TopUpCandidateOut, ...] = Field(
+        default=(),
+        description="Non-perishable tier B items of this supplier not on the basket (invariant 5).",
+    )
+    persisted: PersistedOrderOut | None = Field(
+        default=None,
+        description=(
+            "An open purchase order already stored for this supplier and delivery date -- "
+            "built by the pre-delivery job and waiting in Telegram, or confirmed there."
+        ),
+    )
 
 
 class SourcingChoiceOut(Out):
@@ -1060,6 +1218,14 @@ class DraftOrdersResponse(Out):
     placeholder_supplier_names: tuple[str, ...]
     notes: tuple[str, ...] = ()
     writes_nothing: bool = True
+    uncounted: tuple[NamedIngredientOut, ...] = Field(
+        default=(),
+        description="Never counted, so not ordered (spec C8). Count these first.",
+    )
+    unsourced: tuple[NamedIngredientOut, ...] = Field(
+        default=(), description="Tracked A/B ingredients no active supplier sells."
+    )
+    supplier_count: int = Field(default=0, description="Active suppliers, for 'n of total'.")
 
 
 # ==========================================================================
