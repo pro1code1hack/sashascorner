@@ -17,9 +17,29 @@ import fxStockTierA from '../../fixtures/stock-tier-a.json'
 import fxStockDetail from '../../fixtures/stock-detail.json'
 import fxToday from '../../fixtures/today.json'
 import fxMeta from '../../fixtures/meta.json'
+import fxOrders from '../../fixtures/orders-draft.json'
+import fxMargin from '../../fixtures/margin.json'
+import fxChannels from '../../fixtures/channels.json'
+import fxSuppliers from '../../fixtures/suppliers.json'
+import fxHealth from '../../fixtures/health.json'
+import fxProposals from '../../fixtures/proposals.json'
+import fxTakings from '../../fixtures/takings.json'
 import { cmp, parseDec } from './dec'
 import type {
+  ChannelsResponse,
+  TakingsResponse,
+  MaterialiseIn,
+  MaterialiseResponse,
+  ProposalsResponse,
+  ShelfLifeIn,
+  ShelfLifeResponse,
+  SupplierTermsIn,
+  SupplierTermsResponse,
+  HealthResponse,
+  MarginResponse,
   MetaResponse,
+  OrdersDraftResponse,
+  Supplier,
   PreviewResponse,
   StockDetailResponse,
   StockResponse,
@@ -27,8 +47,17 @@ import type {
   TemplateSummary,
 } from './types'
 
+/**
+ * Where the data comes from.
+ *
+ * `VITE_API_BASE` is an ORIGIN ("https://ops.example.com"), never a path prefix:
+ * every request path below already begins "/api/", so a "/api" base would build
+ * "/api/api/today" and 404. Same-origin deployments -- the normal case, with the
+ * API behind the same Caddy -- leave the base empty and set `VITE_LIVE=1`, which
+ * is why liveness cannot simply be "is the base non-empty".
+ */
 export const API_BASE = (import.meta.env.VITE_API_BASE ?? '').replace(/\/+$/, '')
-export const LIVE = API_BASE !== ''
+export const LIVE = API_BASE !== '' || import.meta.env.VITE_LIVE === '1'
 
 const KEY_STORE = 'cafeops.key'
 
@@ -91,11 +120,68 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 /* ---------------------------------------------------------------- reads --- */
 
+/**
+ * One thing today needs a decision about. `severity` orders the screen:
+ * `act` before `watch` before `info`. `subject` is a display string and may be
+ * a comma-joined list or null -- the typed arrays on `TodaySummary` are the
+ * machine-readable form, so render chips from those, not by splitting this.
+ */
+export interface TodayAlert {
+  kind: string
+  severity: 'act' | 'watch' | 'info'
+  subject: string | null
+  message: string
+}
+
+/** The stock half of /api/today. Counts, not money, except where noted. */
+export interface TodayStock {
+  ingredients: number
+  unanchored: number
+  negative: number
+  short_dated: number
+  unbatched: number
+  auto_order_enabled: number
+  forced_manual: number
+  /** null when a batch in the expiring set has no unit cost. A partial total
+   *  would understate the very waste it warns about, so the API withholds it
+   *  rather than summing what it has (invariant 8). */
+  expiring_value_pence: string | null
+  notes: string[]
+}
+
+/**
+ * /api/today in full. The four `draft_order_*` fields are null until a draft
+ * has been computed for the day -- null means "not computed", never "zero", so
+ * the screen must render the difference.
+ */
 export interface TodaySummary {
+  as_of: string
   local_date: string
+  stock: TodayStock
+  /** Display strings like "Whole milk (3d)". `schemas.py` types this
+   *  `tuple[str, ...]`; the fixture is empty today, which is why it was
+   *  originally typed `unknown[]`. Not to be confused with
+   *  `TodayStock.short_dated`, which is a count. */
+  short_dated: string[]
   expiry_write_offs_due: number
-  expiry_write_offs_value_pence: string
-  short_dated: unknown[]
+  /** null when a batch in the write-off set has no price: the total is then
+   *  unknowable, which is not the same as zero. */
+  expiry_write_offs_value_pence: string | null
+  drift_forced_manual: string[]
+  drift_tuning_band: string[]
+  auto_order_enabled_count: number
+  draft_order_total_pence: number | null
+  draft_order_supplier_count: number | null
+  capped_line_count: number | null
+  emergency_line_count: number | null
+  unavailable_menu_items: string[]
+  /** Things needing a decision, already severity-ranked by the backend. */
+  alerts: TodayAlert[]
+  /** Standing caveats about the data itself -- estimate prices, estimate shelf
+   *  lives. True every day, so they are separate from `alerts`. */
+  data_quality: TodayAlert[]
+  /** Whole-response caveats, invariant 6 among them. Print verbatim. */
+  notes: string[]
 }
 
 export const api = {
@@ -133,6 +219,127 @@ export const api = {
       ),
     )
   },
+
+  /** The draft purchase order. A pure read: `writes_nothing` is true, and
+   *  nothing is committed until it is confirmed in Telegram. */
+  ordersDraft: (): Promise<OrdersDraftResponse> =>
+    LIVE
+      ? request('/api/orders/draft')
+      : Promise.resolve(fxOrders as unknown as OrdersDraftResponse),
+
+  margin: (): Promise<MarginResponse> =>
+    LIVE ? request('/api/margin') : Promise.resolve(fxMargin as unknown as MarginResponse),
+
+  channels: (): Promise<ChannelsResponse> =>
+    LIVE ? request('/api/channels') : Promise.resolve(fxChannels as unknown as ChannelsResponse),
+
+  suppliers: (): Promise<Supplier[]> =>
+    LIVE ? request('/api/suppliers') : Promise.resolve(fxSuppliers as unknown as Supplier[]),
+
+  health: (): Promise<HealthResponse> =>
+    LIVE ? request('/api/health') : Promise.resolve(fxHealth as unknown as HealthResponse),
+
+  /** Template proposals waiting for a human (spec 6). Reading writes nothing. */
+  /** What the cafe took, by day and method. Writes nothing. */
+  takings: (days = 30): Promise<TakingsResponse> =>
+    LIVE
+      ? request(`/api/takings?days=${days}`)
+      : Promise.resolve(fxTakings as unknown as TakingsResponse),
+
+  proposals: (): Promise<ProposalsResponse> =>
+    LIVE
+      ? request('/api/proposals')
+      : Promise.resolve(fxProposals as unknown as ProposalsResponse),
+}
+
+/* ------------------------------------------------------------ the writes --- */
+
+/**
+ * A refused confirmation. The backend writes these messages to be shown to the
+ * person who typed the number -- "a 1-day life against a 2-day transit buffer
+ * leaves nothing usable on arrival" is the whole explanation -- so they are
+ * surfaced verbatim rather than replaced with a generic failure.
+ */
+export type WriteResult<T> =
+  | { kind: 'ok'; data: T }
+  | { kind: 'refused'; message: string }
+  | { kind: 'offline'; message: string }
+  | { kind: 'failed'; status: number | null; message: string }
+
+function refusalMessage(payload: unknown): string | null {
+  if (payload === null || typeof payload !== 'object') return null
+  const detail = (payload as { detail?: unknown }).detail
+  if (typeof detail === 'string') return detail
+  if (detail !== null && typeof detail === 'object') {
+    const m = (detail as { message?: unknown }).message
+    if (typeof m === 'string') return m
+  }
+  // FastAPI's own validation errors arrive as a list of {loc, msg}.
+  if (Array.isArray(detail)) {
+    const parts = detail
+      .map((d) => (d && typeof d === 'object' ? (d as { msg?: unknown }).msg : null))
+      .filter((m): m is string => typeof m === 'string')
+    if (parts.length) return parts.join('; ')
+  }
+  return null
+}
+
+async function write<T>(path: string, body: unknown): Promise<WriteResult<T>> {
+  if (!LIVE) {
+    return {
+      kind: 'offline',
+      message:
+        'This screen is reading recorded fixtures, so there is nothing to write to. ' +
+        'Point it at the live API to confirm terms.',
+    }
+  }
+  try {
+    const data = await request<T>(path, { method: 'POST', body: JSON.stringify(body) })
+    return { kind: 'ok', data }
+  } catch (e) {
+    if (e instanceof ApiError) {
+      const msg = refusalMessage(e.payload)
+      // 409 belongs here too: "a template of that name already exists" is the
+      // backend declining for a reason the reader can act on, not a transport
+      // failure. Rendering it as "the request did not land" would be wrong.
+      if (msg !== null && (e.status === 422 || e.status === 404 || e.status === 409)) {
+        return { kind: 'refused', message: msg }
+      }
+      return { kind: 'failed', status: e.status, message: msg ?? e.message }
+    }
+    return { kind: 'failed', status: null, message: e instanceof Error ? e.message : String(e) }
+  }
+}
+
+/** Record terms confirmed with a supplier, clearing the invented-terms flag. */
+export function confirmSupplierTerms(
+  supplierId: number,
+  body: SupplierTermsIn,
+): Promise<WriteResult<SupplierTermsResponse>> {
+  return write(`/api/suppliers/${supplierId}/confirm`, body)
+}
+
+/**
+ * Confirm one proposal into real composition rows.
+ *
+ * Addressed by `proposal_id`, never by name: detection names a group after its
+ * defining ingredient, so two different recipes can share one. Two pairs do
+ * today, and confirming the wrong one attaches the wrong recipe to real drinks.
+ * The API refuses an ambiguous name rather than resolving it to the first match.
+ */
+export function materialiseProposal(
+  proposalId: string,
+  body: MaterialiseIn,
+): Promise<WriteResult<MaterialiseResponse>> {
+  return write(`/api/proposals/${encodeURIComponent(proposalId)}/materialise`, body)
+}
+
+/** Record a shelf life somebody checked. Changes order size from the next run. */
+export function confirmShelfLife(
+  ingredientId: number,
+  body: ShelfLifeIn,
+): Promise<WriteResult<ShelfLifeResponse>> {
+  return write(`/api/ingredients/${ingredientId}/shelf-life`, body)
 }
 
 /* -------------------------------------------------------------- preview --- */

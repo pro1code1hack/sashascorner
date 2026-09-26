@@ -1,0 +1,2649 @@
+{
+  "proposals": [
+    {
+      "proposal_id": "e40fcc3bd7dd",
+      "name": "Flavoured Latte (Coffee beans (house blend))",
+      "category": null,
+      "menu_item_count": 66,
+      "base_item_names": [
+        "Butterfly (lavender) Latte",
+        "Cinnamon Bun Latte",
+        "Honey Vanilla Latte",
+        "Iced Butterfly Latte",
+        "Iced Cinnamon Bun Latte",
+        "Iced Coconut Water Latte",
+        "Iced Honey Vanilla Latte",
+        "Iced Lavender Latte",
+        "Iced Mint Latte",
+        "Iced Orange Latte",
+        "Iced Pistachio Latte",
+        "Iced Pumpkin Spice Latte",
+        "Iced Rose Latte",
+        "Iced Rose White Mocha",
+        "Iced Salted Caramel Latte",
+        "Iced Toffee Latte",
+        "Iced White Mocha",
+        "Iced White Raspberry Mocha",
+        "Mint Latte",
+        "Orange Latte",
+        "Pistachio Latte",
+        "Pumpkin Spice Latte",
+        "Rose Latte",
+        "Rose White Mocha",
+        "Salted Caramel Latte",
+        "Toffee Nut Latte",
+        "White Mocha"
+      ],
+      "sizes": [
+        "S",
+        "M",
+        "XL"
+      ],
+      "components": [
+        {
+          "role": "COFFEE",
+          "ingredient_name": "Coffee beans (house blend)",
+          "qty_by_size": {
+            "M": "0.036",
+            "S": "0.018",
+            "XL": "0.036"
+          }
+        },
+        {
+          "role": "MILK",
+          "ingredient_name": "Whole milk",
+          "qty_by_size": {
+            "M": "0.18",
+            "S": "0.12",
+            "XL": "0.32"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "12oz cup lid",
+          "qty_by_size": {
+            "M": "1",
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "12oz paper cup",
+          "qty_by_size": {
+            "M": "1",
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "16oz cup lid",
+          "qty_by_size": {
+            "M": "1",
+            "XL": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "16oz paper cup",
+          "qty_by_size": {
+            "M": "1",
+            "XL": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "8oz cup lid",
+          "qty_by_size": {
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "8oz paper cup",
+          "qty_by_size": {
+            "S": "1"
+          }
+        },
+        {
+          "role": "SUNDRY",
+          "ingredient_name": "Napkin",
+          "qty_by_size": {
+            "M": "1",
+            "S": "1",
+            "XL": "1"
+          }
+        },
+        {
+          "role": "FLAVOUR",
+          "ingredient_name": null,
+          "qty_by_size": {
+            "M": "30",
+            "S": "20",
+            "XL": "40"
+          }
+        }
+      ],
+      "axes": [
+        {
+          "name": "Flavour",
+          "role": "FLAVOUR",
+          "options": {
+            "Lavender": "Lavender syrup (Monin)",
+            "Cinnamon Bun": "Cinnamon bun syrup (Monin)",
+            "Vanilla": "Vanilla syrup (Monin)",
+            "Butterfly": "Butterfly syrup (Monin)",
+            "Coconut": "Coconut syrup (Monin)",
+            "Mint": "Mint syrup (Monin)",
+            "Orange": "Orange syrup (Monin)",
+            "Pistachio": "Pistachio syrup (Monin)",
+            "Pumpkin Spice": "Pumpkin spice syrup (Monin)",
+            "Rose": "Rose syrup (Monin)",
+            "White Chocolate": "White chocolate sauce",
+            "Salted Caramel": "Salted caramel syrup (Monin)",
+            "Toffee": "Toffee syrup (Monin)",
+            "Raspberry": "Raspberry syrup (Monin)",
+            "Toffee Nut": "Toffee nut syrup (Monin)"
+          },
+          "option_count": 15
+        }
+      ],
+      "conflicts": [
+        {
+          "role": "MILK",
+          "ingredient_name": "Whole milk",
+          "size_code": "M",
+          "quantities": {
+            "Butterfly (lavender) Latte": "0.24",
+            "Cinnamon Bun Latte": "0.24",
+            "Honey Vanilla Latte": "0.24",
+            "Iced Butterfly Latte": "0.18",
+            "Iced Cinnamon Bun Latte": "0.18",
+            "Iced Coconut Water Latte": "0.18",
+            "Iced Honey Vanilla Latte": "0.18",
+            "Iced Lavender Latte": "0.18",
+            "Iced Mint Latte": "0.18",
+            "Iced Orange Latte": "0.18",
+            "Iced Pistachio Latte": "0.18",
+            "Iced Pumpkin Spice Latte": "0.18",
+            "Iced Rose Latte": "0.18",
+            "Iced Rose White Mocha": "0.18",
+            "Iced Salted Caramel Latte": "0.18",
+            "Iced Toffee Latte": "0.18",
+            "Iced White Mocha": "0.18",
+            "Iced White Raspberry Mocha": "0.18",
+            "Mint Latte": "0.24",
+            "Orange Latte": "0.24",
+            "Pistachio Latte": "0.24",
+            "Pumpkin Spice Latte": "0.24",
+            "Rose Latte": "0.24",
+            "Rose White Mocha": "0.24",
+            "Salted Caramel Latte": "0.24",
+            "Toffee Nut Latte": "0.24",
+            "White Mocha": "0.24"
+          },
+          "describe": "27 items differ in Whole milk qty at size M (0.18, 0.24)"
+        },
+        {
+          "role": "MILK",
+          "ingredient_name": "Whole milk",
+          "size_code": "S",
+          "quantities": {
+            "Butterfly (lavender) Latte": "0.16",
+            "Cinnamon Bun Latte": "0.16",
+            "Honey Vanilla Latte": "0.16",
+            "Iced Butterfly Latte": "0.12",
+            "Iced Cinnamon Bun Latte": "0.12",
+            "Iced Coconut Water Latte": "0.12",
+            "Iced Honey Vanilla Latte": "0.12",
+            "Iced Lavender Latte": "0.12",
+            "Iced Mint Latte": "0.12",
+            "Iced Orange Latte": "0.12",
+            "Iced Pistachio Latte": "0.12",
+            "Iced Pumpkin Spice Latte": "0.12",
+            "Iced Rose Latte": "0.12",
+            "Iced Rose White Mocha": "0.12",
+            "Iced Salted Caramel Latte": "0.12",
+            "Iced Toffee Latte": "0.12",
+            "Iced White Mocha": "0.12",
+            "Iced White Raspberry Mocha": "0.12",
+            "Mint Latte": "0.16",
+            "Orange Latte": "0.16",
+            "Pistachio Latte": "0.16",
+            "Pumpkin Spice Latte": "0.16",
+            "Rose Latte": "0.16",
+            "Rose White Mocha": "0.16",
+            "Salted Caramel Latte": "0.16",
+            "Toffee Nut Latte": "0.16",
+            "White Mocha": "0.16"
+          },
+          "describe": "27 items differ in Whole milk qty at size S (0.12, 0.16)"
+        }
+      ],
+      "is_hollow": false,
+      "name_is_ambiguous": false,
+      "already_materialised": false,
+      "blocked_reason": "2 unresolved conflict(s): the legacy rows disagree about a quantity, so a human must say which is right. Confirming anyway takes the lowest quantity at each size and records that the choice was made."
+    },
+    {
+      "proposal_id": "5e3f104f73af",
+      "name": "Flavoured Chocolate",
+      "category": null,
+      "menu_item_count": 33,
+      "base_item_names": [
+        "Butterfly Hot Chocolate",
+        "Cinnamon Bun Hot Chocolate",
+        "Lavender Hot Chocolate",
+        "Mint Hot Chocolate",
+        "Orange Hot Chocolate",
+        "Pistachio Hot Chocolate",
+        "Pumpkin Spice Hot Chocolate",
+        "Raspberry Hot Chocolate",
+        "Rose Hot Chocolate",
+        "Salted Caramel Hot Chocolate",
+        "Toffee Hot Chocolate"
+      ],
+      "sizes": [
+        "S",
+        "M",
+        "XL"
+      ],
+      "components": [
+        {
+          "role": "BASE",
+          "ingredient_name": "Chocolate powder",
+          "qty_by_size": {
+            "M": "0.015",
+            "S": "0.01",
+            "XL": "0.02"
+          }
+        },
+        {
+          "role": "MILK",
+          "ingredient_name": "Whole milk",
+          "qty_by_size": {
+            "M": "0.26",
+            "S": "0.18",
+            "XL": "0.34"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "12oz cup lid",
+          "qty_by_size": {
+            "M": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "12oz paper cup",
+          "qty_by_size": {
+            "M": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "16oz cup lid",
+          "qty_by_size": {
+            "XL": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "16oz paper cup",
+          "qty_by_size": {
+            "XL": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "8oz cup lid",
+          "qty_by_size": {
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "8oz paper cup",
+          "qty_by_size": {
+            "S": "1"
+          }
+        },
+        {
+          "role": "SUNDRY",
+          "ingredient_name": "Napkin",
+          "qty_by_size": {
+            "M": "1",
+            "S": "1",
+            "XL": "1"
+          }
+        },
+        {
+          "role": "FLAVOUR",
+          "ingredient_name": null,
+          "qty_by_size": {
+            "M": "20",
+            "S": "15",
+            "XL": "25"
+          }
+        }
+      ],
+      "axes": [
+        {
+          "name": "Flavour",
+          "role": "FLAVOUR",
+          "options": {
+            "Butterfly": "Butterfly syrup (Monin)",
+            "Cinnamon Bun": "Cinnamon bun syrup (Monin)",
+            "Lavender": "Lavender syrup (Monin)",
+            "Mint": "Mint syrup (Monin)",
+            "Orange": "Orange syrup (Monin)",
+            "Pistachio": "Pistachio syrup (Monin)",
+            "Pumpkin Spice": "Pumpkin spice syrup (Monin)",
+            "Raspberry": "Raspberry syrup (Monin)",
+            "Rose": "Rose syrup (Monin)",
+            "Salted Caramel": "Salted caramel syrup (Monin)",
+            "Toffee": "Toffee syrup (Monin)"
+          },
+          "option_count": 11
+        }
+      ],
+      "conflicts": [],
+      "is_hollow": false,
+      "name_is_ambiguous": false,
+      "already_materialised": false,
+      "blocked_reason": null
+    },
+    {
+      "proposal_id": "01aa8c40fc81",
+      "name": "Mixed Americano group",
+      "category": null,
+      "menu_item_count": 24,
+      "base_item_names": [
+        "Cappuccino",
+        "Cortado",
+        "Double Macchiato",
+        "Flat White",
+        "Iced Cappuccino",
+        "Iced Flat White",
+        "Iced Latte",
+        "Iced White Americano",
+        "Latte",
+        "Orange Americano",
+        "Single Macchiato",
+        "White Americano"
+      ],
+      "sizes": [
+        "S",
+        "M",
+        "XL",
+        "One"
+      ],
+      "components": [
+        {
+          "role": "COFFEE",
+          "ingredient_name": "Coffee beans (house blend)",
+          "qty_by_size": {
+            "M": "0.036",
+            "One": "0.018",
+            "S": "0.018",
+            "XL": "0.036"
+          }
+        },
+        {
+          "role": "MILK",
+          "ingredient_name": "Whole milk",
+          "qty_by_size": {
+            "M": "0.06",
+            "One": "0.02",
+            "S": "0.06",
+            "XL": "0.06"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "12oz cup lid",
+          "qty_by_size": {
+            "M": "1",
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "12oz paper cup",
+          "qty_by_size": {
+            "M": "1",
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "16oz cup lid",
+          "qty_by_size": {
+            "M": "1",
+            "XL": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "16oz paper cup",
+          "qty_by_size": {
+            "M": "1",
+            "XL": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "8oz cup lid",
+          "qty_by_size": {
+            "One": "1",
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "8oz paper cup",
+          "qty_by_size": {
+            "One": "1",
+            "S": "1"
+          }
+        },
+        {
+          "role": "SUNDRY",
+          "ingredient_name": "Napkin",
+          "qty_by_size": {
+            "M": "1",
+            "One": "1",
+            "S": "1",
+            "XL": "1"
+          }
+        }
+      ],
+      "axes": [],
+      "conflicts": [
+        {
+          "role": "COFFEE",
+          "ingredient_name": "Coffee beans (house blend)",
+          "size_code": "One",
+          "quantities": {
+            "Cortado": "0.036",
+            "Double Macchiato": "0.036",
+            "Flat White": "0.036",
+            "Single Macchiato": "0.018"
+          },
+          "describe": "4 items differ in Coffee beans (house blend) qty at size One (0.018, 0.036)"
+        },
+        {
+          "role": "COFFEE",
+          "ingredient_name": "Coffee beans (house blend)",
+          "size_code": "S",
+          "quantities": {
+            "Cappuccino": "0.018",
+            "Iced Cappuccino": "0.018",
+            "Iced Flat White": "0.036",
+            "Iced Latte": "0.018",
+            "Iced White Americano": "0.018",
+            "Latte": "0.018",
+            "Orange Americano": "0.018",
+            "White Americano": "0.018"
+          },
+          "describe": "8 items differ in Coffee beans (house blend) qty at size S (0.018, 0.036)"
+        },
+        {
+          "role": "MILK",
+          "ingredient_name": "Whole milk",
+          "size_code": "M",
+          "quantities": {
+            "Cappuccino": "0.2",
+            "Iced Cappuccino": "0.18",
+            "Iced Flat White": "0.12",
+            "Iced Latte": "0.18",
+            "Iced White Americano": "0.06",
+            "Latte": "0.24",
+            "Orange Americano": "0.06",
+            "White Americano": "0.06"
+          },
+          "describe": "8 items differ in Whole milk qty at size M (0.06, 0.12, 0.18, 0.2, 0.24)"
+        },
+        {
+          "role": "MILK",
+          "ingredient_name": "Whole milk",
+          "size_code": "One",
+          "quantities": {
+            "Cortado": "0.06",
+            "Double Macchiato": "0.03",
+            "Flat White": "0.12",
+            "Single Macchiato": "0.02"
+          },
+          "describe": "4 items differ in Whole milk qty at size One (0.02, 0.03, 0.06, 0.12)"
+        },
+        {
+          "role": "MILK",
+          "ingredient_name": "Whole milk",
+          "size_code": "S",
+          "quantities": {
+            "Cappuccino": "0.14",
+            "Iced Cappuccino": "0.12",
+            "Iced Flat White": "0.12",
+            "Iced Latte": "0.12",
+            "Iced White Americano": "0.06",
+            "Latte": "0.16",
+            "Orange Americano": "0.06",
+            "White Americano": "0.06"
+          },
+          "describe": "8 items differ in Whole milk qty at size S (0.06, 0.12, 0.14, 0.16)"
+        },
+        {
+          "role": "MILK",
+          "ingredient_name": "Whole milk",
+          "size_code": "XL",
+          "quantities": {
+            "Cappuccino": "0.28",
+            "Latte": "0.32",
+            "Orange Americano": "0.06",
+            "White Americano": "0.06"
+          },
+          "describe": "4 items differ in Whole milk qty at size XL (0.06, 0.28, 0.32)"
+        }
+      ],
+      "is_hollow": false,
+      "name_is_ambiguous": false,
+      "already_materialised": false,
+      "blocked_reason": "6 unresolved conflict(s): the legacy rows disagree about a quantity, so a human must say which is right. Confirming anyway takes the lowest quantity at each size and records that the choice was made."
+    },
+    {
+      "proposal_id": "ad11963b0085",
+      "name": "Flavoured Matcha (Butterfly pea flowers)",
+      "category": "Spring saesonal drinks",
+      "menu_item_count": 19,
+      "base_item_names": [
+        "Blue Honey Matcha",
+        "Blue Lavender Matcha",
+        "Blue Vanilla Matcha",
+        "Iced Citrus Blue Matcha",
+        "Iced Coconut Water Blue Matcha",
+        "Iced Honey Blue Matcha",
+        "Iced Lavender Blue Matcha",
+        "Iced Vanilla Blue Matcha"
+      ],
+      "sizes": [
+        "S",
+        "M",
+        "XL"
+      ],
+      "components": [
+        {
+          "role": "BASE",
+          "ingredient_name": "Butterfly pea flowers",
+          "qty_by_size": {
+            "M": "0.001",
+            "S": "0.001",
+            "XL": "0.001"
+          }
+        },
+        {
+          "role": "MILK",
+          "ingredient_name": "Whole milk",
+          "qty_by_size": {
+            "M": "0.18",
+            "S": "0.12",
+            "XL": "0.32"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "12oz cup lid",
+          "qty_by_size": {
+            "M": "1",
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "12oz paper cup",
+          "qty_by_size": {
+            "M": "1",
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "16oz cup lid",
+          "qty_by_size": {
+            "M": "1",
+            "XL": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "16oz paper cup",
+          "qty_by_size": {
+            "M": "1",
+            "XL": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "8oz cup lid",
+          "qty_by_size": {
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "8oz paper cup",
+          "qty_by_size": {
+            "S": "1"
+          }
+        },
+        {
+          "role": "SUNDRY",
+          "ingredient_name": "Napkin",
+          "qty_by_size": {
+            "M": "1",
+            "S": "1",
+            "XL": "1"
+          }
+        },
+        {
+          "role": "FLAVOUR",
+          "ingredient_name": null,
+          "qty_by_size": {
+            "M": "20",
+            "S": "15",
+            "XL": "25"
+          }
+        }
+      ],
+      "axes": [
+        {
+          "name": "Flavour",
+          "role": "FLAVOUR",
+          "options": {
+            "Honey": "Honey",
+            "Lavender": "Lavender syrup (Monin)",
+            "Vanilla": "Vanilla syrup (Monin)",
+            "Citrus / Lime": "Citrus / lime syrup (Monin)",
+            "Coconut": "Coconut syrup (Monin)"
+          },
+          "option_count": 5
+        }
+      ],
+      "conflicts": [
+        {
+          "role": "MILK",
+          "ingredient_name": "Whole milk",
+          "size_code": "M",
+          "quantities": {
+            "Blue Honey Matcha": "0.24",
+            "Blue Lavender Matcha": "0.24",
+            "Blue Vanilla Matcha": "0.24",
+            "Iced Citrus Blue Matcha": "0.18",
+            "Iced Coconut Water Blue Matcha": "0.18",
+            "Iced Honey Blue Matcha": "0.18",
+            "Iced Lavender Blue Matcha": "0.18",
+            "Iced Vanilla Blue Matcha": "0.18"
+          },
+          "describe": "8 items differ in Whole milk qty at size M (0.18, 0.24)"
+        },
+        {
+          "role": "MILK",
+          "ingredient_name": "Whole milk",
+          "size_code": "S",
+          "quantities": {
+            "Blue Honey Matcha": "0.16",
+            "Blue Lavender Matcha": "0.16",
+            "Blue Vanilla Matcha": "0.16",
+            "Iced Citrus Blue Matcha": "0.12",
+            "Iced Coconut Water Blue Matcha": "0.12",
+            "Iced Honey Blue Matcha": "0.12",
+            "Iced Lavender Blue Matcha": "0.12",
+            "Iced Vanilla Blue Matcha": "0.12"
+          },
+          "describe": "8 items differ in Whole milk qty at size S (0.12, 0.16)"
+        }
+      ],
+      "is_hollow": false,
+      "name_is_ambiguous": false,
+      "already_materialised": false,
+      "blocked_reason": "2 unresolved conflict(s): the legacy rows disagree about a quantity, so a human must say which is right. Confirming anyway takes the lowest quantity at each size and records that the choice was made."
+    },
+    {
+      "proposal_id": "97575c82d2e2",
+      "name": "Flavoured Matcha (Matcha powder)",
+      "category": null,
+      "menu_item_count": 18,
+      "base_item_names": [
+        "Hot Lavender Matcha",
+        "Hot Rose Matcha",
+        "Hot Vanilla Matcha",
+        "Hot banana matcha",
+        "Iced Banana Matcha",
+        "Iced Coconut Matcha",
+        "Iced Mango Matcha",
+        "Iced Peach Matcha"
+      ],
+      "sizes": [
+        "S",
+        "M",
+        "XL"
+      ],
+      "components": [
+        {
+          "role": "BASE",
+          "ingredient_name": "Matcha powder",
+          "qty_by_size": {
+            "M": "0.002",
+            "S": "0.0015",
+            "XL": "0.0025"
+          }
+        },
+        {
+          "role": "MILK",
+          "ingredient_name": "Whole milk",
+          "qty_by_size": {
+            "M": "0.18",
+            "S": "0.12",
+            "XL": "0.32"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "12oz cup lid",
+          "qty_by_size": {
+            "M": "1",
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "12oz paper cup",
+          "qty_by_size": {
+            "M": "1",
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "16oz cup lid",
+          "qty_by_size": {
+            "M": "1",
+            "XL": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "16oz paper cup",
+          "qty_by_size": {
+            "M": "1",
+            "XL": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "8oz cup lid",
+          "qty_by_size": {
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "8oz paper cup",
+          "qty_by_size": {
+            "S": "1"
+          }
+        },
+        {
+          "role": "SUNDRY",
+          "ingredient_name": "Napkin",
+          "qty_by_size": {
+            "M": "1",
+            "S": "1",
+            "XL": "1"
+          }
+        },
+        {
+          "role": "FLAVOUR",
+          "ingredient_name": null,
+          "qty_by_size": {
+            "M": "20",
+            "S": "15",
+            "XL": "25"
+          }
+        }
+      ],
+      "axes": [
+        {
+          "name": "Flavour",
+          "role": "FLAVOUR",
+          "options": {
+            "Lavender": "Lavender syrup (Monin)",
+            "Rose": "Rose syrup (Monin)",
+            "Vanilla": "Vanilla syrup (Monin)",
+            "Banana": "Banana syrup (Monin)",
+            "Coconut": "Coconut syrup (Monin)",
+            "Mango Syrup/Puree (Monin)": "Mango syrup/puree (Monin)",
+            "Peach": "Peach syrup (Monin)"
+          },
+          "option_count": 7
+        }
+      ],
+      "conflicts": [
+        {
+          "role": "MILK",
+          "ingredient_name": "Whole milk",
+          "size_code": "M",
+          "quantities": {
+            "Hot Lavender Matcha": "0.24",
+            "Hot Rose Matcha": "0.24",
+            "Hot Vanilla Matcha": "0.24",
+            "Hot banana matcha": "0.24",
+            "Iced Banana Matcha": "0.18",
+            "Iced Coconut Matcha": "0.18",
+            "Iced Mango Matcha": "0.18",
+            "Iced Peach Matcha": "0.18"
+          },
+          "describe": "8 items differ in Whole milk qty at size M (0.18, 0.24)"
+        },
+        {
+          "role": "MILK",
+          "ingredient_name": "Whole milk",
+          "size_code": "S",
+          "quantities": {
+            "Hot Lavender Matcha": "0.16",
+            "Hot Rose Matcha": "0.16",
+            "Hot Vanilla Matcha": "0.16",
+            "Iced Banana Matcha": "0.12",
+            "Iced Coconut Matcha": "0.12",
+            "Iced Mango Matcha": "0.12",
+            "Iced Peach Matcha": "0.12"
+          },
+          "describe": "7 items differ in Whole milk qty at size S (0.12, 0.16)"
+        }
+      ],
+      "is_hollow": false,
+      "name_is_ambiguous": true,
+      "already_materialised": false,
+      "blocked_reason": "2 unresolved conflict(s): the legacy rows disagree about a quantity, so a human must say which is right. Confirming anyway takes the lowest quantity at each size and records that the choice was made."
+    },
+    {
+      "proposal_id": "4a022eaa3e85",
+      "name": "Tea range",
+      "category": "Teas",
+      "menu_item_count": 9,
+      "base_item_names": [
+        "Berry Tea",
+        "Decaf Tea",
+        "Earl Grey",
+        "English Breakfast",
+        "Forest Fruits Tea",
+        "Ginger and Lemongrass Tea",
+        "Green",
+        "Jasmine and Mint Green Tea",
+        "Mint"
+      ],
+      "sizes": [
+        "One"
+      ],
+      "components": [
+        {
+          "role": "BASE",
+          "ingredient_name": "Tea bag (standard)",
+          "qty_by_size": {
+            "One": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "8oz cup lid",
+          "qty_by_size": {
+            "One": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "8oz paper cup",
+          "qty_by_size": {
+            "One": "1"
+          }
+        },
+        {
+          "role": "SUNDRY",
+          "ingredient_name": "Napkin",
+          "qty_by_size": {
+            "One": "1"
+          }
+        }
+      ],
+      "axes": [],
+      "conflicts": [],
+      "is_hollow": false,
+      "name_is_ambiguous": false,
+      "already_materialised": false,
+      "blocked_reason": null
+    },
+    {
+      "proposal_id": "25a62acc0516",
+      "name": "Flavoured Latte (Whole milk)",
+      "category": null,
+      "menu_item_count": 8,
+      "base_item_names": [
+        "Chai Latte",
+        "Iced Chai Latte",
+        "White Hot Chocolate"
+      ],
+      "sizes": [
+        "S",
+        "M",
+        "XL"
+      ],
+      "components": [
+        {
+          "role": "MILK",
+          "ingredient_name": "Whole milk",
+          "qty_by_size": {
+            "M": "0.18",
+            "S": "0.12",
+            "XL": "0.32"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "12oz cup lid",
+          "qty_by_size": {
+            "M": "1",
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "12oz paper cup",
+          "qty_by_size": {
+            "M": "1",
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "16oz cup lid",
+          "qty_by_size": {
+            "M": "1",
+            "XL": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "16oz paper cup",
+          "qty_by_size": {
+            "M": "1",
+            "XL": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "8oz cup lid",
+          "qty_by_size": {
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "8oz paper cup",
+          "qty_by_size": {
+            "S": "1"
+          }
+        },
+        {
+          "role": "SUNDRY",
+          "ingredient_name": "Napkin",
+          "qty_by_size": {
+            "M": "1",
+            "S": "1",
+            "XL": "1"
+          }
+        },
+        {
+          "role": "FLAVOUR",
+          "ingredient_name": null,
+          "qty_by_size": {
+            "M": "30",
+            "S": "20",
+            "XL": "40"
+          }
+        }
+      ],
+      "axes": [
+        {
+          "name": "Flavour",
+          "role": "FLAVOUR",
+          "options": {
+            "Chai Concentrate": "Chai concentrate",
+            "White Chocolate": "White chocolate sauce"
+          },
+          "option_count": 2
+        }
+      ],
+      "conflicts": [
+        {
+          "role": "MILK",
+          "ingredient_name": "Whole milk",
+          "size_code": "M",
+          "quantities": {
+            "Chai Latte": "0.24",
+            "Iced Chai Latte": "0.18",
+            "White Hot Chocolate": "0.26"
+          },
+          "describe": "3 items differ in Whole milk qty at size M (0.18, 0.24, 0.26)"
+        },
+        {
+          "role": "MILK",
+          "ingredient_name": "Whole milk",
+          "size_code": "S",
+          "quantities": {
+            "Chai Latte": "0.16",
+            "Iced Chai Latte": "0.12",
+            "White Hot Chocolate": "0.18"
+          },
+          "describe": "3 items differ in Whole milk qty at size S (0.12, 0.16, 0.18)"
+        },
+        {
+          "role": "MILK",
+          "ingredient_name": "Whole milk",
+          "size_code": "XL",
+          "quantities": {
+            "Chai Latte": "0.32",
+            "White Hot Chocolate": "0.34"
+          },
+          "describe": "2 items differ in Whole milk qty at size XL (0.32, 0.34)"
+        }
+      ],
+      "is_hollow": false,
+      "name_is_ambiguous": false,
+      "already_materialised": false,
+      "blocked_reason": "3 unresolved conflict(s): the legacy rows disagree about a quantity, so a human must say which is right. Confirming anyway takes the lowest quantity at each size and records that the choice was made."
+    },
+    {
+      "proposal_id": "b4acf9f0a9cc",
+      "name": "Espresso range",
+      "category": null,
+      "menu_item_count": 7,
+      "base_item_names": [
+        "Black Americano",
+        "Double Espresso",
+        "Iced Black Americano",
+        "Single Espresso"
+      ],
+      "sizes": [
+        "S",
+        "M",
+        "XL",
+        "One"
+      ],
+      "components": [
+        {
+          "role": "COFFEE",
+          "ingredient_name": "Coffee beans (house blend)",
+          "qty_by_size": {
+            "M": "0.036",
+            "One": "0.018",
+            "S": "0.018",
+            "XL": "0.036"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "12oz cup lid",
+          "qty_by_size": {
+            "M": "1",
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "12oz paper cup",
+          "qty_by_size": {
+            "M": "1",
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "16oz cup lid",
+          "qty_by_size": {
+            "M": "1",
+            "XL": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "16oz paper cup",
+          "qty_by_size": {
+            "M": "1",
+            "XL": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "8oz cup lid",
+          "qty_by_size": {
+            "One": "1",
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "8oz paper cup",
+          "qty_by_size": {
+            "One": "1",
+            "S": "1"
+          }
+        },
+        {
+          "role": "SUNDRY",
+          "ingredient_name": "Napkin",
+          "qty_by_size": {
+            "M": "1",
+            "One": "1",
+            "S": "1",
+            "XL": "1"
+          }
+        }
+      ],
+      "axes": [],
+      "conflicts": [
+        {
+          "role": "COFFEE",
+          "ingredient_name": "Coffee beans (house blend)",
+          "size_code": "One",
+          "quantities": {
+            "Double Espresso": "0.036",
+            "Single Espresso": "0.018"
+          },
+          "describe": "2 items differ in Coffee beans (house blend) qty at size One (0.018, 0.036)"
+        }
+      ],
+      "is_hollow": false,
+      "name_is_ambiguous": false,
+      "already_materialised": false,
+      "blocked_reason": "1 unresolved conflict(s): the legacy rows disagree about a quantity, so a human must say which is right. Confirming anyway takes the lowest quantity at each size and records that the choice was made."
+    },
+    {
+      "proposal_id": "97718b030a5a",
+      "name": "Flavoured Fruit",
+      "category": null,
+      "menu_item_count": 7,
+      "base_item_names": [
+        "Berry Breeze Lemonade",
+        "Passion Fruit",
+        "Pineapple & Passion Fruit",
+        "Spiced Apple Chai"
+      ],
+      "sizes": [
+        "S",
+        "M",
+        "One"
+      ],
+      "components": [
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "12oz cup lid",
+          "qty_by_size": {
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "12oz paper cup",
+          "qty_by_size": {
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "16oz cup lid",
+          "qty_by_size": {
+            "M": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "16oz paper cup",
+          "qty_by_size": {
+            "M": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "8oz cup lid",
+          "qty_by_size": {
+            "One": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "8oz paper cup",
+          "qty_by_size": {
+            "One": "1"
+          }
+        },
+        {
+          "role": "SUNDRY",
+          "ingredient_name": "Napkin",
+          "qty_by_size": {
+            "M": "1",
+            "One": "1",
+            "S": "1"
+          }
+        },
+        {
+          "role": "FLAVOUR",
+          "ingredient_name": null,
+          "qty_by_size": {
+            "M": "40",
+            "S": "30",
+            "One": "10"
+          }
+        }
+      ],
+      "axes": [
+        {
+          "name": "Flavour",
+          "role": "FLAVOUR",
+          "options": {
+            "Raspberry": "Raspberry syrup (Monin)",
+            "Mango Syrup/Puree (Monin)": "Mango syrup/puree (Monin)",
+            "Chai Concentrate": "Chai concentrate",
+            "Apple": "Apple syrup (Monin)"
+          },
+          "option_count": 4
+        }
+      ],
+      "conflicts": [],
+      "is_hollow": false,
+      "name_is_ambiguous": false,
+      "already_materialised": false,
+      "blocked_reason": null
+    },
+    {
+      "proposal_id": "899c97c18076",
+      "name": "Flavoured Milkshake (Coffee beans (house blend))",
+      "category": null,
+      "menu_item_count": 7,
+      "base_item_names": [
+        "Chocolate Coffee Milkshake",
+        "Coffee Milkshake",
+        "Raff Coffee"
+      ],
+      "sizes": [
+        "S",
+        "M",
+        "XL"
+      ],
+      "components": [
+        {
+          "role": "COFFEE",
+          "ingredient_name": "Coffee beans (house blend)",
+          "qty_by_size": {
+            "M": "0.036",
+            "S": "0.036",
+            "XL": "0.036"
+          }
+        },
+        {
+          "role": "MILK",
+          "ingredient_name": "Whole milk",
+          "qty_by_size": {
+            "M": "0.08",
+            "S": "0.08",
+            "XL": "0.08"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "12oz cup lid",
+          "qty_by_size": {
+            "M": "1",
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "12oz paper cup",
+          "qty_by_size": {
+            "M": "1",
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "16oz cup lid",
+          "qty_by_size": {
+            "M": "1",
+            "XL": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "16oz paper cup",
+          "qty_by_size": {
+            "M": "1",
+            "XL": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "8oz cup lid",
+          "qty_by_size": {
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "8oz paper cup",
+          "qty_by_size": {
+            "S": "1"
+          }
+        },
+        {
+          "role": "SUNDRY",
+          "ingredient_name": "Napkin",
+          "qty_by_size": {
+            "M": "1",
+            "S": "1",
+            "XL": "1"
+          }
+        },
+        {
+          "role": "TOPPING",
+          "ingredient_name": null,
+          "qty_by_size": {
+            "M": "0.1",
+            "S": "0.1",
+            "XL": "0.1"
+          }
+        }
+      ],
+      "axes": [
+        {
+          "name": "Topping",
+          "role": "TOPPING",
+          "options": {
+            "Vanilla Ice Cream": "Vanilla ice cream",
+            "Whipping Cream": "Whipping cream"
+          },
+          "option_count": 2
+        }
+      ],
+      "conflicts": [
+        {
+          "role": "MILK",
+          "ingredient_name": "Whole milk",
+          "size_code": "M",
+          "quantities": {
+            "Chocolate Coffee Milkshake": "0.18",
+            "Coffee Milkshake": "0.18",
+            "Raff Coffee": "0.08"
+          },
+          "describe": "3 items differ in Whole milk qty at size M (0.08, 0.18)"
+        },
+        {
+          "role": "MILK",
+          "ingredient_name": "Whole milk",
+          "size_code": "S",
+          "quantities": {
+            "Chocolate Coffee Milkshake": "0.12",
+            "Coffee Milkshake": "0.12",
+            "Raff Coffee": "0.08"
+          },
+          "describe": "3 items differ in Whole milk qty at size S (0.08, 0.12)"
+        }
+      ],
+      "is_hollow": false,
+      "name_is_ambiguous": false,
+      "already_materialised": false,
+      "blocked_reason": "2 unresolved conflict(s): the legacy rows disagree about a quantity, so a human must say which is right. Confirming anyway takes the lowest quantity at each size and records that the choice was made."
+    },
+    {
+      "proposal_id": "9684672024a1",
+      "name": "Matcha range",
+      "category": null,
+      "menu_item_count": 7,
+      "base_item_names": [
+        "Hot Matcha",
+        "Hot White Choc Matcha",
+        "Iced matcha (plain)"
+      ],
+      "sizes": [
+        "S",
+        "M",
+        "XL"
+      ],
+      "components": [
+        {
+          "role": "BASE",
+          "ingredient_name": "Matcha powder",
+          "qty_by_size": {
+            "M": "0.002",
+            "S": "0.0015",
+            "XL": "0.0025"
+          }
+        },
+        {
+          "role": "MILK",
+          "ingredient_name": "Whole milk",
+          "qty_by_size": {
+            "M": "0.18",
+            "S": "0.16",
+            "XL": "0.32"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "12oz cup lid",
+          "qty_by_size": {
+            "M": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "12oz paper cup",
+          "qty_by_size": {
+            "M": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "16oz cup lid",
+          "qty_by_size": {
+            "M": "1",
+            "XL": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "16oz paper cup",
+          "qty_by_size": {
+            "M": "1",
+            "XL": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "8oz cup lid",
+          "qty_by_size": {
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "8oz paper cup",
+          "qty_by_size": {
+            "S": "1"
+          }
+        },
+        {
+          "role": "SUNDRY",
+          "ingredient_name": "Napkin",
+          "qty_by_size": {
+            "M": "1",
+            "S": "1",
+            "XL": "1"
+          }
+        }
+      ],
+      "axes": [],
+      "conflicts": [
+        {
+          "role": "MILK",
+          "ingredient_name": "Whole milk",
+          "size_code": "M",
+          "quantities": {
+            "Hot Matcha": "0.24",
+            "Hot White Choc Matcha": "0.24",
+            "Iced matcha (plain)": "0.18"
+          },
+          "describe": "3 items differ in Whole milk qty at size M (0.18, 0.24)"
+        }
+      ],
+      "is_hollow": false,
+      "name_is_ambiguous": false,
+      "already_materialised": false,
+      "blocked_reason": "1 unresolved conflict(s): the legacy rows disagree about a quantity, so a human must say which is right. Confirming anyway takes the lowest quantity at each size and records that the choice was made."
+    },
+    {
+      "proposal_id": "ffc65b57fc83",
+      "name": "Flavoured Tea (Loose-leaf tea (black))",
+      "category": null,
+      "menu_item_count": 6,
+      "base_item_names": [
+        "Kiwi Bubble Tea",
+        "Passion Fruit Bubble Tea",
+        "Strawberry Bubble Tea"
+      ],
+      "sizes": [
+        "S",
+        "M"
+      ],
+      "components": [
+        {
+          "role": "BASE",
+          "ingredient_name": "Loose-leaf tea (black)",
+          "qty_by_size": {
+            "M": "0.004",
+            "S": "0.004"
+          }
+        },
+        {
+          "role": "MILK",
+          "ingredient_name": "Whole milk",
+          "qty_by_size": {
+            "M": "0.18",
+            "S": "0.12"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "12oz cup lid",
+          "qty_by_size": {
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "12oz paper cup",
+          "qty_by_size": {
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "16oz cup lid",
+          "qty_by_size": {
+            "M": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "16oz paper cup",
+          "qty_by_size": {
+            "M": "1"
+          }
+        },
+        {
+          "role": "TOPPING",
+          "ingredient_name": null,
+          "qty_by_size": {
+            "M": "0.05",
+            "S": "0.03"
+          }
+        }
+      ],
+      "axes": [
+        {
+          "name": "Sundry",
+          "role": "SUNDRY",
+          "options": {
+            "Bubble Tea Straw (Wide)": "Bubble tea straw (wide)",
+            "Napkin": "Napkin",
+            "Strawberry": "Strawberry syrup (Monin)"
+          },
+          "option_count": 3
+        },
+        {
+          "name": "Topping",
+          "role": "TOPPING",
+          "options": {
+            "Tapioca Pearls": "Tapioca pearls"
+          },
+          "option_count": 1
+        }
+      ],
+      "conflicts": [],
+      "is_hollow": false,
+      "name_is_ambiguous": true,
+      "already_materialised": false,
+      "blocked_reason": null
+    },
+    {
+      "proposal_id": "979a83c4e264",
+      "name": "Flavoured Tea (Tea bag (standard))",
+      "category": null,
+      "menu_item_count": 6,
+      "base_item_names": [
+        "Iced Lemon & Honey Tea",
+        "Iced Rose Tea",
+        "Peach Iced Tea"
+      ],
+      "sizes": [
+        "S",
+        "M"
+      ],
+      "components": [
+        {
+          "role": "BASE",
+          "ingredient_name": "Tea bag (standard)",
+          "qty_by_size": {
+            "M": "1",
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "12oz cup lid",
+          "qty_by_size": {
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "12oz paper cup",
+          "qty_by_size": {
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "16oz cup lid",
+          "qty_by_size": {
+            "M": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "16oz paper cup",
+          "qty_by_size": {
+            "M": "1"
+          }
+        },
+        {
+          "role": "SUNDRY",
+          "ingredient_name": "Napkin",
+          "qty_by_size": {
+            "M": "1",
+            "S": "1"
+          }
+        },
+        {
+          "role": "FLAVOUR",
+          "ingredient_name": null,
+          "qty_by_size": {
+            "M": "20",
+            "S": "15"
+          }
+        }
+      ],
+      "axes": [
+        {
+          "name": "Flavour",
+          "role": "FLAVOUR",
+          "options": {
+            "Honey": "Honey",
+            "Rose": "Rose syrup (Monin)",
+            "Peach": "Peach syrup (Monin)"
+          },
+          "option_count": 3
+        }
+      ],
+      "conflicts": [],
+      "is_hollow": false,
+      "name_is_ambiguous": false,
+      "already_materialised": false,
+      "blocked_reason": null
+    },
+    {
+      "proposal_id": "ae48a45bb128",
+      "name": "Mocha range",
+      "category": null,
+      "menu_item_count": 6,
+      "base_item_names": [
+        "Iced Mocha",
+        "Mocha",
+        "Mocha Cortado"
+      ],
+      "sizes": [
+        "S",
+        "M",
+        "XL",
+        "One"
+      ],
+      "components": [
+        {
+          "role": "BASE",
+          "ingredient_name": "Chocolate powder",
+          "qty_by_size": {
+            "M": "0.015",
+            "One": "0.008",
+            "S": "0.01",
+            "XL": "0.02"
+          }
+        },
+        {
+          "role": "COFFEE",
+          "ingredient_name": "Coffee beans (house blend)",
+          "qty_by_size": {
+            "M": "0.036",
+            "One": "0.036",
+            "S": "0.018",
+            "XL": "0.036"
+          }
+        },
+        {
+          "role": "MILK",
+          "ingredient_name": "Whole milk",
+          "qty_by_size": {
+            "M": "0.18",
+            "One": "0.06",
+            "S": "0.12",
+            "XL": "0.32"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "12oz cup lid",
+          "qty_by_size": {
+            "M": "1",
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "12oz paper cup",
+          "qty_by_size": {
+            "M": "1",
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "16oz cup lid",
+          "qty_by_size": {
+            "M": "1",
+            "XL": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "16oz paper cup",
+          "qty_by_size": {
+            "M": "1",
+            "XL": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "8oz cup lid",
+          "qty_by_size": {
+            "One": "1",
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "8oz paper cup",
+          "qty_by_size": {
+            "One": "1",
+            "S": "1"
+          }
+        },
+        {
+          "role": "SUNDRY",
+          "ingredient_name": "Napkin",
+          "qty_by_size": {
+            "M": "1",
+            "One": "1",
+            "S": "1",
+            "XL": "1"
+          }
+        }
+      ],
+      "axes": [],
+      "conflicts": [
+        {
+          "role": "MILK",
+          "ingredient_name": "Whole milk",
+          "size_code": "M",
+          "quantities": {
+            "Iced Mocha": "0.18",
+            "Mocha": "0.24"
+          },
+          "describe": "2 items differ in Whole milk qty at size M (0.18, 0.24)"
+        },
+        {
+          "role": "MILK",
+          "ingredient_name": "Whole milk",
+          "size_code": "S",
+          "quantities": {
+            "Iced Mocha": "0.12",
+            "Mocha": "0.16"
+          },
+          "describe": "2 items differ in Whole milk qty at size S (0.12, 0.16)"
+        }
+      ],
+      "is_hollow": false,
+      "name_is_ambiguous": false,
+      "already_materialised": false,
+      "blocked_reason": "2 unresolved conflict(s): the legacy rows disagree about a quantity, so a human must say which is right. Confirming anyway takes the lowest quantity at each size and records that the choice was made."
+    },
+    {
+      "proposal_id": "774c428d88d4",
+      "name": "Flavoured Bliss",
+      "category": null,
+      "menu_item_count": 5,
+      "base_item_names": [
+        "Strawberry",
+        "Strawberry bliss",
+        "Tropical Mint Bliss"
+      ],
+      "sizes": [
+        "S",
+        "M"
+      ],
+      "components": [
+        {
+          "role": "MILK",
+          "ingredient_name": "Whole milk",
+          "qty_by_size": {
+            "M": "0.18",
+            "S": "0.12"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "12oz cup lid",
+          "qty_by_size": {
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "12oz paper cup",
+          "qty_by_size": {
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "16oz cup lid",
+          "qty_by_size": {
+            "M": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "16oz paper cup",
+          "qty_by_size": {
+            "M": "1"
+          }
+        },
+        {
+          "role": "TOPPING",
+          "ingredient_name": null,
+          "qty_by_size": {
+            "M": "0.1",
+            "S": "0.06"
+          }
+        }
+      ],
+      "axes": [
+        {
+          "name": "Sundry",
+          "role": "SUNDRY",
+          "options": {
+            "Napkin": "Napkin",
+            "Strawberry": "Strawberry syrup (Monin)"
+          },
+          "option_count": 2
+        },
+        {
+          "name": "Topping",
+          "role": "TOPPING",
+          "options": {
+            "Vanilla Ice Cream": "Vanilla ice cream"
+          },
+          "option_count": 1
+        }
+      ],
+      "conflicts": [],
+      "is_hollow": false,
+      "name_is_ambiguous": false,
+      "already_materialised": false,
+      "blocked_reason": null
+    },
+    {
+      "proposal_id": "857e2cf2da21",
+      "name": "Flavoured Matcha (Matcha powder)",
+      "category": null,
+      "menu_item_count": 5,
+      "base_item_names": [
+        "Hot Strawberry Matcha",
+        "Iced Strawberry Matcha"
+      ],
+      "sizes": [
+        "S",
+        "M",
+        "XL"
+      ],
+      "components": [
+        {
+          "role": "BASE",
+          "ingredient_name": "Matcha powder",
+          "qty_by_size": {
+            "M": "0.002",
+            "S": "0.0015",
+            "XL": "0.0025"
+          }
+        },
+        {
+          "role": "MILK",
+          "ingredient_name": "Whole milk",
+          "qty_by_size": {
+            "M": "0.18",
+            "S": "0.12",
+            "XL": "0.32"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "12oz cup lid",
+          "qty_by_size": {
+            "M": "1",
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "12oz paper cup",
+          "qty_by_size": {
+            "M": "1",
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "16oz cup lid",
+          "qty_by_size": {
+            "M": "1",
+            "XL": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "16oz paper cup",
+          "qty_by_size": {
+            "M": "1",
+            "XL": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "8oz cup lid",
+          "qty_by_size": {
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "8oz paper cup",
+          "qty_by_size": {
+            "S": "1"
+          }
+        }
+      ],
+      "axes": [
+        {
+          "name": "Sundry",
+          "role": "SUNDRY",
+          "options": {
+            "Napkin": "Napkin",
+            "Strawberry": "Strawberry syrup (Monin)"
+          },
+          "option_count": 2
+        }
+      ],
+      "conflicts": [
+        {
+          "role": "MILK",
+          "ingredient_name": "Whole milk",
+          "size_code": "M",
+          "quantities": {
+            "Hot Strawberry Matcha": "0.24",
+            "Iced Strawberry Matcha": "0.18"
+          },
+          "describe": "2 items differ in Whole milk qty at size M (0.18, 0.24)"
+        },
+        {
+          "role": "MILK",
+          "ingredient_name": "Whole milk",
+          "size_code": "S",
+          "quantities": {
+            "Hot Strawberry Matcha": "0.16",
+            "Iced Strawberry Matcha": "0.12"
+          },
+          "describe": "2 items differ in Whole milk qty at size S (0.12, 0.16)"
+        }
+      ],
+      "is_hollow": false,
+      "name_is_ambiguous": true,
+      "already_materialised": false,
+      "blocked_reason": "2 unresolved conflict(s): the legacy rows disagree about a quantity, so a human must say which is right. Confirming anyway takes the lowest quantity at each size and records that the choice was made."
+    },
+    {
+      "proposal_id": "d66f71ce64c8",
+      "name": "Mixed Zest group",
+      "category": null,
+      "menu_item_count": 5,
+      "base_item_names": [
+        "Black Honey",
+        "Emerald Zest",
+        "Strawberry Black"
+      ],
+      "sizes": [
+        "S",
+        "M",
+        "One"
+      ],
+      "components": [
+        {
+          "role": "BASE",
+          "ingredient_name": "Tea bag (standard)",
+          "qty_by_size": {
+            "M": "1",
+            "One": "1",
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "12oz cup lid",
+          "qty_by_size": {
+            "One": "1",
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "12oz paper cup",
+          "qty_by_size": {
+            "One": "1",
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "16oz cup lid",
+          "qty_by_size": {
+            "M": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "16oz paper cup",
+          "qty_by_size": {
+            "M": "1"
+          }
+        }
+      ],
+      "axes": [
+        {
+          "name": "Sundry",
+          "role": "SUNDRY",
+          "options": {
+            "Napkin": "Napkin",
+            "Strawberry": "Strawberry syrup (Monin)"
+          },
+          "option_count": 2
+        }
+      ],
+      "conflicts": [],
+      "is_hollow": false,
+      "name_is_ambiguous": false,
+      "already_materialised": false,
+      "blocked_reason": null
+    },
+    {
+      "proposal_id": "86658cb603d9",
+      "name": "Flavoured Milkshake (Whole milk)",
+      "category": null,
+      "menu_item_count": 4,
+      "base_item_names": [
+        "Banana Milkshake",
+        "Salted Caramel Milkshake"
+      ],
+      "sizes": [
+        "S",
+        "M"
+      ],
+      "components": [
+        {
+          "role": "MILK",
+          "ingredient_name": "Whole milk",
+          "qty_by_size": {
+            "M": "0.18",
+            "S": "0.12"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "12oz cup lid",
+          "qty_by_size": {
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "12oz paper cup",
+          "qty_by_size": {
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "16oz cup lid",
+          "qty_by_size": {
+            "M": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "16oz paper cup",
+          "qty_by_size": {
+            "M": "1"
+          }
+        },
+        {
+          "role": "SUNDRY",
+          "ingredient_name": "Napkin",
+          "qty_by_size": {
+            "M": "1",
+            "S": "1"
+          }
+        },
+        {
+          "role": "FLAVOUR",
+          "ingredient_name": null,
+          "qty_by_size": {
+            "M": "20",
+            "S": "15"
+          }
+        },
+        {
+          "role": "TOPPING",
+          "ingredient_name": null,
+          "qty_by_size": {
+            "M": "0.1",
+            "S": "0.06"
+          }
+        }
+      ],
+      "axes": [
+        {
+          "name": "Flavour",
+          "role": "FLAVOUR",
+          "options": {
+            "Banana": "Banana syrup (Monin)",
+            "Salted Caramel": "Salted caramel syrup (Monin)"
+          },
+          "option_count": 2
+        },
+        {
+          "name": "Topping",
+          "role": "TOPPING",
+          "options": {
+            "Vanilla Ice Cream": "Vanilla ice cream"
+          },
+          "option_count": 1
+        }
+      ],
+      "conflicts": [],
+      "is_hollow": false,
+      "name_is_ambiguous": false,
+      "already_materialised": false,
+      "blocked_reason": null
+    },
+    {
+      "proposal_id": "76e2af930b67",
+      "name": "Flavoured Mocha",
+      "category": "Spring saesonal drinks",
+      "menu_item_count": 4,
+      "base_item_names": [
+        "Iced Raspberry Mocha",
+        "Iced Rose Mocha"
+      ],
+      "sizes": [
+        "S",
+        "M"
+      ],
+      "components": [
+        {
+          "role": "BASE",
+          "ingredient_name": "Chocolate powder",
+          "qty_by_size": {
+            "M": "0.015",
+            "S": "0.01"
+          }
+        },
+        {
+          "role": "COFFEE",
+          "ingredient_name": "Coffee beans (house blend)",
+          "qty_by_size": {
+            "M": "0.036",
+            "S": "0.018"
+          }
+        },
+        {
+          "role": "MILK",
+          "ingredient_name": "Whole milk",
+          "qty_by_size": {
+            "M": "0.18",
+            "S": "0.12"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "12oz cup lid",
+          "qty_by_size": {
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "12oz paper cup",
+          "qty_by_size": {
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "16oz cup lid",
+          "qty_by_size": {
+            "M": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "16oz paper cup",
+          "qty_by_size": {
+            "M": "1"
+          }
+        },
+        {
+          "role": "SUNDRY",
+          "ingredient_name": "Napkin",
+          "qty_by_size": {
+            "M": "1",
+            "S": "1"
+          }
+        },
+        {
+          "role": "FLAVOUR",
+          "ingredient_name": null,
+          "qty_by_size": {
+            "M": "20",
+            "S": "15"
+          }
+        }
+      ],
+      "axes": [
+        {
+          "name": "Flavour",
+          "role": "FLAVOUR",
+          "options": {
+            "Raspberry": "Raspberry syrup (Monin)",
+            "Rose": "Rose syrup (Monin)"
+          },
+          "option_count": 2
+        }
+      ],
+      "conflicts": [],
+      "is_hollow": false,
+      "name_is_ambiguous": false,
+      "already_materialised": false,
+      "blocked_reason": null
+    },
+    {
+      "proposal_id": "7ceb2cab71ec",
+      "name": "Flavoured Tea (Loose-leaf tea (black))",
+      "category": null,
+      "menu_item_count": 4,
+      "base_item_names": [
+        "Green Apple Bubble Tea",
+        "Honey Bubble Tea"
+      ],
+      "sizes": [
+        "S",
+        "M"
+      ],
+      "components": [
+        {
+          "role": "BASE",
+          "ingredient_name": "Loose-leaf tea (black)",
+          "qty_by_size": {
+            "M": "0.004",
+            "S": "0.004"
+          }
+        },
+        {
+          "role": "MILK",
+          "ingredient_name": "Whole milk",
+          "qty_by_size": {
+            "M": "0.18",
+            "S": "0.12"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "12oz cup lid",
+          "qty_by_size": {
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "12oz paper cup",
+          "qty_by_size": {
+            "S": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "16oz cup lid",
+          "qty_by_size": {
+            "M": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "16oz paper cup",
+          "qty_by_size": {
+            "M": "1"
+          }
+        },
+        {
+          "role": "FLAVOUR",
+          "ingredient_name": null,
+          "qty_by_size": {
+            "M": "20",
+            "S": "15"
+          }
+        },
+        {
+          "role": "TOPPING",
+          "ingredient_name": null,
+          "qty_by_size": {
+            "M": "0.05",
+            "S": "0.03"
+          }
+        }
+      ],
+      "axes": [
+        {
+          "name": "Sundry",
+          "role": "SUNDRY",
+          "options": {
+            "Bubble Tea Straw (Wide)": "Bubble tea straw (wide)",
+            "Napkin": "Napkin"
+          },
+          "option_count": 2
+        },
+        {
+          "name": "Flavour",
+          "role": "FLAVOUR",
+          "options": {
+            "Apple": "Apple syrup (Monin)",
+            "Honey": "Honey"
+          },
+          "option_count": 2
+        },
+        {
+          "name": "Topping",
+          "role": "TOPPING",
+          "options": {
+            "Tapioca Pearls": "Tapioca pearls"
+          },
+          "option_count": 1
+        }
+      ],
+      "conflicts": [],
+      "is_hollow": false,
+      "name_is_ambiguous": true,
+      "already_materialised": false,
+      "blocked_reason": null
+    },
+    {
+      "proposal_id": "b8b1921eeb5c",
+      "name": "Flavoured (Add-On)",
+      "category": null,
+      "menu_item_count": 3,
+      "base_item_names": [
+        "Caramel syrup (add-on)",
+        "Syrup Gift Set",
+        "Vanilla syrup (add-on)"
+      ],
+      "sizes": [
+        "M"
+      ],
+      "components": [
+        {
+          "role": "FLAVOUR",
+          "ingredient_name": null,
+          "qty_by_size": {
+            "M": "10"
+          }
+        }
+      ],
+      "axes": [
+        {
+          "name": "Flavour",
+          "role": "FLAVOUR",
+          "options": {
+            "Caramel": "Caramel syrup (Monin)",
+            "Vanilla": "Vanilla syrup (Monin)"
+          },
+          "option_count": 2
+        }
+      ],
+      "conflicts": [],
+      "is_hollow": false,
+      "name_is_ambiguous": false,
+      "already_materialised": false,
+      "blocked_reason": null
+    },
+    {
+      "proposal_id": "ae8dc652037c",
+      "name": "Cake range",
+      "category": null,
+      "menu_item_count": 2,
+      "base_item_names": [
+        "BKK Kyiv cake",
+        "Kyiv cake (whole)"
+      ],
+      "sizes": [
+        "M"
+      ],
+      "components": [],
+      "axes": [],
+      "conflicts": [],
+      "is_hollow": true,
+      "name_is_ambiguous": false,
+      "already_materialised": false,
+      "blocked_reason": "no components and no axes -- there is no recipe in this group to write. Confirming would create an empty template and take its 2 menu item(s) off the manual recipes they resolve through today."
+    },
+    {
+      "proposal_id": "8b57a2ae4597",
+      "name": "Flavoured Pana",
+      "category": null,
+      "menu_item_count": 2,
+      "base_item_names": [
+        "Double Espresso Con Pana",
+        "Single Espresso Con Pana"
+      ],
+      "sizes": [
+        "One"
+      ],
+      "components": [
+        {
+          "role": "COFFEE",
+          "ingredient_name": "Coffee beans (house blend)",
+          "qty_by_size": {
+            "One": "0.018"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "8oz cup lid",
+          "qty_by_size": {
+            "One": "1"
+          }
+        },
+        {
+          "role": "PACKAGING",
+          "ingredient_name": "8oz paper cup",
+          "qty_by_size": {
+            "One": "1"
+          }
+        },
+        {
+          "role": "SUNDRY",
+          "ingredient_name": "Napkin",
+          "qty_by_size": {
+            "One": "1"
+          }
+        },
+        {
+          "role": "TOPPING",
+          "ingredient_name": null,
+          "qty_by_size": {
+            "One": "0.02"
+          }
+        }
+      ],
+      "axes": [
+        {
+          "name": "Topping",
+          "role": "TOPPING",
+          "options": {
+            "Whipping Cream": "Whipping cream"
+          },
+          "option_count": 1
+        }
+      ],
+      "conflicts": [
+        {
+          "role": "COFFEE",
+          "ingredient_name": "Coffee beans (house blend)",
+          "size_code": "One",
+          "quantities": {
+            "Double Espresso Con Pana": "0.036",
+            "Single Espresso Con Pana": "0.018"
+          },
+          "describe": "2 items differ in Coffee beans (house blend) qty at size One (0.018, 0.036)"
+        }
+      ],
+      "is_hollow": false,
+      "name_is_ambiguous": false,
+      "already_materialised": false,
+      "blocked_reason": "1 unresolved conflict(s): the legacy rows disagree about a quantity, so a human must say which is right. Confirming anyway takes the lowest quantity at each size and records that the choice was made."
+    },
+    {
+      "proposal_id": "5be157e525e7",
+      "name": "Flavoured Wafer",
+      "category": null,
+      "menu_item_count": 2,
+      "base_item_names": [
+        "Dark Blue Wafer",
+        "Marshmallow"
+      ],
+      "sizes": [
+        "M"
+      ],
+      "components": [
+        {
+          "role": "TOPPING",
+          "ingredient_name": null,
+          "qty_by_size": {
+            "M": "0.02"
+          }
+        }
+      ],
+      "axes": [
+        {
+          "name": "Topping",
+          "role": "TOPPING",
+          "options": {
+            "Chocolate Wafer": "Chocolate wafer",
+            "Marshmallow": "Marshmallow"
+          },
+          "option_count": 2
+        }
+      ],
+      "conflicts": [],
+      "is_hollow": false,
+      "name_is_ambiguous": false,
+      "already_materialised": false,
+      "blocked_reason": null
+    },
+    {
+      "proposal_id": "7da2feae42d0",
+      "name": "Juice range",
+      "category": null,
+      "menu_item_count": 2,
+      "base_item_names": [
+        "Apple Juice",
+        "Juice (generic)"
+      ],
+      "sizes": [
+        "M"
+      ],
+      "components": [],
+      "axes": [],
+      "conflicts": [],
+      "is_hollow": true,
+      "name_is_ambiguous": false,
+      "already_materialised": false,
+      "blocked_reason": "no components and no axes -- there is no recipe in this group to write. Confirming would create an empty template and take its 2 menu item(s) off the manual recipes they resolve through today."
+    },
+    {
+      "proposal_id": "73f58d6f8d2f",
+      "name": "Panini range",
+      "category": null,
+      "menu_item_count": 2,
+      "base_item_names": [
+        "Ham and Cheese Panini",
+        "Lunch Deal"
+      ],
+      "sizes": [
+        "M"
+      ],
+      "components": [],
+      "axes": [],
+      "conflicts": [],
+      "is_hollow": true,
+      "name_is_ambiguous": false,
+      "already_materialised": false,
+      "blocked_reason": "no components and no axes -- there is no recipe in this group to write. Confirming would create an empty template and take its 2 menu item(s) off the manual recipes they resolve through today."
+    },
+    {
+      "proposal_id": "a979d948366a",
+      "name": "Water range",
+      "category": null,
+      "menu_item_count": 2,
+      "base_item_names": [
+        "Still Water",
+        "Water"
+      ],
+      "sizes": [
+        "M"
+      ],
+      "components": [],
+      "axes": [],
+      "conflicts": [],
+      "is_hollow": true,
+      "name_is_ambiguous": false,
+      "already_materialised": false,
+      "blocked_reason": "no components and no axes -- there is no recipe in this group to write. Confirming would create an empty template and take its 2 menu item(s) off the manual recipes they resolve through today."
+    }
+  ],
+  "total": 27,
+  "with_conflicts": 11,
+  "singletons_excluded": 43,
+  "writes_nothing": true
+}

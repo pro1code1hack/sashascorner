@@ -1,0 +1,728 @@
+---
+import Base from '../layouts/Base.astro';
+import { info } from '../lib/data';
+
+const maxParty = info?.booking.max_party ?? 8;
+const horizon = info?.booking.horizon_days ?? 30;
+const closedWeekdays = (info?.hours ?? []).filter((h) => h.closed).map((h) => h.weekday);
+---
+
+<Base
+  title="Book a table · Sasha's Corner café, Dundee"
+  description="Book a table at Sasha's Corner, 23 Commercial Street, Dundee, for up to 8 people. Pick a time and it's confirmed straight away. Walk-ins welcome too."
+>
+  <div class="book wrap">
+    <header class="book__head">
+      <p class="label">Book a table</p>
+      <h1>Save us a seat.</h1>
+      <p class="book__lede">
+        Bookings are confirmed straight away. Walk-ins are always welcome too — this just guarantees the table.
+      </p>
+    </header>
+
+    <form
+      class="book__form"
+      id="booking"
+      novalidate
+      data-max={maxParty}
+      data-horizon={horizon}
+      data-closed={JSON.stringify(closedWeekdays)}
+    >
+      <div class="steps">
+        <fieldset class="step" data-step="party">
+          <legend><span class="step__n num">1</span> How many of you?</legend>
+          <div class="chips" role="radiogroup" aria-label="Party size">
+            {
+              Array.from({ length: maxParty }, (_, i) => i + 1).map((n) => (
+                <label class="chip">
+                  <input type="radio" name="party" value={n} checked={n === 2} />
+                  <span class="num">{n}</span>
+                </label>
+              ))
+            }
+          </div>
+          <p class="hint">More than {maxParty}? <a href="/visit#contact">Send us a message</a> and we'll sort it.</p>
+        </fieldset>
+
+        <fieldset class="step" data-step="date">
+          <legend><span class="step__n num">2</span> Which day?</legend>
+          <div class="days-wrap" data-days-wrap>
+            <div class="days" data-days role="radiogroup" aria-label="Date"></div>
+          </div>
+          <p class="hint days__more" data-days-more hidden aria-hidden="true">Swipe for more dates →</p>
+          <noscript><p class="hint">Booking needs JavaScript. You can also call or message us — see <a href="/visit">Visit</a>.</p></noscript>
+        </fieldset>
+
+        <fieldset class="step" data-step="time" disabled>
+          <legend><span class="step__n num">3</span> What time?</legend>
+          <div class="slots" data-slots aria-live="polite"></div>
+          <p class="hint" data-slot-msg>Pick a day first.</p>
+          <p class="hint hint--bar">Tables are booked for 90 minutes.</p>
+        </fieldset>
+
+        <fieldset class="step" data-step="details" disabled>
+          <legend><span class="step__n num">4</span> Your details</legend>
+          <div class="fields">
+            <label class="field">
+              <span>Name</span>
+              <input class="input" name="name" autocomplete="name" autocapitalize="words" enterkeyhint="next" required maxlength="80" />
+            </label>
+            <label class="field">
+              <span>Email</span>
+              <input
+                class="input"
+                name="email"
+                type="email"
+                inputmode="email"
+                autocomplete="email"
+                autocapitalize="off"
+                spellcheck="false"
+                enterkeyhint="next"
+                required
+              />
+            </label>
+            <label class="field">
+              <span>Phone <em>(optional)</em></span>
+              <input class="input" name="phone" type="tel" inputmode="tel" autocomplete="tel" enterkeyhint="next" maxlength="30" />
+            </label>
+            <label class="field field--wide">
+              <span>Anything we should know? <em>(optional)</em></span>
+              <textarea class="input" name="notes" maxlength="500" rows="3" enterkeyhint="done" placeholder="Pushchair, birthday, a quiet corner…"></textarea>
+            </label>
+            <label class="hp" aria-hidden="true">Website <input name="website" tabindex="-1" autocomplete="off" /></label>
+          </div>
+        </fieldset>
+      </div>
+
+      <aside class="summary" aria-live="polite" aria-label="Your table">
+        <p class="label">Your table</p>
+        <dl class="summary__list">
+          <div><dt>Guests</dt><dd class="num summary__party" data-sum="party">2</dd></div>
+          <div><dt>Day</dt><dd data-sum="date"></dd></div>
+          <div><dt>Time</dt><dd class="num" data-sum="time"></dd></div>
+        </dl>
+        <p class="summary__err" data-error role="alert" hidden></p>
+        <button class="btn btn--caramel summary__go" type="submit" disabled data-submit>
+          Confirm booking <span class="arrow" aria-hidden="true">→</span>
+        </button>
+        <p class="summary__small">Tables are booked for 90 minutes.</p>
+      </aside>
+    </form>
+
+    <section class="done" data-done hidden tabindex="-1" aria-labelledby="done-title">
+      <p class="label">Booked</p>
+      <h2 id="done-title">See you <span data-done-when></span>.</h2>
+      <p class="done__ref">Reference <strong class="num" data-done-ref></strong></p>
+      <p class="done__text">
+        Keep the link below — it is how to change or cancel. The café has your booking.
+      </p>
+      <div class="done__actions">
+        <a class="btn btn--ghost" data-done-manage href="#">Manage booking</a>
+        <button class="btn btn--ghost" type="button" data-done-ics>Add to calendar</button>
+        <a class="btn" href="/menu">Look at the menu</a>
+      </div>
+    </section>
+  </div>
+</Base>
+
+<script>
+  import { clock } from '../lib/format';
+  import type { Availability, Booking } from '../lib/types';
+
+  const form = document.querySelector<HTMLFormElement>('#booking')!;
+  const maxDays = Number(form.dataset.horizon);
+  const closed: number[] = JSON.parse(form.dataset.closed ?? '[]');
+  const daysEl = form.querySelector<HTMLElement>('[data-days]')!;
+  const slotsEl = form.querySelector<HTMLElement>('[data-slots]')!;
+  const slotMsg = form.querySelector<HTMLElement>('[data-slot-msg]')!;
+  const stepTime = form.querySelector<HTMLFieldSetElement>('[data-step="time"]')!;
+  const stepDetails = form.querySelector<HTMLFieldSetElement>('[data-step="details"]')!;
+  const submit = form.querySelector<HTMLButtonElement>('[data-submit]')!;
+  const errEl = form.querySelector<HTMLElement>('[data-error]')!;
+  const sum = (k: string) => form.querySelector<HTMLElement>(`[data-sum="${k}"]`)!;
+
+  const state: { party: number; date: string | null; time: string | null } = { party: 2, date: null, time: null };
+
+  // Today in the café's timezone, then the next `maxDays` calendar days.
+  const londonToday = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date());
+  const base = new Date(`${londonToday}T12:00:00Z`);
+  const fmtDay = new Intl.DateTimeFormat('en-GB', { weekday: 'short', timeZone: 'UTC' });
+  const fmtNum = new Intl.DateTimeFormat('en-GB', { day: 'numeric', timeZone: 'UTC' });
+  const fmtMon = new Intl.DateTimeFormat('en-GB', { month: 'short', timeZone: 'UTC' });
+  const fmtLong = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
+
+  for (let i = 0; i <= maxDays; i++) {
+    const d = new Date(base.getTime() + i * 86400000);
+    const iso = d.toISOString().slice(0, 10);
+    const wd = (d.getUTCDay() + 6) % 7; // Monday = 0
+    const label = document.createElement('label');
+    label.className = 'day';
+    const isClosed = closed.includes(wd);
+    label.innerHTML = `<input type="radio" name="date" value="${iso}" ${isClosed ? 'disabled' : ''}/>
+      <span class="day__wd">${i === 0 ? 'Today' : i === 1 ? 'Tmrw' : fmtDay.format(d)}</span>
+      <span class="day__n num">${fmtNum.format(d)}</span>
+      <span class="day__m">${isClosed ? 'Closed' : fmtMon.format(d)}</span>`;
+    label.dataset.long = fmtLong.format(d);
+    daysEl.append(label);
+  }
+
+  // The strip runs ~30 days past the screen edge on phones. Fade whichever edge has more
+  // behind it, and say "swipe" until the visitor has scrolled it once.
+  const daysWrap = form.querySelector<HTMLElement>('[data-days-wrap]')!;
+  const daysMore = form.querySelector<HTMLElement>('[data-days-more]')!;
+  const edges = () => {
+    const max = daysEl.scrollWidth - daysEl.clientWidth;
+    daysWrap.classList.toggle('more-start', daysEl.scrollLeft > 4);
+    daysWrap.classList.toggle('more-end', daysEl.scrollLeft < max - 4);
+    if (max <= 4 || daysEl.scrollLeft > 40) daysMore.hidden = true;
+  };
+  daysMore.hidden = false;
+  daysEl.addEventListener('scroll', edges, { passive: true });
+  addEventListener('resize', edges);
+  edges();
+
+  let seq = 0;
+  async function loadSlots() {
+    if (!state.date) return;
+    const my = ++seq;
+    stepTime.disabled = false;
+    slotsEl.innerHTML = '';
+    slotsEl.setAttribute('aria-busy', 'true');
+    slotMsg.textContent = 'Checking tables…';
+    setTime(null);
+    try {
+      const r = await fetch(`/api/availability?date=${state.date}&party=${state.party}`);
+      if (my !== seq) return;
+      const body = await r.json();
+      if (!r.ok) throw new Error(typeof body.detail === 'string' ? body.detail : 'Could not load times.');
+      const a = body as Availability;
+      const open = a.slots.filter((s) => s.available);
+      slotMsg.textContent = a.closed
+        ? 'We are closed that day.'
+        : !open.length
+          ? (a.reason ?? 'No tables left that day — try another.')
+          : `${open.length} times available for ${state.party}.`;
+      for (const s of a.slots) {
+        const l = document.createElement('label');
+        l.className = 'slot';
+        l.innerHTML = `<input type="radio" name="time" value="${s.time}" ${s.available ? '' : 'disabled'}/><span class="num">${s.time}</span>`;
+        slotsEl.append(l);
+      }
+    } catch (e) {
+      slotMsg.textContent = e instanceof Error && e.message ? e.message : 'Could not load times — please try again.';
+    } finally {
+      slotsEl.removeAttribute('aria-busy');
+    }
+  }
+
+  function setTime(t: string | null) {
+    state.time = t;
+    sum('time').textContent = t ? clock(t) : '';
+    stepDetails.disabled = !t;
+    validate();
+  }
+
+  function validate() {
+    const f = new FormData(form);
+    const ok =
+      !!state.date &&
+      !!state.time &&
+      String(f.get('name') ?? '').trim().length > 0 &&
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(f.get('email') ?? ''));
+    submit.disabled = !ok;
+  }
+
+  form.addEventListener('change', (e) => {
+    const t = e.target as HTMLInputElement;
+    if (t.name === 'party') {
+      state.party = Number(t.value);
+      sum('party').textContent = t.value;
+      sum('party').dataset.one = String(t.value === '1');
+      loadSlots();
+    } else if (t.name === 'date') {
+      state.date = t.value;
+      sum('date').textContent = (t.closest('label') as HTMLElement).dataset.long ?? t.value;
+      loadSlots();
+    } else if (t.name === 'time') {
+      setTime(t.value);
+    }
+  });
+  form.addEventListener('input', validate);
+
+  function showError(msg: string) {
+    errEl.textContent = msg;
+    errEl.hidden = false;
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errEl.hidden = true;
+    const f = new FormData(form);
+    submit.disabled = true;
+    submit.classList.add('is-busy');
+    try {
+      const r = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: String(f.get('name')).trim(),
+          email: String(f.get('email')).trim(),
+          phone: String(f.get('phone') ?? '').trim() || null,
+          notes: String(f.get('notes') ?? '').trim() || null,
+          party: state.party,
+          date: state.date,
+          time: state.time,
+          website: String(f.get('website') ?? ''),
+        }),
+      });
+      const body = await r.json().catch(() => ({}));
+      if (r.status === 409) {
+        showError(body.detail ?? 'That time has just filled up — please pick another.');
+        loadSlots();
+        return;
+      }
+      if (r.status === 429) {
+        showError('Too many attempts from this connection — please try again in a few minutes.');
+        return;
+      }
+      if (!r.ok) {
+        const d = body.detail;
+        showError(typeof d === 'string' ? d : Array.isArray(d) ? d.map((x: { msg: string }) => x.msg).join(' ') : 'Something went wrong — please try again.');
+        return;
+      }
+      done(body as Booking);
+    } catch {
+      showError('Could not reach the café — check your connection and try again.');
+    } finally {
+      submit.classList.remove('is-busy');
+      validate();
+    }
+  });
+
+  function done(b: Booking) {
+    const doneEl = document.querySelector<HTMLElement>('[data-done]')!;
+    const when = new Date(`${b.date}T12:00:00Z`);
+    doneEl.querySelector('[data-done-when]')!.textContent = `${fmtLong.format(when)} at ${clock(b.time)}`;
+    doneEl.querySelector('[data-done-ref]')!.textContent = b.reference;
+    const manage = `/book/manage?t=${encodeURIComponent(b.manage_token)}`;
+    doneEl.querySelector<HTMLAnchorElement>('[data-done-manage]')!.href = manage;
+    doneEl.querySelector('[data-done-ics]')!.addEventListener('click', () => downloadIcs(b, new URL(manage, location.href).href));
+    form.hidden = true;
+    doneEl.hidden = false;
+    doneEl.focus();
+    doneEl.scrollIntoView({ block: 'start' });
+  }
+
+  function downloadIcs(b: Booking, manageUrl: string) {
+    // Floating local time with an explicit Europe/London TZID.
+    const start = `${b.date.replaceAll('-', '')}T${b.time.replace(':', '')}00`;
+    const [h, m] = b.time.split(':').map(Number);
+    const endMin = h * 60 + m + 90;
+    const end = `${b.date.replaceAll('-', '')}T${String(Math.floor(endMin / 60)).padStart(2, '0')}${String(endMin % 60).padStart(2, '0')}00`;
+    const ics = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      "PRODID:-//Sasha's Corner//Booking//EN",
+      'BEGIN:VEVENT',
+      `UID:${b.reference}@sashascorner`,
+      `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').slice(0, 15)}Z`,
+      `DTSTART;TZID=Europe/London:${start}`,
+      `DTEND;TZID=Europe/London:${end}`,
+      `SUMMARY:Table for ${b.party} at Sasha's Corner`,
+      "LOCATION:Sasha's Corner\\, 23 Commercial Street\\, Dundee DD1 3DD",
+      `DESCRIPTION:Reference ${b.reference}. Change or cancel: ${manageUrl}`,
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ].join('\r\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' }));
+    a.download = `sashas-corner-${b.reference}.ics`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+</script>
+
+<style>
+  .book {
+    padding-block: clamp(48px, 7vw, 96px) clamp(64px, 9vw, 120px);
+  }
+  .book__head .label,
+  .done .label {
+    color: var(--coffee);
+  }
+  .book__head h1 {
+    font-size: var(--step-5);
+    margin-top: 14px;
+  }
+  .book__lede {
+    margin-top: 18px;
+    max-width: 48ch;
+    font-size: var(--step-1);
+    font-weight: 300;
+    color: var(--olive-900);
+  }
+  .book__form {
+    margin-top: clamp(36px, 5vw, 64px);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: clamp(32px, 5vw, 72px);
+    align-items: start;
+  }
+  @media (max-width: 900px) {
+    .book__form {
+      grid-template-columns: 1fr;
+    }
+  }
+  .steps {
+    display: grid;
+    gap: clamp(32px, 4vw, 48px);
+  }
+  .step {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+    transition: opacity 0.3s;
+  }
+  .step[disabled] {
+    opacity: 0.4;
+  }
+  legend {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0;
+    margin-bottom: 16px;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-stretch: 88%;
+    font-size: var(--step-2);
+  }
+  .step__n {
+    display: inline-grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-blob);
+    background: var(--olive-900);
+    color: var(--paper);
+    font-size: 1rem;
+  }
+  .hint {
+    margin-top: 12px;
+    font-size: var(--step--1);
+    color: var(--olive-700);
+  }
+  .chips,
+  .slots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .days-wrap {
+    position: relative;
+  }
+  .days {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 4px 4px 10px; /* room for the focus ring */
+    margin: -4px -4px 0;
+    scroll-snap-type: x proximity;
+    scroll-padding-inline: 4px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--rule-strong) transparent;
+    overscroll-behavior-x: contain;
+  }
+  /* Edge fades say "there is more this way". Painted over the strip, not a mask, so
+     the day cards keep full contrast until they are actually under the fade. */
+  .days-wrap::before,
+  .days-wrap::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 10px;
+    width: 44px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 1;
+  }
+  .days-wrap::before {
+    left: -4px;
+    background: linear-gradient(to right, var(--paper), transparent);
+  }
+  .days-wrap::after {
+    right: -4px;
+    background: linear-gradient(to left, var(--paper), transparent);
+  }
+  .days-wrap.more-start::before,
+  .days-wrap.more-end::after {
+    opacity: 1;
+  }
+  .days__more {
+    margin-top: 4px;
+  }
+  .hint--bar {
+    display: none;
+  }
+  :global(.chip),
+  :global(.slot),
+  :global(.day) {
+    position: relative;
+    cursor: pointer;
+  }
+  :global(.chip input),
+  :global(.slot input),
+  :global(.day input) {
+    position: absolute;
+    opacity: 0;
+    inset: 0;
+    margin: 0;
+    cursor: inherit;
+  }
+  :global(.chip span),
+  :global(.slot span) {
+    display: grid;
+    place-items: center;
+    min-width: 52px;
+    height: 48px;
+    padding: 0 14px;
+    border: 1px solid var(--rule-strong);
+    border-radius: var(--radius-s);
+    font-size: var(--step-0);
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+  }
+  :global(.day) {
+    flex: none;
+    display: grid;
+    justify-items: center;
+    gap: 2px;
+    width: 68px;
+    padding: 10px 0;
+    border: 1px solid var(--rule-strong);
+    border-radius: var(--radius-m);
+    scroll-snap-align: start;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+  }
+  :global(.day__wd),
+  :global(.day__m) {
+    font-size: 0.875rem;
+    line-height: 1.3;
+    color: var(--olive-700);
+  }
+  :global(.day__n) {
+    font-size: 1.5rem;
+    line-height: 1.1;
+  }
+  :global(.chip:hover span),
+  :global(.slot:hover span),
+  :global(.day:hover) {
+    border-color: var(--olive-900);
+  }
+  :global(.chip input:checked + span),
+  :global(.slot input:checked + span),
+  :global(.day:has(input:checked)) {
+    background: var(--olive-900);
+    border-color: var(--olive-900);
+    color: var(--paper);
+  }
+  :global(.day:has(input:checked) .day__wd),
+  :global(.day:has(input:checked) .day__m) {
+    color: var(--on-dark-soft);
+  }
+  :global(.chip input:focus-visible + span),
+  :global(.slot input:focus-visible + span),
+  :global(.day:has(input:focus-visible)) {
+    outline: 2px solid var(--caramel);
+    outline-offset: 2px;
+  }
+  :global(.slot input:disabled + span) {
+    color: var(--paper-dim);
+    border-style: dashed;
+    text-decoration: line-through;
+    cursor: not-allowed;
+  }
+  :global(.day:has(input:disabled)) {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .slots[aria-busy='true'] {
+    min-height: 48px;
+  }
+
+  .fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .field--wide {
+    grid-column: 1 / -1;
+  }
+  .fields em {
+    font-style: normal;
+    color: var(--olive-700);
+  }
+  @media (max-width: 560px) {
+    .fields {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .summary {
+    position: sticky;
+    top: 24px;
+    padding: 24px;
+    border-radius: var(--radius-m);
+    background: var(--olive-900);
+    color: var(--on-dark);
+  }
+  .summary .label {
+    color: var(--sage-on-dark);
+  }
+  .summary__list {
+    margin: 16px 0 20px;
+    display: grid;
+    gap: 10px;
+  }
+  .summary__list div {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid color-mix(in oklab, var(--paper) 18%, transparent);
+  }
+  .summary__list dt {
+    color: var(--on-dark-soft);
+  }
+  .summary__list dd {
+    margin: 0;
+    text-align: right;
+  }
+  .summary__list dd:empty::before {
+    content: '—';
+  }
+  .summary__go {
+    width: 100%;
+    justify-content: center;
+  }
+  .summary__go:global(.is-busy) {
+    opacity: 0.7;
+    cursor: progress;
+  }
+  .summary__err {
+    margin-bottom: 14px;
+    padding: 10px 12px;
+    border-radius: var(--radius-s);
+    background: color-mix(in oklab, var(--caramel) 25%, transparent);
+    font-size: var(--step--1);
+  }
+  .summary__small {
+    margin-top: 14px;
+    font-size: var(--step--1);
+    color: var(--on-dark-soft);
+  }
+
+  /* ---- phones and tablets: the summary becomes a bar pinned to the bottom -------------
+     Sticky, not fixed: it rides along while the form is on screen and settles at the
+     end of the form, so it never sits over the footer. The confirm button is always in
+     reach. While a text field has focus the bar lets go (the on-screen keyboard is
+     already taking the bottom of the screen), and focused fields scroll clear of it. */
+  @media (max-width: 900px) {
+    :global(html) {
+      scroll-padding-bottom: 150px;
+    }
+    .summary {
+      position: sticky;
+      top: auto;
+      bottom: 0;
+      z-index: 5;
+      margin-inline: calc(-1 * var(--gutter));
+      padding: 12px var(--gutter) calc(12px + var(--safe-b));
+      border-radius: var(--radius-m) var(--radius-m) 0 0;
+      box-shadow: 0 -10px 30px rgb(13 13 11 / 0.18);
+    }
+    .book__form:has(.fields :focus) .summary {
+      position: relative;
+      box-shadow: none;
+    }
+    .summary .label,
+    .summary__small {
+      display: none;
+    }
+    .hint--bar {
+      display: block;
+    }
+    .summary__list {
+      margin: 0 0 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2px 14px;
+      font-size: var(--step--1);
+    }
+    .summary__list div {
+      padding: 0;
+      border: 0;
+    }
+    .summary__list dt {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+    .summary__list dd {
+      text-align: left;
+    }
+    [data-sum='date']:empty::before {
+      content: 'no day yet';
+      color: var(--on-dark-soft);
+    }
+    [data-sum='time']:empty::before {
+      content: 'no time yet';
+      color: var(--on-dark-soft);
+    }
+    .summary__party::after {
+      content: ' guests' / '';
+    }
+    .summary__party[data-one='true']::after {
+      content: ' guest' / '';
+    }
+    .summary__err {
+      margin-bottom: 10px;
+    }
+  }
+
+  .done {
+    margin-top: clamp(36px, 5vw, 64px);
+    padding: clamp(28px, 5vw, 56px);
+    border-radius: var(--radius-m);
+    background: var(--oat);
+    outline: none;
+  }
+  .done h2 {
+    font-size: var(--step-4);
+    margin-top: 12px;
+  }
+  .done__ref {
+    margin-top: 18px;
+    font-size: var(--step-1);
+  }
+  .done__ref strong {
+    font-size: var(--step-2);
+    color: var(--coffee);
+    letter-spacing: 0.04em;
+  }
+  .done__text {
+    margin-top: 10px;
+    color: var(--olive-900);
+    max-width: 52ch;
+  }
+  .done__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 26px;
+  }
+</style>

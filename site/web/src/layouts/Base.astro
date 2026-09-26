@@ -1,0 +1,216 @@
+---
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { info, socialLinks } from '../lib/data';
+// The two Latin font files every page renders with. Preloading them lets text settle
+// before first paint instead of swapping (a CLS and LCP cost on mobile).
+import sairaLatin from '@fontsource-variable/saira/files/saira-latin-wdth-normal.woff2?url';
+import jostLatin from '@fontsource-variable/jost/files/jost-latin-wght-normal.woff2?url';
+
+interface Props {
+  title: string;
+  description: string;
+  /** Header treatment: `dark` sits on the olive hero, `light` on paper. */
+  tone?: 'dark' | 'light';
+  noindex?: boolean;
+  extraJsonLd?: Record<string, unknown>;
+}
+const { title, description, tone = 'light', noindex = false, extraJsonLd } = Astro.props;
+
+const site = Astro.site!;
+const canonical = new URL(
+  Astro.url.pathname.replace(/\.html$/, '').replace(/\/index$/, '/').replace(/(.)\/$/, '$1') || '/',
+  site,
+);
+const ogImage = new URL('/og.png', site);
+const fullTitle = title.includes("Sasha's Corner") ? title : `${title} · Sasha's Corner, Dundee`;
+
+// Entity facts shared by every page. Each URL was checked against the listing itself
+// (name + 23 Commercial Street, DD1 3DD). The Maps URL is a place search that lands on
+// the Google Business Profile; swap in the profile's own share link when the owner has
+// it (docs/SEO-GEO.md, "Maps link").
+const MAPS_URL =
+  'https://www.google.com/maps/search/?api=1&query=Sasha%27s+Corner%2C+23+Commercial+Street%2C+Dundee+DD1+3DD';
+const DELIVERY = [
+  { name: 'Deliveroo', url: 'https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/sashas-corner' },
+  { name: 'Just Eat', url: 'https://www.just-eat.co.uk/restaurants-sashas-corner-dundee/menu' },
+];
+const OG_ALT =
+  "Sasha's Corner logo beside an iced green matcha and an iced blue matcha, with the words: coffee, matcha and Kyiv cake on Commercial Street, Dundee";
+
+const cafeId = new URL('/#cafe', site).href;
+const websiteId = new URL('/#website', site).href;
+const abs = (path: string) => new URL(path, site).href;
+
+// Days with identical hours collapse into one specification (Mon-Sat, Sun).
+const DAY = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const hourGroups = new Map<string, { opens: string; closes: string; days: string[] }>();
+for (const h of info?.hours ?? []) {
+  if (h.closed) continue;
+  const key = `${h.open}-${h.close}`;
+  const g = hourGroups.get(key) ?? { opens: h.open, closes: h.close, days: [] };
+  g.days.push(DAY[h.weekday]);
+  hourGroups.set(key, g);
+}
+
+const sameAs = [
+  ...new Set([
+    ...socialLinks(info).map(([, url]) => url),
+    ...DELIVERY.map((d) => d.url),
+    MAPS_URL,
+  ]),
+];
+
+const business = info && {
+  '@type': 'CafeOrCoffeeShop',
+  '@id': cafeId,
+  name: info.name,
+  url: site.href,
+  logo: abs('/icon-512.png'),
+  image: [ogImage.href, abs('/img/cafe/storefront.webp'), abs('/img/cafe/interior.webp')],
+  description:
+    'Independent café on Commercial Street, Dundee city centre, open since November 2025: over 100 drinks including matcha whisked to order, blue matcha, Raff coffee and bubble tea, plus breakfast, lunch, brunch waffles and cakes, including Kyiv cake by the slice or whole to order.',
+  foundingDate: '2025-11',
+  servesCuisine: ['Coffee', 'Matcha', 'Bubble tea', 'Breakfast', 'Brunch', 'Cakes'],
+  priceRange: '£',
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: info.address.line1,
+    addressLocality: info.address.city,
+    addressRegion: 'Scotland',
+    postalCode: info.address.postcode,
+    addressCountry: info.address.country,
+  },
+  geo: { '@type': 'GeoCoordinates', latitude: info.geo.lat, longitude: info.geo.lng },
+  hasMap: MAPS_URL,
+  areaServed: { '@type': 'City', name: 'Dundee' },
+  ...(info.phone ? { telephone: `+44 ${info.phone.replace(/^0/, '')}` } : {}),
+  ...(info.email ? { email: info.email } : {}),
+  openingHoursSpecification: [...hourGroups.values()].map((g) => ({
+    '@type': 'OpeningHoursSpecification',
+    dayOfWeek: g.days,
+    opens: g.opens,
+    closes: g.closes,
+  })),
+  menu: abs('/menu'),
+  hasMenu: abs('/menu'),
+  acceptsReservations: abs('/book'),
+  sameAs,
+  potentialAction: [
+    {
+      '@type': 'ReserveAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: abs('/book'),
+        inLanguage: 'en-GB',
+        actionPlatform: ['https://schema.org/DesktopWebPlatform', 'https://schema.org/MobileWebPlatform'],
+      },
+      result: { '@type': 'FoodEstablishmentReservation', name: 'Table at ' + info.name },
+    },
+    {
+      '@type': 'OrderAction',
+      target: DELIVERY.map((d) => ({
+        '@type': 'EntryPoint',
+        name: d.name,
+        urlTemplate: d.url,
+        actionPlatform: ['https://schema.org/DesktopWebPlatform', 'https://schema.org/MobileWebPlatform'],
+      })),
+    },
+  ],
+};
+
+const website = {
+  '@type': 'WebSite',
+  '@id': websiteId,
+  url: site.href,
+  name: "Sasha's Corner",
+  inLanguage: 'en-GB',
+  ...(business ? { publisher: { '@id': cafeId }, about: { '@id': cafeId } } : {}),
+};
+
+// Breadcrumbs follow the URL: Home > Menu, Home > Book a table > Manage booking.
+const CRUMB: Record<string, string> = {
+  menu: 'Menu',
+  order: 'Cakes & delivery',
+  about: 'About',
+  visit: 'Visit',
+  book: 'Book a table',
+  manage: 'Manage booking',
+  faq: 'FAQ',
+};
+const segments = canonical.pathname.split('/').filter(Boolean);
+const breadcrumb =
+  !noindex && segments.length > 0
+    ? {
+        '@type': 'BreadcrumbList',
+        '@id': `${canonical.href}#breadcrumb`,
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Home', item: site.href },
+          ...segments.map((seg, i) => ({
+            '@type': 'ListItem',
+            position: i + 2,
+            name: CRUMB[seg] ?? seg.replace(/-/g, ' ').replace(/^./, (c) => c.toUpperCase()),
+            item: abs('/' + segments.slice(0, i + 1).join('/')),
+          })),
+        ],
+      }
+    : null;
+
+const graph = {
+  '@context': 'https://schema.org',
+  '@graph': [website, business, breadcrumb].filter(Boolean),
+};
+---
+
+<!doctype html>
+<html lang="en-GB" class="no-js">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={canonical.href} />}
+    <meta name="theme-color" content="#474531" />
+    <link rel="preload" href={sairaLatin} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={jostLatin} as="font" type="font/woff2" crossorigin />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Sasha's Corner" />
+    <meta property="og:locale" content="en_GB" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical.href} />
+    <meta property="og:image" content={ogImage.href} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={OG_ALT} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage.href} />
+    <meta name="twitter:image:alt" content={OG_ALT} />
+
+    <script type="application/ld+json" set:html={JSON.stringify(graph)} />
+    {extraJsonLd && <script type="application/ld+json" set:html={JSON.stringify(extraJsonLd)} />}
+    <script is:inline>
+      document.documentElement.classList.replace('no-js', 'js');
+    </script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <Header tone={tone} />
+    <main id="main">
+      <slot />
+    </main>
+    <Footer />
+    <script>
+      import '../scripts/reveal';
+    </script>
+  </body>
+</html>

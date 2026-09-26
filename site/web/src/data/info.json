@@ -1,0 +1,64 @@
+{
+  "name": "Sasha's Corner",
+  "address": {
+    "line1": "23 Commercial Street",
+    "city": "Dundee",
+    "postcode": "DD1 3DD",
+    "country": "GB"
+  },
+  "geo": {
+    "lat": 56.4612158,
+    "lng": -2.9668779
+  },
+  "phone": "07398 433317",
+  "email": "",
+  "hours": [
+    {
+      "weekday": 0,
+      "open": "09:00",
+      "close": "19:00"
+    },
+    {
+      "weekday": 1,
+      "open": "09:00",
+      "close": "19:00"
+    },
+    {
+      "weekday": 2,
+      "open": "09:00",
+      "close": "19:00"
+    },
+    {
+      "weekday": 3,
+      "open": "09:00",
+      "close": "19:00"
+    },
+    {
+      "weekday": 4,
+      "open": "09:00",
+      "close": "19:00"
+    },
+    {
+      "weekday": 5,
+      "open": "09:00",
+      "close": "19:00"
+    },
+    {
+      "weekday": 6,
+      "open": "09:00",
+      "close": "17:00"
+    }
+  ],
+  "socials": {
+    "instagram": "https://www.instagram.com/sashascorner_uk",
+    "facebook": "",
+    "tiktok": ""
+  },
+  "booking": {
+    "max_party": 8,
+    "slot_minutes": 30,
+    "horizon_days": 30,
+    "min_lead_minutes": 60
+  },
+  "confirmed": false
+}

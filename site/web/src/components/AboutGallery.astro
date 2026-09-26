@@ -1,0 +1,261 @@
+---
+// Photo gallery with an accessible lightbox: a native <dialog> (focus trap and Esc
+// for free), arrow keys to step through, focus handed back to the thumbnail that
+// opened it. Works as plain links to the full images without JS.
+//
+// The photos come from an image slot (multiple, ordered in the admin). Every position
+// up to the slot's max renders: filled ones open in the lightbox, empty ones show the
+// placeholder saying which photo belongs there. The lightbox reads the thumbnails
+// from the DOM, so photos swapped in at runtime by scripts/slots.ts open too.
+import Slot from './Slot.astro';
+import { largest, slotCount, slotItem } from './slotData';
+
+// Kept for pages that describe the photos elsewhere (about.astro's JSON-LD).
+export interface Photo {
+  src: string;
+  alt: string;
+  caption: string;
+  w: number;
+  h: number;
+}
+interface Props {
+  slotKey: string;
+}
+const { slotKey } = Astro.props;
+const n = slotCount(slotKey, 12);
+const sizes = '(max-width: 560px) 46vw, (max-width: 1000px) 30vw, 300px';
+---
+
+<ul class="gal" data-gallery aria-label="Photos of Sasha's Corner">
+  {
+    Array.from({ length: n }, (_, i) => {
+      const it = slotItem(slotKey, i);
+      return (
+        <li class="gal__item">
+          {it ? (
+            <a class="gal__thumb" href={largest(it)} data-slot-href aria-label={`Open photo: ${it.alt}`}>
+              <Slot key={slotKey} index={i} sizes={sizes} />
+            </a>
+          ) : (
+            <div class="gal__thumb gal__thumb--empty">
+              <Slot key={slotKey} index={i} sizes={sizes} />
+            </div>
+          )}
+        </li>
+      );
+    })
+  }
+</ul>
+
+<dialog class="lb" data-lightbox aria-label="Photo viewer">
+  <figure class="lb__fig">
+    <img class="lb__img" src="" alt="" data-lb-img />
+    <figcaption class="lb__cap">
+      <span class="num lb__count" data-lb-count></span>
+      <span data-lb-cap></span>
+    </figcaption>
+  </figure>
+  <div class="lb__bar">
+    <button type="button" class="lb__btn" data-lb-prev aria-label="Previous photo">
+      <span aria-hidden="true">←</span>
+    </button>
+    <button type="button" class="lb__btn" data-lb-next aria-label="Next photo">
+      <span aria-hidden="true">→</span>
+    </button>
+    <button type="button" class="lb__btn lb__close" data-lb-close aria-label="Close photo viewer">
+      <span aria-hidden="true">×</span>
+    </button>
+  </div>
+</dialog>
+
+<script>
+  const list = document.querySelector<HTMLUListElement>('[data-gallery]');
+  const dlg = document.querySelector<HTMLDialogElement>('[data-lightbox]');
+  if (list && dlg && typeof dlg.showModal === 'function') {
+    const img = dlg.querySelector<HTMLImageElement>('[data-lb-img]')!;
+    const cap = dlg.querySelector<HTMLElement>('[data-lb-cap]')!;
+    const count = dlg.querySelector<HTMLElement>('[data-lb-count]')!;
+    // Read at every open: scripts/slots.ts may have swapped photos in since load.
+    const thumbs = () => [...list.querySelectorAll<HTMLAnchorElement>('a[data-slot-href]')];
+    const photo = (a: HTMLAnchorElement) => {
+      const t = a.querySelector('img');
+      return { src: a.href, alt: t?.alt ?? '', w: t?.naturalWidth || t?.width || 0, h: t?.naturalHeight || t?.height || 0 };
+    };
+    let at = 0;
+    let opener: HTMLElement | null = null;
+
+    const show = (i: number) => {
+      const all = thumbs();
+      if (!all.length) return;
+      at = (i + all.length) % all.length;
+      const p = photo(all[at]);
+      img.src = p.src;
+      img.alt = p.alt;
+      if (p.w && p.h) {
+        img.width = p.w;
+        img.height = p.h;
+      }
+      cap.textContent = p.alt;
+      count.textContent = `${at + 1} / ${all.length}`;
+      // preload neighbours so arrowing through doesn't flash
+      for (const n of [at - 1, at + 1]) new Image().src = all[(n + all.length) % all.length].href;
+    };
+
+    list.addEventListener('click', (e) => {
+      const a = (e.target as Element).closest<HTMLAnchorElement>('a[data-slot-href]');
+      if (!a) return;
+      e.preventDefault();
+      opener = a;
+      show(thumbs().indexOf(a));
+      dlg.showModal();
+      dlg.querySelector<HTMLButtonElement>('[data-lb-close]')!.focus();
+    });
+    dlg.querySelector('[data-lb-prev]')!.addEventListener('click', () => show(at - 1));
+    dlg.querySelector('[data-lb-next]')!.addEventListener('click', () => show(at + 1));
+    dlg.querySelector('[data-lb-close]')!.addEventListener('click', () => dlg.close());
+    dlg.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        show(at - 1);
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        show(at + 1);
+      }
+    });
+    // click on the backdrop (the dialog element itself, outside the figure) closes
+    dlg.addEventListener('click', (e) => {
+      if (e.target === dlg) dlg.close();
+    });
+    dlg.addEventListener('close', () => {
+      opener?.focus();
+      opener = null;
+    });
+  }
+</script>
+
+<style>
+  /* Masonry by columns: the photos keep their own proportions, so no two tiles
+     are forced into the same box. */
+  .gal {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    columns: 4 240px;
+    column-gap: clamp(8px, 1.4vw, 18px);
+  }
+  .gal__item {
+    break-inside: avoid;
+    margin-bottom: clamp(8px, 1.4vw, 18px);
+  }
+  .gal__item:nth-child(3n + 2) :global(.slot) {
+    aspect-ratio: 4 / 5;
+  }
+  .gal__item:nth-child(4n) :global(.slot) {
+    aspect-ratio: 1 / 1;
+  }
+  .gal__thumb {
+    display: block;
+    border-radius: var(--radius-s);
+    overflow: hidden;
+    cursor: zoom-in;
+  }
+  .gal__thumb--empty {
+    cursor: default;
+  }
+  .gal__thumb :global(img) {
+    transition:
+      transform 0.6s var(--ease-out),
+      filter 0.3s;
+  }
+  .gal__thumb:hover :global(img) {
+    transform: scale(1.03);
+  }
+  .gal__thumb:focus-visible {
+    outline-offset: 4px;
+  }
+  @media (max-width: 560px) {
+    .gal {
+      columns: 2;
+    }
+  }
+
+  .lb {
+    width: 100vw;
+    height: 100dvh;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: clamp(16px, 3vw, 32px);
+    border: 0;
+    background: color-mix(in oklab, var(--olive-950) 96%, transparent);
+    color: var(--on-dark);
+  }
+  .lb[open] {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+    gap: 16px;
+  }
+  .lb::backdrop {
+    background: rgb(13 13 11 / 0.6);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .lb[open] {
+      animation: lb-in 0.35s var(--ease-out);
+    }
+    @keyframes lb-in {
+      from {
+        opacity: 0;
+      }
+    }
+  }
+  .lb__fig {
+    margin: 0;
+    min-height: 0;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+    justify-items: center;
+    gap: 12px;
+  }
+  .lb__img {
+    width: auto;
+    height: 100%;
+    max-width: 100%;
+    min-height: 0;
+    object-fit: contain;
+    border-radius: var(--radius-s);
+  }
+  .lb__cap {
+    display: flex;
+    gap: 14px;
+    align-items: baseline;
+    max-width: 60ch;
+    font-weight: 300;
+    color: var(--on-dark-soft);
+  }
+  .lb__count {
+    color: var(--caramel);
+    white-space: nowrap;
+  }
+  .lb__bar {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+  }
+  .lb__btn {
+    width: 52px;
+    height: 52px;
+    border-radius: 999px;
+    border: 1px solid color-mix(in oklab, var(--paper) 45%, transparent);
+    background: transparent;
+    color: var(--paper);
+    font: 400 1.4rem / 1 var(--font-text);
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  .lb__btn:hover {
+    background: color-mix(in oklab, var(--paper) 14%, transparent);
+  }
+  .lb__close {
+    margin-left: 18px;
+  }
+</style>

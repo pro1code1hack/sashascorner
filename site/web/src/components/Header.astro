@@ -1,0 +1,261 @@
+---
+interface Props {
+  tone: 'dark' | 'light';
+}
+const { tone } = Astro.props;
+const path = Astro.url.pathname.replace(/\.html$/, '');
+const links = [
+  { href: '/menu', label: 'Menu' },
+  { href: '/order', label: 'Cakes & delivery' },
+  { href: '/about', label: 'About' },
+  { href: '/visit', label: 'Visit' },
+];
+---
+
+<header class:list={['hdr', `hdr--${tone}`]} data-hdr>
+  <div class="hdr__in wrap">
+    <a href="/" class="hdr__logo" aria-label="Sasha's Corner, home">
+      <img
+        src={tone === 'dark' ? '/brand/logo-reverse.svg' : '/brand/logo.svg'}
+        alt=""
+        width="116"
+        height="70"
+        fetchpriority="high"
+      />
+    </a>
+    <nav aria-label="Main" class="hdr__navwrap">
+      <button class="hdr__toggle" type="button" aria-expanded="false" aria-controls="main-nav" data-nav-toggle>
+        <span class="hdr__bars" aria-hidden="true"></span>
+        <span class="sr-only">Open menu</span>
+      </button>
+      <ul class="hdr__nav" id="main-nav">
+        {
+          links.map((l) => (
+            <li>
+              <a href={l.href} aria-current={path.startsWith(l.href) ? 'page' : undefined}>
+                {l.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+    <a href="/book" class="btn btn--caramel hdr__book" aria-current={path.startsWith('/book') ? 'page' : undefined}>
+      Book a table
+    </a>
+  </div>
+</header>
+
+<script>
+  // Mobile menu (<= 860px). A short dropdown, not a full-screen sheet, so it neither
+  // traps focus nor locks page scroll: Tab moves on into the page and the menu closes
+  // behind it; scrolling the page is harmless. It closes on Escape, on choosing a link,
+  // on focus leaving the menu or a tap outside the header, on widening past the breakpoint, and when a
+  // page is restored from the back/forward cache with the menu left open.
+  const btn = document.querySelector<HTMLButtonElement>('[data-nav-toggle]');
+  const hdr = document.querySelector<HTMLElement>('[data-hdr]');
+  const nav = document.getElementById('main-nav');
+  const setOpen = (open: boolean) => {
+    if (!btn || !hdr) return;
+    btn.setAttribute('aria-expanded', String(open));
+    btn.querySelector('.sr-only')!.textContent = open ? 'Close menu' : 'Open menu';
+    hdr.classList.toggle('is-open', open);
+  };
+  const isOpen = () => hdr?.classList.contains('is-open') ?? false;
+  btn?.addEventListener('click', () => setOpen(!isOpen()));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && isOpen()) {
+      setOpen(false);
+      btn?.focus();
+    }
+  });
+  nav?.addEventListener('click', (e) => {
+    if ((e.target as Element).closest('a')) setOpen(false);
+  });
+  const navWrap = btn?.closest('nav');
+  navWrap?.addEventListener('focusout', (e) => {
+    const to = e.relatedTarget as Node | null;
+    if (isOpen() && to && !navWrap.contains(to)) setOpen(false);
+  });
+  document.addEventListener('pointerdown', (e) => {
+    if (isOpen() && hdr && !hdr.contains(e.target as Node)) setOpen(false);
+  });
+  matchMedia('(min-width: 861px)').addEventListener('change', (e) => e.matches && setOpen(false));
+  addEventListener('pageshow', () => setOpen(false));
+</script>
+
+<style>
+  .hdr {
+    position: relative;
+    z-index: 20;
+  }
+  .hdr--dark {
+    background: var(--olive-900);
+    color: var(--on-dark);
+  }
+  .hdr--light {
+    background: var(--paper);
+    color: var(--ink);
+    border-bottom: 1px solid var(--rule);
+  }
+  .hdr__in {
+    display: flex;
+    align-items: center;
+    gap: clamp(12px, 3vw, 36px);
+    min-height: 84px;
+  }
+  .hdr__logo {
+    margin-right: auto;
+  }
+  .hdr__logo img {
+    width: clamp(92px, 12vw, 128px);
+    height: auto;
+  }
+  .hdr__nav {
+    display: flex;
+    align-items: center;
+    gap: clamp(14px, 2.4vw, 32px);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .hdr__nav a {
+    position: relative;
+    display: block;
+    text-decoration: none;
+    font-weight: 400;
+    padding: 12px 0;
+    min-width: 44px;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .hdr__nav a::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 6px;
+    height: 1px;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.4s var(--ease-out);
+  }
+  .hdr__nav a:hover::after,
+  .hdr__nav a[aria-current='page']::after {
+    transform: scaleX(1);
+  }
+  .hdr__book {
+    flex: none;
+    min-height: 44px;
+    padding: 0 1.1em;
+    font-size: var(--step--1);
+    white-space: nowrap;
+  }
+  .hdr__toggle {
+    display: none;
+  }
+  @media (max-width: 380px) {
+    .hdr__in {
+      gap: 10px;
+    }
+    .hdr__book {
+      padding: 0 0.95em;
+    }
+  }
+
+  @media (max-width: 860px) {
+    .hdr__navwrap {
+      order: 3;
+    }
+    .hdr__toggle {
+      display: grid;
+      place-items: center;
+      width: 44px;
+      height: 44px;
+      border: 1px solid currentColor;
+      border-radius: 50%;
+      background: none;
+      color: inherit;
+      cursor: pointer;
+    }
+    .hdr__bars,
+    .hdr__bars::before,
+    .hdr__bars::after {
+      display: block;
+      width: 16px;
+      height: 1.5px;
+      background: currentColor;
+      transition:
+        transform 0.3s var(--ease-out),
+        opacity 0.2s;
+    }
+    .hdr__bars {
+      position: relative;
+    }
+    .hdr__bars::before,
+    .hdr__bars::after {
+      content: '';
+      position: absolute;
+      left: 0;
+    }
+    .hdr__bars::before {
+      top: -5px;
+    }
+    .hdr__bars::after {
+      top: 5px;
+    }
+    .hdr.is-open .hdr__bars {
+      background: transparent;
+    }
+    .hdr.is-open .hdr__bars::before {
+      transform: translateY(5px) rotate(45deg);
+    }
+    .hdr.is-open .hdr__bars::after {
+      transform: translateY(-5px) rotate(-45deg);
+    }
+    .hdr__nav {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 100%;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0;
+      padding: 8px calc(var(--gutter) + var(--safe-r)) 20px calc(var(--gutter) + var(--safe-l));
+      border-bottom: 1px solid var(--rule);
+      display: none;
+      /* landscape phones: the panel scrolls itself rather than running off-screen */
+      max-height: calc(100svh - 84px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+    .hdr--dark .hdr__nav {
+      background: var(--olive-900);
+    }
+    .hdr--light .hdr__nav {
+      background: var(--paper);
+    }
+    .hdr.is-open .hdr__nav {
+      display: flex;
+    }
+    .hdr__nav a {
+      text-align: left;
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-stretch: 88%;
+      font-size: var(--step-2);
+      padding: 12px 0;
+      border-bottom: 1px solid color-mix(in oklab, currentColor 14%, transparent);
+    }
+    .hdr__nav a::after {
+      display: none;
+    }
+    .hdr__nav a[aria-current='page'] {
+      text-decoration: underline;
+      text-decoration-thickness: 2px;
+      text-decoration-color: var(--caramel);
+      text-underline-offset: 0.18em;
+    }
+  }
+</style>

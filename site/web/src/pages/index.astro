@@ -1,0 +1,504 @@
+---
+import Base from '../layouts/Base.astro';
+import Hero from '../components/Hero.astro';
+import LineDraw from '../components/LineDraw.astro';
+import OpenNow from '../components/OpenNow.astro';
+import Icon from '../components/Icon.astro';
+import Slot from '../components/Slot.astro';
+import { slotCount } from '../components/slotData';
+import { info, menu, signatures } from '../lib/data';
+import { clock, gbp, WEEKDAYS } from '../lib/format';
+
+const blobColours = ['var(--coffee)', 'var(--sage)', 'var(--caramel)', 'var(--olive-700)'];
+const all = menu.categories.flatMap((c) => c.items.map((i) => ({ ...i, cat: c.slug })));
+const food = new Set(['breakfast', 'lunch', 'waffles', 'cakes']);
+const drinks = all.filter((i) => !food.has(i.cat));
+const matchas = drinks.filter((i) => /matcha|hojicha/i.test(i.name));
+const bakes = all.filter((i) => i.cat === 'cakes' || i.cat === 'waffles');
+const mapsUrl = info
+  ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`Sasha's Corner, ${info.address.line1}, ${info.address.city} ${info.address.postcode}`)}`
+  : '';
+const handle = info?.socials.instagram.replace(/\/$/, '').split('/').pop();
+const range = (n: number) => Array.from({ length: n }, (_, i) => i);
+---
+
+<Base
+  tone="dark"
+  title="Sasha's Corner · Coffee, matcha & bubble tea café, Dundee"
+  description="Independent café at 23 Commercial Street, Dundee: over 100 drinks, matcha whisked to order, blue matcha, Raff coffee, bubble tea, brunch and Kyiv cake."
+>
+  <Hero />
+
+  <!-- Signatures -------------------------------------------------------- -->
+  <section class="sig" aria-labelledby="sig-title">
+    <div class="wrap">
+      <header class="sec-head" data-reveal>
+        <p class="label">What people come back for</p>
+        <h2 id="sig-title" class="sec-title">The signatures</h2>
+      </header>
+      <ul class="sig__strip" aria-label="Photos of the signatures" data-reveal>
+        {
+          range(slotCount('home.signatures', 4)).map((i) => (
+            <li>
+              <Slot key="home.signatures" index={i} sizes="(max-width: 600px) 46vw, 24vw" />
+            </li>
+          ))
+        }
+      </ul>
+      <ol class="sig__list">
+        {
+          signatures.map((s, i) => (
+            <li class="sig__row" data-reveal style={`--blob:${blobColours[i % blobColours.length]}`}>
+              <span class="sig__blob" aria-hidden="true" />
+              <div class="sig__name">
+                <span class="sig__cat">{s.category}</span>
+                <h3>{s.name}</h3>
+              </div>
+              <p class="sig__desc">{s.description}</p>
+              <p class="sig__price num">
+                {s.sizes.length > 1 && <span class="sig__from">from</span>}
+                {gbp(Math.min(...s.sizes.map((z) => z.price_pence)))}
+              </p>
+            </li>
+          ))
+        }
+      </ol>
+      <a class="sig__all" href="/menu">
+        The whole menu — {all.length} things, from a £1.90 espresso to Kyiv cake
+        <Icon name="arrow" />
+      </a>
+    </div>
+  </section>
+
+  <!-- The corner ---------------------------------------------------------- -->
+  <section class="corner" aria-labelledby="corner-title">
+    <div class="wrap corner__grid">
+      <div class="corner__art">
+        <LineDraw />
+      </div>
+      <div class="corner__copy">
+        <p class="label" data-reveal>The corner</p>
+        <h2 id="corner-title" class="sec-title" data-reveal>
+          One line, <span class="soft">from the group head to your cup.</span>
+        </h2>
+        <div class="corner__cols">
+          <div data-reveal>
+            <h3><span class="num">{drinks.length}</span> drinks</h3>
+            <p>
+              Probably the longest drinks board in Dundee: a cortado for £3.10, Raff coffee, honey-vanilla and
+              lavender lattes, milkshakes, refreshers and creamy bubble tea.
+            </p>
+          </div>
+          <div data-reveal>
+            <h3><span class="num">{matchas.length}</span> matcha &amp; hojicha</h3>
+            <p>
+              Whisked fresh in front of you, green or butterfly-pea blue, hot or over ice — with honey, lavender,
+              mango, coconut water. The blue ones get photographed.
+            </p>
+          </div>
+          <div data-reveal>
+            <h3><span class="num">{bakes.length}</span> cakes &amp; waffles</h3>
+            <p>
+              The counter changes daily. Kyiv cake by the slice (or whole, ordered ahead), tiramisu blondie, and
+              brunch waffles — sweet with fruit and ice cream, or cheesy with salad.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ul class="mood wrap" aria-label="Photos from the café" data-reveal>
+      {
+        range(slotCount('home.mood', 4)).map((i) => (
+          <li>
+            <Slot key="home.mood" index={i} tone="paper" sizes="(max-width: 600px) 46vw, 24vw" />
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <!-- Visit ------------------------------------------------------------------ -->
+  {
+    info && (
+      <section class="visit" aria-labelledby="visit-title">
+        <figure class="wrap visit__room" data-reveal>
+          <Slot key="home.room" tone="olive" sizes="(max-width: 1320px) 100vw, 1320px" />
+        </figure>
+        <div class="wrap visit__grid">
+          <div data-reveal>
+            <p class="label">Come by</p>
+            <h2 id="visit-title" class="sec-title">
+              {info.address.line1},<br />
+              <span class="soft">{info.address.city}</span>
+            </h2>
+            <OpenNow tone="dark" />
+            <div class="visit__cta">
+              <a class="btn btn--caramel" href="/book">
+                Book a table <span class="arrow" aria-hidden="true">→</span>
+              </a>
+              <a class="btn btn--ghost" href={mapsUrl} target="_blank" rel="noopener">
+                <Icon name="pin" /> Directions
+              </a>
+            </div>
+          </div>
+          <table class="visit__hours" data-reveal>
+            <caption class="label">Opening hours</caption>
+            <tbody>
+              {info.hours.map((h) => (
+                <tr data-weekday={h.weekday}>
+                  <th scope="row">{WEEKDAYS[h.weekday]}</th>
+                  <td class="num">{h.closed ? 'Closed' : `${clock(h.open)} – ${clock(h.close)}`}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- Instagram ------------------------------------------------------------ -->
+  {
+    info?.socials.instagram && (
+      <section class="insta" aria-label="Instagram">
+        <div class="wrap insta__in" data-reveal>
+          <p class="label">Follow along</p>
+          <a class="insta__handle" href={info.socials.instagram} target="_blank" rel="me noopener">
+            <Icon name="instagram" size={40} />@{handle}
+          </a>
+          <p class="insta__note">New drinks, seasonal boards and what's on the counter today.</p>
+        </div>
+      </section>
+    )
+  }
+</Base>
+
+<script>
+  // Mark today's row in the hours table (Europe/London).
+  const wd = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].indexOf(
+    new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', weekday: 'short' }).format(new Date()),
+  );
+  document.querySelector(`.visit__hours tr[data-weekday="${wd}"]`)?.classList.add('is-today');
+</script>
+
+<style>
+  .sec-head {
+    display: grid;
+    gap: 14px;
+    margin-bottom: clamp(28px, 4vw, 48px);
+  }
+  .sec-head .label,
+  .corner .label {
+    color: var(--coffee);
+  }
+  .sec-title {
+    font-size: var(--step-4);
+    line-height: 0.95;
+  }
+  .soft {
+    font-family: var(--font-light);
+    font-weight: 200;
+    font-stretch: 100%;
+    letter-spacing: -0.03em;
+  }
+
+  /* signatures: a printed menu card, not a card grid */
+  .sig {
+    padding-block: clamp(72px, 10vw, 140px) clamp(56px, 8vw, 100px);
+  }
+  .sig__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--rule-strong);
+  }
+  .sig__row {
+    position: relative;
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1.2fr) minmax(0, 1.3fr) auto;
+    align-items: center;
+    gap: clamp(12px, 3vw, 40px);
+    padding-block: clamp(18px, 2.4vw, 28px);
+    border-bottom: 1px solid var(--rule);
+  }
+  .sig__strip {
+    list-style: none;
+    margin: 0 0 clamp(32px, 5vw, 64px);
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: clamp(8px, 1.4vw, 18px);
+  }
+  .sig__strip li:nth-child(odd) {
+    margin-top: clamp(20px, 4vw, 56px);
+  }
+  @media (max-width: 600px) {
+    .sig__strip {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .sig__strip li:nth-child(odd) {
+      margin-top: 0;
+    }
+    .sig__strip li:nth-child(even) {
+      margin-top: 24px;
+    }
+  }
+  .sig__blob {
+    width: 40px;
+    height: 34px;
+    background: var(--blob);
+    border-radius: var(--radius-blob);
+    transition:
+      transform 0.6s var(--ease-out),
+      border-radius 0.6s var(--ease-out);
+  }
+  .sig__row:hover .sig__blob {
+    transform: rotate(-14deg) scale(1.15);
+    border-radius: 42% 58% 45% 55% / 55% 42% 58% 45%;
+  }
+  .sig__cat {
+    display: block;
+    font-size: var(--step--1);
+    color: var(--olive-700);
+    margin-bottom: 4px;
+  }
+  .sig__name h3 {
+    font-size: var(--step-2);
+  }
+  .sig__desc {
+    color: var(--ink-soft);
+    font-weight: 300;
+  }
+  .sig__price {
+    font-size: var(--step-2);
+    text-align: right;
+    white-space: nowrap;
+  }
+  .sig__from {
+    font-family: var(--font-text);
+    font-size: var(--step--1);
+    color: var(--olive-700);
+    margin-right: 6px;
+  }
+  .sig__all {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 28px;
+    font-size: var(--step-1);
+    color: var(--coffee);
+    text-decoration: none;
+  }
+  .sig__all:hover {
+    text-decoration: underline;
+  }
+  @media (max-width: 760px) {
+    .sig__row {
+      grid-template-columns: 44px minmax(0, 1fr) auto;
+      align-items: start;
+    }
+    .sig__blob {
+      width: 32px;
+      height: 28px;
+      margin-top: 6px;
+    }
+    .sig__desc {
+      grid-column: 2 / -1;
+      grid-row: 2;
+    }
+  }
+
+  /* the corner */
+  .corner {
+    background: var(--oat);
+    padding-block: clamp(72px, 10vw, 140px);
+  }
+  .corner__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: clamp(32px, 6vw, 96px);
+    align-items: center;
+  }
+  .corner__art {
+    color: var(--ink);
+    max-width: 520px;
+  }
+  .corner__copy .sec-title {
+    margin-block: 14px clamp(28px, 4vw, 48px);
+  }
+  .corner__cols {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(20px, 3vw, 36px);
+  }
+  .corner__cols h3 {
+    font-size: var(--step-2);
+    margin-bottom: 10px;
+  }
+  .corner__cols h3 .num {
+    color: var(--coffee);
+  }
+  .corner__cols p {
+    font-weight: 300;
+    color: var(--ink-soft);
+  }
+  @media (max-width: 1000px) {
+    .corner__grid {
+      grid-template-columns: 1fr;
+    }
+    .corner__art {
+      max-width: 380px;
+      margin-inline: auto;
+    }
+  }
+  @media (max-width: 720px) {
+    .corner__cols {
+      grid-template-columns: 1fr;
+    }
+  }
+  .mood {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: clamp(8px, 1.4vw, 18px);
+    margin-top: clamp(56px, 8vw, 110px);
+    margin-bottom: 0;
+  }
+  .mood li:nth-child(even) {
+    transform: translateY(clamp(16px, 3vw, 44px));
+  }
+  .mood :global(.slot) {
+    aspect-ratio: 2 / 3;
+  }
+  @media (max-width: 600px) {
+    .mood {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .mood li:nth-child(even) {
+      transform: translateY(24px);
+    }
+  }
+
+  /* visit */
+  .visit {
+    background: var(--olive-700);
+    color: var(--on-dark);
+    padding-block: clamp(80px, 10vw, 140px);
+  }
+  .visit__room {
+    margin-top: 0;
+    margin-bottom: clamp(48px, 7vw, 96px);
+  }
+  @media (max-width: 600px) {
+    .visit__room :global(.slot) {
+      aspect-ratio: 4 / 3;
+    }
+  }
+  .visit .label {
+    color: color-mix(in oklab, var(--paper) 70%, var(--sage));
+  }
+  .visit__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    gap: clamp(40px, 6vw, 96px);
+    align-items: end;
+  }
+  .visit .sec-title {
+    margin-block: 14px 22px;
+  }
+  .visit__cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 30px;
+  }
+  .visit__hours {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .visit__hours caption {
+    text-align: left;
+    padding-bottom: 12px;
+    color: color-mix(in oklab, var(--paper) 70%, var(--sage));
+  }
+  .visit__hours th,
+  .visit__hours td {
+    padding: 11px 0;
+    border-bottom: 1px solid color-mix(in oklab, var(--paper) 20%, transparent);
+    font-weight: 300;
+    text-align: left;
+  }
+  .visit__hours td {
+    text-align: right;
+  }
+  .visit__hours tr.is-today th,
+  .visit__hours tr.is-today td {
+    font-weight: 500;
+    color: var(--paper);
+  }
+  .visit__hours tr.is-today th::after {
+    content: ' · today';
+    color: var(--caramel);
+    font-weight: 400;
+  }
+  @media (max-width: 800px) {
+    .visit__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* instagram */
+  .insta {
+    padding-block: clamp(64px, 9vw, 120px);
+    text-align: center;
+  }
+  .insta__in {
+    display: grid;
+    justify-items: center;
+    gap: 16px;
+  }
+  .insta .label {
+    color: var(--coffee);
+  }
+  .insta__handle {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-stretch: 88%;
+    font-size: var(--step-4);
+    line-height: 1;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+  }
+  .insta__handle:hover {
+    color: var(--coffee);
+  }
+  .insta__note {
+    color: var(--olive-700);
+  }
+  @media (max-width: 480px) {
+    .insta__handle {
+      font-size: var(--step-3);
+    }
+    .insta__handle :global(svg) {
+      width: 28px;
+      height: 28px;
+    }
+  }
+
+  /* QA pass: contrast and tap targets */
+  .sec-head .label,
+  .corner .label {
+    color: var(--coffee-deep);
+  }
+  .visit .label,
+  .visit__hours caption {
+    color: var(--on-dark);
+  }
+  .insta__handle,
+  .sig__all {
+    min-height: 44px;
+  }
+</style>

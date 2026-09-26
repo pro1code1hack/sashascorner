@@ -1,0 +1,82 @@
+# Sasha's Corner public website -- a Caddy site block, imported by the ops Caddyfile:
+#
+#   import /srv/site/*.caddy
+#
+# (top level, outside the ops site block). The `site-static` service copies this file
+# into the `site_static` volume as /srv/site/site.caddy, next to the build it serves,
+# so the config and the HTML it points at always come from the same release. The
+# import is a GLOB on purpose: with no site deployed it matches nothing and Caddy
+# starts normally (a plain path would stop the ops dashboard from starting).
+#
+# SITE_DOMAIN comes from the repo-root .env (the caddy service reads it via env_file).
+# Unset, it is sashascorner.co.uk -- which only works once that domain's DNS points at
+# this box; until then Caddy retries the certificate quietly and the ops site is
+# unaffected.
+
+{$SITE_DOMAIN:sashascorner.co.uk} {
+	encode zstd gzip
+
+	# The site API. Same origin as the pages, so no CORS in production.
+	handle /api/* {
+		# No header_up needed: with no `trusted_proxies` configured, Caddy ignores any
+		# client-supplied X-Forwarded-For and sets it to the real peer address, which
+		# is what sashasite's rate limit keys on (SITE_TRUST_PROXY=1).
+		reverse_proxy site-api:8100
+	}
+
+	# One URL per page: /menu.html and /index.html are the files, /menu and / are
+	# the canonical addresses. Redirect rather than serve the same page twice.
+	redir /index.html / permanent
+	@dothtml path_regexp dothtml ^(/.+)\.html$
+	handle @dothtml {
+		redir {re.dothtml.1} permanent
+	}
+
+	handle {
+		root * /srv/site/public
+		# Astro builds `build.format: 'file'` with `trailingSlash: 'never'`:
+		# /menu is dist/menu.html, /book/manage is dist/book/manage.html.
+		try_files {path} {path}.html {path}/index.html
+		file_server
+	}
+
+	handle_errors 404 {
+		root * /srv/site/public
+		rewrite * /404.html
+		file_server
+	}
+
+	# Astro content-hashes everything under /_astro/, so those URLs never change
+	# contents: cache for a year. HTML names the current hashes, so it must be
+	# revalidated or a deploy keeps serving the old page.
+	@hashed path /_astro/*
+	header @hashed Cache-Control "public, max-age=31536000, immutable"
+
+	@html {
+		not path /_astro/* /api/*
+		not path_regexp \.(png|jpe?g|webp|avif|svg|ico|woff2?|xml|txt|webmanifest|json)$
+	}
+	header @html Cache-Control "public, max-age=0, must-revalidate"
+
+	# Photos, icons, fonts, og.png, sitemap: not hashed, change rarely.
+	@static path_regexp \.(png|jpe?g|webp|avif|svg|ico|woff2?|webmanifest)$
+	header @static Cache-Control "public, max-age=604800"
+
+	header {
+		-Server
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}
+
+# www -> apex, permanently.
+www.{$SITE_DOMAIN:sashascorner.co.uk} {
+	redir https://{$SITE_DOMAIN:sashascorner.co.uk}{uri} permanent
+}

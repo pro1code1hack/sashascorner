@@ -1,0 +1,295 @@
+# Every image position on the public site. Pages render a slot by key; an empty
+# slot shows a branded placeholder with the label and hint below, so the owner can
+# see on the live site which photo belongs where. Assign photos at /admin.
+#
+#   key       page.section[.name], lowercase, dots
+#   label     shown in the admin and, small, in the placeholder
+#   page      the page the slot appears on
+#   aspect    the CSS aspect-ratio the page renders it at (crop with the focal point)
+#   multiple  true => an ordered list (strips, galleries)
+#   max       for multiple, the most the layout shows
+#   hint      the photo to take: subject, framing, light. Shown in the placeholder.
+#
+# The front-end reads the export of this file (web/src/data/slots.json, written by
+# `sashasite slots-export`). Adding a key here does nothing until a page renders it;
+# removing one a page renders leaves that page showing a bare placeholder.
+
+# ---- Home (/) -------------------------------------------------------------------
+
+[[slot]]
+key = "home.signatures"
+label = "Home — signatures photo strip"
+page = "/"
+aspect = "4/5"
+multiple = true
+max = 4
+hint = "One signature per frame — Raff coffee, iced honey blue matcha, honey vanilla latte, Kyiv cake slice — on a white table, from the side at cup height, window light"
+
+[[slot]]
+key = "home.mood"
+label = "Home — the corner, four upright photos"
+page = "/"
+aspect = "2/3"
+multiple = true
+max = 4
+hint = "Four upright moments: a drink, a cake, the room, the window. Phone held upright, daylight, no flash"
+
+[[slot]]
+key = "home.room"
+label = "Home — the room, one wide photo"
+page = "/"
+aspect = "16/9"
+multiple = false
+max = 1
+hint = "The whole room in one landscape frame: sage walls, dark panelling, white tables, strip lights on. From the counter end, late afternoon"
+
+# ---- Menu (/menu) — one small photo per category header -------------------------
+
+[[slot]]
+key = "menu.autumn"
+label = "Menu — Autumn specials"
+page = "/menu"
+aspect = "1/1"
+multiple = false
+max = 1
+hint = "An autumn special, e.g. the iced banana bread hojicha, close up from the side on a white table"
+
+[[slot]]
+key = "menu.hot-drinks"
+label = "Menu — Hot drinks"
+page = "/menu"
+aspect = "1/1"
+multiple = false
+max = 1
+hint = "A Raff coffee or latte with latte art, from 45° above, window light"
+
+[[slot]]
+key = "menu.espresso"
+label = "Menu — Espresso bar"
+page = "/menu"
+aspect = "1/1"
+multiple = false
+max = 1
+hint = "An espresso or cortado on the counter, close up, the machine soft behind"
+
+[[slot]]
+key = "menu.seasonal-hot"
+label = "Menu — Signature hot drinks"
+page = "/menu"
+aspect = "1/1"
+multiple = false
+max = 1
+hint = "A rose or lavender latte with its topping, close up from the side"
+
+[[slot]]
+key = "menu.hot-matcha"
+label = "Menu — Hot matcha"
+page = "/menu"
+aspect = "1/1"
+multiple = false
+max = 1
+hint = "Matcha being whisked in the bowl, hands in frame, close up"
+
+[[slot]]
+key = "menu.tea"
+label = "Menu — Tea"
+page = "/menu"
+aspect = "1/1"
+multiple = false
+max = 1
+hint = "A pot of loose-leaf tea with a cup poured, on a green placemat, from above"
+
+[[slot]]
+key = "menu.iced-coffee"
+label = "Menu — Iced coffee"
+page = "/menu"
+aspect = "1/1"
+multiple = false
+max = 1
+hint = "An iced latte with the milk still swirling, from the side against the sage wall"
+
+[[slot]]
+key = "menu.seasonal-iced"
+label = "Menu — Signature iced drinks"
+page = "/menu"
+aspect = "1/1"
+multiple = false
+max = 1
+hint = "An iced blue matcha, layered, from the side in window light"
+
+[[slot]]
+key = "menu.iced-matcha"
+label = "Menu — Iced green matcha"
+page = "/menu"
+aspect = "1/1"
+multiple = false
+max = 1
+hint = "An iced green matcha over milk, the layers visible, from the side"
+
+[[slot]]
+key = "menu.bubble-tea"
+label = "Menu — Creamy bubble tea"
+page = "/menu"
+aspect = "1/1"
+multiple = false
+max = 1
+hint = "A creamy bubble tea with the tapioca pearls showing, from the side"
+
+[[slot]]
+key = "menu.milkshakes"
+label = "Menu — Milkshakes"
+page = "/menu"
+aspect = "1/1"
+multiple = false
+max = 1
+hint = "A milkshake with its topping, from the side on the counter"
+
+[[slot]]
+key = "menu.cold"
+label = "Menu — Iced teas, refreshers & smoothies"
+page = "/menu"
+aspect = "1/1"
+multiple = false
+max = 1
+hint = "A refresher or smoothie over ice, bright, from the side by the window"
+
+[[slot]]
+key = "menu.breakfast"
+label = "Menu — Breakfast"
+page = "/menu"
+aspect = "1/1"
+multiple = false
+max = 1
+hint = "A breakfast plate on a green placemat, from directly above"
+
+[[slot]]
+key = "menu.lunch"
+label = "Menu — Lunch"
+page = "/menu"
+aspect = "1/1"
+multiple = false
+max = 1
+hint = "Soup or a toasted sandwich with salad, from 45° above"
+
+[[slot]]
+key = "menu.waffles"
+label = "Menu — Brunch waffles"
+page = "/menu"
+aspect = "1/1"
+multiple = false
+max = 1
+hint = "A pistachio or fruit waffle with ice cream, from 45° above"
+
+[[slot]]
+key = "menu.cakes"
+label = "Menu — Cakes & bakes"
+page = "/menu"
+aspect = "1/1"
+multiple = false
+max = 1
+hint = "A slice of Kyiv cake on a white plate, or the cake counter, close up"
+
+# ---- About (/about) -------------------------------------------------------------
+
+[[slot]]
+key = "about.room.hero"
+label = "About — the room, large upright photo"
+page = "/about"
+aspect = "4/5"
+multiple = false
+max = 1
+hint = "The room from the door, upright: sage walls, dark panelling, white tables, the games shelf. Daylight"
+
+[[slot]]
+key = "about.room.window"
+label = "About — a window table"
+page = "/about"
+aspect = "3/4"
+multiple = false
+max = 1
+hint = "A window table with the green placemat, looking out through the window drawings"
+
+[[slot]]
+key = "about.room.cat"
+label = "About — a cat print"
+page = "/about"
+aspect = "3/4"
+multiple = false
+max = 1
+hint = "One of the framed cat prints on the sage wall, straight on, no reflections"
+
+[[slot]]
+key = "about.room.front"
+label = "About — the front window"
+page = "/about"
+aspect = "4/3"
+multiple = false
+max = 1
+hint = "The front window with the logo line drawn on the glass, from the pavement, landscape"
+
+[[slot]]
+key = "about.team"
+label = "About — the team"
+page = "/about"
+aspect = "3/2"
+multiple = false
+max = 1
+hint = "The people behind the counter, at work or together at the bar. Landscape, and only with everyone's agreement"
+
+[[slot]]
+key = "about.gallery"
+label = "About — photo gallery"
+page = "/about"
+aspect = "3/4"
+multiple = true
+max = 12
+hint = "Anything worth a look before someone comes in: drinks, cakes, corners of the room, the window. Upright works best"
+
+# ---- Order (/order) -------------------------------------------------------------
+
+[[slot]]
+key = "order.kyiv"
+label = "Order — Kyiv cake, whole"
+page = "/order"
+aspect = "4/5"
+multiple = false
+max = 1
+hint = "Kyiv cake, whole, on the counter, from 45° above, natural light"
+
+[[slot]]
+key = "order.takeaway"
+label = "Order — takeaway"
+page = "/order"
+aspect = "3/4"
+multiple = false
+max = 1
+hint = "Takeaway cups with the logo sticker, held up or on the counter by the till, upright"
+
+[[slot]]
+key = "order.waffles"
+label = "Order — waffles, made to order"
+page = "/order"
+aspect = "4/3"
+multiple = false
+max = 1
+hint = "A brunch waffle fresh off the iron, sweet with fruit and ice cream, from 45° above"
+
+# ---- Visit (/visit) -------------------------------------------------------------
+
+[[slot]]
+key = "visit.storefront"
+label = "Visit — the shop front"
+page = "/visit"
+aspect = "4/5"
+multiple = false
+max = 1
+hint = "The shop front from across Commercial Street, the whole window and sign in frame, daylight"
+
+[[slot]]
+key = "visit.door"
+label = "Visit — inside, from the door"
+page = "/visit"
+aspect = "4/3"
+multiple = false
+max = 1
+hint = "What you see as you walk in: from the doorway, landscape, lights on"

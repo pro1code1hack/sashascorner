@@ -28,16 +28,24 @@ from cafeops.api.schemas import (
     DraftOrdersResponse,
     Health,
     MarginResponse,
+    MaterialiseIn,
+    MaterialiseResponse,
     Meta,
     PreviewResponse,
+    ProposalsResponse,
+    ShelfLifeIn,
+    ShelfLifeResponse,
     StockDetail,
     StockResponse,
     SupplierOut,
+    SupplierTermsIn,
+    SupplierTermsResponse,
+    TakingsResponse,
     TemplateDetail,
     TemplateSummary,
     TodayResponse,
 )
-from cafeops.api.security import ApiAuth
+from cafeops.api.security import ApiAuth, OptionalApiAuth
 from cafeops.config import settings
 from cafeops.domain.types import Tier
 
@@ -110,9 +118,13 @@ def _tiers(raw: str | None) -> tuple[Tier, ...] | None:
 # --------------------------------------------------------------------------
 
 
-@open_router.get("/api/health", response_model=Health, summary="Liveness and row counts")
-async def health() -> Health:
-    return await in_session(views.health_view)
+@open_router.get(
+    "/api/health",
+    response_model=Health,
+    summary="Liveness. Row counts only for an authenticated caller.",
+)
+async def health(authenticated: Annotated[bool, OptionalApiAuth]) -> Health:
+    return await in_session(lambda session: views.health_view(session, authenticated=authenticated))
 
 
 @open_router.get("/api/meta", response_model=Meta, summary="Enums and encoding conventions")
@@ -176,6 +188,80 @@ async def preview_edit(template_id: int, body: ComponentQtyChange) -> PreviewRes
 async def apply_edit(template_id: int, body: ComponentQtyApply) -> ApplyResponse:
     return await in_session(
         lambda session: views.apply_edit_view(session, template_id=template_id, body=body)
+    )
+
+
+# --------------------------------------------------------------------------
+# import review -- spec 6: detection proposes, a human confirms
+# --------------------------------------------------------------------------
+
+
+@router.get(
+    "/api/proposals",
+    response_model=ProposalsResponse,
+    tags=["composition"],
+    summary="Template proposals waiting for a human. WRITES NOTHING.",
+)
+async def proposals() -> ProposalsResponse:
+    return await in_session(views.proposals_view)
+
+
+@router.post(
+    "/api/proposals/{key}/materialise",
+    response_model=MaterialiseResponse,
+    tags=["composition"],
+    summary="Confirm one proposal (by proposal_id) into real composition rows.",
+)
+async def materialise(key: str, body: MaterialiseIn) -> MaterialiseResponse:
+    """`key` is a `proposal_id`. A name is accepted too, but names are not unique
+    and an ambiguous one is refused rather than resolved to the first match."""
+    return await in_session(
+        lambda session: views.materialise_proposal_view(session, key=key, body=body)
+    )
+
+
+@router.get(
+    "/api/takings",
+    response_model=TakingsResponse,
+    tags=["money"],
+    summary="What the cafe took, by day and method, and what cannot be summed.",
+)
+async def takings(
+    days: Annotated[int, Query(ge=1, le=365, description="Window length in days.")] = 30,
+) -> TakingsResponse:
+    return await in_session(lambda session: views.takings_view(session, days=days))
+
+
+# --------------------------------------------------------------------------
+# confirmations -- the operator path for the doctor's two standing warnings
+# --------------------------------------------------------------------------
+
+
+@router.post(
+    "/api/suppliers/{supplier_id}/confirm",
+    response_model=SupplierTermsResponse,
+    tags=["suppliers"],
+    summary="Record terms confirmed WITH the supplier, clearing the invented-terms flag.",
+)
+async def confirm_supplier(supplier_id: int, body: SupplierTermsIn) -> SupplierTermsResponse:
+    return await in_session(
+        lambda session: views.confirm_supplier_terms_view(
+            session, supplier_id=supplier_id, body=body
+        )
+    )
+
+
+@router.post(
+    "/api/ingredients/{ingredient_id}/shelf-life",
+    response_model=ShelfLifeResponse,
+    tags=["stock"],
+    summary="Record a shelf life somebody checked. Changes order size from the next run.",
+)
+async def confirm_shelf_life_route(ingredient_id: int, body: ShelfLifeIn) -> ShelfLifeResponse:
+    return await in_session(
+        lambda session: views.confirm_shelf_life_view(
+            session, ingredient_id=ingredient_id, body=body
+        )
     )
 
 

@@ -39,6 +39,7 @@ from cafeops.db.models.enums import (
 from cafeops.db.models.ingredient import Ingredient, IngredientPrice
 from cafeops.db.models.menu import ManualRecipeLine, MenuItem, MenuItemCost
 from cafeops.db.models.par import ParLevel
+from cafeops.db.models.payment import PaymentDay
 from cafeops.db.models.purchase_order import ChecklistResponse, POLine, PurchaseOrder
 from cafeops.db.models.sale import Sale
 from cafeops.db.models.stock import DriftObservation, StockCount, StockMovement
@@ -69,6 +70,7 @@ __all__ = [
     "POLine",
     "POStatus",
     "ParLevel",
+    "PaymentDay",
     "PriceSource",
     "PurchaseOrder",
     "Sale",

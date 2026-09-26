@@ -1,0 +1,678 @@
+---
+import Base from '../layouts/Base.astro';
+import OpenNow from '../components/OpenNow.astro';
+import Icon from '../components/Icon.astro';
+import Slot from '../components/Slot.astro';
+import { info } from '../lib/data';
+import { clock, WEEKDAYS } from '../lib/format';
+
+const mapsUrl =
+  'https://www.google.com/maps/search/?api=1&query=Sasha%27s+Corner%2C+23+Commercial+Street%2C+Dundee+DD1+3DD';
+const phone = info?.phone ?? '';
+const tel = phone ? `+44${phone.replace(/\s+/g, '').replace(/^0/, '')}` : '';
+
+const topics = [
+  ['general', 'General question'],
+  ['order', 'Order ahead'],
+  ['events', 'Events & private hire'],
+  ['feedback', 'Feedback'],
+  ['press', 'Press'],
+  ['jobs', 'Jobs'],
+] as const;
+---
+
+<Base
+  title="Opening hours & directions · Sasha's Corner, Dundee"
+  description="23 Commercial Street, Dundee DD1 3DD, a 10-minute walk from the station. Open Mon–Sat 9am–7pm, Sun 9am–5pm. Directions, phone number and contact form."
+>
+  <!-- Header ------------------------------------------------------------- -->
+  <section class="vhead wrap" aria-labelledby="visit-title">
+    <div class="vhead__copy">
+      <p class="label">Visit</p>
+      <h1 id="visit-title">On Commercial Street, <span class="soft">in the middle of Dundee.</span></h1>
+      <p class="vhead__lede">
+        Dine in, take away, or come and read the drinks board. No booking needed — though you can{' '}
+        <a href="/book">book a table</a> if you'd like one kept for you.
+      </p>
+
+      {
+        info && (
+          <address class="vhead__addr">
+            <span>{info.address.line1}</span>
+            <span>
+              {info.address.city} <span class="num">{info.address.postcode}</span>
+            </span>
+          </address>
+        )
+      }
+      {
+        tel && (
+          <p class="vhead__phone">
+            <a href={`tel:${tel}`} class="num">{phone}</a>
+          </p>
+        )
+      }
+      <OpenNow />
+      <div class="vhead__cta">
+        <a class="btn btn--caramel" href={mapsUrl} target="_blank" rel="noopener">
+          <Icon name="pin" /> Directions <span class="sr-only">(opens Google Maps)</span>
+        </a>
+        <a class="btn btn--ghost" href="#contact">Send a message</a>
+      </div>
+    </div>
+
+    <figure class="loc">
+      <!--
+        Stylised locator. Street geometry simplified from OpenStreetMap (Overpass API,
+        ways within 400 m of the café's coordinates): Commercial Street runs from Dock Street
+        north-west past the High Street / Seagate crossing and Murraygate to Meadowside.
+      -->
+      <svg viewBox="30 0 320 360" role="img" aria-labelledby="loc-title loc-desc">
+        <title id="loc-title">Locator sketch</title>
+        <desc id="loc-desc">
+          Sasha's Corner is on Commercial Street, between the High Street and Seagate crossing and Dock Street.
+          Murraygate crosses Commercial Street just to the north-west.
+        </desc>
+        <g class="loc__streets" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path id="st-high" d="M58 298 L125 221 L166 191" />
+          <path id="st-seagate" d="M166 191 L236 53 L318 0" />
+          <path id="st-murraygate" d="M126 213 L134 170 L151 36 L154 0" />
+          <path id="st-dock" d="M140 358 L203 303 L258 240 L340 168" />
+          <path id="st-comm-n" d="M40 98 L69 119 L166 191" />
+        </g>
+        <path class="loc__main" id="st-comm" d="M69 119 L166 191 L258 240" fill="none" />
+        <g class="loc__labels">
+          <text><textPath href="#st-comm" startOffset="6%">Commercial Street</textPath></text>
+          <text><textPath href="#st-high" startOffset="10%">High Street</textPath></text>
+          <text><textPath href="#st-dock" startOffset="14%">Dock Street</textPath></text>
+          <text transform="translate(186 118) rotate(-63)">Seagate</text>
+          <text transform="translate(132 132) rotate(-83)">Murraygate</text>
+        </g>
+        <g class="loc__cafe">
+          <circle cx="216" cy="210" r="17" class="loc__halo" />
+          <circle cx="216" cy="210" r="8" class="loc__dot" />
+          <text x="236" y="222" class="loc__name">Sasha's Corner</text>
+        </g>
+        <text x="346" y="352" class="loc__river" text-anchor="end">River Tay ↓</text>
+      </svg>
+      <figcaption>
+        <span>Not to scale</span>
+        <span>Dundee station: about <span class="num">700</span> m on foot</span>
+      </figcaption>
+    </figure>
+  </section>
+
+  <!-- What you're looking for ------------------------------------------- -->
+  <section class="vphotos wrap" aria-label="What to look for">
+    <figure class="vphotos__front" data-reveal>
+      <Slot key="visit.storefront" sizes="(max-width: 760px) 100vw, 40vw" />
+      <figcaption>Look for the logo line on the window.</figcaption>
+    </figure>
+    <figure class="vphotos__door" data-reveal>
+      <Slot key="visit.door" sizes="(max-width: 760px) 100vw, 56vw" />
+      <figcaption>And this is what you walk into.</figcaption>
+    </figure>
+  </section>
+
+  <!-- Hours + getting here ---------------------------------------------- -->
+  <section class="vinfo" aria-label="Opening hours and getting here">
+    <div class="wrap vinfo__grid">
+      {
+        info && (
+          <table class="hours" data-reveal>
+            <caption>
+              <h2>Opening hours</h2>
+            </caption>
+            <tbody>
+              {info.hours.map((h) => (
+                <tr data-weekday={h.weekday}>
+                  <th scope="row">{WEEKDAYS[h.weekday]}</th>
+                  <td class="num">{h.closed ? 'Closed' : `${clock(h.open)} – ${clock(h.close)}`}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )
+      }
+
+      <div class="getting" data-reveal>
+        <h2>Getting here</h2>
+        <p>
+          We're in the city centre, on Commercial Street between Dock Street and the High Street crossing.
+          Murraygate crosses it just up the street.
+        </p>
+        <p>
+          From Dundee station it's about a <span class="num">10</span>-minute walk — roughly{' '}
+          <span class="num">700</span> m on foot.
+        </p>
+        <!-- OWNER TO CONFIRM: parking nearby, step-free access / wheelchair access, toilets. Not stated until confirmed. -->
+        <p>Can't make it in? We're on Deliveroo and Just Eat.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact ------------------------------------------------------------- -->
+  <section class="contact wrap" id="contact" aria-labelledby="contact-title" tabindex="-1">
+    <div class="contact__intro">
+      <p class="label">Get in touch</p>
+      <h2 id="contact-title">Send us a message.</h2>
+      <p>
+        Messages reach the team directly and we reply by email. For anything today, calling is quicker{
+          tel && (
+            <>
+              {' '}— <a href={`tel:${tel}`} class="num">{phone}</a>
+            </>
+          )
+        }.
+      </p>
+    </div>
+
+    <form class="cform" id="contact-form" novalidate>
+      <label class="field">
+        <span>Name</span>
+        <input class="input" name="name" autocomplete="name" required maxlength="80" aria-describedby="err-name" />
+        <small class="ferr" id="err-name" data-err="name"></small>
+      </label>
+      <label class="field">
+        <span>Email</span>
+        <input class="input" name="email" type="email" autocomplete="email" required aria-describedby="err-email" />
+        <small class="ferr" id="err-email" data-err="email"></small>
+      </label>
+      <label class="field field--wide">
+        <span>What's it about?</span>
+        <select class="input" name="topic" aria-describedby="err-topic">
+          {topics.map(([v, l]) => <option value={v}>{l}</option>)}
+        </select>
+        <small class="ferr" id="err-topic" data-err="topic"></small>
+      </label>
+      <label class="field field--wide">
+        <span>Message</span>
+        <textarea
+          class="input"
+          name="message"
+          rows="6"
+          required
+          minlength="10"
+          maxlength="2000"
+          aria-describedby="msg-count err-message"></textarea>
+        <span class="fmeta">
+          <small class="ferr" id="err-message" data-err="message"></small>
+          <small class="count num" id="msg-count" data-count>0 / 2000</small>
+        </span>
+      </label>
+      <label class="hp" aria-hidden="true">Website <input name="website" tabindex="-1" autocomplete="off" /></label>
+
+      <p class="cform__err" data-error role="alert" hidden></p>
+      <div class="cform__go">
+        <button class="btn btn--caramel" type="submit" data-submit>
+          Send message <span class="arrow" aria-hidden="true">→</span>
+        </button>
+      </div>
+    </form>
+
+    <div class="sent" data-sent hidden tabindex="-1" role="status">
+      <p class="label">Sent</p>
+      <h3>Thanks — we've got it.</h3>
+      <p>The team will reply to <strong data-sent-email></strong> by email.</p>
+    </div>
+  </section>
+</Base>
+
+<script>
+  // Today's row in the hours table, on the café's clock.
+  const wd = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].indexOf(
+    new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', weekday: 'short' }).format(new Date()),
+  );
+  document.querySelector(`.hours tr[data-weekday="${wd}"]`)?.classList.add('is-today');
+
+  // ---- contact form ------------------------------------------------------
+  const TOPICS = ['general', 'order', 'events', 'feedback', 'press', 'jobs'];
+  const MIN = 10;
+  const MAX = 2000;
+
+  const form = document.querySelector<HTMLFormElement>('#contact-form')!;
+  const sent = document.querySelector<HTMLElement>('[data-sent]')!;
+  const submit = form.querySelector<HTMLButtonElement>('[data-submit]')!;
+  const errBox = form.querySelector<HTMLElement>('[data-error]')!;
+  const msg = form.querySelector<HTMLTextAreaElement>('textarea[name="message"]')!;
+  const count = form.querySelector<HTMLElement>('[data-count]')!;
+  const topic = form.querySelector<HTMLSelectElement>('select[name="topic"]')!;
+
+  const wanted = new URLSearchParams(location.search).get('topic');
+  if (wanted && TOPICS.includes(wanted)) topic.value = wanted;
+
+  const updateCount = () => {
+    const n = msg.value.trim().length;
+    count.textContent = `${n} / ${MAX}`;
+    count.classList.toggle('is-over', n > MAX);
+  };
+  msg.addEventListener('input', updateCount);
+  updateCount();
+
+  function setErr(field: string, text: string) {
+    const el = form.querySelector<HTMLElement>(`[data-err="${field}"]`);
+    const input = form.querySelector<HTMLElement>(`[name="${field}"]`);
+    if (el) el.textContent = text;
+    if (input) input.setAttribute('aria-invalid', text ? 'true' : 'false');
+  }
+  function clearErrs() {
+    for (const f of ['name', 'email', 'topic', 'message']) setErr(f, '');
+    errBox.hidden = true;
+  }
+
+  function check(): Record<string, string> {
+    const f = new FormData(form);
+    const e: Record<string, string> = {};
+    const name = String(f.get('name') ?? '').trim();
+    const email = String(f.get('email') ?? '').trim();
+    const m = String(f.get('message') ?? '').trim();
+    if (!name) e.name = 'Please tell us your name.';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = 'Please enter an email address we can reply to.';
+    if (!TOPICS.includes(String(f.get('topic')))) e.topic = 'Please pick a topic.';
+    if (m.length < MIN) e.message = `A little more, please — at least ${MIN} characters.`;
+    else if (m.length > MAX) e.message = `That's over ${MAX} characters — please shorten it.`;
+    return e;
+  }
+
+  // Re-check a field once the visitor has left it, so errors don't nag mid-typing.
+  form.addEventListener('focusout', (ev) => {
+    const t = ev.target as HTMLInputElement;
+    if (!t.name || t.name === 'website' || !t.value) return;
+    setErr(t.name, check()[t.name] ?? '');
+  });
+
+  function showError(text: string) {
+    errBox.textContent = text;
+    errBox.hidden = false;
+  }
+
+  form.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    clearErrs();
+    const errs = check();
+    if (Object.keys(errs).length) {
+      for (const [k, v] of Object.entries(errs)) setErr(k, v);
+      form.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+      return;
+    }
+    const f = new FormData(form);
+    const payload = {
+      name: String(f.get('name')).trim(),
+      email: String(f.get('email')).trim(),
+      topic: String(f.get('topic')),
+      message: String(f.get('message')).trim(),
+      website: String(f.get('website') ?? ''),
+    };
+    submit.disabled = true;
+    submit.classList.add('is-busy');
+    try {
+      const r = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (r.status === 201 || r.ok) {
+        sent.querySelector('[data-sent-email]')!.textContent = payload.email;
+        form.hidden = true;
+        sent.hidden = false;
+        sent.focus();
+        return;
+      }
+      const body = await r.json().catch(() => ({}));
+      if (r.status === 429) {
+        showError('Too many messages from this connection — please try again later.');
+      } else if (r.status === 422 && Array.isArray(body.detail)) {
+        let placed = false;
+        for (const d of body.detail as { loc?: unknown[]; msg?: string }[]) {
+          const field = String(d.loc?.[d.loc.length - 1] ?? '');
+          if (['name', 'email', 'topic', 'message'].includes(field)) {
+            setErr(field, (d.msg ?? 'Please check this field.').replace(/^Value error, /, ''));
+            placed = true;
+          }
+        }
+        if (!placed) showError('Something in the form needs another look.');
+        form.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+      } else {
+        showError(typeof body.detail === 'string' ? body.detail : 'Something went wrong — please try again.');
+      }
+    } catch {
+      showError('Could not reach the café — check your connection and try again.');
+    } finally {
+      submit.disabled = false;
+      submit.classList.remove('is-busy');
+    }
+  });
+</script>
+
+<style>
+  .label {
+    color: var(--coffee);
+  }
+  .soft {
+    font-family: var(--font-light);
+    font-weight: 200;
+    font-stretch: 100%;
+    letter-spacing: -0.03em;
+  }
+
+  /* header */
+  .vhead {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: clamp(36px, 6vw, 96px);
+    align-items: center;
+    padding-block: clamp(48px, 7vw, 96px) clamp(56px, 8vw, 110px);
+  }
+  .vhead h1 {
+    font-size: var(--step-5);
+    margin-top: 14px;
+  }
+  .vhead__lede {
+    margin-top: 18px;
+    max-width: 46ch;
+    font-size: var(--step-1);
+    font-weight: 300;
+    color: var(--olive-900);
+  }
+  .vhead__lede a {
+    color: var(--coffee);
+  }
+  .vhead__addr {
+    display: grid;
+    margin-top: clamp(28px, 4vw, 40px);
+    font-style: normal;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-stretch: 88%;
+    font-size: var(--step-2);
+    line-height: 1.1;
+  }
+  .vhead__phone {
+    margin: 8px 0 14px;
+    font-size: var(--step-1);
+  }
+  .vhead__phone a {
+    color: var(--coffee);
+    text-decoration: none;
+    border-bottom: 1px solid currentColor;
+  }
+  .vhead__cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 26px;
+  }
+  @media (max-width: 900px) {
+    .vhead {
+      grid-template-columns: 1fr;
+    }
+    .loc {
+      max-width: 460px;
+    }
+  }
+
+  /* locator */
+  .loc {
+    margin: 0;
+    padding: clamp(12px, 2vw, 20px);
+    background: var(--oat);
+    border-radius: var(--radius-m);
+  }
+  .loc svg {
+    width: 100%;
+    height: auto;
+  }
+  .loc__streets path {
+    stroke: #fbfaf6;
+    stroke-width: 11;
+  }
+  .loc__main {
+    stroke: var(--olive-700);
+    stroke-width: 13;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .loc__labels text {
+    font: 400 10.5px var(--font-text);
+    letter-spacing: 0.04em;
+    fill: var(--olive-900);
+    dominant-baseline: central;
+  }
+  .loc__labels textPath[href='#st-comm'] {
+    fill: var(--paper);
+    font-weight: 500;
+  }
+  .loc__dot {
+    fill: var(--caramel);
+    stroke: var(--ink);
+    stroke-width: 1.5;
+  }
+  .loc__halo {
+    fill: color-mix(in oklab, var(--caramel) 30%, transparent);
+    transform-origin: 216px 210px;
+    animation: halo 2.8s var(--ease-out) infinite;
+  }
+  @keyframes halo {
+    0% {
+      transform: scale(0.6);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1.5);
+      opacity: 0;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .loc__halo {
+      animation: none;
+    }
+  }
+  .loc__name {
+    font: 600 15px var(--font-display);
+    font-stretch: 88%;
+    fill: var(--ink);
+  }
+  .loc__river {
+    font: 400 10.5px var(--font-text);
+    letter-spacing: 0.04em;
+    fill: var(--olive-700);
+  }
+  .loc figcaption {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 4px 16px;
+    margin-top: 8px;
+    font-size: 0.8rem;
+    color: var(--olive-700);
+  }
+
+  /* photos: the front, then the room from the door */
+  .vphotos {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: clamp(16px, 3vw, 40px);
+    align-items: end;
+    padding-bottom: clamp(56px, 8vw, 110px);
+  }
+  .vphotos figure {
+    margin: 0;
+  }
+  .vphotos figcaption {
+    margin-top: 10px;
+    font-size: var(--step--1);
+    color: var(--olive-700);
+  }
+  @media (max-width: 760px) {
+    .vphotos {
+      grid-template-columns: 1fr;
+    }
+    .vphotos__front {
+      width: 78%;
+    }
+  }
+
+  /* hours + getting here */
+  .vinfo {
+    background: var(--olive-700);
+    color: var(--on-dark);
+    padding-block: clamp(64px, 9vw, 120px);
+  }
+  .vinfo__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: clamp(40px, 7vw, 120px);
+    align-items: start;
+  }
+  .vinfo h2 {
+    font-size: var(--step-3);
+  }
+  .hours {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .hours caption {
+    text-align: left;
+    padding-bottom: 18px;
+  }
+  .hours th,
+  .hours td {
+    padding: 12px 0;
+    border-bottom: 1px solid color-mix(in oklab, var(--paper) 20%, transparent);
+    font-weight: 300;
+    text-align: left;
+  }
+  .hours td {
+    text-align: right;
+  }
+  .hours tr.is-today th,
+  .hours tr.is-today td {
+    font-weight: 500;
+    color: var(--paper);
+  }
+  .hours tr.is-today th::after {
+    content: ' · today';
+    color: var(--caramel);
+    font-weight: 400;
+  }
+  .getting {
+    display: grid;
+    gap: 16px;
+    max-width: 48ch;
+  }
+  .getting h2 {
+    margin-bottom: 4px;
+  }
+  .getting p {
+    font-weight: 300;
+    color: var(--on-dark);
+  }
+  @media (max-width: 800px) {
+    .vinfo__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* contact */
+  .contact {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: clamp(32px, 6vw, 96px);
+    align-items: start;
+    padding-block: clamp(64px, 9vw, 120px);
+    outline: none;
+  }
+  .contact__intro h2 {
+    font-size: var(--step-4);
+    margin-block: 14px 18px;
+  }
+  .contact__intro p:last-child {
+    color: var(--olive-900);
+    max-width: 40ch;
+  }
+  .contact__intro a {
+    color: var(--coffee);
+  }
+  .cform {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px 16px;
+  }
+  .field--wide,
+  .cform__err,
+  .cform__go {
+    grid-column: 1 / -1;
+  }
+  select.input {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23474531' stroke-width='1.5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 40px;
+  }
+  .ferr {
+    min-height: 0;
+    font-size: var(--step--1);
+    color: var(--coffee);
+  }
+  .ferr:empty {
+    display: none;
+  }
+  .fmeta {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .count {
+    margin-left: auto;
+    font-size: var(--step--1);
+    color: var(--olive-700);
+  }
+  .count:global(.is-over) {
+    color: var(--coffee);
+    font-weight: 600;
+  }
+  .cform__err {
+    padding: 10px 12px;
+    border-radius: var(--radius-s);
+    background: color-mix(in oklab, var(--caramel) 25%, transparent);
+    font-size: var(--step--1);
+  }
+  .cform__go .btn:global(.is-busy) {
+    opacity: 0.7;
+    cursor: progress;
+  }
+  .sent {
+    padding: clamp(28px, 5vw, 48px);
+    border-radius: var(--radius-m);
+    background: var(--oat);
+    outline: none;
+  }
+  .sent h3 {
+    font-size: var(--step-3);
+    margin-block: 12px 12px;
+  }
+  .sent p:last-child {
+    color: var(--olive-900);
+  }
+  @media (max-width: 900px) {
+    .contact {
+      grid-template-columns: 1fr;
+    }
+  }
+  @media (max-width: 560px) {
+    .cform {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* QA pass: minimum text size and tap targets */
+  .loc figcaption {
+    font-size: var(--step--1);
+  }
+  .vhead__phone a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+</style>

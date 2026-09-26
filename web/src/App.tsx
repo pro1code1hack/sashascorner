@@ -1,9 +1,15 @@
 import { useState } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { LIVE, getKey } from './lib/api'
-import { KeyState, Masthead, Unlock, type ScreenName } from './components/shell'
+import { Shell, Unlock, type ScreenName } from './components/shell'
 import { Composition } from './screens/Composition'
 import { Stock } from './screens/Stock'
+import { Today } from './screens/Today'
+import { Orders } from './screens/Orders'
+import { Margin } from './screens/Margin'
+import { Channels } from './screens/Channels'
+import { Money } from './screens/Money'
+import { Proposals } from './screens/Proposals'
 
 const client = new QueryClient({
   defaultOptions: {
@@ -19,16 +25,23 @@ const client = new QueryClient({
 })
 
 export function App() {
-  const [screen, setScreen] = useState<ScreenName>('composition')
+  const [screen, setScreen] = useState<ScreenName>('today')
   const [unlocked, setUnlocked] = useState(!LIVE || getKey() !== null)
 
   if (!unlocked) return <Unlock onDone={() => setUnlocked(true)} />
 
   return (
     <QueryClientProvider client={client}>
-      <Masthead screen={screen} onScreen={setScreen} />
-      {screen === 'composition' ? <Composition /> : <Stock />}
-      <KeyState />
+      <Shell screen={screen} onScreen={setScreen}>
+        {screen === 'composition' && <Composition />}
+        {screen === 'stock' && <Stock />}
+        {screen === 'today' && <Today />}
+        {screen === 'orders' && <Orders />}
+        {screen === 'margin' && <Margin />}
+        {screen === 'channels' && <Channels />}
+        {screen === 'proposals' && <Proposals />}
+        {screen === 'money' && <Money />}
+      </Shell>
     </QueryClientProvider>
   )
 }

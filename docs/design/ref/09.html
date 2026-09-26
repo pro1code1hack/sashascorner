@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<title>Delivery apps</title>
+<script src="5bba42c9-6a4d-45c7-bade-09f17517081d"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>/* vietnamese */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("55f49002-9735-4837-9795-1488eeca8a00") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("c7cc885f-42b8-4889-8ff2-fa66b15663dc") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("ffa6e738-c23e-46d0-b217-d9495975883a") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("55f49002-9735-4837-9795-1488eeca8a00") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("c7cc885f-42b8-4889-8ff2-fa66b15663dc") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("ffa6e738-c23e-46d0-b217-d9495975883a") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("738f5ac1-de3b-4582-8462-9b7015d1e3fd") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("60578762-ca83-409c-afe0-440365a0fa8f") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("a11e0f3a-32b6-4088-bdab-fb3a8287bdd0") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("ff4ad29d-6a76-4720-bfd6-92752933f1fd") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("3809a805-3507-4ca8-8606-53689e6e91c2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("f0170bb1-4509-40d9-9076-de53cecfb6be") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("b29bedf9-5131-49b6-b693-cd3863d080b7") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("8cc6a67e-3c81-48e8-af32-f683a2c90c13") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("b257b979-8a32-4c72-b6b0-fdf42e9ba5a3") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("651d1cfc-3111-42d5-af24-f7d150a66a84") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("38401f0f-a448-44be-82f8-fe0e4d2bf335") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("6b1545ed-a13e-4b9c-8308-5515690cf82d") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("79492143-9c84-434c-872a-7876655b1767") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("38401f0f-a448-44be-82f8-fe0e4d2bf335") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("6b1545ed-a13e-4b9c-8308-5515690cf82d") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("79492143-9c84-434c-872a-7876655b1767") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("38401f0f-a448-44be-82f8-fe0e4d2bf335") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("6b1545ed-a13e-4b9c-8308-5515690cf82d") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("79492143-9c84-434c-872a-7876655b1767") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("38401f0f-a448-44be-82f8-fe0e4d2bf335") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("6b1545ed-a13e-4b9c-8308-5515690cf82d") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("79492143-9c84-434c-872a-7876655b1767") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+</style>
+<style>
+body{margin:0;background:#e9e9ec;font-family:'Public Sans',system-ui,sans-serif;color:#18181b;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+h1,h2,h3,h4,p{margin:0}
+.fg{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.disp{font-family:'Fraunces',Georgia,serif}
+.railh{font:600 11px/1.4 'IBM Plex Mono',monospace;letter-spacing:.05em;color:#71717a;padding-bottom:9px;border-bottom:1px solid #d4d4d8}
+.ar{display:flex;gap:9px;padding:9px 0;border-bottom:1px solid #ececef}
+.num{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:9px;background:#4f35c9;color:#fff;font:500 10px/1 'IBM Plex Mono',monospace;flex:0 0 17px;margin-top:2px}
+.fld{font:500 11.5px/1.5 'IBM Plex Mono',monospace;color:#4f35c9;word-break:break-word}
+.txt{font:400 11.5px/1.6 'Public Sans',sans-serif;color:#52525b;margin-top:2px}
+.ex{font:400 10.5px/1.5 'IBM Plex Mono',monospace;color:#18181b;background:#f4f4f5;border:1px solid #e4e4e7;border-radius:4px;padding:1px 5px;display:inline-block;margin-top:4px}
+.src{font:400 10.5px/1.5 'IBM Plex Mono',monospace;color:#a1a1aa;margin-top:3px}
+.mk{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:8px;background:#ece8fb;color:#4f35c9;font:500 9.5px/1 'IBM Plex Mono',monospace;border:1px solid #cfc4f5;flex:0 0 16px}
+.nav{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:8px;font-size:12.5px;color:#52525b}
+.navon{background:#ece8fb;color:#2e1f7d;font-weight:600}
+.navgrp{font:500 10.5px/1 'Public Sans',sans-serif;letter-spacing:.02em;color:#a1a1aa;padding:0 10px;margin:18px 0 7px}
+.card{background:#fff;border:1px solid #e7e7ea;border-radius:12px}
+.pill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:3px 9px;font:600 11px/1.5 'Public Sans',sans-serif;white-space:nowrap}
+.p-ok{background:#e6f4ed;color:#0f6b46}
+.p-warn{background:#fdf1dc;color:#8a5300}
+.p-bad{background:#fdeceb;color:#b42318}
+.p-mut{background:#f4f4f5;color:#52525b}
+.dot{width:6px;height:6px;border-radius:4px;flex:0 0 6px}
+.th{font:500 11px/1.4 'Public Sans',sans-serif;color:#8b8b93}
+.est{text-decoration:underline dotted #a1a1aa;text-underline-offset:3px}
+.btn{display:inline-flex;align-items:center;gap:7px;border-radius:9px;padding:8px 14px;font:600 12.5px/1 'Public Sans',sans-serif;border:1px solid #e0e0e4;background:#fff;color:#27272a}
+.btn-pri{background:#4f35c9;border-color:#4f35c9;color:#fff}
+.tab{border-radius:8px;padding:6px 11px;font:500 12px/1.4 'Public Sans',sans-serif;color:#71717a;border:1px solid transparent}
+.tabon{background:#18181b;color:#fff;border-color:#18181b}
+.frame{background:#fff;border:1px solid #d9d9de;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(24,24,27,.06)}
+.blab{font:500 11px/1 'IBM Plex Mono',monospace;color:#8b8b93;margin-bottom:9px;letter-spacing:.03em}
+.gh{font:500 11px/1 'Public Sans',sans-serif;color:#8b8b93;padding:0 8px;display:flex;align-items:center;height:30px;border-right:1px solid #ececef;box-sizing:border-box;background:#fafafa}
+.gc{font:400 12px/1 'Public Sans',sans-serif;color:#27272a;padding:0 8px;display:flex;align-items:center;height:34px;border-right:1px solid #f2f2f4;border-bottom:1px solid #f2f2f4;box-sizing:border-box;overflow:hidden;white-space:nowrap}
+.gn{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums;justify-content:flex-end}
+.grow{display:flex}
+.gsel{background:#efecfb;box-shadow:inset 0 0 0 1px #b9abf0}
+</style>
+</helmet>
+<div style="width: 1800px; height: 1040px; box-sizing: border-box; padding: 36px; display: flex; flex-direction: row; gap: 44px; background: #e9e9ec">
+<div style="flex: 0 0 1248px; display: flex; flex-direction: column">
+<div class="blab">Channels · Deliveroo and Just Eat are an advertising platform as much as a sales channel</div>
+<div class="frame" style="flex-grow: 1; display: flex; flex-direction: row">
+<div style="flex: 0 0 216px; background: #fafafa; border-right: 1px solid #e7e7ea; padding: 20px 12px; display: flex; flex-direction: column">
+<a href="Main.dc.html" style="display: block; padding: 0 10px 4px"><div class="disp" style="font-size: 17px; font-weight: 600; letter-spacing: -.01em">Sasha’s Corner</div><div style="font-size: 11px; color: #a1a1aa; margin-top: 1px">Dundee</div></a>
+<div class="navgrp">Daily</div>
+<a class="nav" href="Today.dc.html"><svg width="16" height="16" sc-camel-view-box="0 0 16 16" fill="none" stroke="#a1a1aa" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="3.5" width="11" height="10" rx="2"></rect><path d="M2.5 6.5h11M5.5 2v3M10.5 2v3"></path></svg><span>Today</span></a>
+<a class="nav" href="Stock.dc.html"><svg width="16" height="16" sc-camel-view-box="0 0 16 16" fill="none" stroke="#a1a1aa" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 1.8 14 5v6l-6 3.2L2 11V5z"></path><path d="M2 5l6 3.2L14 5M8 8.2v6"></path></svg><span>Stock</span></a>
+<a class="nav" href="Orders.dc.html"><svg width="16" height="16" sc-camel-view-box="0 0 16 16" fill="none" stroke="#a1a1aa" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="2.5" width="10" height="11.5" rx="2"></rect><path d="M6 2v1.5h4V2M5.5 7h5M5.5 10h3"></path></svg><span>Orders</span></a>
+<div class="navgrp">Decide</div>
+<a class="nav" href="Composition.dc.html"><svg width="16" height="16" sc-camel-view-box="0 0 16 16" fill="none" stroke="#a1a1aa" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 1.8 14.5 5 8 8.2 1.5 5z"></path><path d="M1.5 8.6 8 11.8l6.5-3.2M1.5 11.6 8 14.8l6.5-3.2"></path></svg><span>Composition</span></a>
+<a class="nav" href="Ingredients.dc.html"><svg width="16" height="16" sc-camel-view-box="0 0 16 16" fill="none" stroke="#a1a1aa" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.2" y="3.2" width="11.6" height="9.6" rx="1.8"></rect><path d="M2.2 6.4h11.6M6.4 6.4v6.4M2.2 9.6h11.6"></path></svg><span>Ingredients &amp; prices</span></a>
+<a class="nav" href="Margin.dc.html"><svg width="16" height="16" sc-camel-view-box="0 0 16 16" fill="none" stroke="#a1a1aa" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 13.5h11M4.5 13.5V9M8 13.5V4.5M11.5 13.5V7"></path></svg><span>Menu margin</span></a>
+<a class="nav navon" href="Channels.dc.html"><svg width="16" height="16" sc-camel-view-box="0 0 16 16" fill="none" stroke="#4f35c9" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="1.6"></circle><path d="M4.6 4.6a4.8 4.8 0 0 0 0 6.8M11.4 11.4a4.8 4.8 0 0 0 0-6.8M2.4 2.4a8 8 0 0 0 0 11.2M13.6 13.6a8 8 0 0 0 0-11.2"></path></svg><span>Channels</span></a>
+<a class="nav" href="Money.dc.html"><svg width="16" height="16" sc-camel-view-box="0 0 16 16" fill="none" stroke="#a1a1aa" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="6.2"></circle><path d="M9.8 5.2a2 2 0 0 0-3.4 1.4V10H5.6M5.6 8h3.2M5.6 10.8h4.8"></path></svg><span>Money &amp; P&amp;L</span></a>
+<div class="navgrp">Set up</div>
+<a class="nav" href="ImportReview.dc.html"><svg width="16" height="16" sc-camel-view-box="0 0 16 16" fill="none" stroke="#a1a1aa" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="2.5" width="11" height="11" rx="2.5"></rect><path d="m5.6 8.2 1.8 1.8 3.2-3.6"></path></svg><span>Import review</span></a>
+<div style="flex-grow: 1"></div>
+<div style="padding: 10px; border-top: 1px solid #ececef; font-size: 10.5px; line-height: 1.6; color: #a1a1aa">Wireframe. Every figure below is a real value from <span class="fg">cafeops api-fixtures</span>.</div>
+</div>
+<div style="flex-grow: 1; padding: 24px 26px; display: flex; flex-direction: column; gap: 14px; min-width: 0">
+
+  <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 20px">
+    <div>
+      <div style="display: flex; align-items: center; gap: 8px"><h1 class="disp" style="font-size: 27px; font-weight: 600; letter-spacing: -.015em">Delivery apps</h1><span class="mk">1</span></div>
+      <p style="font-size: 13px; color: #71717a; margin-top: 4px">28 Aug to 24 Sept · Deliveroo only · 9 days of data, uploaded by hand</p>
+    </div>
+    <span class="btn">Upload a new export</span>
+  </div>
+
+  <div style="display: flex; align-items: flex-start; gap: 9px; background: #fafafa; border: 1px solid #ececef; border-radius: 10px; padding: 11px 14px">
+    <span class="mk" style="margin-top: 1px">2</span>
+    <p style="font-size: 12.5px; line-height: 1.6; color: #52525b">Deliveroo will not give us an API — that is reserved for certified till integrators. Every figure here came out of the partner portal as a CSV, and each row remembers that it did.</p>
+  </div>
+
+  <div style="display: flex; gap: 14px">
+    <div class="card" style="flex-grow: 1; padding: 13px 15px"><span class="th">They took</span><div class="fg" style="font-size: 24px; font-weight: 500; margin-top: 6px">£587.17</div><div style="font-size: 11.5px; color: #8b8b93; margin-top: 4px">139 orders</div></div>
+    <div class="card" style="flex-grow: 1; padding: 13px 15px"><div style="display: flex; align-items: center; gap: 6px"><span class="th">Their cut</span><span class="mk">3</span></div><div class="fg" style="font-size: 24px; font-weight: 500; margin-top: 6px; color: #b42318">−£176.15</div><div style="font-size: 11.5px; color: #8b8b93; margin-top: 4px">30.0% commission</div></div>
+    <div class="card" style="flex-grow: 1; padding: 13px 15px"><span class="th">Ads</span><div class="fg" style="font-size: 24px; font-weight: 500; margin-top: 6px; color: #b42318">−£45.24</div><div style="font-size: 11.5px; color: #8b8b93; margin-top: 4px">brought in £148.75</div></div>
+    <div class="card" style="flex-grow: 1; padding: 13px 15px; border-color: #cfc4f5; background: #faf9ff"><div style="display: flex; align-items: center; gap: 6px"><span class="th">You kept</span><span class="mk">4</span></div><div class="fg" style="font-size: 24px; font-weight: 500; margin-top: 6px">£365.78</div><div style="font-size: 11.5px; color: #8b8b93; margin-top: 4px">62p in every pound</div></div>
+  </div>
+
+  <div style="display: flex; gap: 16px; flex-grow: 1; min-width: 0">
+    <div class="card" style="flex-grow: 1; padding: 15px 17px; display: flex; flex-direction: column">
+      <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 12px"><span class="th">Day by day, after their cut and the ads</span><span class="mk">5</span></div>
+      <div style="flex-grow: 1; display: flex; align-items: flex-end; gap: 9px; border-bottom: 1px solid #e0e0e4">
+        <span style="flex-grow: 1; height: 46%; background: #4f35c9; border-radius: 4px 4px 0 0; display: block"></span>
+        <span style="flex-grow: 1; height: 62%; background: #4f35c9; border-radius: 4px 4px 0 0; display: block"></span>
+        <span style="flex-grow: 1; height: 38%; background: #4f35c9; border-radius: 4px 4px 0 0; display: block"></span>
+        <span style="flex-grow: 1; height: 81%; background: #4f35c9; border-radius: 4px 4px 0 0; display: block"></span>
+        <span style="flex-grow: 1; height: 55%; background: #4f35c9; border-radius: 4px 4px 0 0; display: block"></span>
+        <span style="flex-grow: 1; height: 72%; background: #4f35c9; border-radius: 4px 4px 0 0; display: block"></span>
+        <span style="flex-grow: 1; height: 34%; background: #4f35c9; border-radius: 4px 4px 0 0; display: block"></span>
+        <span style="flex-grow: 1; height: 67%; background: #4f35c9; border-radius: 4px 4px 0 0; display: block"></span>
+        <span style="flex-grow: 1; height: 49%; background: #4f35c9; border-radius: 4px 4px 0 0; display: block"></span>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-top: 6px"><span style="font-size: 10.5px; color: #a1a1aa">28 Aug</span><span style="font-size: 10.5px; color: #a1a1aa">9 days reported, out of 28</span><span style="font-size: 10.5px; color: #a1a1aa">24 Sept</span></div>
+    </div>
+
+    <div style="flex: 0 0 420px; display: flex; flex-direction: column; gap: 13px">
+      <div class="card" style="padding: 14px 16px">
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 9px"><span class="th">Seen a lot, ordered rarely</span><span class="mk">6</span></div>
+        <p style="font-size: 12px; line-height: 1.65; color: #52525b">Eight items had enough views to judge. These sit near the top of their category and still convert below the 8.1% you average.</p>
+        <div style="display: flex; align-items: center; padding: 9px 0; border-bottom: 1px solid #f4f4f5; margin-top: 4px">
+          <div style="flex-grow: 1"><div style="font-size: 12.5px; font-weight: 600">Iced Latte M</div><div style="font-size: 10.5px; color: #8b8b93">312 views · 14 orders · 3rd in category</div></div>
+          <div class="fg" style="font-size: 12.5px; color: #b42318; font-weight: 600">4.5%</div>
+        </div>
+        <div style="display: flex; align-items: center; padding: 9px 0">
+          <div style="flex-grow: 1"><div style="font-size: 12.5px; font-weight: 600">Kyiv cake slice</div><div style="font-size: 10.5px; color: #8b8b93">188 views · 9 orders · 2nd in category</div></div>
+          <div class="fg" style="font-size: 12.5px; color: #b42318; font-weight: 600">4.8%</div>
+        </div>
+        <p style="font-size: 11px; color: #a1a1aa; margin-top: 9px; line-height: 1.6">Good position, poor photo or price. One item was too quiet to judge and is left out rather than guessed at.</p>
+      </div>
+
+      <div class="card" style="padding: 14px 16px">
+        <div style="display: flex; align-items: center; gap: 6px"><span class="th">What the export did not include</span><span class="mk">7</span></div>
+        <p style="font-size: 11.5px; line-height: 1.7; color: #71717a; margin-top: 7px">Just Eat has not been uploaded at all. Nine of 28 days came through for Deliveroo; the rest are missing, not zero, so nothing here is divided by 28.</p>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+
+<div style="flex: 0 0 432px; display: flex; flex-direction: column">
+<div class="railh">What each thing is · api field · where it comes from · real example</div>
+<div style="margin-top: 2px">
+<div class="ar"><span class="num">1</span><div style="min-width: 0"><div class="fld">GET /api/channels?days=30 → since, until, channels_present[], sources_present[]</div><div class="txt">Deliveroo and Just Eat sell food and sell placement. Both halves are on one screen because you cannot judge either alone.</div><div class="ex">2026-08-28 to 2026-09-24 · ["DELIVEROO"]</div><div class="src">channel_metric</div></div></div>
+<div class="ar"><span class="num">2</span><div style="min-width: 0"><div class="fld">sources_present[], performance[].sources[]</div><div class="txt">Every row records how it arrived. A <b>ChannelSource</b> protocol with a CSV implementation first and a browser agent second — and the agent falls back to CSV when the portal changes, which it will.</div><div class="ex">["CSV_UPLOAD"]</div><div class="src">channel_metric.source</div></div></div>
+<div class="ar"><span class="num">3</span><div style="min-width: 0"><div class="fld">commission_pence, commission_rate_bp</div><div class="txt">Basis points, integer, never a float. 2999 bp = 29.99%.</div><div class="ex">17615p of 58717p · 2999 bp</div><div class="src">channel_metric</div></div></div>
+<div class="ar"><span class="num">4</span><div style="min-width: 0"><div class="fld">net_pence, net_margin_bp, net_complete_days / net_incomplete_days</div><div class="txt">Gross − commission − ad spend. The net is only summed over days that reported <b>all three</b>; a day missing ad spend would flatter it.</div><div class="ex">36578p · 6229 bp · 9 complete days</div><div class="src">services/channels.py</div></div></div>
+<div class="ar"><span class="num">5</span><div style="min-width: 0"><div class="fld">performance[].daily[]</div><div class="txt">The only real time series in the product — which is why this is the one screen that draws one. A shape through a single point is decoration.</div><div class="ex">9 points · metric_date, gross_pence, orders</div><div class="src">channel_metric</div></div></div>
+<div class="ar"><span class="num">6</span><div style="min-width: 0"><div class="fld">findings[].gaps[] — best_rank, views, conversion_bp, benchmark_bp, lost_orders, lost_revenue_pence, sentence</div><div class="txt">Ranks well, converts badly: the actionable combination. The backend writes the sentence and sets the floor of 100 views.</div><div class="ex">benchmark 809 bp · 8 items considered · min_views 100</div><div class="src">channel_item_metric</div></div></div>
+<div class="ar"><span class="num">7</span><div style="min-width: 0"><div class="fld">findings[].caveats[], performance[].coverage[]</div><div class="txt">What the export did not contain, per field. Missing is missing — never averaged over days nobody reported.</div><div class="ex">"1 item(s) under 100 views — too quiet to judge"</div><div class="src">channel_metric coverage</div></div></div>
+</div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script="" data-props="{&quot;$preview&quot;:{&quot;width&quot;:1800,&quot;height&quot;:1040}}">
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+
+
+</body></html>

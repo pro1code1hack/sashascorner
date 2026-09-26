@@ -53,7 +53,7 @@ services:
       target: runtime
     image: cafeops:latest
     command: ["cafeops", "bot-run"]
-    restart: unless-stopped
+    restart: on-failure:3
     env_file: .env
     environment:
       CAFEOPS_DATABASE_URL: sqlite+pysqlite:////data/cafeops.db
@@ -63,10 +63,12 @@ services:
       api:
         condition: service_healthy
     # Long-polls Telegram outbound; nothing listens on a port in this container.
-    # `cafeops bot-run` exits 1 immediately if CAFEOPS_TELEGRAM_BOT_TOKEN /
-    # CAFEOPS_TELEGRAM_OWNER_CHAT_ID are unset -- `restart: unless-stopped` will then
-    # crash-loop it quietly until they're set, which is the correct failure mode for an
-    # optional-until-configured service, not a bug in this file.
+    # `cafeops bot-run` exits 78 (sysexits EX_CONFIG) immediately if
+    # CAFEOPS_TELEGRAM_BOT_TOKEN / CAFEOPS_TELEGRAM_OWNER_CHAT_ID are unset. `on-failure:3`
+    # rather than `unless-stopped` so it settles as Exited(78) instead of restarting
+    # forever: an endless loop is indistinguishable from a real crash and writes two log
+    # lines every couple of seconds over whatever else you were trying to read. Set the
+    # token in .env and `docker compose up -d bot` to start it.
 
   scheduler:
     build:
@@ -101,6 +103,11 @@ services:
     build:
       context: .
       target: caddy
+      args:
+        # The deployed app reads the LIVE database through this same Caddy rather
+        # than the recorded fixtures baked into the bundle. Blank it to ship a
+        # self-contained demo that needs no API and no password.
+        VITE_LIVE: "1"
     restart: unless-stopped
     env_file: .env
     ports:

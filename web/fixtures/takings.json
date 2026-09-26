@@ -1,0 +1,23 @@
+{
+  "since": "2026-09-11",
+  "until": "2026-09-24",
+  "window_days": 14,
+  "days_reported": 8,
+  "gross_pence": 143005,
+  "refunds_pence": 3200,
+  "fees_pence": 2025,
+  "discounts_pence": null,
+  "net_pence": null,
+  "transactions": null,
+  "by_method_pence": {
+    "CARD": 101270,
+    "CASH": 40235,
+    "VOUCHER": 1500
+  },
+  "caveats": [
+    "3 of 17 row(s) did not report discounts; the total is withheld rather than summed from the rows that did",
+    "3 of 17 row(s) did not report a transaction count; the total is withheld rather than summed from the rows that did",
+    "8 of 14 day(s) in the window reported at all; the rest are absent, not zero, so this cannot be read as a period total"
+  ],
+  "source_note": "Takings come from a back-office payment export (CSV). The Lightspeed payments endpoint has never been probed and its shape is unknown, so nothing here claims to have come from the POS API."
+}

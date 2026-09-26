@@ -18,6 +18,13 @@
 > agent as if present. When something here reads as a summary, check `ARCHITECTURE.md`
 > before assuming the detail never existed.
 
+
+> **Status markers in this file went stale once and misled an agent** (four features
+> marked NOT YET BUILT were fully implemented and wired). Verified 2026-09-23 against
+> the running system: backend is ~40k lines across domain/services/integrations/bot/
+> jobs/api/agent/seed/db, 35 CLI commands, 13 API routes. Before trusting a "not
+> built" here, grep for it.
+
 ---
 
 ## 1. Context
@@ -246,7 +253,8 @@ deseasonalises first. See `ARCHITECTURE.md` §8C.
 
 **Seasonal items** use the same calendar window from the previous season scaled by
 year-on-year growth. With no prior season, flat-rate from the first two weeks and mark
-low-confidence. NOT YET BUILT.
+low-confidence. **IMPLEMENTED** — `domain/forecast.py:seasonal_forecast`, called from
+`services/build_order.py:242`.
 
 Under 14 days of history: flat mean, flagged. The API returns the flag; the UI renders
 it **in place of** the number.
@@ -269,14 +277,18 @@ Below `min_order_pence` or `free_delivery_threshold_pence`, top up with
 **non-perishable** tier B items by shortest remaining cover. **Never top up with
 perishables** — that is buying waste to save a delivery fee (invariant 5).
 
-The shelf-life and season caps are **NOT YET BUILT**. `cover_days` and the top-up are.
+The shelf-life and season caps are **IMPLEMENTED** (`domain/ordering.py`,
+`CapKind`). A live draft today produces 2 shelf-life caps, 1 out-of-season skip and
+2 below-par-floor skips, each with its reason.
 
-### 5.5 Supplier split — PARTIALLY BUILT
+### 5.5 Supplier split — IMPLEMENTED
 
 One order per supplier with its own terms; re-source or defer a group short of its
 minimum; a Tesco `MANUAL` order only for what cannot wait. Output is a set of orders
 each with a one-line rationale, not one basket. Per-supplier grouping works; sourcing
-choice between alternates is **not yet built**.
+choice between alternates is **implemented** in `domain/sourcing.py` (677 lines); a
+live draft reports 4 `sourcing_choices`, including oat milk switched to Tesco at 24%
+cheaper with the forgone saving stated.
 
 ### 5.6 Cost, labour and true margin — IMPLEMENTED
 
@@ -325,8 +337,8 @@ cafeops/
     sourcing.py labour.py   (v2, not yet written)
   integrations/lightspeed/  channels/ (v2)  suppliers/
   agent/                    (v2, not yet written) runner.py tools.py policies.py
-  services/  bot/ (not built)  jobs/  api/ (not built)  seed/  cli.py
-migrations/  docs/phase1/  web/ (not built)
+  services/  bot/  jobs/  api/  seed/  cli.py
+migrations/  docs/phase1/  docs/phase4/  web/
 ```
 
 `domain/types.py` and `db/repositories/protocols.py` are **integrator-owned**. An agent
@@ -364,7 +376,7 @@ would spend money stops at a human.
 
 ---
 
-## 10. Frontend (not built)
+## 10. Frontend
 
 Daily interface is the **Telegram bot** (Russian). The web app is where you think about
 the business and configure composition; opened a few times a week on a laptop, must
@@ -431,6 +443,26 @@ GET /api/channels?days=30
                items: [{ menu_item_id, name, views, orders, rank_in_category }] }] }
 ```
 
+### 10.9b The two write endpoints (v2, not in the original spec)
+
+```ts
+POST /api/suppliers/:id/confirm      // terms confirmed WITH the supplier
+{ lead_time_days, delivery_weekdays[], min_order_pence, delivery_fee_pence,
+  cutoff_time, free_delivery_threshold_pence } ->
+{ supplier_id, name, was_placeholder, changed: string[], supplier }
+
+POST /api/ingredients/:id/shelf-life  // a shelf life somebody checked
+{ shelf_life_days, open_life_days, source: 'supplier'|'packaging' } ->
+{ ..., usable_days_after, usable_days_changed_by }
+```
+
+All of a supplier's terms go together: the cover window is computed from several
+at once, so a partial confirmation would clear the invented-terms warning on an
+order that is still partly fiction. `source: 'estimate'` is refused — confirming a
+guess as a guess quiets the warning without adding knowledge. `usable_days_changed_by`
+is the field worth rendering: shelf life caps order size, so the honest answer to
+"what did I just do" is *a single order may now cover three more days of trade*.
+
 ### 10.10 Frontend technical notes (from the spec — restored)
 
 - Build against a fixture layer; every screen renders from static JSON.
@@ -452,10 +484,16 @@ uv run cafeops import-legacy --dry-run | --commit
 uv run cafeops seed --demo
 uv run cafeops stock --as-of today [--tier A] [--batches]
 uv run cafeops drift [--backfill] [--tier A]     # REQUIRED after any reseed
+uv run cafeops supplier list | confirm <name> --lead-days N --days 2,5 ...
+uv run cafeops shelf-life list | set <name> --days N [--open-days N] --source supplier
+#   ^ the operator path for the doctor's two standing warnings. Before these existed
+#     the only remedy on offer was editing a seed file (ARCHITECTURE.md 8O).
 uv run cafeops count / expand / ingredients / info
 uv run cafeops simulate [--weeks 8] [--supplier X] [--cadence-days 7]
 uv run cafeops sync --fixtures --from D --to D
 uv run cafeops proposals / materialise-template / templates / components
+#   ^ proposals prints a stable `id`. Confirm by id: two pairs of proposals share
+#     a name and they are different recipes (ARCHITECTURE.md 8Q).
 uv run cafeops edit-recipe / cost-rollup / menu-costs / set-price
 uv run ruff check . && uv run ruff format --check .
 uv run mypy cafeops/domain/ cafeops/services/   # strict, zero type: ignore
@@ -473,7 +511,11 @@ uv run mypy cafeops/domain/ cafeops/services/   # strict, zero type: ignore
   E is held until A–D settle, as it consumes their output.
 - **Phase 2 —** wire together, resolve contract drift, real legacy import, shelf-life
   confirmation, deploy.
-- **Phase 3 —** frontend.
+- **Phase 3 — done.** Frontend: seven screens on one design system.
+- **Phase 4 — done.** The design was rejected twice and rebuilt from a *measured*
+  reference rather than an invented palette (ARCHITECTURE.md 8N, docs/phase4/DESIGN-LAW.md).
+  The deployed bundle reads the live API rather than fixtures; verified across
+  7 screens x 4 widths with zero horizontal page overflow and no console errors.
 
 ---
 
@@ -493,6 +535,12 @@ uv run mypy cafeops/domain/ cafeops/services/   # strict, zero type: ignore
     or emits a proposal, and every action is logged.
 11. All money in integer pence. A float touching money is a bug — `Qty` raises.
 12. The stock ledger is append-only. Corrections are `ADJUSTMENT` movements.
+    **One documented exception:** `services/rebuild_batches.py` with `purge=True`
+    (its default) deletes `EXPIRED` movements and all batches before replaying the
+    ledger. Those rows are *derived* — the expiry sweep computes them from batch
+    state — so recomputing them loses nothing recorded. It must never delete a
+    `SALE`, `RECEIPT`, `COUNT` or `ADJUSTMENT`, and today only `cafeops seed --demo`
+    calls it. A new caller of `rebuild_batches` is a decision, not a refactor.
 
 ---
 

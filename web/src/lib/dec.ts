@@ -173,3 +173,29 @@ export function trimQty(text: string): string {
   frac = frac.length > 0 ? `.${frac}` : ''
   return (neg_ && d.u !== 0n ? '−' : '') + whole + frac
 }
+
+/**
+ * One part's share of a whole, as a percentage string to one decimal.
+ *
+ * Integer arithmetic only: `part * 1000 / whole`, rounded half-up, then shifted.
+ * Money must never reach a float to be turned into a percentage -- and `0.1 + 0.2`
+ * is the reason this module exists.
+ *
+ * Returns null when the whole is zero or either side is missing: a share of
+ * nothing is not 0%, it is undefined, and rendering 0% would read as "this
+ * contributed nothing".
+ *
+ * Shares round to a tenth and so need not sum to exactly 100; say so wherever a
+ * column of them is shown.
+ */
+export function sharePct(part: number | null, whole: number | null): string | null {
+  if (part === null || whole === null || whole === 0) return null
+  const p = BigInt(Math.trunc(part))
+  const w = BigInt(Math.trunc(whole))
+  const sign = (p < 0n) !== (w < 0n) ? '-' : ''
+  const a = p < 0n ? -p : p
+  const b = w < 0n ? -w : w
+  // x10 for the decimal place, x100 for percent, +half for half-up rounding.
+  const scaled = (a * 1000n + b / 2n) / b
+  return `${sign}${scaled / 10n}.${scaled % 10n}%`
+}

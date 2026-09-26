@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<title>Ingredients &amp; prices</title>
+<script src="3874fa6d-b83e-4f0d-8807-65b798d9d30e"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>/* vietnamese */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("88d6f4a6-c80b-4e85-9071-afb0d26cfdaa") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("cdfbef8c-4f47-4936-9e0c-eab97252bbca") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("6bd3f0e0-f2fb-4332-9f2a-a4717f61a87c") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("88d6f4a6-c80b-4e85-9071-afb0d26cfdaa") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("cdfbef8c-4f47-4936-9e0c-eab97252bbca") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("6bd3f0e0-f2fb-4332-9f2a-a4717f61a87c") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("de3e22f3-046a-4b6a-ab3f-f6dd920b4694") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("1e8bd129-05d6-4f72-b337-ec5127140613") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("0114f656-9f1e-4926-bada-fe2fe78084da") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("21b365d0-018c-421f-9256-50715ce25baa") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("85796775-5a24-4fb4-a8e6-7ed15d7c32b7") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("1abc4df2-21df-4dd9-91f1-8dd9a09fcd81") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("70890f3e-4400-4760-ac72-72ed1c8b283a") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("55eae7dd-7828-402d-8077-a7fdefdef9b6") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("343f6a11-c1b7-416b-9ffe-8529485d2046") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("827d3729-2b38-4ddf-a974-5ca77b5742f2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("96b3530a-02da-4a05-89eb-1089e428c796") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("7b8c2d67-3e5f-40e6-8afa-a157714dbeae") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("d015cc4f-f193-4dfa-8cda-1fceb697db84") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("96b3530a-02da-4a05-89eb-1089e428c796") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("7b8c2d67-3e5f-40e6-8afa-a157714dbeae") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("d015cc4f-f193-4dfa-8cda-1fceb697db84") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("96b3530a-02da-4a05-89eb-1089e428c796") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("7b8c2d67-3e5f-40e6-8afa-a157714dbeae") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("d015cc4f-f193-4dfa-8cda-1fceb697db84") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("96b3530a-02da-4a05-89eb-1089e428c796") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("7b8c2d67-3e5f-40e6-8afa-a157714dbeae") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("d015cc4f-f193-4dfa-8cda-1fceb697db84") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+</style>
+<style>
+body{margin:0;background:#e9e9ec;font-family:'Public Sans',system-ui,sans-serif;color:#18181b;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+h1,h2,h3,h4,p{margin:0}
+.fg{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.disp{font-family:'Fraunces',Georgia,serif}
+.railh{font:600 11px/1.4 'IBM Plex Mono',monospace;letter-spacing:.05em;color:#71717a;padding-bottom:9px;border-bottom:1px solid #d4d4d8}
+.ar{display:flex;gap:9px;padding:9px 0;border-bottom:1px solid #ececef}
+.num{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:9px;background:#4f35c9;color:#fff;font:500 10px/1 'IBM Plex Mono',monospace;flex:0 0 17px;margin-top:2px}
+.fld{font:500 11.5px/1.5 'IBM Plex Mono',monospace;color:#4f35c9;word-break:break-word}
+.txt{font:400 11.5px/1.6 'Public Sans',sans-serif;color:#52525b;margin-top:2px}
+.ex{font:400 10.5px/1.5 'IBM Plex Mono',monospace;color:#18181b;background:#f4f4f5;border:1px solid #e4e4e7;border-radius:4px;padding:1px 5px;display:inline-block;margin-top:4px}
+.src{font:400 10.5px/1.5 'IBM Plex Mono',monospace;color:#a1a1aa;margin-top:3px}
+.mk{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:8px;background:#ece8fb;color:#4f35c9;font:500 9.5px/1 'IBM Plex Mono',monospace;border:1px solid #cfc4f5;flex:0 0 16px}
+.nav{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:8px;font-size:12.5px;color:#52525b}
+.navon{background:#ece8fb;color:#2e1f7d;font-weight:600}
+.navgrp{font:500 10.5px/1 'Public Sans',sans-serif;letter-spacing:.02em;color:#a1a1aa;padding:0 10px;margin:18px 0 7px}
+.card{background:#fff;border:1px solid #e7e7ea;border-radius:12px}
+.pill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:3px 9px;font:600 11px/1.5 'Public Sans',sans-serif;white-space:nowrap}
+.p-ok{background:#e6f4ed;color:#0f6b46}
+.p-warn{background:#fdf1dc;color:#8a5300}
+.p-bad{background:#fdeceb;color:#b42318}
+.p-mut{background:#f4f4f5;color:#52525b}
+.dot{width:6px;height:6px;border-radius:4px;flex:0 0 6px}
+.th{font:500 11px/1.4 'Public Sans',sans-serif;color:#8b8b93}
+.est{text-decoration:underline dotted #a1a1aa;text-underline-offset:3px}
+.btn{display:inline-flex;align-items:center;gap:7px;border-radius:9px;padding:8px 14px;font:600 12.5px/1 'Public Sans',sans-serif;border:1px solid #e0e0e4;background:#fff;color:#27272a}
+.btn-pri{background:#4f35c9;border-color:#4f35c9;color:#fff}
+.tab{border-radius:8px;padding:6px 11px;font:500 12px/1.4 'Public Sans',sans-serif;color:#71717a;border:1px solid transparent}
+.tabon{background:#18181b;color:#fff;border-color:#18181b}
+.frame{background:#fff;border:1px solid #d9d9de;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(24,24,27,.06)}
+.blab{font:500 11px/1 'IBM Plex Mono',monospace;color:#8b8b93;margin-bottom:9px;letter-spacing:.03em}
+.gh{font:500 11px/1 'Public Sans',sans-serif;color:#8b8b93;padding:0 8px;display:flex;align-items:center;height:30px;border-right:1px solid #ececef;box-sizing:border-box;background:#fafafa}
+.gc{font:400 12px/1 'Public Sans',sans-serif;color:#27272a;padding:0 8px;display:flex;align-items:center;height:34px;border-right:1px solid #f2f2f4;border-bottom:1px solid #f2f2f4;box-sizing:border-box;overflow:hidden;white-space:nowrap}
+.gn{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums;justify-content:flex-end}
+.grow{display:flex}
+.gsel{background:#efecfb;box-shadow:inset 0 0 0 1px #b9abf0}
+</style>
+</helmet>
+<div style="width: 1988px; height: 1080px; box-sizing: border-box; padding: 36px; display: flex; flex-direction: row; gap: 44px; background: #e9e9ec">
+<div style="flex: 0 0 1440px; display: flex; flex-direction: column">
+<div class="blab">Ingredients &amp; prices · the spreadsheet, in the browser — and dated, so a price change never rewrites history</div>
+<div class="frame" style="flex-grow: 1; display: flex; flex-direction: row">
+<div style="flex: 0 0 216px; background: #fafafa; border-right: 1px solid #e7e7ea; padding: 20px 12px; display: flex; flex-direction: column">
+<a href="Main.dc.html" style="display: block; padding: 0 10px 4px"><div class="disp" style="font-size: 17px; font-weight: 600; letter-spacing: -.01em">Sasha’s Corner</div><div style="font-size: 11px; color: #a1a1aa; margin-top: 1px">Dundee</div></a>
+<div class="navgrp">Daily</div>
+<a class="nav" href="Today.dc.html"><svg width="16" height="16" sc-camel-view-box="0 0 16 16" fill="none" stroke="#a1a1aa" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="3.5" width="11" height="10" rx="2"></rect><path d="M2.5 6.5h11M5.5 2v3M10.5 2v3"></path></svg><span>Today</span></a>
+<a class="nav" href="Stock.dc.html"><svg width="16" height="16" sc-camel-view-box="0 0 16 16" fill="none" stroke="#a1a1aa" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 1.8 14 5v6l-6 3.2L2 11V5z"></path><path d="M2 5l6 3.2L14 5M8 8.2v6"></path></svg><span>Stock</span></a>
+<a class="nav" href="Orders.dc.html"><svg width="16" height="16" sc-camel-view-box="0 0 16 16" fill="none" stroke="#a1a1aa" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="2.5" width="10" height="11.5" rx="2"></rect><path d="M6 2v1.5h4V2M5.5 7h5M5.5 10h3"></path></svg><span>Orders</span></a>
+<div class="navgrp">Decide</div>
+<a class="nav" href="Composition.dc.html"><svg width="16" height="16" sc-camel-view-box="0 0 16 16" fill="none" stroke="#a1a1aa" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 1.8 14.5 5 8 8.2 1.5 5z"></path><path d="M1.5 8.6 8 11.8l6.5-3.2M1.5 11.6 8 14.8l6.5-3.2"></path></svg><span>Composition</span></a>
+<a class="nav navon" href="Ingredients.dc.html"><svg width="16" height="16" sc-camel-view-box="0 0 16 16" fill="none" stroke="#4f35c9" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.2" y="3.2" width="11.6" height="9.6" rx="1.8"></rect><path d="M2.2 6.4h11.6M6.4 6.4v6.4M2.2 9.6h11.6"></path></svg><span>Ingredients &amp; prices</span></a>
+<a class="nav" href="Margin.dc.html"><svg width="16" height="16" sc-camel-view-box="0 0 16 16" fill="none" stroke="#a1a1aa" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 13.5h11M4.5 13.5V9M8 13.5V4.5M11.5 13.5V7"></path></svg><span>Menu margin</span></a>
+<a class="nav" href="Channels.dc.html"><svg width="16" height="16" sc-camel-view-box="0 0 16 16" fill="none" stroke="#a1a1aa" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="1.6"></circle><path d="M4.6 4.6a4.8 4.8 0 0 0 0 6.8M11.4 11.4a4.8 4.8 0 0 0 0-6.8M2.4 2.4a8 8 0 0 0 0 11.2M13.6 13.6a8 8 0 0 0 0-11.2"></path></svg><span>Channels</span></a>
+<a class="nav" href="Money.dc.html"><svg width="16" height="16" sc-camel-view-box="0 0 16 16" fill="none" stroke="#a1a1aa" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="6.2"></circle><path d="M9.8 5.2a2 2 0 0 0-3.4 1.4V10H5.6M5.6 8h3.2M5.6 10.8h4.8"></path></svg><span>Money &amp; P&amp;L</span></a>
+<div class="navgrp">Set up</div>
+<a class="nav" href="ImportReview.dc.html"><svg width="16" height="16" sc-camel-view-box="0 0 16 16" fill="none" stroke="#a1a1aa" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="2.5" width="11" height="11" rx="2.5"></rect><path d="m5.6 8.2 1.8 1.8 3.2-3.6"></path></svg><span>Import review</span></a>
+<div style="flex-grow: 1"></div>
+<div style="padding: 10px; border-top: 1px solid #ececef; font-size: 10.5px; line-height: 1.6; color: #a1a1aa">Wireframe. Every figure below is a real value from <span class="fg">cafeops api-fixtures</span>.</div>
+</div>
+<div style="flex-grow: 1; padding: 18px; display: flex; flex-direction: column; gap: 11px; min-width: 0">
+
+  <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 20px">
+    <div>
+      <div style="display: flex; align-items: center; gap: 8px"><h1 class="disp" style="font-size: 25px; font-weight: 600; letter-spacing: -.015em">Ingredients &amp; prices</h1><span class="mk">1</span></div>
+      <p style="font-size: 12.5px; color: #71717a; margin-top: 3px">113 ingredients · 42 prices are still guesses · every change here moves 318 menu costs</p>
+    </div>
+    <div style="display: flex; gap: 8px; align-items: center">
+      <span class="mk">2</span>
+      <span class="btn" style="font-size: 12px; padding: 7px 11px">Paste from a spreadsheet</span>
+      <span class="btn" style="font-size: 12px; padding: 7px 11px">Export</span>
+      <a class="btn btn-pri" href="IngredientEdit.dc.html" style="font-size: 12px; padding: 7px 11px">Add ingredient</a>
+    </div>
+  </div>
+
+  <div style="display: flex; align-items: center; gap: 10px; border: 1px solid #e0e0e4; border-radius: 8px; background: #fff; padding: 0 10px; height: 32px">
+    <span class="fg" style="font-size: 11px; color: #8b8b93; border-right: 1px solid #e7e7ea; padding-right: 10px">Whole&nbsp;milk → Price</span>
+    <span class="fg" style="font-size: 12.5px; color: #18181b">69.705882</span>
+    <span style="font-size: 11px; color: #a1a1aa">pence per litre — stored exactly, never rounded</span>
+    <span style="flex-grow: 1"></span>
+    <span class="mk">3</span>
+  </div>
+
+  <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px">
+    <div style="display: flex; align-items: center; gap: 6px">
+      <span class="tab tabon">All <span class="fg" style="opacity: .6">113</span></span>
+      <span class="tab">Guessed prices <span class="fg" style="opacity: .6">42</span></span>
+      <span class="tab">Perishable <span class="fg" style="opacity: .6">15</span></span>
+      <span class="tab">Tracked closely <span class="fg" style="opacity: .6">12</span></span>
+      <span class="mk">4</span>
+    </div>
+    <label style="display: flex; align-items: center; gap: 7px; border: 1px solid #e0e0e4; border-radius: 8px; padding: 6px 10px; background: #fff; width: 190px">
+      <svg width="13" height="13" sc-camel-view-box="0 0 16 16" fill="none" stroke="#a1a1aa" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="7.2" cy="7.2" r="4.4"></circle><path d="m10.6 10.6 2.6 2.6"></path></svg>
+      <span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Search ingredients</span>
+      <input type="text" placeholder="Search" style="border: 0; outline: 0; font: 400 12px/1 'Public Sans', sans-serif; width: 100%; background: transparent">
+    </label>
+  </div>
+
+  <div style="border: 1px solid #e0e0e4; border-radius: 10px; overflow: hidden; background: #fff; position: relative">
+
+    <div class="grow" style="border-bottom: 1px solid #e0e0e4">
+      <span class="gh" style="flex: 0 0 26px; padding: 0"></span>
+      <span class="gh" style="flex: 0 0 210px; border-right: 1px solid #d4d4d8; font-weight: 600; color: #52525b">Ingredient</span>
+      <span class="gh" style="flex: 0 0 52px">Unit</span>
+      <span class="gh" style="flex: 0 0 42px">Watch</span>
+      <span class="gh gn" style="flex: 0 0 106px; justify-content: flex-end">Price</span>
+      <span class="gh" style="flex: 0 0 92px">Where from</span>
+      <span class="gh" style="flex: 0 0 118px">Supplier</span>
+      <span class="gh" style="flex: 0 0 150px">Sold as</span>
+      <span class="gh" style="flex: 0 0 110px">Keeps</span>
+      <span class="gh gn" style="flex: 0 0 58px; justify-content: flex-end">Waste</span>
+      <span class="gh gn" style="flex: 0 0 82px; justify-content: flex-end">In recipes</span>
+      <span class="gh" style="flex: 0 0 82px; border-right: 0">Updated</span>
+    </div>
+
+    <div class="grow">
+      <span class="gc" style="flex: 0 0 26px; padding: 0; justify-content: center"><span style="width: 11px; height: 11px; border: 1px solid #c4c4ca; border-radius: 3px; display: block"></span></span>
+      <span class="gc" style="flex: 0 0 210px; border-right: 1px solid #d4d4d8; font-weight: 600">Whole milk</span>
+      <span class="gc" style="flex: 0 0 52px; color: #71717a">L</span>
+      <span class="gc" style="flex: 0 0 42px"><span class="pill p-mut" style="font-size: 10px; padding: 1px 6px">A</span></span>
+      <span class="gc gn gsel" style="flex: 0 0 106px; font-weight: 600">72.40</span>
+      <span class="gc" style="flex: 0 0 92px"><span class="pill p-ok" style="font-size: 10px; padding: 1px 6px">invoice</span></span>
+      <span class="gc" style="flex: 0 0 118px; color: #3f3f46">Brakes</span>
+      <span class="gc gn" style="flex: 0 0 150px; justify-content: flex-start; color: #3f3f46">2&nbsp;L × 6 — £8.69</span>
+      <span class="gc gn" style="flex: 0 0 110px; justify-content: flex-start"><span class="est">7 / 3 / 2 d</span></span>
+      <span class="gc gn" style="flex: 0 0 58px">10%</span>
+      <span class="gc gn" style="flex: 0 0 82px">230</span>
+      <span class="gc" style="flex: 0 0 82px; border-right: 0; color: #71717a">today</span>
+    </div>
+
+    <div class="grow">
+      <span class="gc" style="flex: 0 0 26px; padding: 0; justify-content: center"><span style="width: 11px; height: 11px; border: 1px solid #c4c4ca; border-radius: 3px; display: block"></span></span>
+      <span class="gc" style="flex: 0 0 210px; border-right: 1px solid #d4d4d8; font-weight: 600">Coffee beans (house blend)</span>
+      <span class="gc" style="flex: 0 0 52px; color: #71717a">KG</span>
+      <span class="gc" style="flex: 0 0 42px"><span class="pill p-mut" style="font-size: 10px; padding: 1px 6px">A</span></span>
+      <span class="gc gn" style="flex: 0 0 106px">1900.00</span>
+      <span class="gc" style="flex: 0 0 92px"><span class="pill p-ok" style="font-size: 10px; padding: 1px 6px">invoice</span></span>
+      <span class="gc" style="flex: 0 0 118px; color: #3f3f46">Booker</span>
+      <span class="gc gn" style="flex: 0 0 150px; justify-content: flex-start; color: #3f3f46">5&nbsp;KG — £95.00</span>
+      <span class="gc gn" style="flex: 0 0 110px; justify-content: flex-start"><span class="est">365 / — / 7 d</span></span>
+      <span class="gc gn" style="flex: 0 0 58px">2%</span>
+      <span class="gc gn" style="flex: 0 0 82px">121</span>
+      <span class="gc" style="flex: 0 0 82px; border-right: 0; color: #71717a">9 Sep</span>
+    </div>
+
+    <div class="grow">
+      <span class="gc" style="flex: 0 0 26px; padding: 0; justify-content: center"><span style="width: 11px; height: 11px; border: 1px solid #c4c4ca; border-radius: 3px; display: block"></span></span>
+      <span class="gc" style="flex: 0 0 210px; border-right: 1px solid #d4d4d8; font-weight: 600">Matcha powder</span>
+      <span class="gc" style="flex: 0 0 52px; color: #71717a">KG</span>
+      <span class="gc" style="flex: 0 0 42px"><span class="pill p-mut" style="font-size: 10px; padding: 1px 6px">A</span></span>
+      <span class="gc gn" style="flex: 0 0 106px">20000.00</span>
+      <span class="gc" style="flex: 0 0 92px"><span class="pill p-ok" style="font-size: 10px; padding: 1px 6px">invoice</span></span>
+      <span class="gc" style="flex: 0 0 118px; color: #3f3f46">Monolith</span>
+      <span class="gc" style="flex: 0 0 150px; color: #b9b9c0; font-style: italic">not recorded</span>
+      <span class="gc gn" style="flex: 0 0 110px; justify-content: flex-start"><span class="est">540 / 90 / 14 d</span></span>
+      <span class="gc gn" style="flex: 0 0 58px">2%</span>
+      <span class="gc gn" style="flex: 0 0 82px">8</span>
+      <span class="gc" style="flex: 0 0 82px; border-right: 0; color: #71717a">25 Jul</span>
+    </div>
+
+    <div class="grow">
+      <span class="gc" style="flex: 0 0 26px; padding: 0; justify-content: center"><span style="width: 11px; height: 11px; border: 1px solid #c4c4ca; border-radius: 3px; display: block"></span></span>
+      <span class="gc" style="flex: 0 0 210px; border-right: 1px solid #d4d4d8; font-weight: 600">Chocolate powder</span>
+      <span class="gc" style="flex: 0 0 52px; color: #71717a">KG</span>
+      <span class="gc" style="flex: 0 0 42px"><span class="pill p-mut" style="font-size: 10px; padding: 1px 6px">A</span></span>
+      <span class="gc gn" style="flex: 0 0 106px">700.00</span>
+      <span class="gc" style="flex: 0 0 92px"><span class="pill p-ok" style="font-size: 10px; padding: 1px 6px">invoice</span></span>
+      <span class="gc" style="flex: 0 0 118px; color: #3f3f46">Booker</span>
+      <span class="gc gn" style="flex: 0 0 150px; justify-content: flex-start; color: #3f3f46">1&nbsp;KG — £7.00</span>
+      <span class="gc gn" style="flex: 0 0 110px; justify-content: flex-start"><span class="est">540 / 90 / 14 d</span></span>
+      <span class="gc gn" style="flex: 0 0 58px">2%</span>
+      <span class="gc gn" style="flex: 0 0 82px">6</span>
+      <span class="gc" style="flex: 0 0 82px; border-right: 0; color: #71717a">25 Jul</span>
+    </div>
+
+    <div class="grow">
+      <span class="gc" style="flex: 0 0 26px; padding: 0; justify-content: center"><span style="width: 11px; height: 11px; border: 1px solid #c4c4ca; border-radius: 3px; display: block"></span></span>
+      <span class="gc" style="flex: 0 0 210px; border-right: 1px solid #d4d4d8; font-weight: 600">Caramel syrup (Monin)</span>
+      <span class="gc" style="flex: 0 0 52px; color: #71717a">ML</span>
+      <span class="gc" style="flex: 0 0 42px"><span class="pill p-mut" style="font-size: 10px; padding: 1px 6px">B</span></span>
+      <span class="gc gn" style="flex: 0 0 106px">0.90</span>
+      <span class="gc" style="flex: 0 0 92px"><span class="pill p-ok" style="font-size: 10px; padding: 1px 6px">invoice</span></span>
+      <span class="gc" style="flex: 0 0 118px; color: #3f3f46">Booker</span>
+      <span class="gc gn" style="flex: 0 0 150px; justify-content: flex-start; color: #3f3f46">1000&nbsp;ML — £9.00</span>
+      <span class="gc gn" style="flex: 0 0 110px; justify-content: flex-start"><span class="est">730 / 180 / 7 d</span></span>
+      <span class="gc gn" style="flex: 0 0 58px">1%</span>
+      <span class="gc gn" style="flex: 0 0 82px">9</span>
+      <span class="gc" style="flex: 0 0 82px; border-right: 0; color: #71717a">11 Sep</span>
+    </div>
+
+    <div class="grow">
+      <span class="gc" style="flex: 0 0 26px; padding: 0; justify-content: center"><span style="width: 11px; height: 11px; border: 1px solid #c4c4ca; border-radius: 3px; display: block"></span></span>
+      <span class="gc" style="flex: 0 0 210px; border-right: 1px solid #d4d4d8; font-weight: 600">16oz paper cup</span>
+      <span class="gc" style="flex: 0 0 52px; color: #71717a">EACH</span>
+      <span class="gc" style="flex: 0 0 42px"><span class="pill p-mut" style="font-size: 10px; padding: 1px 6px">A</span></span>
+      <span class="gc gn gsel" style="flex: 0 0 106px">10.335</span>
+      <span class="gc" style="flex: 0 0 92px"><span class="pill p-ok" style="font-size: 10px; padding: 1px 6px">invoice</span></span>
+      <span class="gc" style="flex: 0 0 118px; color: #3f3f46">Cups Direct</span>
+      <span class="gc" style="flex: 0 0 150px; color: #b9b9c0; font-style: italic">not recorded</span>
+      <span class="gc" style="flex: 0 0 110px; color: #b9b9c0; font-style: italic">keeps forever</span>
+      <span class="gc gn" style="flex: 0 0 58px">1%</span>
+      <span class="gc gn" style="flex: 0 0 82px">101</span>
+      <span class="gc" style="flex: 0 0 82px; border-right: 0; color: #71717a">19 Sep</span>
+    </div>
+
+    <div class="grow">
+      <span class="gc" style="flex: 0 0 26px; padding: 0; justify-content: center"><span style="width: 11px; height: 11px; border: 1px solid #c4c4ca; border-radius: 3px; display: block"></span></span>
+      <span class="gc" style="flex: 0 0 210px; border-right: 1px solid #d4d4d8; font-weight: 600">12oz paper cup</span>
+      <span class="gc" style="flex: 0 0 52px; color: #71717a">EACH</span>
+      <span class="gc" style="flex: 0 0 42px"><span class="pill p-mut" style="font-size: 10px; padding: 1px 6px">A</span></span>
+      <span class="gc gn gsel" style="flex: 0 0 106px">9.588</span>
+      <span class="gc" style="flex: 0 0 92px"><span class="pill p-ok" style="font-size: 10px; padding: 1px 6px">invoice</span></span>
+      <span class="gc" style="flex: 0 0 118px; color: #3f3f46">Cups Direct</span>
+      <span class="gc" style="flex: 0 0 150px; color: #b9b9c0; font-style: italic">not recorded</span>
+      <span class="gc" style="flex: 0 0 110px; color: #b9b9c0; font-style: italic">keeps forever</span>
+      <span class="gc gn" style="flex: 0 0 58px">1%</span>
+      <span class="gc gn" style="flex: 0 0 82px">102</span>
+      <span class="gc" style="flex: 0 0 82px; border-right: 0; color: #71717a">19 Sep</span>
+    </div>
+
+    <div class="grow">
+      <span class="gc" style="flex: 0 0 26px; padding: 0; justify-content: center"><span style="width: 11px; height: 11px; border: 1px solid #c4c4ca; border-radius: 3px; display: block"></span></span>
+      <span class="gc" style="flex: 0 0 210px; border-right: 1px solid #d4d4d8; font-weight: 600">8oz paper cup</span>
+      <span class="gc" style="flex: 0 0 52px; color: #71717a">EACH</span>
+      <span class="gc" style="flex: 0 0 42px"><span class="pill p-mut" style="font-size: 10px; padding: 1px 6px">A</span></span>
+      <span class="gc gn gsel" style="flex: 0 0 106px">8.508</span>
+      <span class="gc" style="flex: 0 0 92px"><span class="pill p-ok" style="font-size: 10px; padding: 1px 6px">invoice</span></span>
+      <span class="gc" style="flex: 0 0 118px; color: #3f3f46">Cups Direct</span>
+      <span class="gc" style="flex: 0 0 150px; color: #b9b9c0; font-style: italic">not recorded</span>
+      <span class="gc" style="flex: 0 0 110px; color: #b9b9c0; font-style: italic">keeps forever</span>
+      <span class="gc gn" style="flex: 0 0 58px">1%</span>
+      <span class="gc gn" style="flex: 0 0 82px">62</span>
+      <span class="gc" style="flex: 0 0 82px; border-right: 0; color: #71717a">19 Sep</span>
+    </div>
+
+    <div class="grow">
+      <span class="gc" style="flex: 0 0 26px; padding: 0; justify-content: center"><span style="width: 11px; height: 11px; border: 1px solid #c4c4ca; border-radius: 3px; display: block"></span></span>
+      <span class="gc" style="flex: 0 0 210px; border-right: 1px solid #d4d4d8; font-weight: 600">12oz cup lid</span>
+      <span class="gc" style="flex: 0 0 52px; color: #71717a">EACH</span>
+      <span class="gc" style="flex: 0 0 42px"><span class="pill p-mut" style="font-size: 10px; padding: 1px 6px">A</span></span>
+      <span class="gc gn" style="flex: 0 0 106px"><span class="est">2.574</span></span>
+      <span class="gc" style="flex: 0 0 92px"><span class="pill p-warn" style="font-size: 10px; padding: 1px 6px">a guess</span></span>
+      <span class="gc" style="flex: 0 0 118px; color: #3f3f46">Cups Direct</span>
+      <span class="gc" style="flex: 0 0 150px; color: #b9b9c0; font-style: italic">not recorded</span>
+      <span class="gc" style="flex: 0 0 110px; color: #b9b9c0; font-style: italic">keeps forever</span>
+      <span class="gc gn" style="flex: 0 0 58px">1%</span>
+      <span class="gc gn" style="flex: 0 0 82px">102</span>
+      <span class="gc" style="flex: 0 0 82px; border-right: 0; color: #b9b9c0">never</span>
+    </div>
+
+    <div class="grow">
+      <span class="gc" style="flex: 0 0 26px; padding: 0; justify-content: center"><span style="width: 11px; height: 11px; border: 1px solid #c4c4ca; border-radius: 3px; display: block"></span></span>
+      <span class="gc" style="flex: 0 0 210px; border-right: 1px solid #d4d4d8; font-weight: 600">16oz cup lid</span>
+      <span class="gc" style="flex: 0 0 52px; color: #71717a">EACH</span>
+      <span class="gc" style="flex: 0 0 42px"><span class="pill p-mut" style="font-size: 10px; padding: 1px 6px">A</span></span>
+      <span class="gc gn" style="flex: 0 0 106px">2.874</span>
+      <span class="gc" style="flex: 0 0 92px"><span class="pill p-ok" style="font-size: 10px; padding: 1px 6px">invoice</span></span>
+      <span class="gc" style="flex: 0 0 118px; color: #3f3f46">Cups Direct</span>
+      <span class="gc" style="flex: 0 0 150px; color: #b9b9c0; font-style: italic">not recorded</span>
+      <span class="gc" style="flex: 0 0 110px; color: #b9b9c0; font-style: italic">keeps forever</span>
+      <span class="gc gn" style="flex: 0 0 58px">1%</span>
+      <span class="gc gn" style="flex: 0 0 82px">101</span>
+      <span class="gc" style="flex: 0 0 82px; border-right: 0; color: #71717a">19 Sep</span>
+    </div>
+
+    <div class="grow">
+      <span class="gc" style="flex: 0 0 26px; padding: 0; justify-content: center"><span style="width: 11px; height: 11px; border: 1px solid #c4c4ca; border-radius: 3px; display: block"></span></span>
+      <span class="gc" style="flex: 0 0 210px; border-right: 1px solid #d4d4d8; font-weight: 600">8oz cup lid</span>
+      <span class="gc" style="flex: 0 0 52px; color: #71717a">EACH</span>
+      <span class="gc" style="flex: 0 0 42px"><span class="pill p-mut" style="font-size: 10px; padding: 1px 6px">A</span></span>
+      <span class="gc gn" style="flex: 0 0 106px">2.574</span>
+      <span class="gc" style="flex: 0 0 92px"><span class="pill p-ok" style="font-size: 10px; padding: 1px 6px">invoice</span></span>
+      <span class="gc" style="flex: 0 0 118px; color: #3f3f46">Cups Direct</span>
+      <span class="gc" style="flex: 0 0 150px; color: #b9b9c0; font-style: italic">not recorded</span>
+      <span class="gc" style="flex: 0 0 110px; color: #b9b9c0; font-style: italic">keeps forever</span>
+      <span class="gc gn" style="flex: 0 0 58px">1%</span>
+      <span class="gc gn" style="flex: 0 0 82px">62</span>
+      <span class="gc" style="flex: 0 0 82px; border-right: 0; color: #71717a">19 Sep</span>
+    </div>
+
+    <div class="grow">
+      <span class="gc" style="flex: 0 0 26px; padding: 0; justify-content: center"><span style="width: 11px; height: 11px; border: 1px solid #c4c4ca; border-radius: 3px; display: block"></span></span>
+      <span class="gc" style="flex: 0 0 210px; border-right: 1px solid #d4d4d8; font-weight: 600">Napkin</span>
+      <span class="gc" style="flex: 0 0 52px; color: #71717a">EACH</span>
+      <span class="gc" style="flex: 0 0 42px"><span class="pill p-mut" style="font-size: 10px; padding: 1px 6px">A</span></span>
+      <span class="gc gn" style="flex: 0 0 106px"><span class="est">0.80</span></span>
+      <span class="gc" style="flex: 0 0 92px"><span class="pill p-warn" style="font-size: 10px; padding: 1px 6px">a guess</span></span>
+      <span class="gc" style="flex: 0 0 118px; color: #b9b9c0; font-style: italic">not set</span>
+      <span class="gc" style="flex: 0 0 150px; color: #b9b9c0; font-style: italic">not recorded</span>
+      <span class="gc" style="flex: 0 0 110px; color: #b9b9c0; font-style: italic">keeps forever</span>
+      <span class="gc gn" style="flex: 0 0 58px">1%</span>
+      <span class="gc gn" style="flex: 0 0 82px; font-weight: 600">265</span>
+      <span class="gc" style="flex: 0 0 82px; border-right: 0; color: #b9b9c0">never</span>
+    </div>
+
+    <div class="grow">
+      <span class="gc" style="flex-grow: 1; border-right: 0; border-bottom: 0; color: #a1a1aa; gap: 7px; height: 32px"><span style="font-size: 14px">+</span> Add an ingredient — or paste a block of rows straight from your spreadsheet</span>
+    </div>
+
+    <div style="position: absolute; left: 330px; top: 66px; width: 372px; background: #fff; border: 1px solid #cfc4f5; border-radius: 12px; box-shadow: 0 16px 40px rgba(24,24,27,.18); padding: 14px 15px">
+      <div style="display: flex; align-items: center; gap: 7px">
+        <span style="font-size: 13px; font-weight: 600">New price for Whole milk</span>
+        <span class="mk">5</span>
+      </div>
+      <div style="display: flex; align-items: baseline; gap: 9px; margin-top: 9px">
+        <span class="fg" style="font-size: 12.5px; color: #a1a1aa; text-decoration: line-through">69.7058p</span>
+        <span style="font-size: 12px; color: #a1a1aa">→</span>
+        <span class="fg" style="font-size: 17px; font-weight: 600">72.40p</span>
+        <span class="fg" style="font-size: 12px; color: #b42318">+3.9%</span>
+      </div>
+      <div style="display: flex; gap: 8px; margin-top: 11px">
+        <label style="flex-grow: 1"><span style="display: block; font-size: 10.5px; color: #8b8b93; margin-bottom: 3px">From</span><input type="text" value="25 Sept 2026" style="width: 100%; box-sizing: border-box; border: 1px solid #e0e0e4; border-radius: 7px; padding: 6px 8px; font: 400 12px/1 'IBM Plex Mono', monospace; background: #fff"></label>
+        <label style="flex-grow: 1"><span style="display: block; font-size: 10.5px; color: #8b8b93; margin-bottom: 3px">Where it came from</span><input type="text" value="Invoice 88214" style="width: 100%; box-sizing: border-box; border: 1px solid #e0e0e4; border-radius: 7px; padding: 6px 8px; font: 400 12px/1 'Public Sans', sans-serif; background: #fff"></label>
+      </div>
+      <div style="margin-top: 11px; background: #f6f5fd; border: 1px solid #e4dffb; border-radius: 9px; padding: 10px 12px">
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 5px"><span style="font-size: 11.5px; font-weight: 600; color: #2e1f7d">What this changes</span><span class="mk">6</span></div>
+        <div style="font-size: 11.5px; line-height: 1.85; color: #3f3f46">
+          <div style="display: flex; justify-content: space-between"><span>Drinks that get dearer</span><span class="fg" style="font-weight: 600">41</span></div>
+          <div style="display: flex; justify-content: space-between"><span>Thinnest margin after</span><span class="fg" style="font-weight: 600">Latte S · 74.1% → 73.6%</span></div>
+          <div style="display: flex; justify-content: space-between"><span>Over a month</span><span class="fg est" style="font-weight: 600">+£7.42</span></div>
+        </div>
+      </div>
+      <p style="font-size: 11px; line-height: 1.6; color: #71717a; margin-top: 9px">The old price stays on file from 12 Sept to yesterday, so last week’s drinks keep costing what they actually cost.</p>
+      <div style="display: flex; gap: 8px; margin-top: 11px">
+        <span class="btn" style="font-size: 11.5px; padding: 6px 12px">Cancel</span>
+        <a class="btn btn-pri" href="IngredientEdit.dc.html" style="font-size: 11.5px; padding: 6px 12px; flex-grow: 1; justify-content: center">Save this price</a>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; border: 1px solid #e0e0e4; border-radius: 8px; background: #fafafa; padding: 7px 11px">
+    <div style="display: flex; align-items: center; gap: 12px">
+      <span class="mk">7</span>
+      <span class="fg" style="font-size: 11.5px; color: #3f3f46">3 cells picked</span>
+      <span class="fg" style="font-size: 11.5px; color: #71717a">total 28.431p</span>
+      <span class="fg" style="font-size: 11.5px; color: #71717a">average 9.477p</span>
+      <span class="fg" style="font-size: 11.5px; color: #71717a">biggest 10.335p</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px">
+      <span style="font-size: 11px; color: #a1a1aa"><span class="fg">Tab</span> next · <span class="fg">↵</span> down · <span class="fg">⌘V</span> paste a block · <span class="fg">⌘Z</span> undo · <span class="fg">⌘↵</span> fill down</span>
+      <span class="mk">8</span>
+    </div>
+  </div>
+
+</div>
+</div>
+</div>
+
+<div style="flex: 0 0 432px; display: flex; flex-direction: column">
+<div class="railh">What each thing is · api field · where it comes from · real example</div>
+<div style="margin-top: 2px">
+<div class="ar"><span class="num">1</span><div style="min-width: 0"><div class="fld">GET /api/ingredients (to build) → rows[]</div><div class="txt">The screen that replaces the hand-kept spreadsheet. 113 ingredients, every column editable in place, nothing hidden behind a modal you have to find.</div><div class="ex">113 rows · 42 prices ESTIMATE</div><div class="src">ingredient, ingredient_price</div></div></div>
+<div class="ar"><span class="num">2</span><div style="min-width: 0"><div class="fld">POST /api/ingredients/bulk (to build)</div><div class="txt">Paste a block straight out of Excel and it lands in the grid as a preview first: units checked, prices parsed to integer pence, anything odd flagged. Nothing saves until you look at it.</div><div class="ex">tab-separated paste → 34 rows, 2 warnings</div><div class="src">see the next board</div></div></div>
+<div class="ar"><span class="num">3</span><div style="min-width: 0"><div class="fld">the stored value, not the displayed one</div><div class="txt">The strip above the grid is the formula bar: it shows the <b>exact</b> stored figure while the cell shows a readable one. 69.705882 is what the database holds; rounding happens only for your eyes.</div><div class="ex">cell "69.71" · stored "69.705882"</div><div class="src">db/types.py · integer pence, never a float</div></div></div>
+<div class="ar"><span class="num">4</span><div style="min-width: 0"><div class="fld">filters over the same rows[]</div><div class="txt">"Guessed prices 42" is the queue that actually matters — every one of them makes a margin approximate. Perishable 15 is the shelf-life queue.</div><div class="ex">113 / 42 / 15 / 12</div><div class="src">ingredient_price.source, ingredient.shelf_life_days</div></div></div>
+<div class="ar"><span class="num">5</span><div style="min-width: 0"><div class="fld">POST /api/ingredients/{id}/price → new ingredient_price row</div><div class="txt"><b>This is the part Excel cannot do.</b> A price is effective-dated: saving does not overwrite, it closes the old row and opens a new one. Last week’s drinks keep costing what they actually cost.</div><div class="ex">effective_from 2026-09-25, source INVOICE, supplier_id 2</div><div class="src">ingredient_price · invariant 3</div></div></div>
+<div class="ar"><span class="num">6</span><div style="min-width: 0"><div class="fld">preview, before the write</div><div class="txt">How many drinks get dearer, which margin ends up thinnest, what it adds up to over a month — shown <i>before</i> you commit. A price change that moves 41 drinks should never happen silently.</div><div class="ex">41 items · Latte S 74.1% → 73.6%</div><div class="src">menu_item_cost cascade</div></div></div>
+<div class="ar"><span class="num">7</span><div style="min-width: 0"><div class="fld">selection stats, client-side</div><div class="txt">The thing people open Excel for: pick some cells, see the total. Sum, average and max of whatever is highlighted, worked out as exact decimals.</div><div class="ex">10.335 + 9.588 + 8.508 = 28.431p</div><div class="src">lib/dec.ts · no float maths</div></div></div>
+<div class="ar"><span class="num">8</span><div style="min-width: 0"><div class="fld">keyboard, not menus</div><div class="txt">Tab, Enter, ⌘V to paste a block, ⌘Z to undo, ⌘↵ to fill down a column. Somebody moving off a spreadsheet should not have to learn new hands.</div></div></div>
+<div class="ar"><span class="num">9</span><div style="min-width: 0"><div class="fld">ingredient.unit, tier, waste_factor</div><div class="txt">Unit is a fixed list (L, KG, ML, G, EACH) — a dropdown, so a paste saying "2L" is caught rather than stored. Waste factor affects stock depletion only, never the menu cost (invariant 7).</div><div class="ex">L · A · 0.1</div><div class="src">ingredient</div></div></div>
+<div class="ar"><span class="num">10</span><div style="min-width: 0"><div class="fld">shelf_life_days / open_life_days / transit_buffer_days</div><div class="txt">Three numbers in one column: keeps 7 days, 3 once opened, 2 days getting here. All 113 are seeded guesses, so all 113 are dotted. This column caps order sizes.</div><div class="ex">7 / 3 / 2 → 5 usable days</div><div class="src">ingredient</div></div></div>
+<div class="ar"><span class="num">11</span><div style="min-width: 0"><div class="fld">supplier_product — pack_size, pack_price_pence, sku, moq_packs</div><div class="txt">What you actually buy: a case, not a litre. "Not recorded" is shown as missing rather than as zero, because a missing pack size is why an order line cannot be built.</div><div class="ex">1000 ML — £9.00 · Booker</div><div class="src">supplier_product</div></div></div>
+<div class="ar"><span class="num">12</span><div style="min-width: 0"><div class="fld">recipe line count per ingredient</div><div class="txt">How much of the menu leans on this row. Napkin appears in 265 recipe lines, whole milk in 230 — that is the order to fix the guessed prices in.</div><div class="ex">265 · 230 · 121 · 102</div><div class="src">template_component, manual_recipe_line</div></div></div>
+</div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script="" data-props="{&quot;$preview&quot;:{&quot;width&quot;:1988,&quot;height&quot;:1080}}">
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+
+
+</body></html>

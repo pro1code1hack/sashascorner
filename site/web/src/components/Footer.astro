@@ -1,0 +1,216 @@
+---
+import { info, socialLinks } from '../lib/data';
+import { clock, WEEKDAYS } from '../lib/format';
+import Icon from './Icon.astro';
+
+// Collapse consecutive days with identical hours: "Monday – Sunday 7.30am – 6pm".
+type Row = { from: number; to: number; text: string };
+const rows: Row[] = [];
+for (const h of info?.hours ?? []) {
+  const text = h.closed ? 'Closed' : `${clock(h.open)} – ${clock(h.close)}`;
+  const last = rows.at(-1);
+  if (last && last.text === text && last.to === h.weekday - 1) last.to = h.weekday;
+  else rows.push({ from: h.weekday, to: h.weekday, text });
+}
+const year = new Date().getFullYear();
+---
+
+<footer class="ftr">
+  <div class="wrap ftr__grid">
+    <div class="ftr__brand">
+      <img src="/brand/logo-reverse.svg" alt="Sasha's Corner" width="170" height="102" loading="lazy" />
+      <p class="ftr__sign">See you on the corner.</p>
+    </div>
+
+    {
+      info && (
+        <address class="ftr__col">
+          <p class="label">Find us</p>
+          <p>
+            {info.address.line1}
+            <br />
+            {info.address.city} {info.address.postcode}
+          </p>
+          <p>
+            {info.phone && <a href={`tel:+44${info.phone.replace(/\s/g, '').replace(/^0/, '')}`}>{info.phone}</a>}
+            {info.email && (
+              <>
+                <br />
+                <a href={`mailto:${info.email}`}>{info.email}</a>
+              </>
+            )}
+          </p>
+        </address>
+      )
+    }
+
+    <div class="ftr__col">
+      <p class="label">Open</p>
+      <dl class="ftr__hours">
+        {
+          rows.map((r) => (
+            <div>
+              <dt>{r.from === r.to ? WEEKDAYS[r.from] : `${WEEKDAYS[r.from].slice(0, 3)} – ${WEEKDAYS[r.to].slice(0, 3)}`}</dt>
+              <dd class="num">{r.text}</dd>
+            </div>
+          ))
+        }
+      </dl>
+    </div>
+
+    <div class="ftr__col">
+      <p class="label">Follow</p>
+      <ul class="ftr__social">
+        {
+          socialLinks(info).map(([name, url]) => (
+            <li>
+              <a href={url} rel="me noopener" target="_blank">
+                <Icon name={name.toLowerCase()} />
+                <span>{name}</span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </div>
+  <div class="wrap ftr__base">
+    <span>© {year} Sasha's Corner, Dundee</span>
+    <nav aria-label="Footer">
+      <ul class="ftr__links">
+        <li><a href="/menu">Menu</a></li>
+        <li><a href="/order">Cakes &amp; delivery</a></li>
+        <li><a href="/about">About</a></li>
+        <li><a href="/book">Book</a></li>
+        <li><a href="/visit">Visit &amp; contact</a></li>
+        <li><a href="/faq">FAQ</a></li>
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+<style>
+  .ftr {
+    background: var(--olive-900);
+    color: var(--on-dark);
+    padding-block: clamp(56px, 8vw, 96px) calc(28px + var(--safe-b));
+    position: relative;
+    overflow: hidden;
+  }
+  .ftr__grid {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr 1fr 0.8fr;
+    gap: 40px;
+  }
+  @media (max-width: 900px) {
+    .ftr__grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  @media (max-width: 520px) {
+    .ftr__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .ftr__brand img {
+    width: 170px;
+    height: auto;
+  }
+  .ftr__sign {
+    margin-top: 18px;
+    font-family: var(--font-light);
+    font-weight: 250;
+    font-size: var(--step-1);
+    color: var(--on-dark-soft);
+  }
+  .ftr__col {
+    display: grid;
+    align-content: start;
+    gap: 14px;
+    font-style: normal;
+  }
+  .ftr__col .label {
+    color: var(--sage-on-dark);
+  }
+  /* phone, social and base links: 44px tall targets without changing the rhythm */
+  .ftr__col a,
+  .ftr__links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .ftr__col p:has(a) {
+    margin-block: -10px;
+  }
+  .ftr__hours {
+    margin: 0;
+    display: grid;
+    gap: 6px;
+  }
+  .ftr__hours div {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .ftr__hours dd {
+    margin: 0;
+  }
+  .ftr__social {
+    list-style: none;
+    padding: 0;
+    margin: -10px 0;
+    display: grid;
+    gap: 0;
+  }
+  .ftr__social a {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+  }
+  .ftr__social a:hover span {
+    text-decoration: underline;
+  }
+  .ftr__base {
+    margin-top: clamp(48px, 7vw, 80px);
+    padding-top: 20px;
+    border-top: 1px solid color-mix(in oklab, var(--on-dark) 18%, transparent);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: var(--step--1);
+    color: var(--on-dark-soft);
+  }
+  .ftr__links {
+    list-style: none;
+    margin: -10px 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: 18px;
+  }
+  .ftr__links a {
+    min-width: 44px;
+    text-decoration: none;
+  }
+  .ftr__links a:hover {
+    text-decoration: underline;
+  }
+  @media (max-width: 520px) {
+    .ftr__grid {
+      gap: 32px;
+    }
+    .ftr__base {
+      flex-direction: column-reverse;
+      gap: 18px;
+    }
+    /* two even columns of links: each a full-width 44px row, easy to hit with a thumb */
+    .ftr__links {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      column-gap: 16px;
+      margin: 0;
+    }
+  }
+</style>

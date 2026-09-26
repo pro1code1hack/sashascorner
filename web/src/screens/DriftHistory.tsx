@@ -28,10 +28,10 @@ export function DriftHistory({ ingredientId }: { ingredientId: number }) {
     retry: false,
   })
 
-  if (q.isPending) return <p className="text-muted mt-2">Reading count history&hellip;</p>
+  if (q.isPending) return <p className="text-ink-3 mt-2">Reading count history&hellip;</p>
   if (q.isError || !q.data) {
     return (
-      <p className="text-muted mt-2 max-w-[70ch] leading-relaxed">
+      <p className="text-ink-3 mt-2 max-w-[70ch] leading-[20px]">
         {(q.error as Error | undefined)?.message ?? 'Count history could not be read.'}
       </p>
     )
@@ -42,7 +42,7 @@ export function DriftHistory({ ingredientId }: { ingredientId: number }) {
   const width = Math.max(obs.length * 46, 240)
 
   return (
-    <div className="border-rule-strong mt-3 border-t pt-3">
+    <div className="border-line-2 mt-3 border-t pt-3">
       <div className="flex flex-wrap items-baseline gap-x-4">
         <Label>
           {obs.length} counts · waste factor {trimQty(row.waste_factor)}
@@ -72,7 +72,7 @@ export function DriftHistory({ ingredientId }: { ingredientId: number }) {
               x2={width}
               y1={y(v)}
               y2={y(v)}
-              stroke="var(--color-rule-strong)"
+              stroke="var(--color-line-2)"
               strokeDasharray="2 3"
             />
           ))}
@@ -83,7 +83,7 @@ export function DriftHistory({ ingredientId }: { ingredientId: number }) {
               x2={width}
               y1={y(v)}
               y2={y(v)}
-              stroke="var(--color-flag)"
+              stroke="var(--color-bad-ink)"
               strokeDasharray="5 3"
             />
           ))}
@@ -95,7 +95,7 @@ export function DriftHistory({ ingredientId }: { ingredientId: number }) {
             textAnchor="end"
             className="fig"
             fontSize="10"
-            fill="var(--color-flag)"
+            fill="var(--color-bad-ink)"
           >
             15% auto-ordering refused
           </text>
@@ -105,7 +105,7 @@ export function DriftHistory({ ingredientId }: { ingredientId: number }) {
             textAnchor="end"
             className="fig"
             fontSize="10"
-            fill="var(--color-muted)"
+            fill="var(--color-ink-3)"
           >
             10% tuning band
           </text>
@@ -123,7 +123,7 @@ export function DriftHistory({ ingredientId }: { ingredientId: number }) {
                   y={top}
                   width="22"
                   height={Math.max(h, 1)}
-                  fill={over ? 'var(--color-flag)' : 'var(--color-rule-strong)'}
+                  fill={over ? 'var(--color-bad-ink)' : 'var(--color-line-2)'}
                 />
                 {/* a count whose window contained expired stock is ticked, the
                     same form the attribution bars use for expiry */}
@@ -143,7 +143,7 @@ export function DriftHistory({ ingredientId }: { ingredientId: number }) {
                   textAnchor="middle"
                   className="fig"
                   fontSize="10"
-                  fill="var(--color-muted)"
+                  fill="var(--color-ink-3)"
                 >
                   {dayShort(o.observed_at)}
                 </text>
@@ -153,7 +153,7 @@ export function DriftHistory({ ingredientId }: { ingredientId: number }) {
                   textAnchor="middle"
                   className="fig"
                   fontSize="10"
-                  fill={over ? 'var(--color-flag)' : 'var(--color-muted)'}
+                  fill={over ? 'var(--color-bad-ink)' : 'var(--color-ink-3)'}
                 >
                   {pct(o.drift_pct, { sign: true })}
                 </text>
@@ -163,13 +163,13 @@ export function DriftHistory({ ingredientId }: { ingredientId: number }) {
 
           <defs>
             <pattern id="ticks" width="6" height="6" patternTransform="rotate(115)" patternUnits="userSpaceOnUse">
-              <rect width="3" height="6" fill="var(--color-paper)" />
+              <rect width="3" height="6" fill="var(--color-canvas)" />
             </pattern>
           </defs>
         </svg>
       </div>
 
-      <p className="text-muted mt-1 max-w-[74ch] leading-relaxed">
+      <p className="text-ink-3 mt-1 max-w-[74ch] leading-[20px]">
         A ticked column is a count whose window contained expired stock — the same form the
         attribution bars use, so expiry reads the same way everywhere. Counts above the
         zero rule found less than the ledger expected; counts below found more.

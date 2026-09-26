@@ -1,0 +1,68 @@
+# Café facts for the public site.
+#
+# Address, phone, geo and hours were checked against the café's Google Business
+# Profile on 2026-09-25 (Maps place id 0x48865de28d402059:0xb002752139d34172).
+# Still unconfirmed: email (no domain registered yet), TikTok/Facebook, and the
+# booking capacity rules -- see `unconfirmed_fields`.
+
+confirmed = false
+unconfirmed_fields = ["email", "booking"]
+
+name = "Sasha's Corner"
+phone = "07398 433317"
+email = ""                               # UNCONFIRMED -- set once a mailbox exists
+
+[address]
+line1 = "23 Commercial Street"
+city = "Dundee"
+postcode = "DD1 3DD"
+country = "GB"
+
+[geo]
+lat = 56.4612158
+lng = -2.9668779
+
+# One entry per weekday, 0 = Monday. A closed day is { weekday = N, closed = true }.
+[[hours]]
+weekday = 0
+open = "09:00"
+close = "19:00"
+[[hours]]
+weekday = 1
+open = "09:00"
+close = "19:00"
+[[hours]]
+weekday = 2
+open = "09:00"
+close = "19:00"
+[[hours]]
+weekday = 3
+open = "09:00"
+close = "19:00"
+[[hours]]
+weekday = 4
+open = "09:00"
+close = "19:00"
+[[hours]]
+weekday = 5
+open = "09:00"
+close = "19:00"
+[[hours]]
+weekday = 6
+open = "09:00"
+close = "17:00"
+
+[socials]
+instagram = "https://www.instagram.com/sashascorner_uk"
+facebook = ""
+tiktok = ""
+
+[booking]                                # UNCONFIRMED -- capacity is a guess
+covers_per_slot = 16                     # max seated covers at any one moment
+max_party = 8                            # larger groups -> contact form
+slot_minutes = 30
+duration_minutes = 90                    # how long a table is held
+last_seating_before_close_minutes = 60
+min_lead_minutes = 60                    # no bookings for sooner than this
+horizon_days = 30
+closed_dates = []                        # e.g. ["2026-12-25", "2027-01-01"]

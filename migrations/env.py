@@ -16,6 +16,13 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata
 
 
+def _include_name(name: str | None, type_: str, _parent: object) -> bool:
+    # The public website (site/) keeps its own tables in this same SQLite file, under
+    # its own Alembic history (version table `site_alembic_version`). Without this
+    # filter an ops `--autogenerate` sees them as unknown and proposes dropping them.
+    return not (type_ == "table" and name is not None and name.startswith("site_"))
+
+
 def _url() -> str:
     # -x db_url=... wins, then the app settings.
     return context.get_x_argument(as_dictionary=True).get("db_url") or settings.database_url
@@ -29,6 +36,7 @@ def run_migrations_offline() -> None:
         dialect_opts={"paramstyle": "named"},
         compare_type=True,
         render_as_batch=True,
+        include_name=_include_name,
     )
     with context.begin_transaction():
         context.run_migrations()
@@ -46,6 +54,7 @@ def run_migrations_online() -> None:
             target_metadata=target_metadata,
             compare_type=True,
             render_as_batch=True,
+            include_name=_include_name,
         )
         with context.begin_transaction():
             context.run_migrations()

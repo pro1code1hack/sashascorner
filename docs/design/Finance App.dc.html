@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet"><script src="sc-fin.js"></script><style>body{margin:0;font-family:'Patrick Hand',system-ui,sans-serif;color:#1d1b19}a{color:#1d1b19}a:hover{color:#c2562b}input,select{font-family:'Patrick Hand',sans-serif;color:#1d1b19;background:#fff}</style></helmet>
+<div style="width:100%;height:100%;display:flex;flex-direction:column;background:#fff;font-family:'Patrick Hand',sans-serif;color:#1d1b19;overflow:hidden">
+<div style="display:flex;align-items:center;gap:18px;padding:12px 20px;border-bottom:2px solid #1d1b19;flex:none">
+<sc-if value="{{ standalone }}" hint-placeholder-val="{{ true }}"><div style="font:700 22px 'Kalam',cursive">Sasha's Corner · Money</div></sc-if><sc-if value="{{ embedded }}" hint-placeholder-val="{{ false }}"><div style="font:700 24px 'Kalam',cursive">{{ pageTitle }}</div><div style="color:#777;font-size:15px">{{ pageSub }}</div></sc-if>
+<sc-if value="{{ standalone }}" hint-placeholder-val="{{ true }}"><div style="display:flex;gap:6px"><sc-for list="{{ tabs }}" as="t" hint-placeholder-count="5"><div onClick="{{ t.go }}" style="cursor:pointer;border:2px solid #1d1b19;border-radius:16px;padding:2px 14px;font-size:18px;white-space:nowrap;background:{{ t.bg }};color:{{ t.fg }}">{{ t.label }}</div></sc-for></div></sc-if>
+<div style="flex:1"></div>
+<div style="color:#888;font-size:15px">{{ savedLabel }}</div>
+<sc-if value="{{ showAdd }}" hint-placeholder-val="{{ false }}"><div onClick="{{ add }}" style="cursor:pointer;background:#c2562b;color:#fff;border-radius:18px;padding:5px 16px;font-size:18px;white-space:nowrap">{{ addLabel }}</div></sc-if>
+</div>
+<sc-if value="{{ showMonths }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;gap:6px;align-items:center;padding:10px 20px;border-bottom:1.5px dashed #bbb;flex:none;overflow-x:auto">
+<span style="color:#777;font-size:15px;margin-right:4px">Month</span>
+<sc-for list="{{ months }}" as="m" hint-placeholder-count="7"><div onClick="{{ m.select }}" style="cursor:pointer;flex:none;border:2px solid #1d1b19;border-radius:12px;padding:0 12px;font-size:16px;background:{{ m.bg }};color:{{ m.fg }}">{{ m.label }}</div></sc-for>
+</div>
+</sc-if>
+<div style="flex:1;min-height:0;overflow-y:auto">
+
+<sc-if value="{{ isOverview }}" hint-placeholder-val="{{ true }}">
+<div style="padding:20px 24px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:28px">
+<div>
+<div style="font:700 26px 'Kalam',cursive;margin-bottom:4px">{{ ov.title }}</div>
+<div style="color:#666;font-size:16px;margin-bottom:14px">{{ ov.sub }}</div>
+<sc-for list="{{ ov.lines }}" as="l" hint-placeholder-count="8">
+<div style="display:grid;grid-template-columns:minmax(0,1fr) 110px 110px;gap:10px;padding:6px 0;border-bottom:{{ l.bd }};font-size:{{ l.fs }};font-weight:{{ l.fw }}"><span style="padding-left:{{ l.indent }}">{{ l.label }}</span><span style="text-align:right;color:{{ l.c }}">{{ l.val }}</span><span style="text-align:right;color:#888;font-size:15px;font-weight:400">{{ l.prev }}</span></div>
+</sc-for>
+<div style="color:#888;font-size:14px;margin-top:6px">Right column: previous month. {{ ov.excluded }}</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:18px">
+<div>
+<div style="display:flex;justify-content:space-between;align-items:baseline"><div style="font:700 19px 'Kalam',cursive">Takings, day by day</div><div style="color:#777;font-size:15px">{{ ov.daysLine }}</div></div>
+<div style="display:flex;align-items:flex-end;gap:3px;height:170px;border-bottom:2px solid #1d1b19;margin-top:8px">
+<sc-for list="{{ ov.bars }}" as="b" hint-placeholder-count="30"><div title="{{ b.tip }}" style="flex:1;height:{{ b.h }};background:{{ b.bg }};border:{{ b.bd }};box-sizing:border-box"></div></sc-for>
+</div>
+<div style="display:flex;justify-content:space-between;color:#888;font-size:14px;margin-top:4px"><span>1st</span><span>dashes = no sales entered that day</span><span>{{ ov.lastDay }}</span></div>
+</div>
+<div>
+<div style="font:700 19px 'Kalam',cursive;margin-bottom:6px">Where the money went</div>
+<sc-for list="{{ ov.cats }}" as="c" hint-placeholder-count="5"><div style="display:grid;grid-template-columns:150px minmax(0,1fr) 90px;gap:10px;align-items:center;padding:3px 0;font-size:16px"><span>{{ c.label }}</span><div style="height:14px;border:1.5px solid #1d1b19"><div style="height:100%;background:#1d1b19;width:{{ c.w }}"></div></div><span style="text-align:right">{{ c.val }}</span></div></sc-for>
+</div>
+<div style="border:2px dashed #c2562b;border-radius:8px;padding:12px 14px">
+<div style="font:700 18px 'Kalam',cursive;margin-bottom:4px">Needs a look · {{ ov.flagCount }}</div>
+<sc-for list="{{ ov.flags }}" as="f" hint-placeholder-count="3"><div onClick="{{ f.go }}" style="cursor:pointer;display:flex;justify-content:space-between;gap:10px;font-size:16px;padding:3px 0"><span>{{ f.label }}</span><span style="color:#777">{{ f.val }}</span></div></sc-for>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isSales }}" hint-placeholder-val="{{ false }}">
+<div style="display:grid;grid-template-columns:120px 60px repeat(4,minmax(0,1fr)) 80px 90px minmax(0,1.4fr) 20px;gap:10px;padding:8px 24px;border-bottom:2px solid #1d1b19;color:#777;font-size:14px;position:sticky;top:0;background:#fff"><span>Date</span><span>Day</span><span style="text-align:right">Card £</span><span style="text-align:right">Square cash £</span><span style="text-align:right">Own cash £</span><span style="text-align:right">Total</span><span style="text-align:right">Orders</span><span style="text-align:right">Avg ticket</span><span>Note</span><span></span></div>
+<sc-for list="{{ salesRows }}" as="r" hint-placeholder-count="12">
+<div style="display:grid;grid-template-columns:120px 60px repeat(4,minmax(0,1fr)) 80px 90px minmax(0,1.4fr) 20px;gap:10px;padding:5px 24px;border-bottom:1.5px dashed #e2e2e2;align-items:center;font-size:16px">
+<input type="date" value="{{ r.date }}" onChange="{{ r.setDate }}" style="border:1.5px solid #bbb;border-radius:6px;padding:2px 4px;font-size:14px;min-width:0"></input>
+<span style="color:#777">{{ r.day }}</span>
+<input value="{{ r.card }}" onChange="{{ r.setCard }}" style="border:1.5px solid #bbb;border-radius:6px;padding:2px 6px;font-size:16px;text-align:right;min-width:0"></input>
+<input value="{{ r.sqCash }}" onChange="{{ r.setSq }}" style="border:1.5px solid #bbb;border-radius:6px;padding:2px 6px;font-size:16px;text-align:right;min-width:0"></input>
+<input value="{{ r.ownCash }}" onChange="{{ r.setOwn }}" style="border:1.5px solid #bbb;border-radius:6px;padding:2px 6px;font-size:16px;text-align:right;min-width:0"></input>
+<span style="text-align:right">{{ r.total }}</span>
+<input value="{{ r.tx }}" onChange="{{ r.setTx }}" placeholder="—" style="border:1.5px solid #bbb;border-radius:6px;padding:2px 6px;font-size:16px;text-align:right;min-width:0"></input>
+<span style="text-align:right;color:#777">{{ r.avg }}</span>
+<input value="{{ r.note }}" onChange="{{ r.setNote }}" placeholder="—" style="border:1.5px solid #bbb;border-radius:6px;padding:2px 6px;font-size:15px;min-width:0"></input>
+<span onClick="{{ r.remove }}" style="cursor:pointer;color:#999;text-align:center">×</span>
+</div>
+</sc-for>
+<div style="display:grid;grid-template-columns:120px 60px repeat(4,minmax(0,1fr)) 80px 90px minmax(0,1.4fr) 20px;gap:10px;padding:10px 24px;font-size:17px;font-weight:700;border-top:2px solid #1d1b19"><span>{{ salesTot.label }}</span><span></span><span style="text-align:right">{{ salesTot.card }}</span><span style="text-align:right">{{ salesTot.sq }}</span><span style="text-align:right">{{ salesTot.own }}</span><span style="text-align:right">{{ salesTot.total }}</span><span style="text-align:right">{{ salesTot.tx }}</span><span></span><span></span><span></span></div>
+</sc-if>
+
+<sc-if value="{{ isExp }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;gap:8px;align-items:center;padding:10px 24px;border-bottom:1.5px dashed #bbb;flex-wrap:wrap">
+<input value="{{ eq }}" onChange="{{ setEq }}" placeholder="Search vendor or note" style="width:210px;border:2px solid #1d1b19;border-radius:8px;padding:4px 10px;font-size:16px"></input>
+<select value="{{ fCat }}" onChange="{{ setFCat }}" style="border:1.5px solid #1d1b19;border-radius:6px;padding:3px 6px;font-size:15px"><sc-for list="{{ catFilter }}" as="c" hint-placeholder-count="4"><option value="{{ c.v }}">{{ c.label }}</option></sc-for></select>
+<select value="{{ fKind }}" onChange="{{ setFKind }}" style="border:1.5px solid #1d1b19;border-radius:6px;padding:3px 6px;font-size:15px"><option value="all">All types</option><option value="Operating">Running costs</option><option value="Capital">Equipment / setup</option><option value="Drawings">Personal (drawings)</option></select>
+<div onClick="{{ toggleFlag }}" style="cursor:pointer;border:2px solid #c2562b;border-radius:14px;padding:0 12px;font-size:15px;background:{{ flagBg }};color:{{ flagFg }}">Needs a look</div>
+<div onClick="{{ toggleNoRcpt }}" style="cursor:pointer;border:2px solid #1d1b19;border-radius:14px;padding:0 12px;font-size:15px;background:{{ rcptBg }};color:{{ rcptFg }}">No receipt</div>
+<div style="flex:1"></div>
+<div style="font-size:17px">{{ expCount }} · <b>{{ expTotal }}</b></div>
+</div>
+<div style="display:grid;grid-template-columns:120px minmax(0,1.1fr) minmax(0,1.8fr) 84px minmax(0,1fr) minmax(0,1.05fr) 40px minmax(0,1.6fr) 20px;gap:8px;padding:8px 24px;border-bottom:2px solid #1d1b19;color:#777;font-size:14px"><span>Date</span><span>Category</span><span>Vendor / description</span><span style="text-align:right">£</span><span>Paid by</span><span>Type</span><span>Rcpt</span><span>Notes</span><span></span></div>
+<sc-for list="{{ expRows }}" as="r" hint-placeholder-count="12">
+<div style="display:grid;grid-template-columns:120px minmax(0,1.1fr) minmax(0,1.8fr) 84px minmax(0,1fr) minmax(0,1.05fr) 40px minmax(0,1.6fr) 20px;gap:8px;padding:5px 24px;border-bottom:1.5px dashed #e2e2e2;align-items:center;font-size:15px;background:{{ r.bg }}">
+<input type="date" value="{{ r.date }}" onChange="{{ r.setDate }}" style="border:1.5px solid #bbb;border-radius:6px;padding:2px 4px;font-size:14px;min-width:0"></input>
+<select value="{{ r.cat }}" onChange="{{ r.setCat }}" style="border:1.5px solid #bbb;border-radius:6px;padding:2px;font-size:14px;min-width:0"><sc-for list="{{ catOptions }}" as="c" hint-placeholder-count="4"><option value="{{ c }}">{{ c }}</option></sc-for></select>
+<input value="{{ r.desc }}" onChange="{{ r.setDesc }}" style="border:1.5px solid #bbb;border-radius:6px;padding:2px 6px;font-size:15px;min-width:0"></input>
+<input value="{{ r.amount }}" onChange="{{ r.setAmount }}" style="border:1.5px solid #bbb;border-radius:6px;padding:2px 6px;font-size:15px;text-align:right;min-width:0"></input>
+<select value="{{ r.method }}" onChange="{{ r.setMethod }}" style="border:1.5px solid #bbb;border-radius:6px;padding:2px;font-size:14px;min-width:0"><sc-for list="{{ methods }}" as="c" hint-placeholder-count="4"><option value="{{ c }}">{{ c }}</option></sc-for></select>
+<select value="{{ r.kind }}" onChange="{{ r.setKind }}" style="border:1.5px solid #bbb;border-radius:6px;padding:2px;font-size:14px;min-width:0"><option value="Operating">Running</option><option value="Capital">Equipment</option><option value="Drawings">Personal</option></select>
+<span onClick="{{ r.toggleRcpt }}" style="cursor:pointer;width:18px;height:18px;border:2px solid #1d1b19;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:13px">{{ r.rcpt }}</span>
+<input value="{{ r.notes }}" onChange="{{ r.setNotes }}" placeholder="—" style="border:1.5px solid {{ r.noteBd }};border-radius:6px;padding:2px 6px;font-size:14px;min-width:0"></input>
+<span onClick="{{ r.remove }}" style="cursor:pointer;color:#999;text-align:center">×</span>
+</div>
+</sc-for>
+<sc-if value="{{ expEmpty }}" hint-placeholder-val="{{ false }}"><div style="padding:40px;text-align:center;color:#888;font-size:17px">No expenses match these filters.</div></sc-if>
+</sc-if>
+
+<sc-if value="{{ isRecon }}" hint-placeholder-val="{{ false }}">
+<div style="padding:18px 24px;display:flex;flex-direction:column;gap:28px">
+<div>
+<div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap"><div style="font:700 22px 'Kalam',cursive">Card takings vs the bank</div><span style="color:#555;font-size:15px;display:flex;gap:6px;align-items:center">Paid out after<input value="{{ rc.lag }}" onChange="{{ rc.setLag }}" style="width:34px;border:1.5px solid #bbb;border-radius:6px;padding:1px 4px;font-size:15px;text-align:center"></input>working days, card fees about<input value="{{ rc.fee }}" onChange="{{ rc.setFee }}" style="width:46px;border:1.5px solid #bbb;border-radius:6px;padding:1px 4px;font-size:15px;text-align:center"></input>%</span></div>
+<div style="color:#777;font-size:15px;margin:2px 0 8px">{{ rc.bankSum }}</div>
+<div style="display:grid;grid-template-columns:130px 110px 130px 120px 110px minmax(0,1fr);gap:10px;padding:6px 0;border-bottom:2px solid #1d1b19;color:#777;font-size:14px;max-width:980px"><span>Sold on</span><span style="text-align:right">Card on till</span><span>Due in bank</span><span style="text-align:right">Arrived £</span><span style="text-align:right">Difference</span><span></span></div>
+<sc-for list="{{ rc.bank }}" as="r" hint-placeholder-count="8"><div style="display:grid;grid-template-columns:130px 110px 130px 120px 110px minmax(0,1fr);gap:10px;padding:4px 0;border-bottom:1.5px dashed #e2e2e2;align-items:center;font-size:15px;max-width:980px;background:{{ r.bg }}"><span>{{ r.sold }}</span><span style="text-align:right">{{ r.card }}</span><span>{{ r.due }}</span><input value="{{ r.arrived }}" onChange="{{ r.setArrived }}" placeholder="not yet" style="border:1.5px solid #bbb;border-radius:6px;padding:1px 6px;font-size:15px;text-align:right;min-width:0"></input><span style="text-align:right;color:{{ r.diffC }}">{{ r.diff }}</span><span style="color:#888;font-size:14px">{{ r.note }}</span></div></sc-for>
+</div>
+
+<div>
+<div style="display:flex;align-items:baseline;gap:14px"><div style="font:700 22px 'Kalam',cursive">Delivery apps: what they took vs what you kept</div><div onClick="{{ rc.upload }}" style="cursor:pointer;border:1.5px solid #1d1b19;border-radius:14px;padding:0 12px;font-size:15px">Upload a CSV export</div><span style="color:#888;font-size:14px">{{ rc.uploadNote }}</span></div>
+<div style="display:grid;grid-template-columns:90px 110px 110px 110px 110px 110px 80px;gap:10px;padding:6px 0;border-bottom:2px solid #1d1b19;color:#777;font-size:14px;margin-top:8px;max-width:980px"><span>Month</span><span>App</span><span style="text-align:right">Customers paid</span><span style="text-align:right">Commission</span><span style="text-align:right">Ads</span><span style="text-align:right">You kept</span><span style="text-align:right">Kept</span></div>
+<sc-for list="{{ rc.ch }}" as="r" hint-placeholder-count="6"><div style="display:grid;grid-template-columns:90px 110px 110px 110px 110px 110px 80px;gap:10px;padding:4px 0;border-bottom:1.5px dashed #e2e2e2;align-items:center;font-size:15px;max-width:980px;color:{{ r.c }}"><span>{{ r.month }}</span><span>{{ r.app }}</span><sc-if value="{{ r.has }}" hint-placeholder-val="{{ true }}"><input value="{{ r.gross }}" onChange="{{ r.setGross }}" style="border:1.5px solid #bbb;border-radius:6px;padding:1px 6px;font-size:15px;text-align:right;min-width:0"></input><input value="{{ r.comm }}" onChange="{{ r.setComm }}" style="border:1.5px solid #bbb;border-radius:6px;padding:1px 6px;font-size:15px;text-align:right;min-width:0"></input><input value="{{ r.ads }}" onChange="{{ r.setAds }}" style="border:1.5px solid #bbb;border-radius:6px;padding:1px 6px;font-size:15px;text-align:right;min-width:0"></input><span style="text-align:right">{{ r.kept }}</span><span style="text-align:right">{{ r.pct }}</span></sc-if><sc-if value="{{ r.missing }}" hint-placeholder-val="{{ false }}"><span style="grid-column:span 5;color:#999">not uploaded: missing, not zero</span></sc-if></div></sc-for>
+</div>
+
+<div>
+<div style="font:700 22px 'Kalam',cursive">Cash: counted vs the till</div>
+<div style="color:#777;font-size:15px;margin:2px 0 8px">{{ rc.cashSum }}</div>
+<div style="display:flex;align-items:center;gap:3px;height:90px;max-width:980px;border-bottom:1.5px solid #1d1b19;position:relative"><sc-for list="{{ rc.cashBars }}" as="b" hint-placeholder-count="20"><div style="flex:1;height:100%;display:flex;flex-direction:column;justify-content:{{ b.jc }}"><div title="{{ b.tip }}" style="height:{{ b.h }};background:{{ b.bg }}"></div></div></sc-for></div>
+<div style="color:#888;font-size:13px;margin:2px 0 10px">bars above the line: more cash than the till says; below: less</div>
+<div style="display:grid;grid-template-columns:130px 110px 120px 110px minmax(0,1fr);gap:10px;padding:6px 0;border-bottom:2px solid #1d1b19;color:#777;font-size:14px;max-width:980px"><span>Day</span><span style="text-align:right">Till says</span><span style="text-align:right">Counted £</span><span style="text-align:right">Difference</span><span></span></div>
+<sc-for list="{{ rc.cash }}" as="r" hint-placeholder-count="6"><div style="display:grid;grid-template-columns:130px 110px 120px 110px minmax(0,1fr);gap:10px;padding:4px 0;border-bottom:1.5px dashed #e2e2e2;align-items:center;font-size:15px;max-width:980px;background:{{ r.bg }}"><span>{{ r.day }}</span><span style="text-align:right">{{ r.till }}</span><input value="{{ r.counted }}" onChange="{{ r.setCounted }}" placeholder="not counted" style="border:1.5px solid #bbb;border-radius:6px;padding:1px 6px;font-size:15px;text-align:right;min-width:0"></input><span style="text-align:right;color:{{ r.diffC }};font-weight:{{ r.fw }}">{{ r.diff }}</span><span style="color:#888;font-size:14px">{{ r.note }}</span></div></sc-for>
+<sc-if value="{{ rc.noCash }}" hint-placeholder-val="{{ false }}"><div style="color:#888;font-size:15px;padding:10px 0">No cash taken this month.</div></sc-if>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isPL }}" hint-placeholder-val="{{ false }}">
+<div style="padding:18px 24px">
+<div style="display:flex;align-items:baseline;gap:12px;margin-bottom:10px"><div style="font:700 26px 'Kalam',cursive">Profit &amp; loss</div><span style="color:#777;font-size:15px">Worked out from the sales and expenses logs. Equipment and personal spending are kept out of running costs.</span></div>
+<div style="overflow-x:auto">
+<div style="display:grid;grid-template-columns:{{ plCols }};gap:0;min-width:900px">
+<sc-for list="{{ plRows }}" as="row" hint-placeholder-count="14">
+<sc-for list="{{ row.cells }}" as="c" hint-placeholder-count="9"><div style="padding:5px 8px;text-align:{{ c.al }};font-size:{{ row.fs }};font-weight:{{ row.fw }};border-bottom:{{ row.bd }};color:{{ c.c }};background:{{ c.bg }};white-space:nowrap">{{ c.v }}</div></sc-for>
+</sc-for>
+</div>
+</div>
+<div style="color:#888;font-size:14px;margin-top:10px">Stock costs above 32% of revenue are marked. Before tax.</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isDir }}" hint-placeholder-val="{{ false }}">
+<div style="padding:16px 24px 0;display:flex;gap:28px;align-items:baseline;flex-wrap:wrap">
+<div><div style="color:#777;font-size:15px">Put in</div><div style="font-size:26px">{{ dir.inTot }}</div></div>
+<div><div style="color:#777;font-size:15px">Taken out</div><div style="font-size:26px">{{ dir.outTot }}</div></div>
+<div><div style="color:#777;font-size:15px">Company owes you</div><div style="font-size:26px;font-weight:700">{{ dir.bal }}</div></div>
+<div style="color:#888;font-size:15px;max-width:380px">{{ dir.note }}</div>
+</div>
+<div style="display:grid;grid-template-columns:120px minmax(0,1fr) minmax(0,2fr) 100px 100px 100px minmax(0,1.4fr) 20px;gap:8px;padding:14px 24px 8px;border-bottom:2px solid #1d1b19;color:#777;font-size:14px"><span>Date</span><span>Type</span><span>Description</span><span style="text-align:right">In £</span><span style="text-align:right">Out £</span><span style="text-align:right">Balance</span><span>Notes</span><span></span></div>
+<sc-for list="{{ dirRows }}" as="r" hint-placeholder-count="10">
+<div style="display:grid;grid-template-columns:120px minmax(0,1fr) minmax(0,2fr) 100px 100px 100px minmax(0,1.4fr) 20px;gap:8px;padding:5px 24px;border-bottom:1.5px dashed #e2e2e2;align-items:center;font-size:15px">
+<input type="date" value="{{ r.date }}" onChange="{{ r.setDate }}" style="border:1.5px solid #bbb;border-radius:6px;padding:2px 4px;font-size:14px;min-width:0"></input>
+<select value="{{ r.type }}" onChange="{{ r.setType }}" style="border:1.5px solid #bbb;border-radius:6px;padding:2px;font-size:14px;min-width:0"><option value="Capital injection">Capital injection</option><option value="Loan to company">Loan to company</option><option value="Drawings">Drawings</option><option value="Repayment">Repayment</option></select>
+<input value="{{ r.desc }}" onChange="{{ r.setDesc }}" style="border:1.5px solid #bbb;border-radius:6px;padding:2px 6px;font-size:15px;min-width:0"></input>
+<input value="{{ r.inV }}" onChange="{{ r.setIn }}" placeholder="—" style="border:1.5px solid #bbb;border-radius:6px;padding:2px 6px;font-size:15px;text-align:right;min-width:0"></input>
+<input value="{{ r.outV }}" onChange="{{ r.setOut }}" placeholder="—" style="border:1.5px solid #bbb;border-radius:6px;padding:2px 6px;font-size:15px;text-align:right;min-width:0"></input>
+<span style="text-align:right">{{ r.bal }}</span>
+<input value="{{ r.notes }}" onChange="{{ r.setNotes }}" placeholder="—" style="border:1.5px solid #bbb;border-radius:6px;padding:2px 6px;font-size:14px;min-width:0"></input>
+<span onClick="{{ r.remove }}" style="cursor:pointer;color:#999;text-align:center">×</span>
+</div>
+</sc-for>
+</sc-if>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900}}">
+const KEY = 'sc-fin-v1';
+const COGS = ['Stock — coffee', 'Stock — dairy', 'Stock — syrups', 'Stock — cakes', 'Stock — food', 'Stock — packaging', 'Stock — other'];
+const OPEX = ['Rent', 'Utilities', 'Wages', 'Marketing', 'Square fees', 'Other'];
+const CATS = [...COGS, ...OPEX];
+const METHODS = ['Card', 'Bank transfer', 'Direct debit', 'Standing order', 'Cash', 'Cash withdrawal'];
+const MN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const gbp = p => (p < 0 ? '−£' : '£') + (Math.abs(p) / 100).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const gbp0 = p => (p < 0 ? '−£' : '£') + Math.round(Math.abs(p) / 100).toLocaleString('en-GB');
+const pct = x => x == null || !isFinite(x) ? '—' : Math.round(x * 100) + '%';
+const pen = v => Math.round((parseFloat(String(v).replace(/[£,]/g, '')) || 0) * 100);
+const on = a => ({ bg: a ? '#1d1b19' : 'transparent', fg: a ? '#fff' : '#1d1b19' });
+const uid = p => p + Math.random().toString(36).slice(2, 8);
+const mLabel = k => MN[+k.slice(5, 7) - 1] + ' ' + k.slice(2, 4);
+const kindOf = e => /capital expenditure/i.test(e.notes) ? 'Capital' : /director drawings|personal/i.test(e.notes) ? 'Drawings' : 'Operating';
+const flagged = e => /ask user|verify|\?\?/i.test(e.notes);
+const FPAGE = { overview: ['Money', 'how the month is going'], sales: ['Sales', 'one row per trading day'], exp: ['Expenses', 'everything paid out'], rec: ['Reconcile', 'does the money that should arrive actually arrive?'], pl: ['Profit & loss', 'worked out from sales and expenses'], dir: ["Director's account", 'money in from you, money out to you'] };
+function finMigrate(d) {
+  if (d.fix1) return d; d.fix1 = true; d.bankLag = 2; d.cardFee = 1.75; d.bank = {};
+  d.channels = [['2026-01', 41250, 7500], ['2026-02', 46820, 3000], ['2026-03', 59010, 4524], ['2026-04', 30140, 2000]].map(([m, g, a]) => ({ month: m, app: 'Deliveroo', gross: g, comm: Math.round(g * 0.3), ads: a, demo: true }));
+  d.cashDecl = {}; const cashDays = d.sales.filter(x => x.sqCash + x.ownCash > 0);
+  cashDays.forEach((x, i) => { const exp = x.sqCash + x.ownCash; d.cashDecl[x.date] = i % 7 === 3 ? exp - 420 : i % 11 === 5 ? exp + 1200 : exp; });
+  const cards = d.sales.filter(x => x.card > 0); if (cards.length > 3) { const x = cards[cards.length - 6]; d.bank[x.date] = Math.round(x.card * 0.9825) - 1850; }
+  return d;
+}
+const shown = (o, k, pv) => o[k + 'Str'] ?? (pv ? (o[pv] / 100).toFixed(2) : o[k]);
+
+class Component extends DCLogic {
+  state = { data: null, tab: 'overview', month: null, eq: '', fCat: 'all', fKind: 'all', fFlag: false, fNoRcpt: false, saved: '' };
+  componentDidMount() {
+    const boot = () => {
+      if (!window.SC_FIN) return setTimeout(boot, 60);
+      let data = null; try { data = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+      if (!data) { data = JSON.parse(JSON.stringify(window.SC_FIN)); data.expenses.forEach(e => e.kind = kindOf(e)); }
+      data = finMigrate(data);
+      const ms = [...new Set(data.sales.map(s => s.date.slice(0, 7)))].sort();
+      this.setState({ data, month: ms[ms.length - 1] });
+    };
+    boot();
+    this.onSync = e => { if (e.detail !== this) try { this.setState({ data: JSON.parse(localStorage.getItem(KEY)) }); } catch (x) {} };
+    window.addEventListener('sc-fin-sync', this.onSync);
+  }
+  componentWillUnmount() { window.removeEventListener('sc-fin-sync', this.onSync); }
+  nav(o) { this.setState(o); if (this.props.onNav && o.tab) this.props.onNav(o.tab); }
+  mut(fn) {
+    this.setState(s => { const data = JSON.parse(JSON.stringify(s.data)); fn(data); return { data, saved: 'Saved' }; }, () => {
+      try { localStorage.setItem(KEY, JSON.stringify(this.state.data)); } catch (e) {}
+      window.dispatchEvent(new CustomEvent('sc-fin-sync', { detail: this }));
+    });
+  }
+  renderVals() {
+    const s = { ...this.state, tab: this.props.tab || this.state.tab }, D = s.data;
+    const tabs = [['overview', 'Overview'], ['sales', 'Sales'], ['exp', 'Expenses'], ['rec', 'Reconcile'], ['pl', 'Profit & loss'], ['dir', "Director's account"]].map(([k, label]) => ({ label, ...on(s.tab === k), go: () => this.nav({ tab: k }) }));
+    const out = { tabs, savedLabel: s.saved, isOverview: s.tab === 'overview', isSales: s.tab === 'sales', isExp: s.tab === 'exp', isPL: s.tab === 'pl', isDir: s.tab === 'dir', isRecon: s.tab === 'rec', rc: { bank: [], ch: [], cash: [], cashBars: [] }, standalone: !this.props.embedded, embedded: !!this.props.embedded, pageTitle: (FPAGE[s.tab] || [''])[0], pageSub: (FPAGE[s.tab] || ['', ''])[1], showMonths: s.tab !== 'pl' && s.tab !== 'dir', months: [], ov: { lines: [], bars: [], cats: [], flags: [] }, salesRows: [], salesTot: {}, expRows: [], catOptions: CATS, methods: METHODS, catFilter: [], plRows: [], dir: {}, dirRows: [], showAdd: false };
+    if (!D) return { ...out, savedLabel: 'Loading workbook…' };
+    const allMonths = [...new Set([...D.sales.map(x => x.date.slice(0, 7)), ...D.expenses.map(x => x.date.slice(0, 7))])].filter(Boolean).sort();
+    const M = s.month || allMonths[allMonths.length - 1];
+    out.months = [{ label: 'All', ...on(M === 'all'), select: () => this.setState({ month: 'all' }) }, ...allMonths.map(k => ({ label: mLabel(k), ...on(k === M), select: () => this.setState({ month: k }) }))];
+    const inM = (d, k) => k === 'all' || (d || '').startsWith(k);
+    const rev = x => x.card + x.sqCash + x.ownCash;
+    let STK = null; try { STK = JSON.parse(localStorage.getItem('sc-menu-stock-v1')); } catch (e) {}
+    const woBy = k => { if (!STK || !STK.ingredients) return 0; let v = 0; STK.ingredients.forEach(i => { const uc = i.pack ? i.packCost / i.pack : 0; ((i.stk || {}).writeoffs || []).forEach(w => { if (inM(w.date, k)) v += w.qty * uc; }); }); return Math.round(v); };
+    const monthCalc = k => {
+      const sales = D.sales.filter(x => inM(x.date, k)), ex = D.expenses.filter(x => inM(x.date, k));
+      const byCat = {}; ex.filter(e => e.kind === 'Operating').forEach(e => byCat[e.cat] = (byCat[e.cat] || 0) + e.amount);
+      const card = sales.reduce((a, x) => a + x.card, 0), sq = sales.reduce((a, x) => a + x.sqCash, 0), own = sales.reduce((a, x) => a + x.ownCash, 0);
+      const revenue = card + sq + own, cogs = COGS.reduce((a, c) => a + (byCat[c] || 0), 0), opex = OPEX.reduce((a, c) => a + (byCat[c] || 0), 0);
+      const capital = ex.filter(e => e.kind === 'Capital').reduce((a, e) => a + e.amount, 0), drawings = ex.filter(e => e.kind === 'Drawings').reduce((a, e) => a + e.amount, 0);
+      const ch = (D.channels || []).filter(x => inM(x.month, k)); const chG = ch.reduce((a, x) => a + x.gross, 0), chC = ch.reduce((a, x) => a + x.comm, 0), chA = ch.reduce((a, x) => a + x.ads, 0);
+      const wo = woBy(k);
+      const revenue2 = revenue + chG, cogs2 = cogs + wo, opex2 = opex + chC + chA;
+      return { sales, ex, byCat, card, sq, own, chG, chC, chA, wo, revenue: revenue2, cogs: cogs2, opex: opex2, gp: revenue2 - cogs2, net: revenue2 - cogs2 - opex2, capital, drawings, days: sales.filter(x => rev(x) > 0).length };
+    };
+
+    if (s.tab === 'overview') {
+      const c = monthCalc(M); const pi = allMonths.indexOf(M); const p = M !== 'all' && pi > 0 ? monthCalc(allMonths[pi - 1]) : null;
+      const L = (label, v, pv, o = {}) => ({ label, val: o.pctv != null ? pct(o.pctv) : gbp(v), prev: p ? (o.pctp != null ? pct(o.pctp) : pv != null ? gbp(pv) : '') : '', indent: o.ind ? '14px' : '0', fs: o.big ? '20px' : '17px', fw: o.big ? 700 : 400, bd: o.big ? '2px solid #1d1b19' : '1.5px dashed #e2e2e2', c: o.warn ? '#c2562b' : '#1d1b19' });
+      const cp = c.revenue ? c.cogs / c.revenue : null;
+      out.ov = {
+        title: M === 'all' ? 'Everything so far' : new Date(M + '-01').toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }),
+        sub: c.days + ' trading days entered · ' + c.ex.length + ' expenses',
+        lines: [L('Takings', c.revenue, p && p.revenue, { big: true }), L('Card', c.card, p && p.card, { ind: 1 }), L('Cash', c.sq + c.own, p && (p.sq + p.own), { ind: 1 }), ...(c.chG || (p && p.chG) ? [L('Delivery apps (customers paid)', c.chG, p && p.chG, { ind: 1 })] : []),
+          L('Stock bought', -c.cogs, p && -p.cogs, {}), L('Stock as % of takings', 0, null, { pctv: cp, pctp: p && p.revenue ? p.cogs / p.revenue : null, ind: 1, warn: cp > 0.32 }),
+          ...(c.wo || (p && p.wo) ? [L('Stock written off', -c.wo, p && -p.wo, { ind: 1, warn: c.wo > 0 })] : []), L('Gross profit', c.gp, p && p.gp, { big: true }), ...(c.chC || (p && p.chC) ? [L('Delivery app commission', -c.chC, p && -p.chC, { ind: 1 }), L('Delivery app ads', -c.chA, p && -p.chA, { ind: 1 })] : []), ...OPEX.filter(k => c.byCat[k] || (p && p.byCat[k])).map(k => L(k, -(c.byCat[k] || 0), p && -(p.byCat[k] || 0), { ind: 1 })),
+          L('Net profit (before tax)', c.net, p && p.net, { big: true, warn: c.net < 0 })],
+        excluded: (c.capital || c.drawings) ? 'Not counted as running costs: equipment/setup ' + gbp0(c.capital) + ', personal ' + gbp0(c.drawings) + '.' : '',
+        daysLine: c.days ? 'about ' + gbp0(c.revenue / c.days) + ' a day' : '',
+      };
+      if (M !== 'all') {
+        const [y, m] = M.split('-').map(Number); const n = new Date(y, m, 0).getDate();
+        const byDay = {}; c.sales.forEach(x => byDay[+x.date.slice(8, 10)] = rev(x));
+        const max = Math.max(1, ...Object.values(byDay));
+        out.ov.bars = Array.from({ length: n }, (_, i) => { const v = byDay[i + 1]; const has = v != null && v > 0; return { h: has ? Math.max(3, v / max * 100) + '%' : '2px', bg: has ? '#1d1b19' : 'transparent', bd: has ? 'none' : '0', tip: (i + 1) + ': ' + (has ? gbp(v) : 'nothing entered') }; });
+        out.ov.lastDay = n + 'th';
+      } else { out.ov.bars = allMonths.map(k => { const cc = monthCalc(k); return { v: cc.revenue, k }; }).map((b, i, a) => ({ h: Math.max(2, b.v / Math.max(1, ...a.map(x => x.v)) * 100) + '%', bg: '#1d1b19', bd: 'none', tip: mLabel(b.k) + ': ' + gbp(b.v) })); out.ov.lastDay = mLabel(allMonths[allMonths.length - 1]); }
+      const cats = Object.entries(c.byCat).sort((a, b) => b[1] - a[1]).slice(0, 6); const cmax = Math.max(1, ...cats.map(x => x[1]));
+      out.ov.cats = cats.map(([k, v]) => ({ label: k, val: gbp0(v), w: (v / cmax * 100) + '%' }));
+      const fl = c.ex.filter(flagged), nr = c.ex.filter(e => !e.receipt);
+      out.ov.flags = [...fl.slice(0, 4).map(e => ({ label: e.desc, val: gbp(e.amount), go: () => this.nav({ tab: 'exp', fFlag: true }) })),
+        { label: 'Expenses without a receipt', val: nr.length + '', go: () => this.nav({ tab: 'exp', fNoRcpt: true }) },
+        ...(c.days && M !== 'all' ? [] : [])];
+      out.ov.flagCount = fl.length + (nr.length ? 1 : 0);
+    }
+
+    if (s.tab === 'sales') {
+      const rows = D.sales.map((x, i) => ({ x, i })).filter(({ x }) => inM(x.date, M)).sort((a, b) => a.x.date.localeCompare(b.x.date));
+      const upd = (i, fn) => this.mut(d => fn(d.sales[i]));
+      const money = (i, k) => e => { const v = e.target.value; upd(i, r => { r[k + 'Str'] = v; r[k] = pen(v); }); };
+      out.salesRows = rows.map(({ x, i }) => { const t = rev(x); return { date: x.date, day: DOW[new Date(x.date + 'T12:00').getDay()], card: shown(x, 'card', 'card'), sqCash: shown(x, 'sqCash', 'sqCash'), ownCash: shown(x, 'ownCash', 'ownCash'), total: gbp(t), tx: x.tx || '', avg: x.tx ? gbp(t / x.tx) : '—', note: x.note,
+        setDate: e => { const v = e.target.value; upd(i, r => r.date = v); }, setCard: money(i, 'card'), setSq: money(i, 'sqCash'), setOwn: money(i, 'ownCash'),
+        setTx: e => { const v = e.target.value; upd(i, r => r.tx = parseInt(v) || 0); }, setNote: e => { const v = e.target.value; upd(i, r => r.note = v); }, remove: () => this.mut(d => d.sales.splice(i, 1)) }; });
+      const sum = k => rows.reduce((a, { x }) => a + x[k], 0);
+      out.salesTot = { label: rows.length + ' days', card: gbp(sum('card')), sq: gbp(sum('sqCash')), own: gbp(sum('ownCash')), total: gbp(sum('card') + sum('sqCash') + sum('ownCash')), tx: sum('tx') || '' };
+      out.showAdd = true; out.addLabel = '+ Add a day';
+      out.add = () => { const last = rows.length ? rows[rows.length - 1].x.date : (M === 'all' ? new Date().toISOString().slice(0, 10) : M + '-01'); const d = new Date(last + 'T12:00'); if (rows.length) d.setDate(d.getDate() + 1); const iso = d.toISOString().slice(0, 10); this.mut(dd => dd.sales.push({ date: iso, card: 0, sqCash: 0, ownCash: 0, tx: 0, note: '' })); if (M !== 'all' && !iso.startsWith(M)) this.setState({ month: iso.slice(0, 7) }); };
+    }
+
+    if (s.tab === 'exp') {
+      const q = s.eq.trim().toLowerCase();
+      out.eq = s.eq; out.setEq = e => this.setState({ eq: e.target.value }); out.fCat = s.fCat; out.fKind = s.fKind;
+      out.setFCat = e => this.setState({ fCat: e.target.value }); out.setFKind = e => this.setState({ fKind: e.target.value });
+      out.catFilter = [{ v: 'all', label: 'All categories' }, { v: 'cogs', label: 'All stock' }, ...CATS.map(c => ({ v: c, label: c }))];
+      out.toggleFlag = () => this.setState(x => ({ fFlag: !x.fFlag })); out.toggleNoRcpt = () => this.setState(x => ({ fNoRcpt: !x.fNoRcpt }));
+      out.flagBg = s.fFlag ? '#c2562b' : 'transparent'; out.flagFg = s.fFlag ? '#fff' : '#c2562b'; const r2 = on(s.fNoRcpt); out.rcptBg = r2.bg; out.rcptFg = r2.fg;
+      const rows = D.expenses.map((x, i) => ({ x, i })).filter(({ x }) => inM(x.date, M) && (s.fCat === 'all' || (s.fCat === 'cogs' ? COGS.includes(x.cat) : x.cat === s.fCat)) && (s.fKind === 'all' || x.kind === s.fKind) && (!s.fFlag || flagged(x)) && (!s.fNoRcpt || !x.receipt) && (!q || (x.desc + ' ' + x.notes).toLowerCase().includes(q))).sort((a, b) => b.x.date.localeCompare(a.x.date));
+      const upd = (i, fn) => this.mut(d => fn(d.expenses[i]));
+      const f = (i, k) => e => { const v = e.target.value; upd(i, r => r[k] = v); };
+      out.expRows = rows.map(({ x, i }) => ({ date: x.date, cat: x.cat, desc: x.desc, amount: shown(x, 'amount', 'amount'), method: x.method, kind: x.kind, rcpt: x.receipt ? '✓' : '', notes: x.notes, noteBd: flagged(x) ? '#c2562b' : '#bbb', bg: flagged(x) ? '#fbf1ec' : 'transparent',
+        setDate: f(i, 'date'), setCat: f(i, 'cat'), setDesc: f(i, 'desc'), setMethod: f(i, 'method'), setKind: f(i, 'kind'), setNotes: f(i, 'notes'),
+        setAmount: e => { const v = e.target.value; upd(i, r => { r.amountStr = v; r.amount = pen(v); }); }, toggleRcpt: () => upd(i, r => r.receipt = !r.receipt), remove: () => this.mut(d => d.expenses.splice(i, 1)) }));
+      out.expEmpty = rows.length === 0; out.expCount = rows.length + ' expenses'; out.expTotal = gbp(rows.reduce((a, { x }) => a + x.amount, 0));
+      out.showAdd = true; out.addLabel = '+ Add expense';
+      out.add = () => { const iso = new Date().toISOString().slice(0, 10); this.mut(d => d.expenses.push({ id: uid('e'), date: M === 'all' || iso.startsWith(M) ? iso : M + '-01', cat: 'Stock — food', desc: '', amount: 0, method: 'Card', receipt: false, notes: '', kind: 'Operating' })); this.setState({ fCat: 'all', fKind: 'all', fFlag: false, fNoRcpt: false, eq: '' }); };
+    }
+
+    if (s.tab === 'rec') {
+      const lag = D.bankLag ?? 2, fee = D.cardFee ?? 1.75;
+      const addWD = (iso, n) => { const d = new Date(iso + 'T12:00'); let k = 0; while (k < n) { d.setDate(d.getDate() + 1); const w = d.getDay(); if (w !== 0 && w !== 6) k++; } return d.toISOString().slice(0, 10); };
+      const fd = iso => new Date(iso + 'T12:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+      const today = new Date().toISOString().slice(0, 10);
+      const cards = D.sales.filter(x => inM(x.date, M) && x.card > 0).sort((a, b) => a.date.localeCompare(b.date));
+      let exp = 0, arr = 0, off = 0;
+      out.rc = { lag: String(lag), fee: String(fee), setLag: e => { const v = e.target.value; this.mut(d => d.bankLag = parseInt(v) || 0); }, setFee: e => { const v = e.target.value; this.mut(d => d.cardFee = parseFloat(v) || 0); },
+        bank: cards.map(x => { const due = addWD(x.date, lag); const expected = Math.round(x.card * (1 - fee / 100)); const has = D.bank && D.bank[x.date] != null; const arrived = has ? D.bank[x.date] : (due <= today ? expected : null);
+          const diff = arrived == null ? null : arrived - expected; exp += expected; if (arrived != null) arr += arrived; if (diff && Math.abs(diff) > 100) off++;
+          return { sold: fd(x.date), card: gbp(x.card), due: fd(due), arrived: x.bankStr ?? (arrived == null ? '' : (arrived / 100).toFixed(2)), diff: diff == null ? 'not yet' : Math.abs(diff) <= 100 ? 'ok' : gbp(diff), diffC: diff != null && Math.abs(diff) > 100 ? '#c2562b' : '#777', bg: diff != null && Math.abs(diff) > 100 ? '#fbf1ec' : 'transparent',
+            note: diff != null && Math.abs(diff) > 100 ? 'less than expected after fees: a refund or chargeback?' : has ? '' : 'assumed from the payout pattern (bank feed not connected)', setArrived: e => { const v = e.target.value; this.mut(d => { d.bank = d.bank || {}; d.bank[x.date] = v === '' ? null : pen(v); }); } }; }) };
+      out.rc.bankSum = cards.length ? gbp(exp) + ' expected after fees · ' + gbp(arr) + ' arrived · ' + off + ' day' + (off === 1 ? '' : 's') + ' don’t match' : 'No card takings this month.';
+      const months = M === 'all' ? [...new Set((D.channels || []).map(x => x.month))].sort() : [M];
+      out.rc.ch = months.flatMap(m => ['Deliveroo', 'Just Eat'].map(app => { const i = (D.channels || []).findIndex(x => x.month === m && x.app === app); const x = D.channels[i];
+        const set = k => e => { const v = e.target.value; this.mut(d => { d.channels[i][k] = pen(v); d.channels[i].demo = false; }); };
+        return x ? { month: m.slice(5) + '/' + m.slice(2, 4), app, has: true, missing: false, c: '#1d1b19', gross: (x.gross / 100).toFixed(2), comm: (x.comm / 100).toFixed(2), ads: (x.ads / 100).toFixed(2), kept: gbp(x.gross - x.comm - x.ads), pct: x.gross ? Math.round((x.gross - x.comm - x.ads) / x.gross * 100) + '%' : '—', setGross: set('gross'), setComm: set('comm'), setAds: set('ads') }
+          : { month: m.slice(5) + '/' + m.slice(2, 4), app, has: false, missing: true, c: '#999' }; }));
+      out.rc.upload = () => this.setState({ uploaded: true }); out.rc.uploadNote = s.uploaded ? 'File picker goes here: CSV from the partner portal (no API access).' : 'Deliveroo figures are demo until an export is uploaded.';
+      const cashDays = D.sales.filter(x => inM(x.date, M) && x.sqCash + x.ownCash > 0).sort((a, b) => a.date.localeCompare(b.date));
+      let vsum = 0, flagged = 0;
+      out.rc.cash = cashDays.map(x => { const till = x.sqCash + x.ownCash; const c = (D.cashDecl || {})[x.date]; const diff = c == null ? null : c - till; if (diff) vsum += diff; if (diff != null && Math.abs(diff) > 500) flagged++;
+        return { day: fd(x.date), till: gbp(till), counted: c == null ? '' : (c / 100).toFixed(2), diff: diff == null ? '—' : diff === 0 ? 'spot on' : gbp(diff), diffC: diff != null && Math.abs(diff) > 500 ? '#c2562b' : '#1d1b19', fw: diff != null && Math.abs(diff) > 500 ? 700 : 400, bg: diff != null && Math.abs(diff) > 500 ? '#fbf1ec' : 'transparent',
+          note: diff != null && Math.abs(diff) > 500 ? 'over £5 out: needs an explanation' : '', setCounted: e => { const v = e.target.value; this.mut(d => { d.cashDecl = d.cashDecl || {}; d.cashDecl[x.date] = v === '' ? null : pen(v); }); } }; });
+      const vmax = Math.max(100, ...cashDays.map(x => Math.abs(((D.cashDecl || {})[x.date] ?? (x.sqCash + x.ownCash)) - (x.sqCash + x.ownCash))));
+      out.rc.cashBars = cashDays.map(x => { const d = ((D.cashDecl || {})[x.date] ?? (x.sqCash + x.ownCash)) - (x.sqCash + x.ownCash); return { h: Math.max(1, Math.abs(d) / vmax * 50) + '%', jc: d >= 0 ? 'flex-start' : 'flex-end', bg: Math.abs(d) > 500 ? '#c2562b' : '#1d1b19', tip: fd(x.date) + ': ' + gbp(d) }; });
+      out.rc.cashSum = cashDays.length ? cashDays.length + ' days with cash · net difference ' + gbp(vsum) + ' · ' + flagged + ' day' + (flagged === 1 ? '' : 's') + ' over £5 out' : '';
+      out.rc.noCash = cashDays.length === 0;
+    }
+
+    if (s.tab === 'pl') {
+      const cs = allMonths.map(monthCalc), tot = monthCalc('all');
+      out.plCols = 'minmax(200px,1.6fr) repeat(' + (allMonths.length + 1) + ', minmax(90px,1fr))';
+      const R = (label, fnv, o = {}) => ({ fs: o.big ? '17px' : '16px', fw: o.big || o.head ? 700 : 400, bd: o.big ? '2px solid #1d1b19' : o.head ? '0' : '1.5px dashed #e2e2e2',
+        cells: [{ v: label, al: 'left', c: o.head ? '#777' : '#1d1b19', bg: 'transparent' }, ...[...cs, tot].map((c, i) => { const v = o.head ? (i === cs.length ? 'Total' : mLabel(allMonths[i])) : fnv(c); const warn = o.warn && o.warn(c); return { v: o.head ? v : o.pct ? pct(v) : gbp0(v), al: 'right', c: warn ? '#c2562b' : o.head ? '#777' : '#1d1b19', bg: i === cs.length ? '#f6f3ee' : 'transparent' }; })] });
+      out.plRows = [R('', null, { head: true }), R('Card sales', c => c.card), R('Cash sales', c => c.sq + c.own), R('Delivery apps (gross)', c => c.chG), R('Takings', c => c.revenue, { big: true }),
+        ...COGS.filter(k => tot.byCat[k]).map(k => R(k, c => -(c.byCat[k] || 0))), R('Stock written off', c => -c.wo, { warn: c => c.wo > 0 }), R('Stock % of takings', c => c.revenue ? c.cogs / c.revenue : null, { pct: 1, warn: c => c.revenue && c.cogs / c.revenue > 0.32 }), R('Gross profit', c => c.gp, { big: true }),
+        ...OPEX.filter(k => tot.byCat[k]).map(k => R(k, c => -(c.byCat[k] || 0))), R('Delivery app commission', c => -c.chC), R('Delivery app ads', c => -c.chA), R('Net profit', c => c.net, { big: true, warn: c => c.net < 0 }),
+        R('Equipment / setup (not in P&L)', c => -c.capital), R('Personal spending (not in P&L)', c => -c.drawings)];
+    }
+
+    if (s.tab === 'dir') {
+      const rows = D.director.map((x, i) => ({ x, i })).sort((a, b) => a.x.date.localeCompare(b.x.date));
+      let bal = 0; const upd = (i, fn) => this.mut(d => fn(d.director[i])); const f = (i, k) => e => { const v = e.target.value; upd(i, r => r[k] = v); };
+      out.dirRows = rows.map(({ x, i }) => { bal += x.inP - x.outP; return { date: x.date, type: x.type, desc: x.desc, inV: x.inP ? shown(x, 'inP', 'inP') : (x.inPStr ?? ''), outV: x.outP ? shown(x, 'outP', 'outP') : (x.outPStr ?? ''), bal: gbp(bal), notes: x.notes,
+        setDate: f(i, 'date'), setType: f(i, 'type'), setDesc: f(i, 'desc'), setNotes: f(i, 'notes'),
+        setIn: e => { const v = e.target.value; upd(i, r => { r.inPStr = v; r.inP = pen(v); }); }, setOut: e => { const v = e.target.value; upd(i, r => { r.outPStr = v; r.outP = pen(v); }); }, remove: () => this.mut(d => d.director.splice(i, 1)) }; });
+      const tin = D.director.reduce((a, x) => a + x.inP, 0), tout = D.director.reduce((a, x) => a + x.outP, 0);
+      out.dir = { inTot: gbp(tin), outTot: gbp(tout), bal: gbp(tin - tout), note: 'Money you put into the business, minus personal spending paid from the business account.' };
+      out.showAdd = true; out.addLabel = '+ Add entry';
+      out.add = () => this.mut(d => d.director.push({ id: uid('d'), date: new Date().toISOString().slice(0, 10), type: 'Drawings', desc: '', inP: 0, outP: 0, notes: '' }));
+    }
+    return out;
+  }
+}
+</script>
+</body>
+</html>

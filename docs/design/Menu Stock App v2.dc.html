@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet"><script src="sc-data.js"></script><script src="sc-comp.js"></script><script src="sc-fin.js"></script><script src="./image-slot.js"></script><style>body{font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;margin:0;font-family:'Nunito',system-ui,sans-serif;color:#1f2633}a{color:#1f2633}a:hover{color:#4a6fd1}input,select{font-family:'Nunito',sans-serif;color:#1f2633;background:#fff}</style></helmet>
+<div style="width:100%;height:100%;display:flex;flex-direction:column;background:#fff;font-family:'Nunito',sans-serif;color:#1f2633;overflow:hidden">
+<div style="display:flex;align-items:center;gap:18px;padding:12px 20px;border-bottom:1px solid #e8ebf0;flex:none">
+<sc-if value="{{ standalone }}" hint-placeholder-val="{{ true }}"><div style="font:800 19px 'Nunito',sans-serif;letter-spacing:-.01em">Sasha's Corner</div></sc-if><sc-if value="{{ embedded }}" hint-placeholder-val="{{ false }}"><div style="font:800 21px 'Nunito',sans-serif;letter-spacing:-.01em">{{ pageTitle }}</div><div style="color:#5b6475;font-size:14px">{{ pageSub }}</div></sc-if>
+<sc-if value="{{ standalone }}" hint-placeholder-val="{{ true }}"><div style="display:flex;gap:6px"><sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3"><div onClick="{{ t.go }}" style="cursor:pointer;border:1px solid #e8ebf0;border-radius:16px;padding:6px 16px;font-size:16px;background:{{ t.bg }};color:{{ t.fg }};transition:background .15s,border-color .15s">{{ t.label }}</div></sc-for></div></sc-if>
+<div style="flex:1"></div>
+<div style="color:#8a93a3;font-size:14px">{{ savedLabel }}</div>
+<sc-if value="{{ showAdd }}" hint-placeholder-val="{{ true }}"><div onClick="{{ add }}" style="cursor:pointer;background:#4a6fd1;color:#fff;border-radius:18px;padding:9px 18px;font-size:16px;font-weight:700;transition:background .15s,border-color .15s">{{ addLabel }}</div></sc-if>
+</div>
+
+<sc-if value="{{ compact }}" hint-placeholder-val="{{ false }}"><sc-if value="{{ showRail }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:12px 20px;border-bottom:1px solid #eef0f4;flex:none"><sc-for list="{{ railChips }}" as="g" hint-placeholder-count="8"><div onClick="{{ g.select }}" style="cursor:pointer;flex:none;display:flex;align-items:center;gap:6px;height:36px;box-sizing:border-box;border:1px solid {{ g.bd }};border-radius:999px;padding:0 14px;font-size:14px;font-weight:{{ g.fw }};white-space:nowrap;background:{{ g.bg }};color:{{ g.fg }};transition:background .15s,border-color .15s"><span>{{ g.label }}</span><span style="font-size:12px;opacity:.6">{{ g.count }}</span></div></sc-for></div>
+</sc-if></sc-if>
+
+<div style="flex:1;min-height:0;display:flex">
+<sc-if value="{{ wideRail }}" hint-placeholder-val="{{ true }}">
+<div style="width:210px;flex:none;border-right:1px solid #eef0f4;overflow-y:auto;padding:10px 10px 16px;display:flex;flex-direction:column;gap:2px">
+<sc-for list="{{ rail }}" as="g" hint-placeholder-count="10">
+<sc-if value="{{ g.isHead }}" hint-placeholder-val="{{ false }}"><div style="padding:14px 10px 6px;font:700 11px 'Nunito',sans-serif;color:#8a93a3;text-transform:uppercase;letter-spacing:.08em">{{ g.label }}</div></sc-if>
+<sc-if value="{{ g.isRow }}" hint-placeholder-val="{{ true }}"><div onClick="{{ g.select }}" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:36px;padding:0 10px;border-radius:10px;font-size:14px;font-weight:{{ g.fw }};background:{{ g.bg }};color:{{ g.fg }}"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ g.label }}</span><span style="font-size:12px;opacity:.6;flex:none">{{ g.count }}</span></div></sc-if>
+</sc-for>
+<sc-if value="{{ isMenu }}" hint-placeholder-val="{{ true }}">
+<div style="margin:14px 12px 0;border-top:1px solid #e8ebf0;padding-top:10px">
+<input value="{{ newCat }}" onChange="{{ setNewCat }}" placeholder="New category" style="width:100%;box-sizing:border-box;border:1px solid #e8ebf0;border-radius:10px;padding:4px 8px;font-size:14px"></input>
+<div style="display:flex;gap:6px;margin-top:6px"><div onClick="{{ addCatDrink }}" style="cursor:pointer;flex:1;text-align:center;border:1px solid #d5dae3;border-radius:12px;font-size:13px;padding:1px;transition:background .15s,border-color .15s">+ drinks</div><div onClick="{{ addCatFood }}" style="cursor:pointer;flex:1;text-align:center;border:1px solid #d5dae3;border-radius:12px;font-size:13px;padding:1px;transition:background .15s,border-color .15s">+ food</div></div>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ isMenu }}" hint-placeholder-val="{{ true }}">
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0;background:#f6f7fa">
+<div style="display:flex;gap:10px;align-items:center;padding:14px 20px 4px;flex:none">
+<div style="flex:1;min-width:0;display:flex;align-items:center;height:40px;box-sizing:border-box;border:1px solid #e2e6ed;border-radius:12px;padding:0 12px;background:#fff"><span style="width:12px;height:12px;border:2px solid #8a93a3;border-radius:50%;flex:none;margin-right:8px;box-sizing:border-box"></span><input value="{{ q }}" onChange="{{ setQ }}" placeholder="Search the menu" style="flex:1;min-width:0;border:none;outline:none;font-size:15px;background:transparent"></input></div>
+<div style="color:#5b6475;font-size:14px;white-space:nowrap">{{ listMeta }}</div>
+</div>
+<div style="flex:1;overflow-y:auto;padding:12px 20px 24px">
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax({{ cardMin }},1fr));gap:14px">
+<sc-for list="{{ items }}" as="it" hint-placeholder-count="12">
+<div onClick="{{ it.select }}" style="cursor:pointer;display:flex;flex-direction:column;background:#fff;border-radius:16px;overflow:hidden;box-shadow:{{ it.sh }};opacity:{{ it.op }};transition:box-shadow .15s">
+<div style="position:relative;aspect-ratio:4/3;background:#eef0f4"><image-slot id="menu-{{ it.id }}" shape="rect" placeholder="Photo" style="width:100%;height:100%"></image-slot><span style="position:absolute;top:8px;left:8px;pointer-events:none;background:{{ it.mBg }};color:{{ it.mC }};border-radius:999px;padding:3px 9px;font-size:12px;font-weight:700">{{ it.margin }}</span></div>
+<div style="padding:10px 12px 12px;display:flex;flex-direction:column;gap:3px;min-height:64px">
+<div style="font-size:15px;font-weight:700;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">{{ it.name }}</div>
+<div style="color:#5b6475;font-size:13px">{{ it.priceLine }}</div>
+<sc-if value="{{ it.off }}" hint-placeholder-val="{{ false }}"><div style="color:#8a93a3;font-size:12px;font-weight:700">Off the menu</div></sc-if>
+</div>
+</div>
+</sc-for>
+</div>
+<sc-if value="{{ hasMore }}" hint-placeholder-val="{{ false }}"><div style="display:flex;justify-content:center;padding:18px 0 0"><div onClick="{{ showMore }}" style="cursor:pointer;height:42px;display:flex;align-items:center;background:#fff;border:1px solid #e2e6ed;border-radius:12px;padding:0 20px;font-size:14px;font-weight:700;color:#3558b8">Show {{ moreLeft }} more</div></div></sc-if>
+<sc-if value="{{ noItems }}" hint-placeholder-val="{{ false }}"><div style="padding:60px;text-align:center;color:#8a93a3;font-size:15px">Nothing here yet. Use “Add item”.</div></sc-if>
+</div>
+</div>
+
+<sc-if value="{{ ed.has }}" hint-placeholder-val="{{ false }}">
+<div style="width:{{ drawerW }};flex:none;border-left:1px solid #eef0f4;background:#fff;display:flex;flex-direction:column;min-height:0">
+<div style="display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid #eef0f4;flex:none">
+<div style="flex:1;font-size:13px;color:#5b6475">{{ ed.type }} · {{ ed.cat }}</div>
+<div onClick="{{ ed.close }}" style="cursor:pointer;width:36px;height:36px;border-radius:10px;background:#f1f3f7;display:flex;align-items:center;justify-content:center;font-size:18px;color:#5b6475">×</div>
+</div>
+<div style="flex:1;overflow-y:auto;padding:16px 18px 24px;display:flex;flex-direction:column;gap:18px">
+<div style="height:170px;border-radius:14px;overflow:hidden;background:#eef0f4;flex:none"><image-slot id="menu-{{ ed.id }}" shape="rect" placeholder="Drop a photo of this item" style="width:100%;height:100%"></image-slot></div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<input value="{{ ed.name }}" onChange="{{ ed.setName }}" style="width:100%;box-sizing:border-box;border:none;outline:none;font:800 22px 'Nunito',sans-serif;letter-spacing:-.01em;padding:0;background:transparent"></input>
+<div style="display:flex;align-items:center;gap:10px">
+<div onClick="{{ ed.toggleActive }}" style="cursor:pointer;display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600"><span style="width:40px;height:24px;border-radius:999px;background:{{ ed.tglBg }};position:relative;flex:none;transition:background .15s"><span style="position:absolute;top:3px;left:{{ ed.tglX }};width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2);transition:left .15s"></span></span>{{ ed.activeLabel }}</div>
+</div>
+<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px">
+<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:#8a93a3;font-weight:700">Category<select value="{{ ed.cat }}" onChange="{{ ed.setCat }}" style="height:40px;box-sizing:border-box;border:1px solid #e2e6ed;border-radius:10px;padding:0 10px;font-size:15px;background:#fff;outline:none;font-weight:400;color:#1f2633"><sc-for list="{{ catOptions }}" as="c" hint-placeholder-count="5"><option value="{{ c.name }}">{{ c.label }}</option></sc-for></select></label>
+<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:#8a93a3;font-weight:700">Note<input value="{{ ed.note }}" onChange="{{ ed.setNote }}" placeholder="e.g. CakeSmiths" style="height:40px;box-sizing:border-box;border:1px solid #e2e6ed;border-radius:10px;padding:0 10px;font-size:15px;background:#fff;outline:none;font-weight:400;color:#1f2633"></input></label>
+</div>
+</div>
+<sc-if value="{{ ed.fromTpl }}" hint-placeholder-val="{{ false }}"><div style="background:#edf1fc;border-radius:12px;padding:12px 14px;font-size:14px;color:#2d3f75;display:flex;flex-direction:column;gap:8px"><span>{{ ed.tplLine }}</span><span onClick="{{ ed.goTpl }}" style="cursor:pointer;align-self:flex-start;background:#fff;border-radius:10px;padding:7px 12px;font-weight:700;color:#3558b8">Open recipe</span></div></sc-if>
+
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="font:800 16px 'Nunito',sans-serif">Sizes and price</div>
+<div style="display:flex;gap:6px;flex-wrap:wrap">
+<sc-for list="{{ ed.sizes }}" as="s" hint-placeholder-count="2"><div onClick="{{ s.select }}" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:64px;height:52px;box-sizing:border-box;border:1px solid {{ s.bd }};border-radius:12px;padding:0 12px;background:{{ s.bg }};color:{{ s.fg }}"><span style="font-size:15px;font-weight:800">{{ s.label }}</span><span style="font-size:12px;opacity:.8">{{ s.priceLabel }}</span></div></sc-for>
+<sc-for list="{{ ed.addSizes }}" as="s" hint-placeholder-count="1"><div onClick="{{ s.add }}" style="cursor:pointer;display:flex;align-items:center;justify-content:center;min-width:52px;height:52px;box-sizing:border-box;border:1.5px dashed #d5dae3;border-radius:12px;padding:0 10px;font-size:13px;color:#5b6475">+ {{ s.label }}</div></sc-for>
+</div>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) ;gap:8px">
+<label style="display:flex;flex-direction:column;gap:4px;background:#f6f7fa;border-radius:12px;padding:10px 12px;font-size:12px;color:#8a93a3;font-weight:700">Sell price<span style="display:flex;align-items:center;gap:2px;font:800 18px 'Nunito',sans-serif;color:#1f2633">£<input value="{{ ed.price }}" onChange="{{ ed.setPrice }}" style="width:100%;min-width:0;border:none;outline:none;background:transparent;font:800 18px 'Nunito',sans-serif;color:#1f2633;padding:0"></input></span></label>
+<div style="display:flex;flex-direction:column;gap:4px;background:#f6f7fa;border-radius:12px;padding:10px 12px;font-size:12px;color:#8a93a3;font-weight:700">Costs us<span style="font:800 18px 'Nunito',sans-serif;color:#1f2633">{{ ed.cost }}</span></div>
+<div style="display:flex;flex-direction:column;gap:4px;background:{{ ed.mBg }};border-radius:12px;padding:10px 12px;font-size:12px;color:#8a93a3;font-weight:700">Margin<span style="font:800 18px 'Nunito',sans-serif;color:{{ ed.mC }}">{{ ed.margin }}</span></div>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;align-items:baseline;gap:8px"><div style="font:800 16px 'Nunito',sans-serif;flex:1">{{ ed.sizeTitle }}</div><span style="font-size:13px;color:#5b6475">profit {{ ed.gp }}</span></div>
+<sc-for list="{{ ed.lines }}" as="l" hint-placeholder-count="4">
+<div style="display:flex;flex-direction:column;gap:8px;border:1px solid #eef0f4;border-radius:12px;padding:10px">
+<div style="display:flex;gap:8px;align-items:center"><select value="{{ l.ing }}" onChange="{{ l.setIng }}" style="height:40px;box-sizing:border-box;border:1px solid #e2e6ed;border-radius:10px;padding:0 10px;font-size:15px;background:#fff;outline:none;flex:1;min-width:0"><sc-for list="{{ ingOptions }}" as="o" hint-placeholder-count="3"><option value="{{ o.id }}">{{ o.label }}</option></sc-for></select><span onClick="{{ l.remove }}" style="cursor:pointer;width:36px;height:36px;flex:none;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#8a93a3;font-size:18px">×</span></div>
+<div style="display:flex;gap:8px;align-items:center"><input value="{{ l.qty }}" onChange="{{ l.setQty }}" style="height:40px;box-sizing:border-box;border:1px solid #e2e6ed;border-radius:10px;padding:0 10px;font-size:15px;background:#fff;outline:none;width:84px;text-align:right"></input><select value="{{ l.unit }}" onChange="{{ l.setUnit }}" style="height:40px;box-sizing:border-box;border:1px solid #e2e6ed;border-radius:10px;padding:0 10px;font-size:15px;background:#fff;outline:none;width:76px"><sc-for list="{{ unitOptions }}" as="u" hint-placeholder-count="3"><option value="{{ u }}">{{ u }}</option></sc-for></select><span style="flex:1;font-size:12px;color:#8a93a3;font-style:{{ l.estStyle }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ l.unitCost }}</span><span style="font-size:15px;font-weight:700">{{ l.cost }}</span></div>
+</div>
+</sc-for>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<div onClick="{{ ed.addLine }}" style="cursor:pointer;height:40px;display:flex;align-items:center;border:1.5px dashed #d5dae3;border-radius:10px;padding:0 14px;font-size:14px;font-weight:600;color:#3558b8">+ Add ingredient</div>
+<div onClick="{{ ed.copyToAll }}" style="cursor:pointer;height:40px;display:flex;align-items:center;border-radius:10px;padding:0 12px;font-size:14px;color:#5b6475">Copy to other sizes</div>
+</div>
+<sc-if value="{{ ed.hasEst }}" hint-placeholder-val="{{ false }}"><div style="font-size:13px;color:#5b6475;background:#fdf6e7;border-radius:10px;padding:8px 12px"><i>Italic</i> costs are estimates. {{ ed.estLine }}</div></sc-if>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="font:800 16px 'Nunito',sans-serif;margin-bottom:4px">All sizes</div>
+<div style="display:grid;grid-template-columns:48px repeat(4,minmax(0,1fr));gap:8px;padding:6px 0;border-bottom:1px solid #eef0f4;color:#8a93a3;font:700 11px 'Nunito',sans-serif;text-transform:uppercase;letter-spacing:.06em"><span>Size</span><span style="text-align:right">Price</span><span style="text-align:right">Cost</span><span style="text-align:right">Profit</span><span style="text-align:right">Margin</span></div>
+<sc-for list="{{ ed.summary }}" as="r" hint-placeholder-count="2"><div style="display:grid;grid-template-columns:48px repeat(4,minmax(0,1fr));gap:8px;padding:8px 0;border-bottom:1px solid #f1f3f6;font-size:14px"><span style="font-weight:700">{{ r.size }}</span><span style="text-align:right">{{ r.price }}</span><span style="text-align:right">{{ r.cost }}</span><span style="text-align:right">{{ r.gp }}</span><span style="text-align:right;font-weight:700;color:{{ r.mC }}">{{ r.margin }}</span></div></sc-for>
+<div style="color:#8a93a3;font-size:12px;margin-top:4px">Margins under 60% are marked. Prices exclude VAT.</div>
+</div>
+
+<div style="display:flex;gap:8px;border-top:1px solid #eef0f4;padding-top:14px">
+<div onClick="{{ ed.dup }}" style="cursor:pointer;flex:1;height:40px;display:flex;align-items:center;justify-content:center;border:1px solid #e2e6ed;border-radius:10px;font-size:14px;font-weight:600">Duplicate</div>
+<div onClick="{{ ed.removeSize }}" style="cursor:pointer;flex:1;height:40px;display:flex;align-items:center;justify-content:center;border:1px solid #e2e6ed;border-radius:10px;font-size:14px;font-weight:600">Remove size</div>
+<div onClick="{{ ed.del }}" style="cursor:pointer;flex:1;height:40px;display:flex;align-items:center;justify-content:center;background:#fdecea;color:#c2453b;border-radius:10px;font-size:14px;font-weight:700">Delete item</div>
+</div>
+</div>
+</div>
+</sc-if>
+</sc-if>
+
+<sc-if value="{{ isIng }}" hint-placeholder-val="{{ false }}">
+<div style="width:{{ listW }};flex:none;border-right:1px solid #e8ebf0;display:flex;flex-direction:column;min-height:0">
+<div style="padding:10px 12px;border-bottom:1px solid #e8ebf0;display:flex;flex-direction:column;gap:6px"><input value="{{ iq }}" onChange="{{ setIq }}" placeholder="Search ingredients" style="width:100%;box-sizing:border-box;border:1px solid #e8ebf0;border-radius:12px;padding:6px 10px;font-size:15px"></input>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+<select value="{{ fSup }}" onChange="{{ setFSup }}" style="min-width:0;border:1px solid #d5dae3;border-radius:10px;padding:3px 4px;font-size:14px"><sc-for list="{{ supFilterOptions }}" as="o" hint-placeholder-count="3"><option value="{{ o.id }}">{{ o.label }}</option></sc-for></select>
+<select value="{{ fPrice }}" onChange="{{ setFPrice }}" style="min-width:0;border:1px solid #d5dae3;border-radius:10px;padding:3px 4px;font-size:14px"><option value="all">All prices</option><option value="invoice">From invoice</option><option value="est">Estimates</option></select>
+<select value="{{ fUse }}" onChange="{{ setFUse }}" style="min-width:0;border:1px solid #d5dae3;border-radius:10px;padding:3px 4px;font-size:14px"><option value="all">Used or not</option><option value="used">Used in recipes</option><option value="unused">Not used</option></select>
+<select value="{{ fSort }}" onChange="{{ setFSort }}" style="min-width:0;border:1px solid #d5dae3;border-radius:10px;padding:3px 4px;font-size:14px"><option value="az">Sort A–Z</option><option value="cost">Cost per unit</option><option value="most">Most used</option><option value="sups">Fewest suppliers</option></select>
+</div>
+<div style="display:flex;justify-content:space-between;color:#8a93a3;font-size:13px"><span>{{ ingMeta }}</span><sc-if value="{{ hasFilters }}" hint-placeholder-val="{{ false }}"><span onClick="{{ clearFilters }}" style="cursor:pointer;text-decoration:underline">Clear filters</span></sc-if></div></div>
+<div style="flex:1;overflow-y:auto">
+<sc-for list="{{ ingList }}" as="it" hint-placeholder-count="10">
+<div onClick="{{ it.select }}" style="cursor:pointer;padding:9px 14px;border-bottom:1px solid #e8ebf0;background:{{ it.bg }}">
+<div style="display:flex;justify-content:space-between;gap:8px"><span style="font-size:16px">{{ it.name }}</span><span style="font-size:14px;white-space:nowrap;font-style:{{ it.estStyle }}">{{ it.unitCost }}</span></div>
+<div style="color:#5b6475;font-size:13px">{{ it.sub }}</div>
+</div>
+</sc-for>
+</div>
+</div>
+<div style="flex:1;min-width:0;overflow-y:auto;padding:18px 22px">
+<sc-if value="{{ ie.has }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;gap:10px;align-items:center"><input value="{{ ie.name }}" onChange="{{ ie.setName }}" style="flex:1;min-width:0;border:none;border-bottom:1px solid #e8ebf0;font:800 24px 'Nunito',sans-serif;letter-spacing:-.01em;padding:2px 0"></input><div onClick="{{ ie.del }}" style="cursor:pointer;border:1px solid #d4554a;color:#d4554a;border-radius:14px;padding:6px 14px;font-size:14px;transition:background .15s,border-color .15s">Delete</div></div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin:16px 0">
+<label style="display:flex;flex-direction:column;gap:4px;font-size:14px;color:#5b6475">Category<select value="{{ ie.cat }}" onChange="{{ ie.setCat }}" style="border:1px solid #e8ebf0;border-radius:10px;padding:5px;font-size:15px"><sc-for list="{{ ingCatOptions }}" as="c" hint-placeholder-count="4"><option value="{{ c }}">{{ c }}</option></sc-for></select></label>
+<label style="display:flex;flex-direction:column;gap:4px;font-size:14px;color:#5b6475">Pack size<input value="{{ ie.pack }}" onChange="{{ ie.setPack }}" style="border:1px solid #e8ebf0;border-radius:10px;padding:5px 8px;font-size:15px"></input></label>
+<label style="display:flex;flex-direction:column;gap:4px;font-size:14px;color:#5b6475">Unit<select value="{{ ie.unit }}" onChange="{{ ie.setUnit }}" style="border:1px solid #e8ebf0;border-radius:10px;padding:5px;font-size:15px"><sc-for list="{{ unitOptions }}" as="u" hint-placeholder-count="3"><option value="{{ u }}">{{ u }}</option></sc-for></select></label>
+<label style="display:flex;flex-direction:column;gap:4px;font-size:14px;color:#5b6475">Pack cost £<input value="{{ ie.packCost }}" onChange="{{ ie.setPackCost }}" style="border:1px solid #e8ebf0;border-radius:10px;padding:5px 8px;font-size:15px"></input></label>
+</div>
+<div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap;border:1px solid #e8ebf0;border-radius:14px;padding:12px 16px;margin-bottom:16px">
+<div><div style="color:#5b6475;font-size:14px">Cost per unit</div><div style="font-size:22px;font-style:{{ ie.estStyle }}">{{ ie.unitCost }}</div></div>
+<div onClick="{{ ie.toggleEst }}" style="cursor:pointer;display:flex;align-items:center;gap:8px;font-size:15px"><div style="width:20px;height:20px;border:1px solid #e8ebf0;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px">{{ ie.estMark }}</div>Price is an estimate</div>
+<div style="flex:1"></div>
+<div style="font-size:14px;color:#5b6475;max-width:320px">{{ ie.impact }}</div>
+</div>
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:6px"><div style="font:800 16px 'Nunito',sans-serif;letter-spacing:-.01em">Where to buy</div><span style="color:#8a93a3;font-size:13px">{{ ie.buyNote }}</span></div>
+<div style="border:1px solid #e8ebf0;border-radius:14px;padding:4px 14px 10px;margin-bottom:16px">
+<sc-for list="{{ ie.offers }}" as="o" hint-placeholder-count="2">
+<div style="display:grid;grid-template-columns:28px minmax(0,1.4fr) minmax(0,1.4fr) 110px minmax(0,1fr);gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #e8ebf0;font-size:14px">
+<span onClick="{{ o.prefer }}" style="cursor:pointer;font-size:17px;color:{{ o.starC }}">{{ o.star }}</span>
+<span onClick="{{ o.go }}" style="cursor:pointer;text-decoration:underline">{{ o.supplier }}</span>
+<span style="color:#5b6475">{{ o.pack }}</span>
+<span style="text-align:right">{{ o.unitCost }}</span>
+<span style="color:{{ o.cmpC }};font-size:14px">{{ o.cmp }}</span>
+</div>
+</sc-for>
+<sc-if value="{{ ie.noOffers }}" hint-placeholder-val="{{ false }}"><div style="color:#8a93a3;font-size:14px;padding:8px 0">No supplier linked yet. The price above is used as-is.</div></sc-if>
+<div style="display:flex;gap:8px;align-items:center;margin-top:10px"><span style="color:#5b6475;font-size:14px">Link to</span><select value="" onChange="{{ ie.linkSup }}" style="border:1px solid #d5dae3;border-radius:10px;padding:3px 6px;font-size:14px"><sc-for list="{{ ie.linkOptions }}" as="o" hint-placeholder-count="3"><option value="{{ o.id }}">{{ o.label }}</option></sc-for></select></div>
+</div>
+<label style="display:flex;flex-direction:column;gap:4px;font-size:14px;color:#5b6475;margin-bottom:16px">Notes<input value="{{ ie.supplier }}" onChange="{{ ie.setSupplier }}" style="border:1px solid #e8ebf0;border-radius:10px;padding:5px 8px;font-size:15px"></input></label>
+<div style="font:800 16px 'Nunito',sans-serif;letter-spacing:-.01em;margin-bottom:6px">Used in {{ ie.usedCount }}</div>
+<div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ ie.usedIn }}" as="u" hint-placeholder-count="4"><div onClick="{{ u.go }}" style="cursor:pointer;border:1px solid #d5dae3;border-radius:12px;padding:6px 14px;font-size:14px;transition:background .15s,border-color .15s">{{ u.name }}</div></sc-for></div>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ isSup }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;min-width:0;overflow-y:auto;padding:18px 22px">
+<sc-if value="{{ se.none }}" hint-placeholder-val="{{ false }}"><div style="color:#8a93a3;font-size:16px;padding:60px;text-align:center">Pick a supplier, or add one.</div></sc-if>
+<sc-if value="{{ se.has }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;gap:10px;align-items:center"><input value="{{ se.name }}" onChange="{{ se.setName }}" style="flex:1;min-width:0;border:none;border-bottom:1px solid #e8ebf0;font:800 24px 'Nunito',sans-serif;letter-spacing:-.01em;padding:2px 0"></input><div onClick="{{ se.del }}" style="cursor:pointer;border:1px solid #d4554a;color:#d4554a;border-radius:14px;padding:6px 14px;font-size:14px;transition:background .15s,border-color .15s">Delete</div></div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin:16px 0">
+<label style="display:flex;flex-direction:column;gap:4px;font-size:14px;color:#5b6475">Type<select value="{{ se.kind }}" onChange="{{ se.setKind }}" style="border:1px solid #e8ebf0;border-radius:10px;padding:5px;font-size:15px"><sc-for list="{{ supKinds }}" as="k" hint-placeholder-count="4"><option value="{{ k }}">{{ k }}</option></sc-for></select></label>
+<label style="display:flex;flex-direction:column;gap:4px;font-size:14px;color:#5b6475">How we order<select value="{{ se.channel }}" onChange="{{ se.setChannel }}" style="border:1px solid #e8ebf0;border-radius:10px;padding:5px;font-size:15px"><sc-for list="{{ supChannels }}" as="k" hint-placeholder-count="4"><option value="{{ k }}">{{ k }}</option></sc-for></select></label>
+<label style="display:flex;flex-direction:column;gap:4px;font-size:14px;color:#5b6475">Contact / website<input value="{{ se.contact }}" onChange="{{ se.setContact }}" placeholder="—" style="border:1px solid #e8ebf0;border-radius:10px;padding:5px 8px;font-size:15px"></input></label>
+<label style="display:flex;flex-direction:column;gap:4px;font-size:14px;color:#5b6475">Lead time (days)<input value="{{ se.lead }}" onChange="{{ se.setLead }}" placeholder="—" style="border:1px solid #e8ebf0;border-radius:10px;padding:5px 8px;font-size:15px"></input></label>
+<label style="display:flex;flex-direction:column;gap:4px;font-size:14px;color:#5b6475">Minimum order £<input value="{{ se.min }}" onChange="{{ se.setMin }}" placeholder="—" style="border:1px solid #e8ebf0;border-radius:10px;padding:5px 8px;font-size:15px"></input></label>
+<label style="display:flex;flex-direction:column;gap:4px;font-size:14px;color:#5b6475">Order cut-off<input value="{{ se.cutoff }}" onChange="{{ se.setCutoff }}" placeholder="e.g. 12:00 day before" style="border:1px solid #e8ebf0;border-radius:10px;padding:5px 8px;font-size:15px"></input></label>
+<label style="display:flex;flex-direction:column;gap:4px;font-size:14px;color:#5b6475">Delivery fee £<input value="{{ se.fee }}" onChange="{{ se.setFee }}" placeholder="—" style="border:1px solid #e8ebf0;border-radius:10px;padding:5px 8px;font-size:15px"></input></label>
+<label style="display:flex;flex-direction:column;gap:4px;font-size:14px;color:#5b6475">Free delivery over £<input value="{{ se.free }}" onChange="{{ se.setFree }}" placeholder="—" style="border:1px solid #e8ebf0;border-radius:10px;padding:5px 8px;font-size:15px"></input></label>
+</div>
+<div onClick="{{ se.toggleTerms }}" style="cursor:pointer;display:flex;gap:8px;align-items:center;margin-bottom:12px;font-size:14px;color:{{ se.termsC }}"><span style="width:18px;height:18px;border:1px solid {{ se.termsC }};border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px">{{ se.termsMark }}</span>{{ se.termsLabel }}</div>
+<div style="display:flex;gap:8px;align-items:center;margin-bottom:18px;flex-wrap:wrap"><span style="color:#5b6475;font-size:14px;margin-right:4px">Delivers on</span><sc-for list="{{ se.days }}" as="d" hint-placeholder-count="7"><div onClick="{{ d.toggle }}" style="cursor:pointer;border:1px solid #e8ebf0;border-radius:12px;padding:6px 14px;font-size:14px;background:{{ d.bg }};color:{{ d.fg }};transition:background .15s,border-color .15s">{{ d.label }}</div></sc-for><span style="color:#8a93a3;font-size:13px">{{ se.daysNote }}</span></div>
+
+<div style="display:flex;align-items:baseline;gap:12px;margin-bottom:6px"><div style="font:800 16px 'Nunito',sans-serif;letter-spacing:-.01em">What we buy here · {{ se.count }}</div><span style="color:#8a93a3;font-size:13px">★ = the price used in recipe costs</span><div style="flex:1"></div><input value="{{ sq }}" onChange="{{ setSq }}" placeholder="Filter" style="width:150px;border:1px solid #d5dae3;border-radius:10px;padding:3px 8px;font-size:14px"></input></div>
+<div style="display:grid;grid-template-columns:28px minmax(0,2.2fr) minmax(0,1.3fr) 70px 64px 80px 100px minmax(0,1.1fr) 20px;gap:8px;padding:4px 0;border-bottom:1px solid #e8ebf0;color:#5b6475;font-size:13px"><span></span><span>Ingredient</span><span>Their product / SKU</span><span style="text-align:right">Pack</span><span>Unit</span><span style="text-align:right">Pack £</span><span style="text-align:right">Per unit</span><span>vs other suppliers</span><span></span></div>
+<sc-for list="{{ se.products }}" as="p" hint-placeholder-count="5">
+<div style="display:grid;grid-template-columns:28px minmax(0,2.2fr) minmax(0,1.3fr) 70px 64px 80px 100px minmax(0,1.1fr) 20px;gap:8px;padding:6px 0;border-bottom:1px solid #e8ebf0;align-items:center;font-size:14px">
+<span onClick="{{ p.prefer }}" style="cursor:pointer;font-size:17px;color:{{ p.starC }}">{{ p.star }}</span>
+<select value="{{ p.ing }}" onChange="{{ p.setIng }}" style="min-width:0;border:1px solid #d5dae3;border-radius:10px;padding:3px 4px;font-size:14px"><sc-for list="{{ ingOptions }}" as="o" hint-placeholder-count="3"><option value="{{ o.id }}">{{ o.label }}</option></sc-for></select>
+<input value="{{ p.sku }}" onChange="{{ p.setSku }}" placeholder="—" style="min-width:0;border:1px solid #d5dae3;border-radius:10px;padding:3px 6px;font-size:14px"></input>
+<input value="{{ p.pack }}" onChange="{{ p.setPack }}" style="min-width:0;border:1px solid #d5dae3;border-radius:10px;padding:3px 6px;font-size:14px;text-align:right"></input>
+<select value="{{ p.unit }}" onChange="{{ p.setUnit }}" style="min-width:0;border:1px solid #d5dae3;border-radius:10px;padding:3px 2px;font-size:14px"><sc-for list="{{ unitOptions }}" as="u" hint-placeholder-count="3"><option value="{{ u }}">{{ u }}</option></sc-for></select>
+<input value="{{ p.packCost }}" onChange="{{ p.setPackCost }}" style="min-width:0;border:1px solid #d5dae3;border-radius:10px;padding:3px 6px;font-size:14px;text-align:right"></input>
+<span style="text-align:right">{{ p.unitCost }}</span>
+<span style="color:{{ p.cmpC }};font-size:13px">{{ p.cmp }}</span>
+<span onClick="{{ p.remove }}" style="cursor:pointer;color:#8a93a3;text-align:center">×</span>
+</div>
+</sc-for>
+<div onClick="{{ se.addProduct }}" style="cursor:pointer;display:inline-block;margin-top:10px;border:1.5px dashed #d5dae3;border-radius:14px;padding:6px 14px;font-size:14px;transition:background .15s,border-color .15s">+ Link an ingredient</div>
+<label style="display:flex;flex-direction:column;gap:4px;font-size:14px;color:#5b6475;margin-top:18px">Notes<input value="{{ se.notes }}" onChange="{{ se.setNotes }}" placeholder="Account number, rep, anything" style="border:1px solid #e8ebf0;border-radius:10px;padding:5px 8px;font-size:15px"></input></label>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ isOrders }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">
+<div style="display:flex;gap:8px;align-items:center;padding:10px 20px;border-bottom:1px solid #e8ebf0;flex:none;flex-wrap:wrap">
+<sc-for list="{{ od.views }}" as="v" hint-placeholder-count="3"><div onClick="{{ v.select }}" style="cursor:pointer;border:1px solid #e8ebf0;border-radius:14px;padding:6px 14px;font-size:14px;background:{{ v.bg }};color:{{ v.fg }};transition:background .15s,border-color .15s">{{ v.label }}</div></sc-for>
+<div style="flex:1"></div><span style="color:#5b6475;font-size:14px">{{ od.meta }}</span>
+</div>
+<div style="flex:1;overflow-y:auto;padding:16px 20px">
+
+<sc-if value="{{ od.isDraft }}" hint-placeholder-val="{{ true }}">
+<sc-if value="{{ od.guessWarn }}" hint-placeholder-val="{{ true }}"><div style="border:1.5px dashed #d4554a;border-radius:12px;padding:8px 12px;font-size:14px;margin-bottom:14px">{{ od.guessLine }}</div></sc-if>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(520px,1fr));gap:16px;align-items:start">
+<sc-for list="{{ od.baskets }}" as="b" hint-placeholder-count="3">
+<div style="border:1px solid #e8ebf0;border-radius:14px;padding:12px 14px">
+<div style="display:flex;align-items:baseline;gap:10px"><div style="font:800 18px 'Nunito',sans-serif;letter-spacing:-.01em;flex:1">{{ b.name }}</div><span style="border:1px solid {{ b.statusC }};color:{{ b.statusC }};border-radius:12px;padding:0 8px;font-size:12px">{{ b.status }}</span><div style="font-size:18px">{{ b.total }}</div></div>
+<div style="color:#5b6475;font-size:14px;margin:2px 0 8px">{{ b.terms }}</div>
+<sc-for list="{{ b.lines }}" as="l" hint-placeholder-count="2">
+<div style="display:grid;grid-template-columns:minmax(0,1fr) 110px 70px;gap:10px;align-items:center;border-top:1px solid #e8ebf0;padding:7px 0">
+<div style="min-width:0"><div style="font-size:15px">{{ l.name }}</div><div style="color:#5b6475;font-size:13px">{{ l.why }} <span style="color:#d4554a">{{ l.cap }}</span></div></div>
+<div style="display:flex;align-items:center;gap:6px;justify-content:flex-end;font-size:14px"><span onClick="{{ l.dec }}" style="cursor:pointer;width:22px;height:22px;border:1px solid #d5dae3;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background .15s,border-color .15s">–</span><span style="min-width:44px;text-align:center">{{ l.qty }}</span><span onClick="{{ l.inc }}" style="cursor:pointer;width:22px;height:22px;border:1px solid #d5dae3;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background .15s,border-color .15s">+</span></div>
+<div style="text-align:right;font-size:14px">{{ l.price }}</div>
+</div>
+</sc-for>
+<sc-if value="{{ b.under }}" hint-placeholder-val="{{ false }}"><div style="border-top:1px solid #e8ebf0;padding-top:8px;font-size:14px;color:#d4554a">{{ b.underLine }}</div>
+<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px"><sc-for list="{{ b.topups }}" as="t" hint-placeholder-count="2"><div onClick="{{ t.add }}" style="cursor:pointer;border:1.5px dashed #d5dae3;border-radius:12px;padding:6px 14px;font-size:13px;transition:background .15s,border-color .15s">+ {{ t.label }}</div></sc-for></div></sc-if>
+<div style="display:flex;gap:10px;align-items:center;margin-top:10px"><span style="color:#8a93a3;font-size:13px;flex:1">{{ b.note }}</span><sc-if value="{{ b.canSend }}" hint-placeholder-val="{{ true }}"><div onClick="{{ b.send }}" style="cursor:pointer;background:#4a6fd1;color:#fff;border-radius:16px;padding:9px 14px;font-size:14px;white-space:nowrap;font-weight:700;transition:background .15s,border-color .15s">Send to Telegram to confirm</div></sc-if></div>
+</div>
+</sc-for>
+</div>
+<sc-if value="{{ od.hasTesco }}" hint-placeholder-val="{{ false }}">
+<div style="border:1.5px dashed #d5dae3;border-radius:14px;padding:12px 14px;margin-top:16px;max-width:760px">
+<div style="display:flex;align-items:baseline;gap:10px"><div style="font:800 17px 'Nunito',sans-serif;letter-spacing:-.01em;flex:1">Shop run · can't wait for a delivery</div><div style="font-size:16px">{{ od.tescoTotal }}</div></div>
+<sc-for list="{{ od.tesco }}" as="l" hint-placeholder-count="1"><div style="display:grid;grid-template-columns:minmax(0,1fr) 90px 80px;gap:10px;border-top:1px solid #e8ebf0;padding:6px 0;font-size:14px"><div><div>{{ l.name }}</div><div style="color:#5b6475;font-size:13px">{{ l.why }}</div></div><span style="text-align:right">{{ l.qty }}</span><span style="text-align:right">{{ l.price }}</span></div></sc-for>
+<div style="display:flex;gap:10px;align-items:center;margin-top:6px"><span style="color:#8a93a3;font-size:13px;flex:1">Retail premium is a guess (25% over the supplier price). Every shop run is logged in Shop runs.</span><div onClick="{{ od.logTesco }}" style="cursor:pointer;border:1px solid #e8ebf0;border-radius:16px;padding:6px 14px;font-size:14px;white-space:nowrap;transition:background .15s,border-color .15s">Log as bought</div></div>
+</div>
+</sc-if>
+<sc-if value="{{ od.hasUncounted }}" hint-placeholder-val="{{ false }}"><div style="margin-top:16px;font-size:14px;color:#5b6475">Count these first; they can’t be ordered until there’s a real number: {{ od.uncounted }}</div></sc-if>
+<sc-if value="{{ od.hasNoSup }}" hint-placeholder-val="{{ false }}"><div style="margin-top:16px;font-size:14px;color:#5b6475">No supplier set, so not ordered: {{ od.noSup }}</div></sc-if>
+<sc-if value="{{ od.noneNeeded }}" hint-placeholder-val="{{ false }}"><div style="padding:40px;text-align:center;color:#8a93a3;font-size:16px">Nothing needs ordering right now.</div></sc-if>
+</sc-if>
+
+<sc-if value="{{ od.isHist }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;gap:8px;margin-bottom:10px"><select value="{{ od.hSup }}" onChange="{{ od.setHSup }}" style="border:1px solid #d5dae3;border-radius:10px;padding:3px 6px;font-size:14px"><sc-for list="{{ od.supOpts }}" as="o" hint-placeholder-count="3"><option value="{{ o.id }}">{{ o.label }}</option></sc-for></select></div>
+<div style="display:grid;grid-template-columns:110px minmax(0,1fr) minmax(0,2.4fr) 90px 110px 110px 150px;gap:10px;padding:6px 0;border-bottom:1px solid #e8ebf0;color:#5b6475;font-size:13px"><span>Created</span><span>Supplier</span><span>What</span><span style="text-align:right">Total</span><span>Status</span><span>Arrives</span><span></span></div>
+<sc-for list="{{ od.hist }}" as="h" hint-placeholder-count="6">
+<div style="display:grid;grid-template-columns:110px minmax(0,1fr) minmax(0,2.4fr) 90px 110px 110px 150px;gap:10px;padding:7px 0;border-bottom:1px solid #e8ebf0;align-items:center;font-size:14px">
+<span>{{ h.date }}</span><span>{{ h.sup }}</span><span style="color:#5b6475">{{ h.what }}</span><span style="text-align:right">{{ h.total }}</span>
+<span><span style="border:1px solid {{ h.statusC }};color:{{ h.statusC }};border-radius:12px;padding:0 8px;font-size:12px">{{ h.status }}</span></span><span>{{ h.arrive }}</span>
+<span style="display:flex;gap:6px;justify-content:flex-end"><sc-for list="{{ h.actions }}" as="a" hint-placeholder-count="1"><span onClick="{{ a.go }}" style="cursor:pointer;border:1px solid #d5dae3;border-radius:12px;padding:6px 14px;font-size:12px;white-space:nowrap;transition:background .15s,border-color .15s">{{ a.label }}</span></sc-for></span>
+</div>
+</sc-for>
+<sc-if value="{{ od.histEmpty }}" hint-placeholder-val="{{ false }}"><div style="padding:30px;text-align:center;color:#8a93a3">No orders yet.</div></sc-if>
+</sc-if>
+
+<sc-if value="{{ od.isShop }}" hint-placeholder-val="{{ false }}">
+<div style="font:800 21px 'Nunito',sans-serif;letter-spacing:-.01em">{{ od.shopHead }}</div>
+<div style="color:#5b6475;font-size:14px;margin:4px 0 14px;max-width:760px">{{ od.shopSub }}</div>
+<div style="display:flex;align-items:flex-end;gap:10px;height:120px;border-bottom:1px solid #e8ebf0;max-width:760px;margin-bottom:6px"><sc-for list="{{ od.shopBars }}" as="b" hint-placeholder-count="7"><div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:3px"><span style="font-size:12px;color:#5b6475">{{ b.v }}</span><div style="width:100%;height:{{ b.h }};background:#4a6fd1"></div></div></sc-for></div>
+<div style="display:flex;gap:10px;max-width:760px;margin-bottom:18px"><sc-for list="{{ od.shopBars }}" as="b" hint-placeholder-count="7"><span style="flex:1;text-align:center;font-size:12px;color:#5b6475">{{ b.label }}</span></sc-for></div>
+<div style="display:grid;grid-template-columns:110px minmax(0,1.6fr) minmax(0,2fr) 90px;gap:10px;padding:6px 0;border-bottom:1px solid #e8ebf0;color:#5b6475;font-size:13px;max-width:900px"><span>Date</span><span>Where</span><span>Why / note</span><span style="text-align:right">£</span></div>
+<sc-for list="{{ od.shopRows }}" as="r" hint-placeholder-count="8"><div style="display:grid;grid-template-columns:110px minmax(0,1.6fr) minmax(0,2fr) 90px;gap:10px;padding:5px 0;border-bottom:1px solid #e8ebf0;font-size:14px;max-width:900px"><span>{{ r.date }}</span><span>{{ r.where }}</span><span style="color:#5b6475">{{ r.note }}</span><span style="text-align:right">{{ r.amount }}</span></div></sc-for>
+</sc-if>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isRec }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;min-width:0;display:flex;min-height:0">
+<div style="flex:1;min-width:0;overflow-y:auto;padding:20px 22px 32px">
+<sc-if value="{{ rc.oneoff }}" hint-placeholder-val="{{ false }}">
+<div style="font:800 22px 'Nunito',sans-serif;letter-spacing:-.01em">One-off recipes</div>
+<div style="color:#5b6475;font-size:14px;margin:4px 0 14px">{{ rc.oneoffMeta }}</div>
+<div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ rc.oneoffs }}" as="p" hint-placeholder-count="12"><div onClick="{{ p.go }}" style="cursor:pointer;border:1px solid #d5dae3;border-radius:12px;padding:6px 14px;font-size:14px;transition:background .15s,border-color .15s">{{ p.name }}</div></sc-for></div>
+</sc-if>
+<sc-if value="{{ rc.has }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;gap:10px;align-items:baseline"><input value="{{ rc.name }}" onChange="{{ rc.setName }}" style="flex:1;min-width:0;border:none;border-bottom:1px solid #e8ebf0;font:800 24px 'Nunito',sans-serif;letter-spacing:-.01em;padding:2px 0"></input><span style="color:#5b6475;font-size:14px;white-space:nowrap">{{ rc.cat }}</span></div>
+<div style="color:#5b6475;font-size:14px;margin:4px 0 16px">{{ rc.meta }}</div>
+
+<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:26px">
+<div style="font:800 16px 'Nunito',sans-serif;letter-spacing:-.01em">What goes in, per size</div>
+<sc-for list="{{ rc.comps }}" as="k" hint-placeholder-count="5">
+<div style="display:flex;flex-direction:column;gap:10px;background:#fff;border:1px solid #eef0f4;border-radius:14px;padding:12px 14px">
+<div style="display:flex;gap:8px;align-items:center">
+<select value="{{ k.role }}" onChange="{{ k.setRole }}" style="height:38px;box-sizing:border-box;border:1px solid #e2e6ed;border-radius:10px;padding:0 10px;font-size:14px;background:#fff;outline:none;min-width:0;width:130px;flex:none;font-weight:700;font-size:12px;letter-spacing:.04em;background:#f6f7fa;border-color:#f6f7fa"><sc-for list="{{ roles }}" as="r" hint-placeholder-count="4"><option value="{{ r }}">{{ r }}</option></sc-for></select>
+<div style="flex:1;min-width:0"><sc-if value="{{ k.single }}" hint-placeholder-val="{{ true }}"><select value="{{ k.ing }}" onChange="{{ k.setIng }}" style="height:38px;box-sizing:border-box;border:1px solid #e2e6ed;border-radius:10px;padding:0 10px;font-size:14px;background:#fff;outline:none;min-width:0;width:100%"><sc-for list="{{ ingOptions }}" as="o" hint-placeholder-count="3"><option value="{{ o.id }}">{{ o.label }}</option></sc-for></select></sc-if><sc-if value="{{ k.bySize }}" hint-placeholder-val="{{ false }}"><span style="color:#5b6475;font-size:14px">Different item for each size</span></sc-if></div>
+<div onClick="{{ k.toggleSubst }}" title="Customer can swap this" style="cursor:pointer;flex:none;height:38px;display:flex;align-items:center;gap:6px;padding:0 10px;border-radius:10px;font-size:13px;color:#5b6475"><span style="width:18px;height:18px;border:1.5px solid #c9cfda;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#3558b8;font-weight:800">{{ k.subst }}</span>Swappable</div>
+<div onClick="{{ k.remove }}" style="cursor:pointer;flex:none;width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#8a93a3;font-size:18px">×</div>
+</div>
+<div style="display:grid;grid-template-columns:repeat({{ rc.nSizes }},minmax(0,1fr));gap:8px"><sc-for list="{{ k.cells }}" as="c" hint-placeholder-count="3"><div style="display:flex;flex-direction:column;gap:6px;background:#f6f7fa;border-radius:10px;padding:8px"><span style="font-size:11px;font-weight:800;color:#8a93a3">{{ c.size }}</span><sc-if value="{{ c.hasIng }}" hint-placeholder-val="{{ false }}"><select value="{{ c.ing }}" onChange="{{ c.setIng }}" style="height:38px;box-sizing:border-box;border:1px solid #e2e6ed;border-radius:10px;padding:0 10px;font-size:14px;background:#fff;outline:none;min-width:0;width:100%;font-size:13px"><sc-for list="{{ ingOptions }}" as="o" hint-placeholder-count="3"><option value="{{ o.id }}">{{ o.label }}</option></sc-for></select></sc-if><div style="display:flex;align-items:center;gap:6px"><input value="{{ c.qty }}" onChange="{{ c.setQty }}" style="height:38px;box-sizing:border-box;border:1px solid #e2e6ed;border-radius:10px;padding:0 10px;font-size:14px;background:#fff;outline:none;min-width:0;flex:1;width:100%;text-align:right;border-color:{{ c.bd }};background:{{ c.bg }}"></input><span style="color:#8a93a3;font-size:13px;width:28px;flex:none">{{ k.unit }}</span></div></div></sc-for></div>
+</div>
+</sc-for>
+<sc-if value="{{ rc.hasFlav }}" hint-placeholder-val="{{ true }}"><div style="display:flex;gap:10px;align-items:center;background:#f6f7fa;border-radius:14px;padding:12px 14px;font-size:14px;color:#5b6475"><span style="font:700 12px 'Nunito',sans-serif;letter-spacing:.04em;color:#1f2633">FLAVOUR</span>Set by the flavour chosen below, per size</div></sc-if>
+<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px">
+<div style="display:flex;flex-direction:column;gap:10px;background:#fff;border:1px solid #eef0f4;border-radius:14px;padding:12px 14px"><div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><span style="font-weight:800;font-size:14px">Time to make</span><span onClick="{{ rc.togglePrep }}" style="cursor:pointer;font-size:12px;font-weight:700;color:{{ rc.prepC }}">{{ rc.prepState }}</span></div>
+<div style="display:grid;grid-template-columns:repeat({{ rc.nSizes }},minmax(0,1fr));gap:8px"><sc-for list="{{ rc.prepCells }}" as="c" hint-placeholder-count="3"><label style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:#8a93a3;font-weight:700;text-transform:uppercase;letter-spacing:.05em;min-width:0">{{ c.size }}<span style="display:flex;align-items:center;gap:4px"><input value="{{ c.v }}" onChange="{{ c.set }}" style="height:38px;box-sizing:border-box;border:1px solid #e2e6ed;border-radius:10px;padding:0 10px;font-size:14px;background:#fff;outline:none;min-width:0;width:100%;text-align:right;font-style:{{ rc.prepStyle }};border-color:{{ c.bd }};background:{{ c.bg }}"></input><span style="color:#8a93a3;font-size:12px;text-transform:none">s</span></span></label></sc-for></div></div>
+<div style="display:flex;flex-direction:column;gap:10px;background:#fff;border:1px solid #eef0f4;border-radius:14px;padding:12px 14px"><div style="font-weight:800;font-size:14px">Base price <span style="font-weight:400;color:#8a93a3;font-size:12px">before flavour extra</span></div>
+<div style="display:grid;grid-template-columns:repeat({{ rc.nSizes }},minmax(0,1fr));gap:8px"><sc-for list="{{ rc.priceCells }}" as="c" hint-placeholder-count="3"><label style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:#8a93a3;font-weight:700;text-transform:uppercase;letter-spacing:.05em;min-width:0">{{ c.size }}<span style="display:flex;align-items:center;gap:4px"><span style="color:#8a93a3;font-size:13px">£</span><input value="{{ c.v }}" onChange="{{ c.set }}" style="height:38px;box-sizing:border-box;border:1px solid #e2e6ed;border-radius:10px;padding:0 10px;font-size:14px;background:#fff;outline:none;min-width:0;width:100%;text-align:right;border-color:{{ c.bd }};background:{{ c.bg }}"></input></span></label></sc-for></div></div>
+</div>
+<div onClick="{{ rc.addComp }}" style="cursor:pointer;align-self:flex-start;height:40px;display:flex;align-items:center;border:1.5px dashed #d5dae3;border-radius:10px;padding:0 14px;font-size:14px;font-weight:600;color:#3558b8">+ Add component</div>
+</div>
+
+<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:6px"><div style="font:800 16px 'Nunito',sans-serif;letter-spacing:-.01em">Flavours · {{ rc.flavCount }}</div><span style="color:#8a93a3;font-size:13px">each flavour makes one menu item per size</span></div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px">
+<sc-for list="{{ rc.flavs }}" as="f" hint-placeholder-count="6">
+<div style="display:flex;flex-direction:column;gap:10px;background:#fff;border:1px solid #eef0f4;border-radius:14px;padding:12px 14px;background:{{ f.bg }};opacity:{{ f.op }}">
+<div style="display:flex;gap:8px;align-items:center"><input value="{{ f.name }}" onChange="{{ f.setName }}" style="height:38px;box-sizing:border-box;border:1px solid #e2e6ed;border-radius:10px;padding:0 10px;font-size:14px;background:#fff;outline:none;min-width:0;flex:1;font-weight:700;border-color:transparent;padding:0 4px"></input>
+<span onClick="{{ f.toggle }}" title="On menu" style="cursor:pointer;flex:none;width:40px;height:24px;border-radius:999px;position:relative;background:{{ f.trackBg }};transition:background .15s"><span style="position:absolute;top:3px;left:{{ f.knobX }};width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2);transition:left .15s"></span></span>
+<span onClick="{{ f.remove }}" style="cursor:pointer;flex:none;width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:#8a93a3;font-size:18px">×</span></div>
+<label style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:#8a93a3;font-weight:700;text-transform:uppercase;letter-spacing:.05em;min-width:0">Ingredient<select value="{{ f.ing }}" onChange="{{ f.setIng }}" style="height:38px;box-sizing:border-box;border:1px solid #e2e6ed;border-radius:10px;padding:0 10px;font-size:14px;background:#fff;outline:none;min-width:0;border-color:{{ f.ingBd }};font-weight:400;text-transform:none;letter-spacing:0;color:#1f2633"><sc-for list="{{ flavIngOptions }}" as="o" hint-placeholder-count="3"><option value="{{ o.id }}">{{ o.label }}</option></sc-for></select></label>
+<div style="display:grid;grid-template-columns:70px 80px minmax(0,1fr);gap:8px">
+<label style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:#8a93a3;font-weight:700;text-transform:uppercase;letter-spacing:.05em;min-width:0">Qty<input value="{{ f.qty }}" onChange="{{ f.setQty }}" style="height:38px;box-sizing:border-box;border:1px solid #e2e6ed;border-radius:10px;padding:0 10px;font-size:14px;background:#fff;outline:none;min-width:0;text-align:right;font-weight:400;color:#1f2633"></input></label>
+<label style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:#8a93a3;font-weight:700;text-transform:uppercase;letter-spacing:.05em;min-width:0">Extra £<input value="{{ f.delta }}" onChange="{{ f.setDelta }}" style="height:38px;box-sizing:border-box;border:1px solid #e2e6ed;border-radius:10px;padding:0 10px;font-size:14px;background:#fff;outline:none;min-width:0;text-align:right;font-weight:400;color:#1f2633"></input></label>
+<label style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:#8a93a3;font-weight:700;text-transform:uppercase;letter-spacing:.05em;min-width:0">Season<select value="{{ f.season }}" onChange="{{ f.setSeason }}" style="height:38px;box-sizing:border-box;border:1px solid #e2e6ed;border-radius:10px;padding:0 10px;font-size:14px;background:#fff;outline:none;min-width:0;font-weight:400;text-transform:none;letter-spacing:0;color:#1f2633"><sc-for list="{{ seasonOptions }}" as="o" hint-placeholder-count="3"><option value="{{ o.id }}">{{ o.label }}</option></sc-for></select></label>
+</div>
+</div>
+</sc-for>
+</div>
+<div style="display:flex;gap:10px;align-items:center;margin:10px 0 22px"><div onClick="{{ rc.addFlav }}" style="cursor:pointer;border:1.5px dashed #d5dae3;border-radius:14px;padding:6px 14px;font-size:14px;transition:background .15s,border-color .15s">+ Add flavour</div><span style="color:#8a93a3;font-size:13px">{{ rc.addFlavNote }}</span></div>
+
+<div style="font:800 16px 'Nunito',sans-serif;letter-spacing:-.01em;margin-bottom:6px">Swaps a customer can ask for</div>
+<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px"><sc-for list="{{ rc.mods }}" as="m" hint-placeholder-count="5"><div onClick="{{ m.toggle }}" style="cursor:pointer;border:1px solid #e8ebf0;border-radius:14px;padding:6px 14px;font-size:14px;background:{{ m.bg }};color:{{ m.fg }};transition:background .15s,border-color .15s">{{ m.label }}</div></sc-for></div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px">
+<sc-for list="{{ modRows }}" as="m" hint-placeholder-count="5"><div style="display:flex;flex-direction:column;gap:10px;background:#fff;border:1px solid #eef0f4;border-radius:14px;padding:12px 14px">
+<input value="{{ m.name }}" onChange="{{ m.setName }}" style="height:38px;box-sizing:border-box;border:1px solid #e2e6ed;border-radius:10px;padding:0 10px;font-size:14px;background:#fff;outline:none;min-width:0;font-weight:700;border-color:transparent;padding:0 4px"></input>
+<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px">
+<label style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:#8a93a3;font-weight:700;text-transform:uppercase;letter-spacing:.05em;min-width:0">Does<select value="{{ m.action }}" onChange="{{ m.setAction }}" style="height:38px;box-sizing:border-box;border:1px solid #e2e6ed;border-radius:10px;padding:0 10px;font-size:14px;background:#fff;outline:none;min-width:0;font-weight:400;text-transform:none;letter-spacing:0;color:#1f2633"><option value="SUBSTITUTE">replaces</option><option value="ADD">adds</option></select></label>
+<label style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:#8a93a3;font-weight:700;text-transform:uppercase;letter-spacing:.05em;min-width:0">To<select value="{{ m.role }}" onChange="{{ m.setRole }}" style="height:38px;box-sizing:border-box;border:1px solid #e2e6ed;border-radius:10px;padding:0 10px;font-size:14px;background:#fff;outline:none;min-width:0;font-weight:400;letter-spacing:0;color:#1f2633"><sc-for list="{{ roles }}" as="r" hint-placeholder-count="4"><option value="{{ r }}">{{ r }}</option></sc-for></select></label>
+</div>
+<label style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:#8a93a3;font-weight:700;text-transform:uppercase;letter-spacing:.05em;min-width:0">Ingredient<select value="{{ m.ing }}" onChange="{{ m.setIng }}" style="height:38px;box-sizing:border-box;border:1px solid #e2e6ed;border-radius:10px;padding:0 10px;font-size:14px;background:#fff;outline:none;min-width:0;font-weight:400;text-transform:none;letter-spacing:0;color:#1f2633"><sc-for list="{{ ingOptions }}" as="o" hint-placeholder-count="3"><option value="{{ o.id }}">{{ o.label }}</option></sc-for></select></label>
+<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px">
+<label style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:#8a93a3;font-weight:700;text-transform:uppercase;letter-spacing:.05em;min-width:0">Qty<input value="{{ m.qty }}" onChange="{{ m.setQty }}" placeholder="same" style="height:38px;box-sizing:border-box;border:1px solid #e2e6ed;border-radius:10px;padding:0 10px;font-size:14px;background:#fff;outline:none;min-width:0;text-align:right;font-weight:400;color:#1f2633"></input></label>
+<label style="display:flex;flex-direction:column;gap:4px;font-size:11px;color:#8a93a3;font-weight:700;text-transform:uppercase;letter-spacing:.05em;min-width:0">Charge £<input value="{{ m.price }}" onChange="{{ m.setPrice }}" style="height:38px;box-sizing:border-box;border:1px solid #e2e6ed;border-radius:10px;padding:0 10px;font-size:14px;background:#fff;outline:none;min-width:0;text-align:right;font-weight:400;color:#1f2633;font-style:{{ m.style }}"></input></label>
+</div>
+</div></sc-for>
+</div>
+<div style="color:#8a93a3;font-size:13px;margin:6px 0 22px">Italic charges are guesses; the workbook only prices oat milk, coconut milk, syrup pumps and marshmallow. Swaps save straight away.</div>
+
+<div style="font:800 16px 'Nunito',sans-serif;letter-spacing:-.01em;margin-bottom:6px">Recipe history</div>
+<sc-for list="{{ rc.history }}" as="h" hint-placeholder-count="1"><div style="display:flex;gap:12px;font-size:14px;padding:4px 0;border-bottom:1px solid #e8ebf0"><span style="color:#5b6475;width:110px;flex:none">from {{ h.date }}</span><span>{{ h.text }}</span></div></sc-for>
+<div style="color:#8a93a3;font-size:14px;padding:4px 0">{{ rc.historyBase }}</div>
+</sc-if>
+</div>
+
+<div style="width:{{ costW }};flex:none;border-left:1px solid #eef0f4;overflow-y:auto;padding:18px 16px;background:#f6f7fa">
+<sc-if value="{{ rc.has }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><div style="font:800 16px 'Nunito',sans-serif;letter-spacing:-.01em;flex:1">What it costs</div><select value="{{ rc.flavSel }}" onChange="{{ rc.setFlavSel }}" style="max-width:170px;border:1px solid #d5dae3;border-radius:10px;padding:2px 4px;font-size:13px"><sc-for list="{{ rc.flavPick }}" as="o" hint-placeholder-count="3"><option value="{{ o.id }}">{{ o.label }}</option></sc-for></select></div>
+<div style="display:grid;grid-template-columns:96px repeat({{ rc.nSizes }},minmax(0,1fr));gap:0 8px;font-size:14px;background:#fff;border-radius:14px;padding:6px 14px">
+<sc-for list="{{ rc.costGrid }}" as="c" hint-placeholder-count="21"><span style="text-align:{{ c.al }};color:{{ c.c }};font-weight:{{ c.fw }};border-bottom:{{ c.bd }};padding:8px 0;white-space:nowrap">{{ c.v }}</span></sc-for>
+</div>
+<div style="display:flex;align-items:center;gap:6px;margin:10px 0 18px;font-size:14px;color:#5b6475">Staff time at £<input value="{{ rateStr }}" onChange="{{ setRate }}" style="width:52px;border:1px solid #d5dae3;border-radius:10px;padding:1px 5px;font-size:14px;text-align:right"></input>an hour</div>
+<sc-if value="{{ rc.dirty }}" hint-placeholder-val="{{ false }}">
+<div style="border:1px solid #e8ebf0;border-radius:14px;padding:14px;background:#fff">
+<div style="font:800 16px 'Nunito',sans-serif;letter-spacing:-.01em;margin-bottom:6px">What this change does</div>
+<sc-for list="{{ rc.diff }}" as="d" hint-placeholder-count="2"><div style="font-size:14px;padding:2px 0">{{ d }}</div></sc-for>
+<div style="display:grid;grid-template-columns:1fr auto;gap:4px 10px;margin:10px 0;font-size:14px;border-top:1px solid #e8ebf0;padding-top:8px">
+<span style="color:#5b6475">Menu items affected</span><b>{{ rc.affected }}</b>
+<span style="color:#5b6475">Cost per item</span><b>{{ rc.costDelta }}</b>
+<span style="color:#5b6475">Thinnest margin after</span><b style="color:{{ rc.worstC }}">{{ rc.worst }}</b>
+<span style="color:#5b6475">Over a month</span><span style="color:#8a93a3">needs item sales from Lightspeed</span>
+</div>
+<sc-for list="{{ rc.warnings }}" as="w" hint-placeholder-count="1"><div style="color:#d4554a;font-size:13px;padding:2px 0">{{ w }}</div></sc-for>
+<div style="font-size:13px;color:#5b6475;margin:8px 0 12px">Changes apply from today. Past sales keep the recipe they were sold with; history is never rewritten.</div>
+<div style="display:flex;gap:8px"><div onClick="{{ rc.discard }}" style="cursor:pointer;flex:1;text-align:center;border:1px solid #e8ebf0;border-radius:18px;padding:5px;font-size:14px;transition:background .15s,border-color .15s">Discard</div><div onClick="{{ rc.apply }}" style="cursor:pointer;flex:2;text-align:center;background:#4a6fd1;color:#fff;border-radius:18px;padding:7px;font-size:14px;font-weight:700;transition:background .15s,border-color .15s">Apply from today</div></div>
+</div>
+</sc-if>
+<sc-if value="{{ rc.clean }}" hint-placeholder-val="{{ true }}"><div style="border:1px solid #e8ebf0;border-radius:14px;padding:12px;font-size:14px;color:#5b6475">No unsaved changes. Edit any quantity, price or flavour and the effect shows up here before anything is saved.</div></sc-if>
+</sc-if>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isStock }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">
+<div style="display:flex;flex-direction:column;gap:12px;padding:14px 20px;border-bottom:1px solid #eef0f4;flex:none">
+<div style="display:flex;gap:10px;align-items:center">
+<div style="flex:1;min-width:0;display:flex;align-items:center;height:40px;box-sizing:border-box;border:1px solid #e2e6ed;border-radius:12px;padding:0 12px;background:#fff"><span style="width:12px;height:12px;border:2px solid #8a93a3;border-radius:50%;flex:none;margin-right:8px;box-sizing:border-box"></span><input value="{{ iq }}" onChange="{{ setIq }}" placeholder="Search ingredients" style="flex:1;min-width:0;border:none;outline:none;font-size:15px;background:transparent"></input></div>
+<div style="display:flex;align-items:center;gap:2px;height:40px;box-sizing:border-box;padding:3px;background:#f1f3f7;border-radius:12px;flex:none"><span style="font-size:12px;color:#8a93a3;padding:0 8px 0 6px">Tier</span><sc-for list="{{ st.tiers }}" as="f" hint-placeholder-count="4"><div onClick="{{ f.select }}" style="cursor:pointer;height:34px;min-width:34px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;padding:0 10px;border-radius:9px;font-size:14px;font-weight:{{ f.fw }};background:{{ f.segBg }};color:{{ f.fg }};box-shadow:{{ f.segSh }};transition:background .15s">{{ f.label }}</div></sc-for></div>
+<div onClick="{{ st.startCount }}" style="cursor:pointer;flex:none;height:40px;box-sizing:border-box;display:flex;align-items:center;background:#4a6fd1;color:#fff;border-radius:12px;padding:0 18px;font-size:15px;white-space:nowrap;font-weight:700">{{ st.countLabel }}</div>
+</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<sc-for list="{{ st.filters }}" as="f" hint-placeholder-count="5"><div onClick="{{ f.select }}" style="cursor:pointer;display:flex;align-items:center;gap:6px;height:34px;box-sizing:border-box;border:1px solid {{ f.bd }};border-radius:999px;padding:0 14px;font-size:14px;font-weight:{{ f.fw }};white-space:nowrap;background:{{ f.bg }};color:{{ f.fg }};transition:background .15s,border-color .15s"><span>{{ f.name }}</span><span style="font-size:12px;opacity:.6">{{ f.n }}</span></div></sc-for>
+</div>
+</div>
+<div style="display:flex;gap:8px 20px;align-items:center;padding:10px 20px;border-bottom:1px solid #eef0f4;font-size:13px;color:#5b6475;flex:none;flex-wrap:wrap;background:#fafbfc">
+<span>{{ st.asOf }}</span>
+<span onClick="{{ st.showSoon }}" style="cursor:pointer;color:{{ st.soonC }};font-weight:600">{{ st.soonLine }}</span>
+<span>{{ st.wasteLine }}</span>
+<span style="color:#8a93a3;margin-left:auto">Estimates in <i>italic</i>, counts upright</span>
+</div>
+
+<sc-if value="{{ st.counting }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;overflow-y:auto;padding:24px">
+<sc-if value="{{ cn.has }}" hint-placeholder-val="{{ true }}">
+<div style="max-width:560px;margin:0 auto;border:1px solid #e8ebf0;border-radius:12px;padding:22px 24px">
+<div style="display:flex;justify-content:space-between;color:#5b6475;font-size:14px"><span>Counting · {{ cn.pos }}</span><span onClick="{{ cn.done }}" style="cursor:pointer;text-decoration:underline">Stop for now</span></div>
+<div style="font:800 26px 'Nunito',sans-serif;letter-spacing:-.01em;margin-top:4px">{{ cn.name }}</div>
+<div style="color:#5b6475;font-size:14px;margin-bottom:16px">{{ cn.hint }}</div>
+<div style="display:flex;gap:10px;align-items:center"><div onClick="{{ cn.down }}" style="cursor:pointer;width:50px;height:50px;border:1px solid #e8ebf0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;transition:background .15s,border-color .15s">–</div><input value="{{ cn.val }}" onChange="{{ cn.setVal }}" placeholder="What you can see" style="flex:1;min-width:0;border:1px solid #e8ebf0;border-radius:12px;padding:10px;font-size:22px;text-align:center"></input><span style="font-size:16px;color:#5b6475">{{ cn.unit }}</span><div onClick="{{ cn.up }}" style="cursor:pointer;width:50px;height:50px;border:1px solid #e8ebf0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;transition:background .15s,border-color .15s">+</div></div>
+<div style="min-height:52px;margin:14px 0;font-size:15px;color:{{ cn.msgC }}">{{ cn.msg }}</div>
+<div style="display:flex;gap:10px"><div onClick="{{ cn.skip }}" style="cursor:pointer;flex:1;text-align:center;border:1px solid #e8ebf0;border-radius:20px;padding:8px;font-size:16px;transition:background .15s,border-color .15s">Skip</div><div onClick="{{ cn.save }}" style="cursor:pointer;flex:2;text-align:center;background:#4a6fd1;color:#fff;border-radius:20px;padding:10px;font-size:16px;font-weight:700;transition:background .15s,border-color .15s">Save · next</div></div>
+<div style="color:#8a93a3;font-size:13px;margin-top:12px">Least-trusted first, so stopping halfway still does the useful part. The expected figure shows only after you type.</div>
+</div>
+<div style="max-width:560px;margin:14px auto 0;display:flex;flex-wrap:wrap;gap:6px"><span style="color:#5b6475;font-size:13px">Up next:</span><sc-for list="{{ cn.next }}" as="n" hint-placeholder-count="4"><span style="border:1px solid #d5dae3;border-radius:14px;padding:0 8px;font-size:13px">{{ n }}</span></sc-for></div>
+</sc-if>
+<sc-if value="{{ cn.none }}" hint-placeholder-val="{{ false }}"><div style="text-align:center;padding:60px;font-size:17px">Count finished: {{ cn.doneLine }} <span onClick="{{ cn.done }}" style="cursor:pointer;text-decoration:underline">Back to stock</span></div></sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ st.listing }}" hint-placeholder-val="{{ true }}">
+<div style="flex:1;min-height:0;display:flex">
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">
+<div style="display:grid;grid-template-columns:minmax(0,2.2fr) 84px minmax(0,1.3fr) 64px 118px minmax(0,1.2fr) 70px;gap:12px;padding:10px 20px;border-bottom:1px solid #eef0f4;color:#8a93a3;font:700 11px 'Nunito',sans-serif;text-transform:uppercase;letter-spacing:.06em;flex:none"><span>Ingredient</span><span style="text-align:right">Left (est.)</span><span>Last count</span><span style="text-align:right">Drift</span><span>Trust</span><span>Runs out</span><span>Use by</span></div>
+<div style="flex:1;overflow-y:auto">
+<sc-for list="{{ st.rows }}" as="r" hint-placeholder-count="12">
+<div onClick="{{ r.select }}" style="cursor:pointer;display:grid;grid-template-columns:minmax(0,2.2fr) 84px minmax(0,1.3fr) 64px 118px minmax(0,1.2fr) 70px;gap:12px;min-height:52px;padding:6px 20px;box-sizing:border-box;border-bottom:1px solid #f1f3f6;align-items:center;font-size:14px;background:{{ r.bg }}">
+<span style="display:flex;gap:8px;align-items:center;min-width:0"><span style="flex:none;width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:7px;background:#f1f3f7;color:#5b6475;font:700 11px 'Nunito',sans-serif">{{ r.tier }}</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600">{{ r.name }}</span></span>
+<span style="text-align:right;font-style:italic;color:{{ r.estC }}">{{ r.est }}</span>
+<span style="font-size:13px;color:#5b6475;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.last }}</span>
+<span style="text-align:right;color:{{ r.driftC }};font-weight:{{ r.driftW }}">{{ r.drift }}</span>
+<span><span style="display:inline-flex;align-items:center;height:24px;background:{{ r.trustBg }};color:{{ r.trustC }};border-radius:999px;padding:0 10px;font-size:12px;font-weight:700;white-space:nowrap">{{ r.trust }}</span></span>
+<span style="font-size:13px;color:{{ r.runC }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.runs }}</span>
+<span style="font-size:13px;color:{{ r.expC }};white-space:nowrap">{{ r.exp }}</span>
+</div>
+</sc-for>
+<sc-if value="{{ st.empty }}" hint-placeholder-val="{{ false }}"><div style="padding:40px;text-align:center;color:#8a93a3;font-size:15px">Nothing in this view.</div></sc-if>
+</div>
+</div>
+
+<sc-if value="{{ sd.has }}" hint-placeholder-val="{{ false }}">
+<div style="width:400px;flex:none;border-left:1px solid #e8ebf0;overflow-y:auto;padding:16px 18px;background:#f6f7fa">
+<div style="display:flex;align-items:baseline;gap:8px"><div style="font:800 21px 'Nunito',sans-serif;letter-spacing:-.01em;flex:1">{{ sd.name }}</div><span onClick="{{ sd.close }}" style="cursor:pointer;color:#8a93a3;font-size:17px">×</span></div>
+<div style="display:flex;gap:8px;align-items:center;font-size:14px;color:#5b6475;margin-bottom:12px">Tier <sc-for list="{{ sd.tierOpts }}" as="t" hint-placeholder-count="3"><span onClick="{{ t.select }}" style="cursor:pointer;border:1px solid #d5dae3;border-radius:8px;padding:0 7px;font:700 12px 'Nunito',sans-serif;letter-spacing:.04em;background:{{ t.bg }};color:{{ t.fg }};transition:background .15s,border-color .15s">{{ t.label }}</span></sc-for><span style="color:#8a93a3">{{ sd.tierNote }}</span></div>
+
+<sc-if value="{{ sd.isC }}" hint-placeholder-val="{{ false }}">
+<div style="border:1px solid #e8ebf0;border-radius:14px;padding:12px;font-size:14px">Checklist item: not worked out from sales. Staff mark it OK or low.<div style="display:flex;gap:8px;margin-top:10px"><sc-for list="{{ sd.checkOpts }}" as="o" hint-placeholder-count="2"><div onClick="{{ o.select }}" style="cursor:pointer;flex:1;text-align:center;border:1px solid #e8ebf0;border-radius:16px;padding:3px;background:{{ o.bg }};color:{{ o.fg }};transition:background .15s,border-color .15s">{{ o.label }}</div></sc-for></div></div>
+</sc-if>
+
+<sc-if value="{{ sd.notC }}" hint-placeholder-val="{{ true }}">
+<div style="border:1px solid #e8ebf0;border-radius:14px;padding:12px 14px;margin-bottom:12px">
+<div style="color:#5b6475;font-size:13px">We think you have</div>
+<div style="font-size:30px;font-style:italic">{{ sd.est }}</div>
+<div style="color:#8a93a3;font-size:13px;margin-bottom:8px">worked out, not counted</div>
+<div style="font-size:14px;color:#5b6475">{{ sd.how }}</div>
+</div>
+<div style="border:1px solid #e8ebf0;border-radius:14px;padding:12px 14px;margin-bottom:12px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><div style="font:800 15px 'Nunito',sans-serif;letter-spacing:-.01em">Last count</div><span style="border:1px solid {{ sd.trustC }};color:{{ sd.trustC }};border-radius:12px;padding:0 8px;font-size:12px">{{ sd.trust }}</span></div>
+<div style="font-size:19px">{{ sd.last }}</div>
+<div style="font-size:14px;color:#5b6475;margin:4px 0">{{ sd.driftLine }}</div>
+<sc-if value="{{ sd.hasSplit }}" hint-placeholder-val="{{ false }}">
+<div style="display:grid;grid-template-columns:130px minmax(0,1fr) 44px;gap:6px 8px;align-items:center;font-size:13px;margin:8px 0">
+<span>Went out of date</span><div style="height:12px;border:1px solid #d5dae3"><div style="height:100%;background:#4a6fd1;width:{{ sd.expW }}"></div></div><span style="text-align:right">{{ sd.expP }}</span>
+<span>Measuring / recipe</span><div style="height:12px;border:1px solid #d5dae3"><div style="height:100%;background:#4a6fd1;width:{{ sd.measW }}"></div></div><span style="text-align:right">{{ sd.measP }}</span>
+</div>
+<div style="font-size:14px;border-top:1px solid #e8ebf0;padding-top:6px"><b>{{ sd.fixTitle }}</b> {{ sd.fixBody }}</div>
+</sc-if>
+<div style="font-size:13px;color:#5b6475;margin-top:6px">{{ sd.autoLine }}</div>
+</div>
+
+<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px"><div style="font:800 15px 'Nunito',sans-serif;letter-spacing:-.01em">Batches</div><span style="color:#8a93a3;font-size:12px">used oldest-first by use-by date</span></div>
+<div style="display:grid;grid-template-columns:1fr 60px 1fr 64px;gap:4px 8px;font-size:13px;color:#5b6475;border-bottom:1px solid #e8ebf0;padding-bottom:3px"><span>Came in</span><span style="text-align:right">Qty</span><span>Use by</span><span style="text-align:right">Left</span></div>
+<sc-for list="{{ sd.batches }}" as="b" hint-placeholder-count="2"><div style="display:grid;grid-template-columns:1fr 60px 1fr 64px;gap:4px 8px;font-size:14px;padding:4px 0;border-bottom:1px solid #e8ebf0"><span>{{ b.inn }}</span><span style="text-align:right">{{ b.qty }}</span><span style="color:{{ b.expC }}">{{ b.exp }}</span><span style="text-align:right;font-style:italic">{{ b.left }}</span></div></sc-for>
+<sc-if value="{{ sd.noBatches }}" hint-placeholder-val="{{ false }}"><div style="color:#8a93a3;font-size:13px;padding:4px 0">No deliveries recorded since the last count.</div></sc-if>
+<div style="display:flex;gap:6px;align-items:center;margin:8px 0 4px;font-size:13px;flex-wrap:wrap"><span style="color:#5b6475">Delivery</span><input value="{{ dQty }}" onChange="{{ setDQty }}" placeholder="qty" style="width:56px;border:1px solid #d5dae3;border-radius:10px;padding:2px 5px;font-size:13px"></input><span style="color:#5b6475">use by</span><input type="date" value="{{ sd.dExp }}" onChange="{{ setDExp }}" style="border:1px solid #d5dae3;border-radius:10px;padding:1px 3px;font-size:12px"></input><div onClick="{{ sd.addDelivery }}" style="cursor:pointer;border:1px solid #d5dae3;border-radius:12px;padding:6px 14px;transition:background .15s,border-color .15s">Record</div></div>
+<div style="display:flex;gap:6px;align-items:center;margin:4px 0 14px;font-size:13px;flex-wrap:wrap"><span style="color:#5b6475">Write off</span><input value="{{ wQty }}" onChange="{{ setWQty }}" placeholder="qty" style="width:56px;border:1px solid #d5dae3;border-radius:10px;padding:2px 5px;font-size:13px"></input><select value="{{ wReason }}" onChange="{{ setWReason }}" style="border:1px solid #d5dae3;border-radius:10px;padding:1px;font-size:13px"><option value="Expired">Went out of date</option><option value="Spilled">Spilled / dropped</option><option value="Staff">Staff drinks</option><option value="Other">Other</option></select><div onClick="{{ sd.addWrite }}" style="cursor:pointer;border:1px solid #d4554a;color:#d4554a;border-radius:12px;padding:6px 14px;transition:background .15s,border-color .15s">Write off</div></div>
+</sc-if>
+
+<div style="font:800 15px 'Nunito',sans-serif;letter-spacing:-.01em;margin-bottom:4px">How long it keeps</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:6px">
+<label style="display:flex;flex-direction:column;gap:2px;font-size:12px;color:#5b6475">Unopened (days)<input value="{{ sd.shelf }}" onChange="{{ sd.setShelf }}" placeholder="not set" style="border:1px solid {{ sd.shelfBd }};border-radius:10px;padding:3px 6px;font-size:14px"></input></label>
+<label style="display:flex;flex-direction:column;gap:2px;font-size:12px;color:#5b6475">Opened (days)<input value="{{ sd.open }}" onChange="{{ sd.setOpen }}" placeholder="—" style="border:1px solid #d5dae3;border-radius:10px;padding:3px 6px;font-size:14px"></input></label>
+<label style="display:flex;flex-direction:column;gap:2px;font-size:12px;color:#5b6475">Reorder at<input value="{{ sd.par }}" onChange="{{ sd.setPar }}" placeholder="—" style="border:1px solid #d5dae3;border-radius:10px;padding:3px 6px;font-size:14px"></input></label>
+</div>
+<div style="font-size:13px;color:#8a93a3;margin-bottom:14px">{{ sd.shelfNote }}</div>
+
+<sc-if value="{{ sd.notC }}" hint-placeholder-val="{{ true }}">
+<div style="font:800 15px 'Nunito',sans-serif;letter-spacing:-.01em;margin-bottom:4px">Count history</div>
+<sc-for list="{{ sd.history }}" as="h" hint-placeholder-count="2"><div style="display:flex;justify-content:space-between;font-size:14px;padding:3px 0;border-bottom:1px solid #e8ebf0"><span>{{ h.date }}</span><span>{{ h.qty }}</span><span style="color:{{ h.c }}">{{ h.drift }}</span></div></sc-for>
+<div onClick="{{ sd.countThis }}" style="cursor:pointer;margin-top:12px;text-align:center;background:#4a6fd1;color:#fff;border-radius:18px;padding:6px;font-size:14px;font-weight:700;transition:background .15s,border-color .15s">Count this now</div>
+</sc-if>
+</div>
+</sc-if>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900},&quot;compact&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;startTab&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;menu&quot;,&quot;rec&quot;,&quot;ing&quot;,&quot;sup&quot;,&quot;stock&quot;],&quot;default&quot;:&quot;menu&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const KEY = 'sc-menu-stock-v1';
+const TYPE = { 'Milkshake':'Drinks','Tea':'Drinks','Americano':'Drinks','Matcha':'Drinks','Latte / flavoured latte':'Drinks','Hot chocolate':'Drinks','Cappuccino':'Drinks','Espresso-based':'Drinks','Flat white':'Drinks','Bubble tea':'Drinks','Mocha':'Drinks','Iced drinks':'Drinks','Chai':'Drinks','Fruit cold drink':'Drinks','Bottled / pre-packed':'Drinks','Cake / sweet':'Food','Food — savoury':'Food','Meal deal':'Food','Add-on / modifier':'Other','Other':'Other','DISCONTINUED (May 2026)':'Other' };
+const SIZES = ['S', 'M', 'XL', 'One'];
+const UNITS = ['L', 'ml', 'kg', 'g', 'unit'];
+const gbp = p => (p < 0 ? '−£' : '£') + (Math.abs(p) / 100).toFixed(2);
+const unitPrice = p => { const v = Math.abs(p) / 100; return '£' + (v >= 1 ? v.toFixed(2) : v >= 0.1 ? v.toFixed(3) : v.toFixed(4)); };
+const norm = u => { u = (u || '').toLowerCase(); return u === 'each' ? 'unit' : u; };
+const conv = (lu, iu) => { lu = norm(lu); iu = norm(iu); if (lu === iu) return 1; if (iu === 'l' && lu === 'ml') return .001; if (iu === 'kg' && lu === 'g') return .001; if (iu === 'ml' && lu === 'l') return 1000; if (iu === 'g' && lu === 'kg') return 1000; return 1; };
+const on = a => ({ bg: a ? '#edf1fc' : 'transparent', fg: a ? '#3558b8' : '#1f2633', bd: a ? '#c9d5f5' : '#e2e6ed', fw: a ? 700 : 500 });
+const uid = p => p + Math.random().toString(36).slice(2, 8);
+const SUP_KINDS = ['Foodservice', 'Wholesale', 'Packaging', 'Cakes & bakery', 'Supermarket', 'Online', 'Specialist', 'Custom'];
+const SUP_CHANNELS = ['Portal', 'Email', 'Phone', 'In store', 'Message', 'EDI'];
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const SEED_SUPS = [['Brakes', 'Foodservice', 'Portal'], ['Booker', 'Wholesale', 'Portal'], ['Cakesmiths', 'Cakes & bakery', 'Portal'], ['Cups Direct', 'Packaging', 'Portal'], ['Monolith', 'Specialist', 'Email'], ['Tesco', 'Supermarket', 'In store'], ['Amazon', 'Online', 'Portal'], ['Nataly', 'Custom', 'Message']];
+function migrate(d) {
+  if (d.suppliers) return d;
+  d.suppliers = SEED_SUPS.map(([name, kind, channel], i) => ({ id: 's' + (i + 1), name, kind, channel, contact: '', lead: '', min: '', cutoff: '', days: [], notes: '' }));
+  d.links = [];
+  const find = n => d.suppliers.find(s => s.name.toLowerCase() === n);
+  d.ingredients.forEach(i => {
+    const t = (i.supplier || '').toLowerCase();
+    const s = /amazon/.test(t) ? find('amazon') : /brakes/.test(t) ? find('brakes') : /cakesmiths/.test(t) ? find('cakesmiths') : null;
+    if (s) d.links.push({ id: uid('l'), sup: s.id, ing: i.id, sku: '', pack: i.pack, unit: norm(i.unit), packCost: i.packCost, preferred: true });
+  });
+  return d;
+}
+const ROLES = ['COFFEE', 'MILK', 'BASE', 'FLAVOUR', 'TOPPING', 'PACKAGING', 'SUNDRY'];
+const TODAY = new Date().toISOString().slice(0, 10);
+const NOW = () => new Date().toISOString().slice(0, 16);
+const addD = (iso, n) => { const d = new Date(iso.slice(0, 10) + 'T12:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+const dBetween = (a, b) => Math.round((new Date(b.slice(0, 10) + 'T12:00') - new Date(a.slice(0, 10) + 'T12:00')) / 864e5);
+const fmtD = iso => new Date(iso.slice(0, 10) + 'T12:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+const fmtQ = (n, u) => { if (n == null || !isFinite(n)) return '—'; u = norm(u); const v = u === 'unit' || ((u === 'ml' || u === 'g') && Math.abs(n) >= 10) || (Number.isInteger(n) && Math.abs(n) >= 10) ? Math.round(n).toLocaleString('en-GB') : (Math.abs(n) >= 10 ? n.toFixed(1) : n.toFixed(2)); return v + (u === 'unit' ? '' : ' ' + (u === 'l' ? 'L' : u)); };
+const PAGE = { stock: ['Stock', 'what is on the shelf: worked out from sales, checked by counting'], orders: ['Orders', 'one basket per supplier, confirmed in Telegram'], rec: ['Recipes', 'set a recipe once; every item made from it follows'], menu: ['Menu items', 'everything you sell, with price and margin'], ing: ['Ingredients & prices', 'what things cost'], sup: ['Suppliers', 'who we buy from, and on what terms'] };
+const SUP_TERMS = { 'Brakes': ['1', [1, 4], '50', '0', '', '14:00 day before'], 'Booker': ['1', [0, 3], '30', '0', '', '16:00 day before'], 'Cakesmiths': ['2', [2, 4], '40', '6', '80', '12:00'], 'Cups Direct': ['2', [0, 1, 2, 3, 4], '0', '7.95', '100', '13:00'], 'Monolith': ['3', [3], '50', '0', '', ''], 'Tesco': ['0', [0, 1, 2, 3, 4, 5, 6], '0', '0', '', ''], 'Amazon': ['1', [0, 1, 2, 3, 4, 5], '0', '0', '', ''], 'Nataly': ['3', [], '0', '0', '', ''] };
+const AKEY = 'sc-agents-v1';
+function pushAgent(prop, run) { let A = null; try { A = JSON.parse(localStorage.getItem(AKEY)); } catch (e) {} A = A || { seeded: false, runs: [], proposals: [] }; if (prop) A.proposals.unshift(prop); if (run) A.runs.unshift(run); try { localStorage.setItem(AKEY, JSON.stringify(A)); } catch (e) {} window.dispatchEvent(new CustomEvent('sc-agents-sync')); }
+function migrate3(d) {
+  if (d.fix2) return d; d.fix2 = true; d.orders = d.orders || [];
+  d.suppliers.forEach(s => { const t = SUP_TERMS[s.name]; if (!t) return; if (!s.lead) s.lead = t[0]; if (!s.days || !s.days.length) s.days = t[1]; if (!s.min) s.min = t[2]; if (s.fee == null) s.fee = t[3]; if (s.free == null) s.free = t[4]; if (!s.cutoff) s.cutoff = t[5]; s.termsConfirmed = false; });
+  const sup = n => (d.suppliers.find(s => s.name === n) || {}).id;
+  const want = i => ['Whole milk', 'Semi-skimmed milk', 'Oat milk (barista)', 'Almond milk (barista)', 'Soy milk (barista)', 'Coconut milk (barista)', 'Whipping cream'].includes(i.name) ? 'Brakes' : i.cat === 'Packaging' ? 'Cups Direct' : ['Coffee', 'Syrup', 'Chocolate', 'Tea', 'Specialty', 'Sundries'].includes(i.cat) ? 'Booker' : null;
+  d.ingredients.forEach(i => { if (d.links.some(l => l.ing === i.id)) return; const n = want(i); if (!n || !sup(n)) return; d.links.push({ id: uid('l'), sup: sup(n), ing: i.id, sku: '', pack: i.pack, unit: norm(i.unit), packCost: i.packCost, preferred: true, guess: true }); });
+  const I = n => d.ingredients.find(i => i.name === n);
+  const line = (n, packs) => { const i = I(n); return i ? { ing: i.id, packs, pack: i.pack, unit: norm(i.unit), packCost: i.packCost } : null; };
+  const mk = (s, created, status, arrive, ls) => { const lines = ls.filter(Boolean); return { id: uid('o'), sup: sup(s), created: addD(TODAY, created), status, arrive: addD(TODAY, arrive), lines, total: lines.reduce((a, l) => a + l.packs * l.packCost, 0), demo: true }; };
+  d.orders.push(mk('Cups Direct', -21, 'Received', -19, [line('12oz paper cup', 1), line('12oz cup lid', 1)]), mk('Booker', -12, 'Received', -11, [line('Coffee beans (house blend)', 1), line('Caramel syrup (Monin)', 1)]), mk('Brakes', -9, 'Received', -8, [line('Whole milk', 2), line('Oat milk (barista)', 6)]), mk('Brakes', -1, 'Confirmed', 1, [line('Whole milk', 2)]));
+  return d;
+}
+const EMPTY_STK = { tier: 'B', shelf: null, open: null, rate: 0, par: '', check: null, counts: [], batches: [], writeoffs: [] };
+function migrate2(d) {
+  if (d.templates) { if (!d.fix1) { d.ingredients.forEach(i => (i.stk && i.stk.batches || []).forEach(b => { if (b.id === 'b0' && Math.abs(b.qty - i.stk.rate * 6) < 1) b.qty = norm(i.unit) === 'unit' ? Math.round(i.stk.rate * 4) : +(i.stk.rate * 4).toFixed(2); })); d.fix1 = true; } return d; }
+  d.fix1 = true;
+  const C = JSON.parse(JSON.stringify(window.SC_COMP)); const pids = new Set(d.products.map(p => p.id));
+  const IMx = Object.fromEntries(d.ingredients.map(i => [i.id, i]));
+  d.templates = C.templates.map(t => ({ ...t, flavours: t.flavours.map(f => ({ ...f, unit: f.ing && IMx[f.ing] && !['l', 'ml'].includes(norm(IMx[f.ing].unit)) ? norm(IMx[f.ing].unit) : 'ml', product: pids.has(f.product) ? f.product : null })) }));
+  d.templates.forEach(t => t.flavours.forEach(f => { const p = d.products.find(p => p.id === f.product); if (p) p.templateId = t.id; }));
+  d.modifiers = C.modifiers; d.seasons = C.seasons; d.rate = C.rate;
+  d.ingredients.forEach(i => { const s = C.stock[i.id]; i.stk = s ? { tier: s.tier, shelf: s.shelf, open: s.open, rate: s.rate, par: s.par || '', check: s.check,
+    counts: s.counts.map(c => ({ date: addD(TODAY, c.d), qty: c.qty, expected: c.expected, expiryShare: c.expiryShare })),
+    batches: s.batches.map(b => ({ id: b.id, date: addD(TODAY, b.d), qty: b.qty, exp: b.expD != null ? addD(TODAY, b.expD) : null })),
+    writeoffs: s.writeoffs.map(w => ({ date: addD(TODAY, w.d), qty: w.qty, reason: w.reason })) } : JSON.parse(JSON.stringify(EMPTY_STK)); });
+  return d;
+}
+function syncPreferred(d) {
+  d.links.filter(l => l.preferred).forEach(l => { const i = d.ingredients.find(x => x.id === l.ing); if (!i) return; i.pack = l.pack; i.packUnit = l.unit; i.unit = l.unit; i.packCost = l.packCost; delete i.packStr; delete i.packCostStr; });
+}
+
+class Component extends DCLogic {
+  state = { data: null, tab: this.props.startTab || 'menu', selT: null, draft: null, flavSel: '', stF: 'all', tierF: 'all', selSt: null, counting: false, cQueue: [], cPos: 0, cVal: '', cDone: 0, dQty: '', dExp: '', wQty: '', wReason: 'Expired', cat: 'All', q: '', selP: null, sizeIx: 0, ingCat: 'All', iq: '', selI: null, stockF: 'All', newCat: '', saved: '', selS: 's1', sq: '', fSup: 'all', fPrice: 'all', fUse: 'all', fSort: 'az' };
+  componentDidMount() {
+    const boot = () => {
+      if (!window.SC_DATA || !window.SC_COMP) return setTimeout(boot, 60);
+      let data = null; try { data = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+      if (!data) {
+        const d = JSON.parse(JSON.stringify(window.SC_DATA));
+        d.ingredients.forEach(i => { i.onHand = ''; i.par = ''; i.countedAt = ''; });
+        d.cats = [];
+        data = d;
+      }
+      data = migrate3(migrate2(migrate(data)));
+      const sp = this.props.startTab === 'stock' ? (data.ingredients.find(i => i.name === 'Whole milk') || {}).id : null; this.setState({ data, selP: null, selI: data.ingredients[0]?.id, selT: (data.templates.find(t => t.name === 'Flavoured Latte') || data.templates[0] || {}).id, selSt: sp });
+    };
+    boot();
+    this.onSync = e => { if (e.detail !== this) try { this.setState({ data: JSON.parse(localStorage.getItem(KEY)) }); } catch (x) {} };
+    window.addEventListener('sc-sync', this.onSync);
+  }
+  componentWillUnmount() { window.removeEventListener('sc-sync', this.onSync); }
+  nav(o) { this.setState(o); if (this.props.onNav && o.tab) this.props.onNav(o.tab); }
+  mut(fn) {
+    this.setState(s => { const data = JSON.parse(JSON.stringify(s.data)); fn(data); syncPreferred(data); return { data, saved: 'Saved' }; }, () => {
+      try { localStorage.setItem(KEY, JSON.stringify(this.state.data)); } catch (e) {}
+      window.dispatchEvent(new CustomEvent('sc-sync', { detail: this }));
+    });
+  }
+  typeOf(cat, data) { return TYPE[cat] || (data.cats.find(c => c.name === cat) || {}).type || 'Other'; }
+  renderVals() {
+    const s = { ...this.state, tab: this.props.tab || this.state.tab }, D = s.data, compact = !!this.props.compact;
+    const base = { costW: compact ? '320px' : '380px', cardMin: s.selP && s.tab === 'menu' ? (compact ? '150px' : '180px') : (compact ? '170px' : '200px'), drawerW: compact ? '380px' : '420px', compact, wideRail: !compact, listW: compact ? '290px' : '320px', tabs: [], rail: [], railChips: [], items: [], catOptions: [], ingOptions: [], unitOptions: UNITS, ed: { none: true }, ie: {}, ingList: [], ingCatOptions: [], stockRows: [], stockFilters: [], isMenu: s.tab === 'menu', isIng: s.tab === 'ing', isStock: s.tab === 'stock', isSup: s.tab === 'sup', isRec: s.tab === 'rec', isOrders: s.tab === 'orders', od: { views: [], baskets: [], tesco: [], hist: [], shopRows: [], shopBars: [], supOpts: [] }, standalone: !this.props.embedded, embedded: !!this.props.embedded, pageTitle: PAGE[s.tab] ? PAGE[s.tab][0] : '', pageSub: PAGE[s.tab] ? PAGE[s.tab][1] : '', rc: {}, st: { filters: [], tiers: [], rows: [] }, sd: {}, cn: {}, roles: ROLES, modRows: [], seasonOptions: [], flavIngOptions: [], se: { none: true }, supKinds: SUP_KINDS, supChannels: SUP_CHANNELS, supFilterOptions: [] };
+    if (!D) return { ...base, savedLabel: 'Loading workbook…' };
+    const IM = Object.fromEntries(D.ingredients.map(i => [i.id, i]));
+    const uc = i => i && i.pack ? i.packCost / i.pack : 0;
+    const lineCost = l => { const i = IM[l.ing]; return i ? (parseFloat(l.qty) || 0) * uc(i) * conv(l.unit, i.unit) : 0; };
+    const sizeCost = z => z.lines.reduce((a, l) => a + lineCost(l), 0);
+    const marg = (price, cost) => price > 0 ? (price - cost) / price : null;
+    const mLabel = m => m == null ? 'no price' : Math.round(m * 100) + '%';
+    const mColor = m => m != null && m < 0.6 ? '#d4554a' : '#1f2633';
+    const allCats = [...new Set([...D.products.map(p => p.cat), ...D.cats.map(c => c.name)])];
+    const tabs = [['stock', 'Stock'], ['orders', 'Orders'], ['rec', 'Recipes'], ['menu', 'Menu items'], ['ing', 'Ingredients & prices'], ['sup', 'Suppliers']].map(([k, label]) => ({ label, ...on(s.tab === k), go: () => this.nav({ tab: k }) }));
+    const out = { ...base, tabs, savedLabel: s.saved, unitOptions: UNITS, newCat: s.newCat, setNewCat: e => this.setState({ newCat: e.target.value }) };
+    const addCat = type => () => { const n = s.newCat.trim(); if (!n || allCats.includes(n)) return; this.mut(d => d.cats.push({ name: n, type })); this.setState({ newCat: '', cat: n }); };
+    out.addCatDrink = addCat('Drinks'); out.addCatFood = addCat('Food');
+    out.ingOptions = [{ id: '', label: '— pick ingredient —' }, ...[...D.ingredients].sort((a, b) => a.name.localeCompare(b.name)).map(i => ({ id: i.id, label: i.name }))];
+
+    if (s.tab === 'menu') {
+      const rail = [{ isRow: true, label: 'All items', count: D.products.length, ...on(s.cat === 'All'), select: () => this.setState({ cat: 'All', menuLim: 24 }) }];
+      ['Drinks', 'Food', 'Other'].forEach(t => {
+        const cs = allCats.filter(c => this.typeOf(c, D) === t).sort();
+        if (!cs.length) return;
+        rail.push({ isHead: true, label: t });
+        cs.forEach(c => rail.push({ isRow: true, label: c.replace(' (May 2026)', ''), count: D.products.filter(p => p.cat === c).length, ...on(s.cat === c), select: () => this.setState({ cat: c }) }));
+      });
+      out.rail = rail; out.railChips = rail.filter(r => r.isRow); out.showRail = true;
+      const q = s.q.trim().toLowerCase();
+      const list = D.products.filter(p => (s.cat === 'All' || p.cat === s.cat) && (!q || p.name.toLowerCase().includes(q))).sort((a, b) => a.name.localeCompare(b.name));
+      out.q = s.q; out.setQ = e => this.setState({ q: e.target.value });
+      out.listMeta = list.length + ' items' + (s.cat === 'All' ? '' : ' in ' + s.cat);
+      const lim = s.menuLim || 24; out.moreLeft = Math.max(0, list.length - lim); out.hasMore = out.moreLeft > 0; out.showMore = () => this.setState({ menuLim: lim + 48 });
+      out.items = list.slice(0, lim).map(p => {
+        const ms = p.sizes.map(z => marg(z.price, sizeCost(z))).filter(m => m != null);
+        const low = ms.length ? Math.min(...ms) : null;
+        return { id: p.id, off: !!p.inactive, op: p.inactive ? .55 : 1, sh: p.id === s.selP ? '0 0 0 2px #4a6fd1' : '0 1px 2px rgba(31,38,51,.06),0 0 0 1px rgba(31,38,51,.04)', priceLine: p.sizes.map(z => (p.sizes.length > 1 ? z.size + ' ' : '') + gbp(z.price)).join(' · ') || 'no price', mBg: low == null ? '#f1f3f7' : low < 0.6 ? '#fdecea' : '#e8f5ee', name: p.name, sub: (s.cat === 'All' ? p.cat + ' · ' : '') + (p.sizes.map(z => z.size + ' ' + gbp(z.price)).join(' · ') || 'no sizes'), margin: mLabel(low), mC: low == null ? '#5b6475' : low < 0.6 ? '#c2453b' : '#237a57', bg: p.id === s.selP ? '#edf1fc' : 'transparent', select: () => this.setState({ selP: p.id, sizeIx: 0 }) };
+      });
+      out.noItems = list.length === 0;
+      out.catOptions = allCats.sort().map(c => ({ name: c, label: c }));
+      const P = D.products.find(p => p.id === s.selP);
+      if (P) {
+        const ix = Math.min(s.sizeIx, Math.max(0, P.sizes.length - 1));
+        const Z = P.sizes[ix];
+        const upd = fn => this.mut(d => fn(d.products.find(p => p.id === P.id)));
+        const cost = Z ? sizeCost(Z) : 0, price = Z ? Z.price : 0, m = marg(price, cost);
+        const estLines = Z ? Z.lines.filter(l => IM[l.ing] && IM[l.ing].est) : [];
+        out.ed = {
+          has: true, none: false, id: P.id, name: P.name, close: () => this.setState({ selP: null }),
+          toggleActive: () => upd(p => p.inactive = !p.inactive), activeLabel: P.inactive ? 'Off the menu' : 'On the menu', tglBg: P.inactive ? '#d5dae3' : '#3fa57a', tglX: P.inactive ? '3px' : '19px', cat: P.cat, type: this.typeOf(P.cat, D), note: P.note || '', fromTpl: !!(P.templateId && D.templates.find(t => t.id === P.templateId)), tplLine: P.templateId && D.templates.find(t => t.id === P.templateId) ? 'Made from the ' + D.templates.find(t => t.id === P.templateId).name + ' recipe. Change it there; edits here are overwritten next time that recipe is applied.' : '', goTpl: () => this.nav({ tab: 'rec', selT: P.templateId, draft: null }),
+          setName: e => { const v = e.target.value; upd(p => p.name = v); },
+          setCat: e => { const v = e.target.value; upd(p => p.cat = v); },
+          setNote: e => { const v = e.target.value; upd(p => p.note = v); },
+          dup: () => { const id = uid('p'); this.mut(d => { const c = JSON.parse(JSON.stringify(P)); c.id = id; c.name = P.name + ' (copy)'; d.products.push(c); }); this.setState({ selP: id }); },
+          del: () => { this.mut(d => d.products = d.products.filter(p => p.id !== P.id)); this.setState({ selP: null }); },
+          sizes: P.sizes.map((z, i) => ({ label: z.size, priceLabel: gbp(z.price), ...on(i === ix), select: () => this.setState({ sizeIx: i }) })),
+          addSizes: SIZES.filter(x => !P.sizes.some(z => z.size === x)).map(x => ({ label: x, add: () => { upd(p => { p.sizes.push({ size: x, price: Z ? Z.price : 0, lines: Z ? JSON.parse(JSON.stringify(Z.lines)) : [] }); p.sizes.sort((a, b) => SIZES.indexOf(a.size) - SIZES.indexOf(b.size)); }); } })),
+          sizeTitle: Z ? 'Recipe · ' + Z.size : 'Add a size to start',
+          price: Z ? (Z.priceStr ?? (Z.price / 100).toFixed(2)) : '',
+          setPrice: e => { const v = e.target.value; upd(p => { const z = p.sizes[ix]; if (!z) return; z.priceStr = v; z.price = Math.round((parseFloat(v) || 0) * 100); }); },
+          removeSize: () => { upd(p => p.sizes.splice(ix, 1)); this.setState({ sizeIx: 0 }); },
+          copyToAll: () => upd(p => p.sizes.forEach((z, i) => { if (i !== ix) z.lines = JSON.parse(JSON.stringify(p.sizes[ix].lines)); })),
+          addLine: () => upd(p => { const z = p.sizes[ix]; if (z) z.lines.push({ ing: '', qty: '1', unit: 'unit' }); }),
+          lines: Z ? Z.lines.map((l, li) => {
+            const I = IM[l.ing]; const setL = fn => upd(p => fn(p.sizes[ix].lines[li]));
+            return { ing: l.ing || '', qty: l.qty, unit: norm(l.unit) || 'unit', unitCost: I ? unitPrice(uc(I)) + '/' + (norm(I.unit) === 'l' ? 'L' : norm(I.unit)) : '—', estStyle: I && I.est ? 'italic' : 'normal', cost: gbp(lineCost(l)),
+              setIng: e => { const v = e.target.value; setL(x => { x.ing = v; if (IM[v]) x.unit = norm(IM[v].unit); }); }, setQty: e => { const v = e.target.value; setL(x => x.qty = v); }, setUnit: e => { const v = e.target.value; setL(x => x.unit = v); },
+              remove: () => upd(p => p.sizes[ix].lines.splice(li, 1)) };
+          }) : [],
+          cost: gbp(cost), gp: gbp(price - cost), margin: mLabel(m), mC: m == null ? '#5b6475' : m < 0.6 ? '#c2453b' : '#237a57', mBg: m == null ? '#f6f7fa' : m < 0.6 ? '#fdecea' : '#e8f5ee',
+          hasEst: estLines.length > 0, estLine: estLines.length + ' of ' + (Z ? Z.lines.length : 0) + ' ingredients here: ' + estLines.map(l => IM[l.ing].name).join(', ') + '.',
+          summary: P.sizes.map(z => { const c = sizeCost(z), mm = marg(z.price, c); return { size: z.size, price: gbp(z.price), cost: gbp(c), gp: gbp(z.price - c), margin: mLabel(mm), mC: mColor(mm) }; }),
+        };
+      }
+      out.showAdd = true; out.addLabel = '+ Add item';
+      out.add = () => { const id = uid('p'); const cat = s.cat === 'All' ? 'Latte / flavoured latte' : s.cat; this.mut(d => d.products.push({ id, name: 'New item', cat, note: '', sizes: [{ size: 'M', price: 0, lines: [] }] })); this.setState({ selP: id, sizeIx: 0, q: '' }); };
+    }
+
+    const ingCats = [...new Set(D.ingredients.map(i => i.cat))];
+    out.ingCatOptions = ingCats;
+    const iq = s.iq.trim().toLowerCase();
+    out.iq = s.iq; out.setIq = e => this.setState({ iq: e.target.value });
+    const usage = id => D.products.filter(p => p.sizes.some(z => z.lines.some(l => l.ing === id)));
+
+    if (s.tab === 'ing') {
+      const rail = [{ isRow: true, label: 'All', count: D.ingredients.length, ...on(s.ingCat === 'All'), select: () => this.setState({ ingCat: 'All' }) },
+        { isRow: true, label: 'Estimated prices', count: D.ingredients.filter(i => i.est).length, ...on(s.ingCat === '__est'), select: () => this.setState({ ingCat: '__est' }) }, { isHead: true, label: 'Categories' }];
+      ingCats.forEach(c => rail.push({ isRow: true, label: c, count: D.ingredients.filter(i => i.cat === c).length, ...on(s.ingCat === c), select: () => this.setState({ ingCat: c }) }));
+      out.rail = rail; out.railChips = rail.filter(r => r.isRow); out.showRail = true;
+      const useCount = {}; D.products.forEach(p => { const seen = new Set(); p.sizes.forEach(z => z.lines.forEach(l => seen.add(l.ing))); seen.forEach(id => useCount[id] = (useCount[id] || 0) + 1); });
+      const supsOf = id => D.links.filter(l => l.ing === id);
+      out.supFilterOptions = [{ id: 'all', label: 'All suppliers' }, { id: 'none', label: 'No supplier yet' }, ...D.suppliers.map(x => ({ id: x.id, label: x.name }))];
+      out.fSup = s.fSup; out.fPrice = s.fPrice; out.fUse = s.fUse; out.fSort = s.fSort;
+      out.setFSup = e => this.setState({ fSup: e.target.value }); out.setFPrice = e => this.setState({ fPrice: e.target.value });
+      out.setFUse = e => this.setState({ fUse: e.target.value }); out.setFSort = e => this.setState({ fSort: e.target.value });
+      out.hasFilters = s.fSup !== 'all' || s.fPrice !== 'all' || s.fUse !== 'all' || s.iq !== '' || s.ingCat !== 'All';
+      out.clearFilters = () => this.setState({ fSup: 'all', fPrice: 'all', fUse: 'all', iq: '', ingCat: 'All' });
+      const list = D.ingredients.filter(i => (s.ingCat === 'All' || (s.ingCat === '__est' ? i.est : i.cat === s.ingCat)) && (!iq || i.name.toLowerCase().includes(iq))
+        && (s.fSup === 'all' || (s.fSup === 'none' ? supsOf(i.id).length === 0 : supsOf(i.id).some(l => l.sup === s.fSup)))
+        && (s.fPrice === 'all' || (s.fPrice === 'est' ? i.est : !i.est))
+        && (s.fUse === 'all' || (s.fUse === 'used' ? useCount[i.id] : !useCount[i.id])));
+      const sorters = { az: (a, b) => a.name.localeCompare(b.name), cost: (a, b) => uc(b) - uc(a), most: (a, b) => (useCount[b.id] || 0) - (useCount[a.id] || 0), sups: (a, b) => supsOf(a.id).length - supsOf(b.id).length || a.name.localeCompare(b.name) };
+      list.sort(sorters[s.fSort] || sorters.az);
+      out.ingMeta = list.length + ' of ' + D.ingredients.length + ' · italic = estimated price';
+      out.ingList = list.map(i => ({ name: i.name, sub: i.cat + ' · ' + (supsOf(i.id).map(l => (D.suppliers.find(x => x.id === l.sup) || {}).name).filter(Boolean).join(', ') || 'no supplier') + ' · in ' + (useCount[i.id] || 0) + ' items', unitCost: unitPrice(uc(i)) + '/' + norm(i.unit), estStyle: i.est ? 'italic' : 'normal', bg: i.id === s.selI ? '#edf1fc' : 'transparent', select: () => this.setState({ selI: i.id }) }));
+      const I = IM[s.selI];
+      if (I) {
+        const upd = fn => this.mut(d => fn(d.ingredients.find(x => x.id === I.id)));
+        const used = usage(I.id);
+        const offers = supsOf(I.id);
+        const perU = l => l.pack ? l.packCost / l.pack * conv(I.unit, l.unit) : 0;
+        const best = offers.length ? Math.min(...offers.map(perU)) : 0;
+        const writePref = fn => this.mut(d => { const x = d.ingredients.find(y => y.id === I.id); fn(x); const pl = d.links.find(l => l.ing === I.id && l.preferred); if (pl) { pl.pack = x.pack; pl.packCost = x.packCost; pl.unit = norm(x.unit); } });
+        const prefName = (D.suppliers.find(x => x.id === (offers.find(o => o.preferred) || {}).sup) || {}).name;
+        out.ie = { has: true, name: I.name, cat: I.cat, pack: I.packStr ?? String(I.pack), unit: norm(I.unit) || 'unit', packCost: I.packCostStr ?? (I.packCost / 100).toFixed(2), supplier: I.supplier,
+          unitCost: unitPrice(uc(I)) + ' / ' + norm(I.unit), estStyle: I.est ? 'italic' : 'normal', estMark: I.est ? '✓' : '',
+          impact: used.length ? 'Changing this price updates the cost of ' + used.length + ' menu items straight away.' : 'Not used in any recipe yet.',
+          usedCount: used.length + (used.length === 1 ? ' item' : ' items'), usedIn: used.slice(0, 40).map(p => ({ name: p.name, go: () => this.nav({ tab: 'menu', selP: p.id, cat: 'All', q: '' }) })),
+          setName: e => { const v = e.target.value; upd(x => x.name = v); }, setCat: e => { const v = e.target.value; upd(x => x.cat = v); },
+          setUnit: e => { const v = e.target.value; upd(x => { x.unit = v; x.packUnit = v; }); }, setSupplier: e => { const v = e.target.value; upd(x => x.supplier = v); },
+          setPack: e => { const v = e.target.value; writePref(x => { x.packStr = v; x.pack = parseFloat(v) || 0; }); },
+          setPackCost: e => { const v = e.target.value; writePref(x => { x.packCostStr = v; x.packCost = Math.round((parseFloat(v) || 0) * 100); }); },
+          buyNote: prefName ? 'Recipe cost uses the ★ price from ' + prefName + '. Editing pack or cost above updates it.' : '',
+          noOffers: offers.length === 0,
+          offers: offers.map(l => { const S = D.suppliers.find(x => x.id === l.sup) || { name: '?' }; const p = perU(l); const diff = best ? (p - best) / best : 0;
+            return { supplier: S.name, pack: l.pack + ' ' + l.unit + ' for ' + gbp(l.packCost) + (l.sku ? ' · ' + l.sku : ''), unitCost: unitPrice(p) + '/' + norm(I.unit), star: l.preferred ? '★' : '☆', starC: l.preferred ? '#d4554a' : '#8a93a3',
+              cmp: offers.length < 2 ? '' : diff < 0.005 ? 'cheapest' : '+' + Math.round(diff * 100) + '% vs cheapest', cmpC: offers.length > 1 && diff < 0.005 ? '#1f2633' : '#5b6475',
+              prefer: () => this.mut(d => d.links.forEach(x => { if (x.ing === I.id) x.preferred = x.id === l.id; })), go: () => this.nav({ tab: 'sup', selS: l.sup }) }; }),
+          linkOptions: [{ id: '', label: '+ add a supplier…' }, ...D.suppliers.filter(x => !offers.some(o => o.sup === x.id)).map(x => ({ id: x.id, label: x.name }))],
+          linkSup: e => { const v = e.target.value; if (!v) return; this.mut(d => d.links.push({ id: uid('l'), sup: v, ing: I.id, sku: '', pack: I.pack, unit: norm(I.unit), packCost: I.packCost, preferred: offers.length === 0 })); },
+          toggleEst: () => upd(x => x.est = !x.est),
+          del: () => { this.mut(d => d.ingredients = d.ingredients.filter(x => x.id !== I.id)); this.setState({ selI: null }); } };
+      }
+      out.showAdd = true; out.addLabel = '+ Add ingredient';
+      out.add = () => { const id = uid('i'); const cat = s.ingCat === 'All' || s.ingCat === '__est' ? 'Sundries' : s.ingCat; this.mut(d => d.ingredients.push({ id, name: 'New ingredient', cat, pack: 1, packUnit: 'unit', packCost: 0, unit: 'unit', supplier: '', est: true, onHand: '', par: '', countedAt: '' })); this.setState({ selI: id, iq: '' }); };
+    }
+
+    if (s.tab === 'sup') {
+      out.showRail = true;
+      out.rail = [{ isHead: true, label: 'Suppliers' }, ...D.suppliers.map(x => ({ isRow: true, label: x.name, count: D.links.filter(l => l.sup === x.id).length, ...on(s.selS === x.id), select: () => this.setState({ selS: x.id, sq: '' }) }))];
+      out.railChips = out.rail.filter(r => r.isRow);
+      out.showAdd = true; out.addLabel = '+ Add supplier';
+      out.add = () => { const id = uid('s'); this.mut(d => d.suppliers.push({ id, name: 'New supplier', kind: 'Wholesale', channel: 'Email', contact: '', lead: '', min: '', cutoff: '', days: [], notes: '' })); this.setState({ selS: id }); };
+      out.sq = s.sq; out.setSq = e => this.setState({ sq: e.target.value });
+      const S = D.suppliers.find(x => x.id === s.selS);
+      if (S) {
+        const upd = fn => this.mut(d => fn(d.suppliers.find(x => x.id === S.id)));
+        const field = k => e => { const v = e.target.value; upd(x => x[k] = v); };
+        const sq = s.sq.trim().toLowerCase();
+        const mine = D.links.filter(l => l.sup === S.id && (!sq || ((IM[l.ing] || {}).name || '').toLowerCase().includes(sq)));
+        out.se = { has: true, none: false, name: S.name, kind: S.kind, channel: S.channel, contact: S.contact, lead: S.lead, min: S.min, cutoff: S.cutoff, notes: S.notes,
+          fee: S.fee ?? '', free: S.free ?? '', setFee: field('fee'), setFree: field('free'), termsMark: S.termsConfirmed ? '✓' : '', termsC: S.termsConfirmed ? '#1f2633' : '#d4554a', termsLabel: S.termsConfirmed ? 'Terms confirmed with the supplier' : 'Terms are a guess: tick once confirmed with the supplier', toggleTerms: () => upd(x => x.termsConfirmed = !x.termsConfirmed),
+          setName: field('name'), setKind: field('kind'), setChannel: field('channel'), setContact: field('contact'), setLead: field('lead'), setMin: field('min'), setCutoff: field('cutoff'), setNotes: field('notes'),
+          del: () => { this.mut(d => { d.suppliers = d.suppliers.filter(x => x.id !== S.id); d.links = d.links.filter(l => l.sup !== S.id); }); this.setState({ selS: null }); },
+          days: DAYS.map((dname, di) => ({ label: dname, ...on(S.days.includes(di)), toggle: () => upd(x => x.days = x.days.includes(di) ? x.days.filter(y => y !== di) : [...x.days, di].sort()) })),
+          daysNote: S.days.length ? '' : 'not set',
+          count: D.links.filter(l => l.sup === S.id).length,
+          addProduct: () => this.mut(d => d.links.push({ id: uid('l'), sup: S.id, ing: '', sku: '', pack: 1, unit: 'unit', packCost: 0, preferred: false })),
+          products: mine.map(l => {
+            const I = IM[l.ing]; const updL = fn => this.mut(d => fn(d.links.find(x => x.id === l.id)));
+            const perU = x => x.pack && I ? x.packCost / x.pack * conv(I.unit, x.unit) : 0;
+            const others = D.links.filter(x => x.ing === l.ing && x.id !== l.id && l.ing);
+            const mine$ = perU(l); const bestOther = others.length ? others.reduce((a, x) => perU(x) < perU(a) ? x : a) : null;
+            let cmp = others.length ? '' : 'only supplier', cmpC = '#8a93a3';
+            if (bestOther) { const o = perU(bestOther), n = (D.suppliers.find(x => x.id === bestOther.sup) || {}).name; const diff = o ? (mine$ - o) / o : 0; if (Math.abs(diff) < 0.005) cmp = 'same as ' + n; else if (diff < 0) { cmp = Math.round(-diff * 100) + '% cheaper than ' + n; cmpC = '#1f2633'; } else { cmp = Math.round(diff * 100) + '% dearer than ' + n; cmpC = '#d4554a'; } }
+            return { ing: l.ing, sku: l.sku, pack: l.packStr ?? String(l.pack), unit: l.unit, packCost: l.packCostStr ?? (l.packCost / 100).toFixed(2), unitCost: I ? unitPrice(perU(l)) + '/' + norm(I.unit) : '—', cmp, cmpC,
+              star: l.preferred ? '★' : '☆', starC: l.preferred ? '#d4554a' : '#8a93a3',
+              prefer: () => this.mut(d => d.links.forEach(x => { if (x.ing === l.ing) x.preferred = x.id === l.id; })),
+              setIng: e => { const v = e.target.value; updL(x => { x.ing = v; if (IM[v]) { x.unit = norm(IM[v].unit); x.preferred = !D.links.some(y => y.ing === v && y.preferred); } }); },
+              setSku: e => { const v = e.target.value; updL(x => x.sku = v); }, setUnit: e => { const v = e.target.value; updL(x => x.unit = v); },
+              setPack: e => { const v = e.target.value; updL(x => { x.packStr = v; x.pack = parseFloat(v) || 0; }); },
+              setPackCost: e => { const v = e.target.value; updL(x => { x.packCostStr = v; x.packCost = Math.round((parseFloat(v) || 0) * 100); }); },
+              remove: () => this.mut(d => { const was = d.links.find(x => x.id === l.id); d.links = d.links.filter(x => x.id !== l.id); if (was && was.preferred) { const nx = d.links.find(x => x.ing === was.ing); if (nx) nx.preferred = true; } }) };
+          }) };
+      }
+    }
+
+    const stkOf = i => i.stk || EMPTY_STK;
+    const calc = i => {
+      const k = stkOf(i); const cs = [...k.counts].sort((a, b) => a.date.localeCompare(b.date)); const lc = cs[cs.length - 1];
+      const drift = c => c && c.expected != null ? (c.expected - c.qty) / Math.max(Math.abs(c.qty), 0.001) : null;
+      if (!lc) return { k, cs, lc: null, est: null, trust: 'Never counted', d1: null, runDays: null, batches: [], nextExp: null };
+      const deliv = k.batches.filter(b => b.date > lc.date).reduce((a, b) => a + b.qty, 0);
+      const wo = k.writeoffs.filter(w => w.date > lc.date).reduce((a, w) => a + w.qty, 0);
+      const since = dBetween(lc.date, TODAY);
+      const est = Math.max(0, lc.qty + deliv - k.rate * since - wo);
+      const d1 = drift(lc), d0 = cs.length > 1 ? drift(cs[cs.length - 2]) : null;
+      const trust = d1 == null ? 'Drifting' : Math.abs(d1) > 0.15 ? 'Excluded' : (d0 != null && Math.abs(d0) < 0.10 && Math.abs(d1) < 0.10) ? 'Trusted' : 'Drifting';
+      let rem = est; const bs = [...k.batches].sort((a, b) => (b.exp || '9').localeCompare(a.exp || '9')).map(b => { const left = Math.min(b.qty, Math.max(0, rem)); rem -= left; return { ...b, left }; });
+      const live = bs.filter(b => b.left > 0 && b.exp).map(b => b.exp).sort();
+      return { k, cs, lc, est, trust, d1, d0, runDays: k.rate > 0 ? est / k.rate : null, batches: bs, nextExp: live[0] || null, since, deliv, wo };
+    };
+    const TRUST_FG = { 'Trusted': '#237a57', 'Drifting': '#9a6a12', 'Excluded': '#c2453b', 'Never counted': '#5b6475' };
+    const TRUST_BG = { 'Trusted': '#e8f5ee', 'Drifting': '#fdf3e1', 'Excluded': '#fdecea', 'Never counted': '#f1f3f7' };
+    const TRUST_C = { 'Trusted': '#1f2633', 'Drifting': '#5b6475', 'Excluded': '#d4554a', 'Never counted': '#8a93a3' };
+    out.rateStr = ((D.rate || 1450) / 100).toFixed(2);
+    out.setRate = e => { const v = e.target.value; this.mut(d => d.rate = Math.round((parseFloat(v) || 0) * 100)); };
+    out.seasonOptions = [{ id: '', label: 'all year' }, ...(D.seasons || []).map(x => ({ id: x.id, label: x.name }))];
+    out.flavIngOptions = [{ id: '', label: '— none —' }, ...[...D.ingredients].filter(i => ['Syrup', 'Specialty', 'Chocolate', 'Tea'].includes(i.cat) || i.name === 'Honey').sort((a, b) => a.name.localeCompare(b.name)).map(i => ({ id: i.id, label: i.name }))];
+    out.modRows = (D.modifiers || []).map((m, mi) => { const upd = fn => this.mut(d => fn(d.modifiers[mi])); const fld = k => e => { const v = e.target.value; upd(x => x[k] = v); };
+      return { name: m.name, action: m.action, role: m.role, ing: m.ing || '', qty: m.qty || '', price: m.priceStr ?? (m.price / 100).toFixed(2), style: m.src === 'guess' ? 'italic' : 'normal',
+        setName: fld('name'), setAction: fld('action'), setRole: fld('role'), setIng: fld('ing'), setQty: fld('qty'), setPrice: e => { const v = e.target.value; upd(x => { x.priceStr = v; x.price = Math.round((parseFloat(v) || 0) * 100); x.src = 'set'; }); } }; });
+
+    if (s.tab === 'orders') {
+      out.showRail = false; out.wideRail = false; out.showAdd = false;
+      const view = s.odView || 'draft';
+      out.od = { views: [['draft', 'Draft orders'], ['hist', 'History'], ['shop', 'Shop runs']].map(([k, l]) => ({ label: l, ...on(view === k), select: () => this.setState({ odView: k }) })), isDraft: view === 'draft', isHist: view === 'hist', isShop: view === 'shop', baskets: [], tesco: [], hist: [], shopRows: [], shopBars: [], supOpts: [] };
+      const SM = Object.fromEntries(D.suppliers.map(x => [x.id, x]));
+      const orders = D.orders || [];
+      const open = orders.filter(o => ['Waiting', 'Confirmed', 'Sent'].includes(o.status));
+      const onOrder = id => open.reduce((a, o) => a + o.lines.filter(l => l.ing === id).reduce((b, l) => b + l.packs * l.pack * conv(l.unit, (IM[id] || {}).unit), 0), 0);
+      const wd = iso => (new Date(iso + 'T12:00').getDay() + 6) % 7;
+      const nextDel = (S, from) => { const days = S.days || []; for (let k = 0; k < 14; k++) { const c = addD(from, k); if (!days.length || days.includes(wd(c))) return c; } return from; };
+      const adj = s.odAdj || {}, added = s.odAdded || {};
+      const tesco = [], noSup = [], uncounted = [];
+      const prefOf = id => D.links.find(l => l.ing === id && l.preferred);
+      D.ingredients.forEach(i => { const k = stkOf(i); if (k.tier !== 'C' && k.rate > 0 && !prefOf(i.id)) noSup.push(i.name); });
+      const baskets = [];
+      D.suppliers.forEach(S => {
+        if (S.name === 'Tesco') return;
+        const lead = parseInt(S.lead) || 1; const arrive = nextDel(S, addD(TODAY, lead)); const after = nextDel(S, addD(arrive, 1));
+        const untilArrive = dBetween(TODAY, arrive), gap = dBetween(arrive, after);
+        const links = D.links.filter(l => l.sup === S.id && l.preferred && IM[l.ing]);
+        const lines = [];
+        links.forEach(l => { const I = IM[l.ing]; const c = calc(I); const k = c.k; const u = norm(I.unit);
+          if (k.tier === 'C' || !(k.rate > 0)) return;
+          if (c.est == null) { uncounted.push(I.name); return; }
+          const est = c.est; const oo = onOrder(I.id);
+          let eff = gap + 1, cap = '';
+          if (k.shelf) { const usable = Math.max(1, k.shelf - lead); if (usable < eff) { eff = usable; cap = 'Cut to ' + usable + ' days after delivery: it keeps ' + k.shelf + ' days.'; } }
+          const need = k.rate * (untilArrive + eff) - est - oo;
+          if (k.rate > 0 && est / k.rate < untilArrive && c.est != null) { const bridge = k.rate * (untilArrive - est / k.rate); const q = u === 'unit' ? Math.ceil(bridge) : Math.ceil(bridge * 10) / 10;
+            tesco.push({ ing: I.id, name: I.name, qtyN: q, qty: fmtQ(q, u), priceN: q * uc(I) * 1.25, price: gbp(q * uc(I) * 1.25), why: 'Runs out around ' + fmtD(addD(TODAY, Math.floor(est / k.rate))) + '; ' + S.name + ' arrives ' + fmtD(arrive) + '.' }); }
+          const packIng = (l.pack || 1) * conv(l.unit, I.unit);
+          const key = S.id + ':' + I.id;
+          const base = need > 0 ? Math.ceil(need / packIng) : 0;
+          const packs = Math.max(0, base + (adj[key] || 0));
+          if (base <= 0 && !(adj[key] > 0)) return;
+          lines.push({ ing: I.id, packs, pack: packIng, unit: u, packCost: l.packCost, name: I.name, qty: packs + ' × ' + fmtQ(packIng, u), price: gbp(packs * l.packCost),
+            why: 'About ' + fmtQ(k.rate, u) + ' a day for ' + (untilArrive + eff) + ' days; you have ~' + fmtQ(est, u) + (oo ? ' + ' + fmtQ(oo, u) + ' on order' : '') + (c.est == null ? ' (never counted)' : '') + '.', cap,
+            inc: () => this.setState(st => ({ odAdj: { ...(st.odAdj || {}), [key]: ((st.odAdj || {})[key] || 0) + 1 } })), dec: () => this.setState(st => ({ odAdj: { ...(st.odAdj || {}), [key]: ((st.odAdj || {})[key] || 0) - 1 } })) }); });
+        (added[S.id] || []).forEach(id => { if (lines.some(x => x.ing === id)) return; const l = D.links.find(x => x.sup === S.id && x.ing === id); const I = IM[id]; if (!l || !I) return; const key = S.id + ':' + id; const packs = Math.max(0, 1 + (adj[key] || 0)); const packIng = (l.pack || 1) * conv(l.unit, I.unit);
+          lines.push({ ing: id, packs, pack: packIng, unit: norm(I.unit), packCost: l.packCost, name: I.name, qty: packs + ' × ' + fmtQ(packIng, norm(I.unit)), price: gbp(packs * l.packCost), why: 'Added to reach the minimum. Keeps well, so nothing is wasted.', cap: '',
+            inc: () => this.setState(st => ({ odAdj: { ...(st.odAdj || {}), [key]: ((st.odAdj || {})[key] || 0) + 1 } })), dec: () => this.setState(st => ({ odAdj: { ...(st.odAdj || {}), [key]: ((st.odAdj || {})[key] || 0) - 1 } })) }); });
+        const pending = orders.find(o => o.sup === S.id && o.created.slice(0, 10) === TODAY && ['Waiting', 'Confirmed', 'Sent'].includes(o.status));
+        if (!lines.length && !pending) return;
+        const sub = lines.reduce((a, l) => a + l.packs * l.packCost, 0);
+        const fee = Math.round((parseFloat(S.fee) || 0) * 100), free = Math.round((parseFloat(S.free) || 0) * 100), min = Math.round((parseFloat(S.min) || 0) * 100);
+        const feeApplies = fee && !(free && sub >= free);
+        const total = sub + (feeApplies ? fee : 0);
+        const under = !pending && min > 0 && sub < min;
+        const inBasket = new Set(lines.map(l => l.ing));
+        const topups = under ? D.links.filter(l => l.sup === S.id && l.preferred && IM[l.ing] && !inBasket.has(l.ing)).map(l => ({ l, I: IM[l.ing], c: calc(IM[l.ing]) })).filter(x => { const k = x.c.k; return k.tier !== 'C' && (!k.shelf || k.shelf > 30); }).sort((a, b) => ((a.c.est ?? 0) / (a.c.k.rate || 1e-6)) - ((b.c.est ?? 0) / (b.c.k.rate || 1e-6))).slice(0, 4) : [];
+        const status = pending ? pending.status : 'Draft';
+        baskets.push({ name: S.name, total: gbp(total), status: status === 'Waiting' ? 'Waiting in Telegram' : status, statusC: status === 'Draft' ? '#8a93a3' : status === 'Waiting' ? '#d4554a' : '#1f2633',
+          terms: 'Order by ' + (S.cutoff ? S.cutoff + ', ' : '') + fmtD(addD(arrive, -lead)) + ' · arrives ' + fmtD(arrive) + ' · next after that ' + fmtD(after) + ' · min ' + (min ? gbp(min) : 'none') + (fee ? ' · fee ' + gbp(fee) + (free ? ' (free over ' + gbp(free) + ')' : '') + (feeApplies ? ', included' : ', waived') : ''),
+          lines: pending ? pending.lines.map(l => ({ name: (IM[l.ing] || {}).name || '?', qty: l.packs + ' × ' + fmtQ(l.pack, l.unit), price: gbp(l.packs * l.packCost), why: '', cap: '', inc: () => {}, dec: () => {} })) : lines,
+          under, underLine: under ? gbp(min - sub) + ' under their ' + gbp(min) + ' minimum. Top up with something that keeps (never with fresh stock):' : '',
+          topups: topups.map(x => ({ label: x.I.name + ' · ' + gbp(x.l.packCost), add: () => this.setState(st => ({ odAdded: { ...(st.odAdded || {}), [S.id]: [...((st.odAdded || {})[S.id] || []), x.I.id] } })) })),
+          note: pending ? (status === 'Waiting' ? 'Sent to Telegram. Nothing is ordered until someone taps Confirm.' : 'Confirmed ' + (pending.confirmedBy ? 'by ' + pending.confirmedBy : '') + '. See History.') : S.termsConfirmed ? 'Terms confirmed.' : 'Terms are a guess.',
+          canSend: !pending && lines.some(l => l.packs > 0),
+          send: () => { const ls = lines.filter(l => l.packs > 0).map(l => ({ ing: l.ing, packs: l.packs, pack: l.pack, unit: l.unit, packCost: l.packCost })); const id = uid('o');
+            this.mut(d => { d.orders = d.orders || []; d.orders.push({ id, sup: S.id, created: NOW(), status: 'Waiting', arrive, lines: ls, total }); });
+            pushAgent({ id: uid('pr'), at: NOW(), agent: 'Order builder', kind: 'order', ref: id, title: 'Confirm ' + S.name + ' order · ' + gbp(total), body: ls.map(l => l.packs + ' × ' + ((IM[l.ing] || {}).name || '?')).join(', ') + '. Arrives ' + fmtD(arrive) + '.', status: 'waiting' },
+              { id: uid('r'), at: NOW(), agent: 'Order builder', tool: 'build_orders (worked out, not AI)', input: 'stock estimates, shelf lives, ' + S.name + ' terms', output: ls.length + ' lines, ' + gbp(total), result: 'Sent to Telegram for confirmation' });
+            this.setState(st => { const a2 = { ...(st.odAdj || {}) }; Object.keys(a2).forEach(k => { if (k.startsWith(S.id + ':')) delete a2[k]; }); return { odAdj: a2, odAdded: { ...(st.odAdded || {}), [S.id]: [] } }; }); } });
+      });
+      out.od.baskets = baskets; out.od.noneNeeded = !baskets.length && !tesco.length;
+      const guessN = D.suppliers.filter(x => !x.termsConfirmed).length;
+      out.od.guessWarn = guessN > 0; out.od.guessLine = guessN + ' of ' + D.suppliers.length + ' suppliers’ terms are guesses. Delivery days, lead times and minimums below are built on them; confirm each on its supplier page.';
+      out.od.hasTesco = tesco.length > 0; out.od.tesco = tesco; out.od.tescoTotal = gbp(tesco.reduce((a, t) => a + t.priceN, 0));
+      out.od.logTesco = () => { const T = D.suppliers.find(x => x.name === 'Tesco'); if (!T) return; const id = uid('o');
+        this.mut(d => { d.orders = d.orders || []; d.orders.push({ id, sup: T.id, created: NOW(), status: 'Bought', arrive: TODAY, shop: true, lines: tesco.map(t => ({ ing: t.ing, packs: 1, pack: t.qtyN, unit: norm((IM[t.ing] || {}).unit), packCost: Math.round(t.priceN) })), total: Math.round(tesco.reduce((a, t) => a + t.priceN, 0)), note: tesco.map(t => t.name).join(', ') + ': ran out before the next delivery' });
+          tesco.forEach(t => { const x = d.ingredients.find(y => y.id === t.ing); if (!x.stk) return; x.stk.batches.push({ id: uid('b'), date: NOW(), qty: t.qtyN, exp: x.stk.shelf ? addD(TODAY, x.stk.shelf) : null }); }); }); };
+      out.od.hasUncounted = uncounted.length > 0; out.od.uncounted = uncounted.slice(0, 12).join(', ') + (uncounted.length > 12 ? ' and ' + (uncounted.length - 12) + ' more' : '') + '.';
+      out.od.hasNoSup = noSup.length > 0; out.od.noSup = noSup.slice(0, 10).join(', ') + (noSup.length > 10 ? ' and ' + (noSup.length - 10) + ' more' : '') + '.';
+      out.od.meta = open.length + ' open · ' + orders.filter(o => o.status === 'Waiting').length + ' waiting in Telegram';
+      const stC = { Waiting: '#d4554a', Confirmed: '#1f2633', Sent: '#1f2633', Received: '#8a93a3', Bought: '#8a93a3', Cancelled: '#8a93a3' };
+      out.od.supOpts = [{ id: 'all', label: 'All suppliers' }, ...D.suppliers.map(x => ({ id: x.id, label: x.name }))];
+      out.od.hSup = s.hSup || 'all'; out.od.setHSup = e => this.setState({ hSup: e.target.value });
+      const setSt = (o, st, extra) => this.mut(d => { const x = d.orders.find(y => y.id === o.id); x.status = st; if (extra) extra(d, x); });
+      const receive = o => setSt(o, 'Received', (d, x) => { x.received = NOW(); x.lines.forEach(l => { const i = d.ingredients.find(y => y.id === l.ing); if (!i || !i.stk) return; i.stk.batches.push({ id: uid('b'), date: NOW(), qty: l.packs * l.pack * conv(l.unit, i.unit), exp: i.stk.shelf ? addD(TODAY, i.stk.shelf) : null }); }); });
+      out.od.hist = [...orders].filter(o => (s.hSup || 'all') === 'all' || o.sup === s.hSup).sort((a, b) => b.created.localeCompare(a.created)).map(o => ({ date: fmtD(o.created).replace(/^\w+ /, ''), sup: (SM[o.sup] || {}).name || '?', what: o.lines.map(l => l.packs + '× ' + ((IM[l.ing] || {}).name || '?')).join(', '), total: gbp(o.total), status: o.status + (o.demo ? ' ·demo' : ''), statusC: stC[o.status] || '#8a93a3', arrive: o.arrive ? fmtD(o.arrive).replace(/^\w+ /, '') : '',
+        actions: o.status === 'Waiting' ? [{ label: 'Cancel', go: () => setSt(o, 'Cancelled') }] : o.status === 'Confirmed' ? [{ label: 'Mark sent', go: () => setSt(o, 'Sent') }, { label: 'Cancel', go: () => setSt(o, 'Cancelled') }] : o.status === 'Sent' ? [{ label: 'Received → stock', go: () => receive(o) }] : [] }));
+      out.od.histEmpty = out.od.hist.length === 0;
+      const re = /tesco|convenience|co-?op|aldi|lidl|sainsbury|asda|spar\b|morrisons|farmfoods|iceland/i;
+      const fin = (window.SC_FIN && window.SC_FIN.expenses || []).filter(e => re.test(e.desc) || re.test(e.notes || ''));
+      const runs = [...fin.map(e => ({ date: e.date, where: e.desc.replace(/ Card purchase| Dundee.*$/g, ''), note: e.notes || 'from the expenses log', amount: e.amount })), ...orders.filter(o => o.shop).map(o => ({ date: o.created.slice(0, 10), where: 'Tesco', note: o.note || '', amount: o.total }))].sort((a, b) => b.date.localeCompare(a.date));
+      const tot = runs.reduce((a, r) => a + r.amount, 0);
+      out.od.shopHead = runs.length + ' shop runs, ' + gbp(tot) + ' in total';
+      out.od.shopSub = 'Every time stock is bought at a supermarket or corner shop because a delivery would come too late. Found in the expenses log plus shop runs logged here. The count is the case for fixing delivery days: retail almost always costs more than the supplier price.';
+      const months = [...new Set(runs.map(r => r.date.slice(0, 7)))].sort().slice(-8);
+      const mv = months.map(m => runs.filter(r => r.date.startsWith(m)).reduce((a, r) => a + r.amount, 0)); const mx = Math.max(1, ...mv);
+      out.od.shopBars = months.map((m, i) => ({ label: new Date(m + '-01T12:00').toLocaleDateString('en-GB', { month: 'short' }), v: gbp(mv[i]).replace(/\.\d\d$/, ''), h: Math.max(2, mv[i] / mx * 100) + '%' }));
+      out.od.shopRows = runs.slice(0, 40).map(r => ({ date: fmtD(r.date).replace(/^\w+ /, ''), where: r.where, note: r.note, amount: gbp(r.amount) }));
+    }
+
+    if (s.tab === 'rec') {
+      const T0 = D.templates.find(t => t.id === s.selT);
+      const rail = [];
+      const tcats = [...new Set(D.templates.map(t => t.cat))];
+      tcats.forEach(c => { rail.push({ isHead: true, label: c.replace(' / flavoured latte', '') }); D.templates.filter(t => t.cat === c).forEach(t => rail.push({ isRow: true, label: t.name, count: t.flavours.filter(f => f.active).length * t.sizes.length, ...on(s.selT === t.id), select: () => this.setState({ selT: t.id, draft: null, flavSel: '' }) })); });
+      const oneoffs = D.products.filter(p => !p.templateId);
+      rail.push({ isHead: true, label: 'Not in a recipe' }, { isRow: true, label: 'One-off items', count: oneoffs.length, ...on(s.selT === '__one'), select: () => this.setState({ selT: '__one', draft: null }) });
+      out.rail = rail; out.railChips = rail.filter(r => r.isRow); out.showRail = true; out.showAdd = true; out.addLabel = '+ New recipe';
+      out.add = () => { const id = uid('t'); this.mut(d => d.templates.push({ id, name: 'New recipe', cat: 'Latte / flavoured latte', sizes: ['S', 'M', 'XL'], components: [], prep: { S: 45, M: 50, XL: 60 }, prepMeasured: false, basePrice: { S: 0, M: 0, XL: 0 }, flavours: [], mods: [], history: [] })); this.setState({ selT: id, draft: null }); };
+      if (s.selT === '__one') {
+        out.rc = { oneoff: true, has: false, oneoffMeta: oneoffs.length + ' items have their own hand-written recipe (cakes, bottled drinks, toasties, meal deals…). That is correct for them. Tap one to edit it in Menu items.', oneoffs: oneoffs.sort((a, b) => a.name.localeCompare(b.name)).map(p => ({ name: p.name, go: () => this.nav({ tab: 'menu', selP: p.id, cat: 'All', q: '' }) })) };
+      } else if (T0) {
+        const T = s.draft && s.draft.id === T0.id ? s.draft : T0;
+        const ed = fn => this.setState(st => { const dr = JSON.parse(JSON.stringify(st.draft && st.draft.id === T0.id ? st.draft : T0)); fn(dr); return { draft: dr }; });
+        const flavLines = (t, fl) => { const L = []; if (fl && fl.ing) L.push({ ing: fl.ing, qty: fl.qty, unit: fl.unit || 'ml' }); if (fl && fl.ing2) L.push({ ing: fl.ing2, qty: fl.qty2 || '15', unit: 'ml' }); return L; };
+        const gen = (t, fl, sz) => [...t.components.map(c => ({ ing: c.ingBySize ? c.ingBySize[sz] : c.ing, qty: (c.qty || {})[sz] || '0', unit: c.unit })).filter(l => l.ing && parseFloat(l.qty) > 0), ...flavLines(t, fl)];
+        const costOf = (t, fl, sz) => gen(t, fl, sz).reduce((a, l) => a + lineCost(l), 0);
+        const priceOf = (t, fl, sz) => ((t.basePrice || {})[sz] || 0) + (fl ? fl.priceDelta || 0 : 0);
+        const rate = D.rate || 1450;
+        const bad = (a, b) => JSON.stringify(a) !== JSON.stringify(b);
+        const n = T.sizes.length;
+        const cellStyle = (changed) => ({ bd: changed ? '#d4554a' : '#d5dae3', bg: changed ? '#fdf1ef' : '#fff' });
+        const ingName = id => (IM[id] || {}).name || '—';
+        out.rc = { has: true, oneoff: false, name: T.name, cat: T.cat, setName: e => { const v = e.target.value; ed(t => t.name = v); },
+          meta: 'Makes ' + T.flavours.filter(f => f.active).length * n + ' menu items: ' + T.flavours.filter(f => f.active).length + ' flavours × ' + n + ' sizes (' + T.sizes.join(', ') + ')',
+          cols: '100px minmax(0,2fr) repeat(' + n + ', 92px) 44px 20px', sizeHeads: T.sizes, nSizes: n,
+          comps: T.components.map((c, ci) => { const o = T0.components.find(x => x.id === c.id);
+            return { role: c.role, ing: c.ing || '', unit: norm(c.unit), single: !c.ingBySize, bySize: !!c.ingBySize, bySizeLabel: c.ingBySize ? 'differs by size' : '', subst: c.subst ? '✓' : '',
+              setRole: e => { const v = e.target.value; ed(t => t.components[ci].role = v); }, setIng: e => { const v = e.target.value; ed(t => { t.components[ci].ing = v; if (IM[v]) t.components[ci].unit = norm(IM[v].unit); }); },
+              toggleSubst: () => ed(t => t.components[ci].subst = !t.components[ci].subst), remove: () => ed(t => t.components.splice(ci, 1)),
+              cells: T.sizes.map(sz => ({ size: sz, qty: (c.qty || {})[sz] || '', hasIng: !!c.ingBySize, ing: c.ingBySize ? c.ingBySize[sz] || '' : '', ...cellStyle(!o || (o.qty || {})[sz] !== (c.qty || {})[sz] || (c.ingBySize && o.ingBySize && o.ingBySize[sz] !== c.ingBySize[sz])),
+                setQty: e => { const v = e.target.value; ed(t => { t.components[ci].qty = { ...(t.components[ci].qty || {}), [sz]: v }; }); },
+                setIng: e => { const v = e.target.value; ed(t => { t.components[ci].ingBySize = { ...t.components[ci].ingBySize, [sz]: v }; }); } })) }; }),
+          hasFlav: T.flavours.some(f => f.ing),
+          prepState: T.prepMeasured ? 'timed' : 'estimate, not timed yet', prepC: T.prepMeasured ? '#5b6475' : '#d4554a', prepStyle: T.prepMeasured ? 'normal' : 'italic', togglePrep: () => ed(t => t.prepMeasured = !t.prepMeasured),
+          prepCells: T.sizes.map(sz => ({ size: sz, v: String((T.prep || {})[sz] ?? ''), ...cellStyle((T0.prep || {})[sz] !== (T.prep || {})[sz]), set: e => { const v = e.target.value; ed(t => t.prep = { ...t.prep, [sz]: parseInt(v) || 0 }); } })),
+          priceCells: T.sizes.map(sz => ({ size: sz, v: T.priceStr && T.priceStr[sz] != null ? T.priceStr[sz] : (((T.basePrice || {})[sz] || 0) / 100).toFixed(2), ...cellStyle((T0.basePrice || {})[sz] !== (T.basePrice || {})[sz]), set: e => { const v = e.target.value; ed(t => { t.priceStr = { ...(t.priceStr || {}), [sz]: v }; t.basePrice = { ...t.basePrice, [sz]: Math.round((parseFloat(v) || 0) * 100) }; }); } })),
+          addComp: () => ed(t => t.components.push({ id: uid('c'), role: 'SUNDRY', ing: '', ingBySize: null, qty: Object.fromEntries(t.sizes.map(z => [z, '1'])), unit: 'unit', subst: false })),
+          flavCount: T.flavours.length,
+          flavs: T.flavours.map((fl, fi) => ({ name: fl.name, ing: fl.ing || '', qty: fl.qty || '', delta: fl.deltaStr ?? ((fl.priceDelta || 0) / 100).toFixed(2), season: fl.season || '', trackBg: fl.active ? '#3fa57a' : '#d5dae3', knobX: fl.active ? '18px' : '2px',
+            op: fl.active ? 1 : 0.5, bg: fl.missing && !fl.ing ? '#fdf1ef' : 'transparent', ingBd: fl.missing && !fl.ing ? '#d4554a' : '#d5dae3',
+            setName: e => { const v = e.target.value; ed(t => t.flavours[fi].name = v); }, setIng: e => { const v = e.target.value; ed(t => { t.flavours[fi].ing = v; t.flavours[fi].unit = IM[v] && !['l', 'ml'].includes(norm(IM[v].unit)) ? norm(IM[v].unit) : 'ml'; }); },
+            setQty: e => { const v = e.target.value; ed(t => t.flavours[fi].qty = v); }, setDelta: e => { const v = e.target.value; ed(t => { t.flavours[fi].deltaStr = v; t.flavours[fi].priceDelta = Math.round((parseFloat(v) || 0) * 100); }); },
+            setSeason: e => { const v = e.target.value; ed(t => t.flavours[fi].season = v || null); }, toggle: () => ed(t => t.flavours[fi].active = !t.flavours[fi].active), remove: () => ed(t => t.flavours.splice(fi, 1)) })),
+          addFlav: () => ed(t => t.flavours.push({ id: uid('f'), name: 'New flavour', ing: '', qty: '30', unit: 'ml', priceDelta: 0, season: null, active: true, product: null })),
+          addFlavNote: 'Adding a flavour creates ' + n + ' sellable item' + (n > 1 ? 's' : '') + ' when you apply.',
+          mods: (D.modifiers || []).map(m => { const onm = (T0.mods || []).includes(m.id); return { label: m.name + ' +' + gbp(m.price).replace('£0.00', '£0'), ...on(onm), toggle: () => this.mut(d => { const t = d.templates.find(x => x.id === T0.id); t.mods = onm ? t.mods.filter(x => x !== m.id) : [...(t.mods || []), m.id]; }) }; }),
+          history: (T0.history || []).slice().reverse().map(h => ({ date: fmtD(h.date), text: h.text })),
+          historyBase: 'Imported from the workbook. Every change after this keeps its own date.' };
+        const fls = T.flavours.filter(f => f.active);
+        const sel = T.flavours.find(f => f.id === s.flavSel) || fls.find(f => f.ing) || fls[0] || null;
+        out.rc.flavSel = sel ? sel.id : ''; out.rc.setFlavSel = e => this.setState({ flavSel: e.target.value });
+        out.rc.flavPick = T.flavours.map(f => ({ id: f.id, label: f.name }));
+        const grid = [{ v: '', al: 'left' }, ...T.sizes.map(z => ({ v: z, al: 'right', c: '#5b6475' }))];
+        const row = (label, fn, o = {}) => { grid.push({ v: label, al: 'left', c: '#5b6475' }); T.sizes.forEach(z => { const r = fn(z); grid.push({ v: r.v, al: 'right', c: r.c || '#1f2633', fw: o.fw || 400 }); }); };
+        const mm = z => { const p = priceOf(T, sel, z), c = costOf(T, sel, z), lab = ((T.prep || {})[z] || 0) / 3600 * rate, sec = (T.prep || {})[z] || 0; return { p, c, lab, m: p ? (p - c) / p : null, ml: p ? (p - c - lab) / p : null, pm: sec ? (p - c) / (sec / 60) : null }; };
+        row('Price', z => ({ v: gbp(mm(z).p) }));
+        row('Ingredients', z => ({ v: gbp(mm(z).c) }));
+        row('Staff time', z => ({ v: gbp(mm(z).lab) }));
+        row('Margin', z => { const m = mm(z).m; return { v: m == null ? '—' : Math.round(m * 100) + '%', c: m != null && m < 0.6 ? '#d4554a' : '#1f2633' }; }, { fw: 700 });
+        row('After staff', z => { const m = mm(z).ml; return { v: m == null ? '—' : Math.round(m * 100) + '%', c: m != null && m < 0.4 ? '#d4554a' : '#1f2633' }; });
+        row('Per minute', z => ({ v: mm(z).pm == null ? '—' : gbp(mm(z).pm) }), { fw: 700 });
+        out.rc.costGrid = grid.map(g => ({ ...g, c: g.c || '#1f2633', fw: g.fw || 400, bd: '1px solid #f1f3f6' }));
+        const dirty = bad(T, T0);
+        out.rc.dirty = dirty; out.rc.clean = !dirty;
+        if (dirty) {
+          const diff = [];
+          if (T.name !== T0.name) diff.push('Renamed to ' + T.name);
+          T.components.forEach(c => { const o = T0.components.find(x => x.id === c.id); const nm = ingName(c.ing) !== '—' ? ingName(c.ing) : c.role.toLowerCase();
+            if (!o) { diff.push('Added ' + nm); return; }
+            if (o.ing !== c.ing) diff.push(ingName(o.ing) + ' → ' + ingName(c.ing));
+            T.sizes.forEach(z => { if ((o.qty || {})[z] !== (c.qty || {})[z]) diff.push(nm + ' ' + z + ': ' + ((o.qty || {})[z] || 0) + ' → ' + ((c.qty || {})[z] || 0) + ' ' + norm(c.unit)); });
+            if (o.subst !== c.subst) diff.push(nm + (c.subst ? ' can now be swapped' : ' can no longer be swapped')); });
+          T0.components.forEach(o => { if (!T.components.find(c => c.id === o.id)) diff.push('Removed ' + ingName(o.ing)); });
+          T.sizes.forEach(z => { if ((T0.prep || {})[z] !== (T.prep || {})[z]) diff.push('Prep ' + z + ': ' + (T0.prep || {})[z] + 's → ' + (T.prep || {})[z] + 's'); if ((T0.basePrice || {})[z] !== (T.basePrice || {})[z]) diff.push('Price ' + z + ': ' + gbp((T0.basePrice || {})[z] || 0) + ' → ' + gbp((T.basePrice || {})[z] || 0)); });
+          T.flavours.forEach(fl => { const o = T0.flavours.find(x => x.id === fl.id); if (!o) diff.push('New flavour: ' + fl.name); else { if (o.name !== fl.name) diff.push(o.name + ' renamed ' + fl.name); if (o.ing !== fl.ing) diff.push(fl.name + ': ' + ingName(o.ing) + ' → ' + ingName(fl.ing)); if (o.qty !== fl.qty) diff.push(fl.name + ' syrup ' + o.qty + ' → ' + fl.qty); if (o.priceDelta !== fl.priceDelta) diff.push(fl.name + ' extra ' + gbp(o.priceDelta || 0) + ' → ' + gbp(fl.priceDelta || 0)); if (o.active !== fl.active) diff.push(fl.name + (fl.active ? ' back on the menu' : ' off the menu')); if ((o.season || '') !== (fl.season || '')) diff.push(fl.name + ' season → ' + (((D.seasons || []).find(x => x.id === fl.season) || {}).name || 'all year')); } });
+          T0.flavours.forEach(o => { if (!T.flavours.find(fl => fl.id === o.id)) diff.push('Removed flavour: ' + o.name); });
+          if (T.prepMeasured !== T0.prepMeasured) diff.push(T.prepMeasured ? 'Prep times marked as timed' : 'Prep times marked as estimates');
+          let affected = 0, dmin = Infinity, dmax = -Infinity, worst = null;
+          T.flavours.filter(f => f.active).forEach(fl => { const o = T0.flavours.find(x => x.id === fl.id);
+            T.sizes.forEach(z => { const cA = costOf(T, fl, z), pA = priceOf(T, fl, z); const cB = o ? costOf(T0, o, z) : null, pB = o ? priceOf(T0, o, z) : null;
+              if (!o || Math.abs(cA - cB) > 0.001 || pA !== pB || !o.active) { affected++; if (o) { dmin = Math.min(dmin, cA - cB); dmax = Math.max(dmax, cA - cB); } }
+              const mA = pA ? (pA - cA) / pA : null; if (mA != null && (!worst || mA < worst.mA)) worst = { name: fl.name + ' ' + z, mA, mB: o && pB ? (pB - cB) / pB : null }; }); });
+          const sgn = v => (v >= 0 ? '+' : '−') + '£' + (Math.abs(v) / 100).toFixed(3);
+          out.rc.diff = diff.slice(0, 8).concat(diff.length > 8 ? ['…and ' + (diff.length - 8) + ' more'] : []);
+          out.rc.affected = affected;
+          out.rc.costDelta = dmin === Infinity ? 'no change' : Math.abs(dmax - dmin) < 0.001 ? sgn(dmin) : sgn(dmin) + ' to ' + sgn(dmax);
+          out.rc.worst = worst ? worst.name + ', ' + (worst.mB != null ? Math.round(worst.mB * 1000) / 10 + '% → ' : '') + Math.round(worst.mA * 1000) / 10 + '%' : '—';
+          out.rc.worstC = worst && worst.mA < 0.6 ? '#d4554a' : '#1f2633';
+          const warnings = [];
+          const miss = T.flavours.filter(f => f.active && f.missing && !f.ing); if (miss.length) warnings.push(miss.length + ' flavour' + (miss.length > 1 ? 's have' : ' has') + ' no flavour ingredient, so their cost is too low: ' + miss.slice(0, 4).map(f => f.name).join(', ') + (miss.length > 4 ? '…' : ''));
+          if (T.sizes.some(z => !(T.basePrice || {})[z])) warnings.push('A size has no price.');
+          if (!T.prepMeasured) warnings.push('Prep times are estimates, so staff-time figures are too.');
+          out.rc.warnings = warnings;
+          out.rc.discard = () => this.setState({ draft: null });
+          out.rc.apply = () => { const dr = JSON.parse(JSON.stringify(T)); delete dr.priceStr; dr.flavours.forEach(f => delete f.deltaStr);
+            this.mut(d => {
+              const idx = d.templates.findIndex(x => x.id === dr.id); dr.history = [...(T0.history || []), { date: TODAY, text: diff.slice(0, 3).join(' · ') + (diff.length > 3 ? ' · +' + (diff.length - 3) + ' more' : '') }];
+              const suffix = dr.name.replace(/^Flavoured /, '');
+              dr.flavours.forEach(fl => { let p = d.products.find(x => x.id === fl.product);
+                if (!p) { p = { id: uid('p'), name: fl.name + ' ' + suffix, cat: dr.cat, note: '', sizes: [] }; d.products.push(p); fl.product = p.id; }
+                p.templateId = dr.id; p.inactive = !fl.active; p.cat = dr.cat;
+                p.sizes = dr.sizes.map(z => ({ size: z, price: priceOf(dr, fl, z), lines: gen(dr, fl, z) })); });
+              T0.flavours.forEach(o => { if (!dr.flavours.find(x => x.id === o.id)) { const p = d.products.find(x => x.id === o.product); if (p) p.inactive = true; } });
+              d.templates[idx] = dr; });
+            this.setState({ draft: null }); };
+        }
+      }
+    }
+
+    if (s.tab === 'stock') {
+      out.showAdd = false;
+      const stCat = s.stCat || 'All';
+      const allI = D.ingredients.map(i => ({ i, c: calc(i) }));
+      out.rail = [{ isRow: true, label: 'All', count: allI.length, ...on(stCat === 'All'), select: () => this.setState({ stCat: 'All' }) }, { isHead: true, label: 'Categories' },
+        ...ingCats.map(c => ({ isRow: true, label: c, count: allI.filter(x => x.i.cat === c).length, ...on(stCat === c), select: () => this.setState({ stCat: c }) }))];
+      out.railChips = out.rail.filter(r => r.isRow); out.showRail = true;
+      const all = allI.filter(x => stCat === 'All' || x.i.cat === stCat);
+      const isCount = x => x.c.k.tier !== 'C' && (x.c.k.rate > 0 || x.c.lc) && x.c.trust !== 'Trusted';
+      const isOut = x => x.c.runDays != null && x.c.runDays <= 7;
+      const soonIso = addD(TODAY, 3);
+      const isSoon = x => x.c.nextExp && x.c.nextExp <= soonIso;
+      const F = [['all', 'All', () => true], ['count', 'Count these', isCount], ['out', 'Running out', isOut], ['soon', 'Use soon', isSoon], ['check', 'Checklist', x => x.c.k.tier === 'C']];
+      out.st = { filters: F.map(([k, l, fn]) => ({ label: l + ' ' + all.filter(fn).length, name: l, n: all.filter(fn).length, ...on(s.stF === k), select: () => this.setState({ stF: k }) })),
+        tiers: ['all', 'A', 'B', 'C'].map(t => ({ label: t === 'all' ? 'All' : t, ...on(s.tierF === t), segBg: s.tierF === t ? '#fff' : 'transparent', segSh: s.tierF === t ? '0 1px 2px rgba(31,38,51,.08)' : 'none', select: () => this.setState({ tierF: t }) })) };
+      const fn = (F.find(x => x[0] === s.stF) || F[0])[2];
+      const order = { 'Excluded': 0, 'Never counted': 1, 'Drifting': 2, 'Trusted': 3 };
+      const rows = all.filter(x => fn(x) && (s.tierF === 'all' || x.c.k.tier === s.tierF) && (!iq || x.i.name.toLowerCase().includes(iq)))
+        .sort((a, b) => (a.c.k.tier === 'C') - (b.c.k.tier === 'C') || a.c.k.tier.localeCompare(b.c.k.tier) || order[a.c.trust] - order[b.c.trust] || (a.c.runDays ?? 999) - (b.c.runDays ?? 999));
+      out.st.rows = rows.map(({ i, c }) => { const isC = c.k.tier === 'C'; const u = i.unit;
+        return { name: i.name, tier: c.k.tier, bg: s.selSt === i.id ? '#edf1fc' : 'transparent', select: () => this.setState({ selSt: i.id, counting: false }),
+          est: isC ? '' : c.est == null ? '—' : '~' + fmtQ(c.est, u), estC: '#1f2633',
+          last: isC ? (c.k.check === 'LOW' ? 'marked low' : c.k.check === 'OK' ? 'marked OK' : 'checklist') : c.lc ? fmtQ(c.lc.qty, u) + ' · ' + fmtD(c.lc.date).replace(/^\w+ /, '') : 'never',
+          drift: c.d1 == null ? '' : (c.d1 > 0 ? '' : '+') + Math.round(-c.d1 * 1000) / 10 + '%', driftC: c.d1 != null && Math.abs(c.d1) > 0.15 ? '#d4554a' : '#1f2633', driftW: c.d1 != null && Math.abs(c.d1) >= 0.10 ? 700 : 400,
+          trust: isC ? (c.k.check === 'LOW' ? 'Low' : 'Checklist') : c.trust, trustC: isC ? (c.k.check === 'LOW' ? '#c2453b' : '#5b6475') : TRUST_FG[c.trust], trustBg: isC ? (c.k.check === 'LOW' ? '#fdecea' : '#f1f3f7') : TRUST_BG[c.trust],
+          runs: isC ? '' : c.runDays == null ? (c.k.rate ? '' : 'not enough sales') : c.runDays < 1 ? 'today' : fmtD(addD(TODAY, Math.floor(c.runDays))) + ' · ' + Math.floor(c.runDays) + 'd', runC: c.runDays != null && c.runDays <= 3 ? '#d4554a' : '#1f2633',
+          exp: c.nextExp ? fmtD(c.nextExp).replace(/^\w+ /, '') : '', expC: c.nextExp && c.nextExp <= soonIso ? '#d4554a' : '#1f2633' }; });
+      out.st.empty = rows.length === 0;
+      out.st.asOf = 'Worked out to ' + fmtD(TODAY);
+      const soonList = all.flatMap(x => x.c.batches.filter(b => b.left > 0 && b.exp && b.exp <= soonIso).map(b => ({ x, b })));
+      const soonVal = soonList.reduce((a, { x, b }) => a + b.left * uc(x.i), 0);
+      out.st.soonLine = soonList.length ? soonList.length + ' batch' + (soonList.length > 1 ? 'es' : '') + ' go out of date in 3 days · ' + gbp(soonVal) : 'Nothing goes out of date in the next 3 days';
+      out.st.soonC = soonList.length ? '#d4554a' : '#5b6475'; out.st.showSoon = () => this.setState({ stF: 'soon' });
+      const mo = TODAY.slice(0, 7); let wv = 0, wn = 0; D.ingredients.forEach(i => stkOf(i).writeoffs.forEach(w => { if (w.date.startsWith(mo)) { wv += w.qty * uc(i); wn++; } }));
+      out.st.wasteLine = 'Written off this month: ' + gbp(wv) + ' (' + wn + ')';
+      const queue = all.filter(x => x.c.k.tier !== 'C' && (x.c.k.rate > 0 || x.c.lc)).sort((a, b) => a.c.k.tier.localeCompare(b.c.k.tier) || order[a.c.trust] - order[b.c.trust] || (a.c.runDays ?? 999) - (b.c.runDays ?? 999)).map(x => x.i.id);
+      const startCount = (ids) => this.setState({ counting: true, cQueue: ids, cPos: 0, cVal: '', cDone: 0 });
+      out.st.countLabel = s.counting ? 'Counting…' : 'Start a count';
+      out.st.startCount = () => startCount(queue);
+      out.st.counting = s.counting; out.st.listing = !s.counting;
+      if (s.counting) {
+        const id = s.cQueue[s.cPos]; const I = IM[id];
+        if (!I) out.cn = { none: true, has: false, doneLine: s.cDone + ' ingredients counted.', done: () => this.setState({ counting: false }) };
+        else { const c = calc(I); const u = norm(I.unit); const v = parseFloat(s.cVal);
+          let msg = '', msgC = '#1f2633';
+          if (s.cVal !== '' && isFinite(v) && c.est != null) { const dr = (c.est - v) / Math.max(v, 0.001); const pc = Math.round(Math.abs(dr) * 1000) / 10;
+            if (Math.abs(dr) < 0.10) msg = 'Expected about ' + fmtQ(c.est, u) + '. ' + pc + '% out: close enough.';
+            else if (Math.abs(dr) <= 0.15) { msg = 'Expected about ' + fmtQ(c.est, u) + '. ' + pc + '% out: worth a second look, stays on manual ordering.'; msgC = '#5b6475'; }
+            else { msg = 'Expected about ' + fmtQ(c.est, u) + '. ' + pc + '% out: over 15%, so this comes off auto-ordering until it settles.'; msgC = '#d4554a'; } }
+          else if (s.cVal !== '' && c.est == null) msg = 'First count for this one; it becomes the starting point.';
+          const step = u === 'unit' ? 1 : u === 'kg' || u === 'l' ? 0.1 : 10;
+          out.cn = { has: true, none: false, pos: (s.cPos + 1) + ' of ' + s.cQueue.length, name: I.name, unit: u, val: s.cVal, msg, msgC,
+            hint: u === 'unit' ? 'Count every one, opened packs too.' : 'Everything you can see, opened ones included. In ' + u + '.',
+            setVal: e => this.setState({ cVal: e.target.value }),
+            up: () => this.setState(st => ({ cVal: String(+((parseFloat(st.cVal) || 0) + step).toFixed(3)) })), down: () => this.setState(st => ({ cVal: String(Math.max(0, +((parseFloat(st.cVal) || 0) - step).toFixed(3))) })),
+            skip: () => this.setState(st => ({ cPos: st.cPos + 1, cVal: '' })),
+            save: () => { if (s.cVal === '' || !isFinite(v)) return; const gap = c.est != null ? Math.abs(c.est - v) : 0;
+              this.mut(d => { const x = d.ingredients.find(y => y.id === id); x.stk = x.stk || JSON.parse(JSON.stringify(EMPTY_STK)); x.stk.counts.push({ date: NOW(), qty: v, expected: c.est != null ? +c.est.toFixed(3) : null, expiryShare: gap > 0 ? Math.min(1, (c.wo || 0) / gap) : 0 }); });
+              this.setState(st => ({ cPos: st.cPos + 1, cVal: '', cDone: st.cDone + 1 })); },
+            done: () => this.setState({ counting: false }),
+            next: s.cQueue.slice(s.cPos + 1, s.cPos + 6).map(x => (IM[x] || {}).name).filter(Boolean) }; }
+      }
+      const I = IM[s.selSt];
+      if (I && !s.counting) { const c = calc(I); const k = c.k; const u = norm(I.unit);
+        const updK = fn => this.mut(d => { const x = d.ingredients.find(y => y.id === I.id); x.stk = x.stk || JSON.parse(JSON.stringify(EMPTY_STK)); fn(x.stk); });
+        const expShare = c.lc ? (c.lc.expiryShare || 0) : 0; const hasSplit = c.d1 != null && Math.abs(c.d1) >= 0.05;
+        out.sd = { has: true, name: I.name, close: () => this.setState({ selSt: null }), isC: k.tier === 'C', notC: k.tier !== 'C',
+          tierOpts: ['A', 'B', 'C'].map(t => ({ label: t, ...on(k.tier === t), select: () => updK(x => x.tier = t) })),
+          tierNote: { A: 'worked out from sales, can earn auto-ordering', B: 'worked out, always reviewed', C: 'yes/no checklist' }[k.tier],
+          checkOpts: [['OK', 'Plenty'], ['LOW', 'Running low']].map(([v, l]) => ({ label: l, ...on(k.check === v), select: () => updK(x => x.check = v) })),
+          est: c.est == null ? 'not counted yet' : fmtQ(c.est, u),
+          how: c.lc ? 'Counted ' + fmtQ(c.lc.qty, u) + ' on ' + fmtD(c.lc.date) + ', + ' + fmtQ(c.deliv, u) + ' delivered, − about ' + fmtQ(k.rate * c.since, u) + ' used over ' + c.since + ' days' + (c.wo ? ', − ' + fmtQ(c.wo, u) + ' written off' : '') + '.' : 'Count it once and the app keeps track from there.',
+          last: c.lc ? fmtQ(c.lc.qty, u) + ' on ' + fmtD(c.lc.date) : 'never', trust: c.trust, trustC: TRUST_C[c.trust],
+          driftLine: c.d1 == null ? (c.lc ? 'First count, nothing to compare yet.' : '') : 'The app expected ' + fmtQ(c.lc.expected, u) + ': out by ' + Math.round(Math.abs(c.d1) * 1000) / 10 + '%' + (c.d1 > 0 ? ' (less than expected).' : ' (more than expected).'),
+          hasSplit, expW: Math.round(expShare * 100) + '%', measW: Math.round((1 - expShare) * 100) + '%', expP: Math.round(expShare * 100) + '%', measP: Math.round((1 - expShare) * 100) + '%',
+          fixTitle: expShare >= 0.5 ? 'Order less; don’t change the recipe.' : 'Check the recipe or how it’s measured.',
+          fixBody: expShare >= 0.5 ? 'Most of the gap is stock that went out of date. Changing the recipe would hide a buying problem.' : 'Most of the gap isn’t explained by waste: quantities per drink, spills or a missed delivery.',
+          autoLine: k.tier !== 'A' ? 'Not tier A, so never auto-ordered.' : c.trust === 'Trusted' ? 'Two counts in a row under 10%: can be auto-ordered (still confirmed in Telegram).' : 'Needs two counts in a row under 10% before it can be auto-ordered.',
+          batches: c.batches.map(b => ({ inn: fmtD(b.date).replace(/^\w+ /, ''), qty: fmtQ(b.qty, u), exp: b.exp ? fmtD(b.exp) + (b.left > 0 ? ' · ' + dBetween(TODAY, b.exp) + 'd' : '') : 'keeps', expC: b.exp && b.left > 0 && b.exp <= soonIso ? '#d4554a' : '#1f2633', left: fmtQ(b.left, u) })),
+          noBatches: c.batches.length === 0,
+          dExp: s.dExp || (k.shelf ? addD(TODAY, k.shelf) : ''),
+          addDelivery: () => { const q = parseFloat(s.dQty); if (!isFinite(q) || q <= 0) return; const ex = s.dExp || (k.shelf ? addD(TODAY, k.shelf) : null); updK(x => x.batches.push({ id: uid('b'), date: NOW(), qty: q, exp: ex })); this.setState({ dQty: '', dExp: '' }); },
+          addWrite: () => { const q = parseFloat(s.wQty); if (!isFinite(q) || q <= 0) return; updK(x => x.writeoffs.push({ date: NOW(), qty: q, reason: s.wReason })); this.setState({ wQty: '' }); },
+          shelf: k.shelf == null ? '' : String(k.shelf), open: k.open == null ? '' : String(k.open), par: k.par || '', shelfBd: k.shelf == null && ['Dairy', 'Dairy alt', 'Food', 'Cake', 'Cake (CakeSmiths)'].includes(I.cat) ? '#d4554a' : '#d5dae3',
+          setShelf: e => { const v = e.target.value; updK(x => x.shelf = v === '' ? null : parseInt(v) || 0); }, setOpen: e => { const v = e.target.value; updK(x => x.open = v === '' ? null : parseInt(v) || 0); }, setPar: e => { const v = e.target.value; updK(x => x.par = v); },
+          shelfNote: k.shelf ? 'Caps orders: never more than can be used in ' + k.shelf + ' days (less delivery time).' : 'Not in the workbook. Without it, orders for this can’t be capped by shelf life.',
+          history: [...c.cs].reverse().map(h => { const d = h.expected != null ? (h.expected - h.qty) / Math.max(h.qty, 0.001) : null; return { date: fmtD(h.date), qty: fmtQ(h.qty, u), drift: d == null ? 'first' : Math.round(Math.abs(d) * 1000) / 10 + '% out', c: d != null && Math.abs(d) > 0.15 ? '#d4554a' : '#5b6475' }; }),
+          countThis: () => startCount([I.id]) };
+      } else out.sd = { has: false };
+      out.dQty = s.dQty; out.setDQty = e => this.setState({ dQty: e.target.value }); out.setDExp = e => this.setState({ dExp: e.target.value });
+      out.wQty = s.wQty; out.setWQty = e => this.setState({ wQty: e.target.value }); out.wReason = s.wReason; out.setWReason = e => this.setState({ wReason: e.target.value });
+    }
+    return out;
+  }
+}
+</script>
+</body>
+</html>

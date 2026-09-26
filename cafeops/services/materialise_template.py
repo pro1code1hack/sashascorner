@@ -87,6 +87,10 @@ class ProposalNotFound(LookupError):
     """No proposal by that name. The message lists the closest available names."""
 
 
+class AmbiguousProposal(LookupError):
+    """More than one proposal has this name. They are different recipes."""
+
+
 class ProposalHasConflicts(ValueError):
     """The legacy rows disagree about a quantity. A human adjudicates, not this code."""
 
@@ -163,17 +167,40 @@ def list_proposals(session: Session) -> list[TemplateProposal]:
     return propose_templates(staged_lines(session))
 
 
-def find_proposal(session: Session, name: str) -> TemplateProposal:
+def find_proposal(session: Session, key: str) -> TemplateProposal:
+    """Resolve a proposal by `proposal_id` or by name.
+
+    The id is tried first and is the only unambiguous handle: detection names a
+    group after its defining ingredient, so two structurally different groups can
+    share a name. `Flavoured Matcha (Matcha powder)` is two proposals today, 18
+    items and 5.
+
+    A name matching more than one proposal now RAISES rather than returning the
+    first. It used to silently pick one, which meant confirming a proposal could
+    write the wrong recipe onto real menu items with nothing to notice it by.
+    """
     proposals = list_proposals(session)
-    wanted = name.strip().casefold()
+    wanted = key.strip().casefold()
+
     for proposal in proposals:
-        if proposal.name.casefold() == wanted:
+        if proposal.proposal_id == wanted:
             return proposal
-    near = [p.name for p in proposals if wanted in p.name.casefold()]
+
+    exact = [p for p in proposals if p.name.casefold() == wanted]
+    if len(exact) == 1:
+        return exact[0]
+    if len(exact) > 1:
+        raise AmbiguousProposal(
+            f"{len(exact)} proposals are named {key!r} and they are different recipes "
+            f"({', '.join(f'{p.proposal_id} = {p.menu_item_count} items' for p in exact)}). "
+            "Confirming by name could write the wrong one, so pass the proposal id."
+        )
+
+    near = [p for p in proposals if wanted in p.name.casefold()]
     if len(near) == 1:
-        return next(p for p in proposals if p.name == near[0])
-    candidates = near or [p.name for p in proposals if not p.is_singleton][:10]
-    raise ProposalNotFound(f"no proposal named {name!r}. Candidates: " + "; ".join(candidates))
+        return near[0]
+    candidates = [p.name for p in (near or [p for p in proposals if not p.is_singleton])][:10]
+    raise ProposalNotFound(f"no proposal named {key!r}. Candidates: " + "; ".join(candidates))
 
 
 # --------------------------------------------------------------------------
@@ -194,6 +221,14 @@ def materialise_proposal(
     proposal = find_proposal(session, name)
     report = MaterialisationReport(proposal_name=proposal.name)
 
+    if proposal.is_hollow:
+        raise ProposalHasConflicts(
+            f"{proposal.name!r} has no components and no axes -- there is no recipe in it "
+            "to write. Confirming it would create an empty template AND take its "
+            f"{proposal.menu_item_count} menu item(s) off the manual recipes they resolve "
+            "through today, so they would cost and deplete nothing. The legacy rows for "
+            "this group carry no ingredient lines; fix the import, not the template."
+        )
     if proposal.is_singleton:
         raise ProposalHasConflicts(
             f"{proposal.name!r} covers a single base item, which is not a pattern. "

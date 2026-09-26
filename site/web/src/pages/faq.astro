@@ -1,0 +1,235 @@
+---
+// Questions people (and answer engines) actually ask about the café. Every answer is
+// built from verified facts or the menu data in ./_facts.ts, so a price change on the
+// board changes the answer here, in the FAQPage JSON-LD and in /llms-full.txt at once.
+import Base from '../layouts/Base.astro';
+import OpenNow from '../components/OpenNow.astro';
+import { faqs, plain, phone, address } from './_facts';
+
+const site = Astro.site!;
+const url = new URL('/faq', site).href;
+const listed = faqs.filter((f) => !f.pageOnly);
+const tel = phone ? `+44${phone.replace(/\s+/g, '').replace(/^0/, '')}` : '';
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  '@id': `${url}#faq`,
+  url,
+  inLanguage: 'en-GB',
+  about: { '@id': new URL('/#cafe', site).href },
+  isPartOf: { '@id': new URL('/#website', site).href },
+  mainEntity: listed.map((f) => ({
+    '@type': 'Question',
+    name: f.q,
+    url: `${url}#${f.id}`,
+    acceptedAnswer: { '@type': 'Answer', text: plain(f.html) },
+  })),
+};
+---
+
+<Base
+  title="FAQ: hours, booking, matcha, Kyiv cake · Sasha's Corner"
+  description="Opening hours, booking, delivery, matcha and blue matcha, Raff coffee, whole Kyiv cakes, prices and dairy-free milks at Sasha's Corner, Dundee."
+  extraJsonLd={jsonLd}
+>
+  <header class="fhead wrap">
+    <p class="label">Questions</p>
+    <h1>Asked at the counter, <span class="soft">answered here.</span></h1>
+    <p class="fhead__lede">
+      The things people ask us most, from where we are to what Raff coffee is. Prices come straight from the{' '}
+      <a href="/menu">menu</a>.
+    </p>
+    <nav class="fnav" aria-label="Questions on this page">
+      <ol>
+        {
+          faqs.map((f, n) => (
+            <li>
+              <a href={`#${f.id}`}>
+                <span class="num">{String(n + 1).padStart(2, '0')}</span>
+                {f.q}
+              </a>
+            </li>
+          ))
+        }
+      </ol>
+    </nav>
+  </header>
+
+  <div class="flist wrap">
+    {
+      faqs.map((f, n) => (
+        <section class="fq" id={f.id} aria-labelledby={`${f.id}-q`}>
+          <p class="fq__n num" aria-hidden="true">
+            {String(n + 1).padStart(2, '0')}
+          </p>
+          <div class="fq__body">
+            <h2 id={`${f.id}-q`}>{f.q}</h2>
+            {f.ownerNote && <Fragment set:html={`<!-- OWNER TO CONFIRM: ${f.ownerNote} -->`} />}
+            <p set:html={f.html} />
+            {f.id === 'hours' && <OpenNow />}
+          </div>
+        </section>
+      ))
+    }
+  </div>
+
+  <section class="fend" aria-labelledby="fend-title">
+    <div class="wrap fend__in">
+      <h2 id="fend-title">Something we haven't covered?</h2>
+      <p>
+        {address}.{' '}
+        {tel && (
+          <>
+            Call <a href={`tel:${tel}`} class="num">{phone}</a> or
+          </>
+        )}{' '}
+        send us a message.
+      </p>
+      <div class="fend__cta">
+        <a class="btn btn--caramel" href="/visit#contact">Send a message <span class="arrow" aria-hidden="true">→</span></a>
+        <a class="btn btn--ghost" href="/book">Book a table</a>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .label {
+    color: var(--coffee);
+  }
+  .soft {
+    font-family: var(--font-light);
+    font-weight: 200;
+    font-stretch: 100%;
+    letter-spacing: -0.03em;
+  }
+
+  /* header */
+  .fhead {
+    padding-block: clamp(48px, 7vw, 96px) clamp(32px, 5vw, 64px);
+  }
+  .fhead h1 {
+    font-size: var(--step-5);
+    margin-top: 14px;
+    max-width: 14ch;
+  }
+  .fhead__lede {
+    margin-top: 18px;
+    max-width: 48ch;
+    font-size: var(--step-1);
+    font-weight: 300;
+    color: var(--olive-900);
+  }
+  .fhead__lede a,
+  .fq__body a,
+  .fend a:not(.btn) {
+    color: var(--coffee);
+  }
+
+  /* jump list: two columns of plain links, no cards */
+  .fnav {
+    margin-top: clamp(32px, 5vw, 56px);
+    border-top: 1px solid var(--rule-strong);
+  }
+  .fnav ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    columns: 2 22rem;
+    column-gap: clamp(24px, 4vw, 64px);
+  }
+  .fnav li {
+    break-inside: avoid;
+    border-bottom: 1px solid var(--rule);
+  }
+  .fnav a {
+    display: flex;
+    gap: 14px;
+    align-items: baseline;
+    padding: 11px 0;
+    text-decoration: none;
+    color: var(--ink);
+  }
+  .fnav a:hover {
+    color: var(--coffee);
+  }
+  .fnav .num {
+    color: var(--coffee);
+    font-size: var(--step--1);
+    min-width: 2ch;
+  }
+
+  /* answers */
+  .flist {
+    padding-block: clamp(24px, 4vw, 48px) clamp(56px, 8vw, 110px);
+  }
+  .fq {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 10fr);
+    gap: clamp(12px, 3vw, 48px);
+    padding-block: clamp(28px, 4vw, 44px);
+    border-top: 1px solid var(--rule-strong);
+    scroll-margin-top: 96px;
+  }
+  .fq__n {
+    font-size: var(--step-3);
+    line-height: 1;
+    color: var(--sage);
+  }
+  .fq__body h2 {
+    font-size: var(--step-2);
+    color: var(--olive-900);
+    max-width: 26ch;
+  }
+  .fq__body p {
+    margin-top: 12px;
+    max-width: 62ch;
+  }
+  .fq__body :global(.open) {
+    margin-top: 14px;
+  }
+  .fq:target h2 {
+    text-decoration: underline;
+    text-decoration-color: var(--caramel);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.18em;
+  }
+
+  /* close */
+  .fend {
+    background: var(--olive-900);
+    color: var(--on-dark);
+  }
+  .fend__in {
+    padding-block: clamp(48px, 7vw, 88px);
+  }
+  .fend h2 {
+    font-size: var(--step-3);
+  }
+  .fend p {
+    margin-top: 14px;
+    color: var(--on-dark-soft);
+    font-size: var(--step-1);
+    font-weight: 300;
+  }
+  .fend a:not(.btn) {
+    color: var(--on-dark);
+  }
+  .fend__cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 26px;
+  }
+
+  @media (max-width: 640px) {
+    .fq {
+      grid-template-columns: 1fr;
+      gap: 6px;
+    }
+    .fq__n {
+      font-size: var(--step-1);
+    }
+  }
+</style>

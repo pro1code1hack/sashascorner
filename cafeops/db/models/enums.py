@@ -439,3 +439,27 @@ class GateAlertLevel(enum.StrEnum):
     NOTICE = "NOTICE"
     #: The theoretical figures themselves cannot be trusted (>15%).
     ALARM = "ALARM"
+
+
+class PaymentMethod(enum.Enum):
+    """How the money arrived. `OTHER` exists so an unmapped method is kept and
+    labelled rather than dropped or silently folded into CARD."""
+
+    CASH = "CASH"
+    CARD = "CARD"
+    VOUCHER = "VOUCHER"
+    ACCOUNT = "ACCOUNT"
+    OTHER = "OTHER"
+
+
+class PaymentSourceKind(enum.Enum):
+    """Where a payment figure came from.
+
+    Only `CSV_UPLOAD` is reachable today: the Lightspeed payments endpoint has
+    never been probed and its shape is unknown, so `POS_API` exists as a label for
+    when it is -- not as a claim that anything uses it.
+    """
+
+    CSV_UPLOAD = "CSV_UPLOAD"
+    POS_API = "POS_API"
+    MANUAL = "MANUAL"

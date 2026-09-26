@@ -1,0 +1,83 @@
+---
+// "Open now until 6pm" -- computed in the visitor's browser against the café's own
+// clock (Europe/London), since a static page cannot know the time it is read.
+import { info } from '../lib/data';
+import { clock } from '../lib/format';
+
+interface Props {
+  tone?: 'dark' | 'light';
+}
+const { tone = 'light' } = Astro.props;
+const hours = info?.hours ?? [];
+const allSame = hours.length === 7 && hours.every((h) => !h.closed && 'open' in h && JSON.stringify(h.open + h.close) === JSON.stringify((hours[0] as { open: string }).open + (hours[0] as { close: string }).close));
+const fallback = allSame && 'open' in hours[0] ? `Open every day, ${clock(hours[0].open)} – ${clock(hours[0].close)}` : 'Opening hours below';
+---
+
+<p class:list={['open', `open--${tone}`]} data-open={JSON.stringify(hours)}>
+  <span class="open__dot" aria-hidden="true"></span>
+  <span class="open__text">{fallback}</span>
+</p>
+
+<script>
+  import { clock } from '../lib/format';
+  type H = { weekday: number; open?: string; close?: string; closed?: boolean };
+
+  for (const el of document.querySelectorAll<HTMLElement>('[data-open]')) {
+    const hours: H[] = JSON.parse(el.dataset.open ?? '[]');
+    if (!hours.length) continue;
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Europe/London',
+      weekday: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    }).formatToParts(new Date());
+    const get = (t: string) => parts.find((p) => p.type === t)?.value ?? '';
+    const wd = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].indexOf(get('weekday'));
+    const now = `${get('hour')}:${get('minute')}`;
+    const today = hours.find((h) => h.weekday === wd);
+    const text = el.querySelector('.open__text')!;
+    if (today && !today.closed && today.open && today.close && now >= today.open && now < today.close) {
+      text.textContent = `Open now · until ${clock(today.close)}`;
+      el.classList.add('is-open');
+    } else {
+      // next opening, looking up to a week ahead
+      for (let i = 0; i < 8; i++) {
+        const h = hours.find((x) => x.weekday === (wd + i) % 7);
+        if (!h || h.closed || !h.open) continue;
+        if (i === 0 && now >= h.open) continue;
+        const when = i === 0 ? 'today' : i === 1 ? 'tomorrow' : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][h.weekday];
+        text.textContent = `Closed now · opens ${when} at ${clock(h.open)}`;
+        break;
+      }
+    }
+  }
+</script>
+
+<style>
+  .open {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: var(--step--1);
+  }
+  /* Not --on-dark-soft (72%): that is 3.6:1 where this sits on olive-700 grounds. */
+  .open--dark {
+    color: color-mix(in oklab, var(--on-dark) 92%, transparent);
+  }
+  .open--light {
+    color: var(--olive-900);
+  }
+  .open__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.5;
+  }
+  .open.is-open .open__dot {
+    background: var(--sage);
+    opacity: 1;
+    box-shadow: 0 0 0 4px color-mix(in oklab, var(--sage) 30%, transparent);
+  }
+</style>

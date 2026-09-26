@@ -1,0 +1,340 @@
+# The menu as published -- the website's source of truth for what is sold and at
+# what price.
+#
+# Transcribed 2026-09-25 from:
+#   drinks  -- the six TV-screen slides linked from the Google Business Profile
+#              ("Menu", drive.google.com/file/d/1eCqAHGgahQQJVXy5ss8RS6cjXs7nMjj5)
+#   autumn  -- the newer TV slide in the profile's Menu photos (hojicha, pumpkin spice)
+#   food    -- the printed Breakfast / Lunch / Brunch menu the owner supplied
+#   cakes   -- the ops database (menu_item), since no board lists them
+#
+# Spelling is corrected here, not copied ("matca", "pech", "Lemonad", "bibbles").
+# Two conflicts on the boards were resolved and should be confirmed by the owner:
+#   * Honey vanilla latte XL: feature panel says 3.40, the seasonal list 4.30 -> 4.30
+#   * Passion fruit smoothie S: feature panel 3.90, the smoothie list 4.00  -> 4.00
+#
+# `sashasite doctor` compares these prices against the ops database (the POS
+# side) and lists every disagreement. The two are expected to converge; until
+# they do, the website shows what the café's own screens show.
+#
+# Format: each category declares its size columns; each item gives one price per
+# column, in pounds, space-separated. `note`, `description`, `signature`,
+# `seasonal` are optional.
+
+[[category]]
+slug = "autumn"
+name = "Autumn specials"
+blurb = "On the board until the clocks change properly."
+sizes = ["S", "M"]
+seasonal = "Autumn"
+items = [
+  { n = "Iced banana bread hojicha", p = "4.80 5.00", description = "Fresh banana with cinnamon and fresh milk, finished with roasted green tea.", signature = true },
+  { n = "Iced Biscoff hojicha", p = "4.60 4.80" },
+  { n = "Iced brown sugar hojicha", p = "4.60 4.80" },
+  { n = "Iced creamy pumpkin spice", p = "- 5.00", description = "Espresso, condensed milk and pumpkin-spice syrup over milk and ice, topped with cream." },
+  { n = "Brown sugar bubble tea", p = "4.40 4.80" },
+  { n = "Mango bubble tea", p = "4.40 4.80" },
+]
+
+[[category]]
+slug = "hot-drinks"
+name = "Hot drinks"
+blurb = "The everyday list, in three sizes."
+sizes = ["S", "M", "XL"]
+items = [
+  { n = "Black americano", p = "2.80 3.10 3.40" },
+  { n = "White americano", p = "2.80 3.10 3.40" },
+  { n = "Latte", p = "3.20 3.50 3.80" },
+  { n = "Cappuccino", p = "3.20 3.50 3.80" },
+  { n = "Raff coffee", p = "3.50 3.80 4.10", description = "Espresso steamed with cream and vanilla sugar — an Eastern European café favourite.", signature = true },
+  { n = "Mocha", p = "3.40 3.70 4.00" },
+  { n = "White mocha", p = "3.50 3.80 4.10" },
+  { n = "Orange americano", p = "3.40 3.70 4.00" },
+  { n = "Chai latte", p = "3.40 3.70 4.00" },
+  { n = "Hot chocolate", p = "3.40 3.70 4.00" },
+  { n = "White hot chocolate", p = "3.40 3.70 4.00" },
+]
+
+[[category]]
+slug = "espresso"
+name = "Espresso bar"
+blurb = "One size, made to order."
+sizes = ["One"]
+items = [
+  { n = "Single espresso", p = "1.90" },
+  { n = "Double espresso", p = "2.00" },
+  { n = "Single macchiato", p = "2.00" },
+  { n = "Double macchiato", p = "2.10" },
+  { n = "Single espresso con panna", p = "2.20" },
+  { n = "Double espresso con panna", p = "2.40" },
+  { n = "Cortado", p = "3.10" },
+  { n = "Mocha cortado", p = "3.15" },
+  { n = "Flat white", p = "3.25" },
+]
+
+[[category]]
+slug = "seasonal-hot"
+name = "Signature hot drinks"
+blurb = "Lavender, rose, pistachio, honey — and blue matcha."
+sizes = ["S", "M", "XL"]
+items = [
+  { n = "Honey vanilla latte", p = "3.90 4.10 4.30", description = "Pure honey and vanilla with a smooth espresso.", signature = true },
+  { n = "Lavender latte", p = "3.90 4.10 4.30", description = "Espresso, creamy milk and a fresh note of lavender." },
+  { n = "Rose latte", p = "3.90 4.10 4.30" },
+  { n = "Pistachio latte", p = "3.90 4.10 4.30" },
+  { n = "Salted caramel latte", p = "4.00 4.10 4.30" },
+  { n = "Rose white mocha", p = "4.00 4.20 4.60" },
+  { n = "Blue vanilla matcha", p = "4.00 4.20 4.60", description = "Blue matcha and vanilla — warms you up on any day." },
+  { n = "Blue lavender matcha", p = "4.00 4.20 4.60" },
+  { n = "Blue honey matcha", p = "4.00 4.20 4.60" },
+  { n = "Black honey", p = "3.80 4.00 4.20" },
+  { n = "Lavender hot chocolate", p = "4.00 4.20 4.40" },
+  { n = "Pistachio hot chocolate", p = "4.00 4.20 4.40" },
+  { n = "Rose hot chocolate", p = "4.00 4.20 4.40" },
+  { n = "Raspberry hot chocolate", p = "4.00 4.20 4.40", description = "A properly fruity hot chocolate." },
+]
+
+[[category]]
+slug = "hot-matcha"
+name = "Hot matcha"
+blurb = "Whisked fresh in front of you."
+sizes = ["S", "M", "XL"]
+items = [
+  { n = "Matcha latte", p = "3.40 3.70 3.90" },
+  { n = "Strawberry matcha", p = "3.60 3.90 4.20" },
+  { n = "Vanilla matcha", p = "3.60 3.90 4.20" },
+  { n = "Banana matcha", p = "3.60 3.90 4.20" },
+  { n = "Lavender matcha", p = "3.60 3.90 4.20" },
+  { n = "Rose matcha", p = "3.60 3.90 4.20" },
+  { n = "White chocolate matcha", p = "3.60 3.90 4.20" },
+  { n = "Raspberry matcha", p = "3.60 3.90 4.20" },
+  { n = "Green apple matcha", p = "3.60 3.90 4.20" },
+  { n = "Kiwi matcha", p = "3.60 3.90 4.20" },
+  { n = "Mango matcha", p = "3.60 3.90 4.20" },
+  { n = "Peach matcha", p = "3.60 3.90 4.20" },
+]
+
+[[category]]
+slug = "tea"
+name = "Tea"
+blurb = "Classic teas, and loose-leaf specials."
+sizes = ["One"]
+items = [
+  { n = "English breakfast", p = "1.90" },
+  { n = "Earl grey", p = "1.90" },
+  { n = "Green", p = "1.90" },
+  { n = "Mint", p = "1.90" },
+  { n = "Berry", p = "1.90" },
+  { n = "Decaf", p = "1.90" },
+  { n = "Strawberry black", p = "2.00", note = "Special leaf tea" },
+  { n = "Jasmine and mint green", p = "2.00", note = "Special leaf tea" },
+  { n = "Spiced apple chai", p = "2.00", note = "Special leaf tea" },
+  { n = "Ginger and lemongrass", p = "2.00", note = "Special leaf tea" },
+  { n = "Forest fruits", p = "2.00", note = "Special leaf tea" },
+]
+
+[[category]]
+slug = "iced-coffee"
+name = "Iced coffee"
+blurb = "The classics, over ice."
+sizes = ["S", "M"]
+items = [
+  { n = "Iced black americano", p = "2.90 3.10" },
+  { n = "Iced white americano", p = "2.90 3.10" },
+  { n = "Iced latte", p = "3.40 3.60" },
+  { n = "Iced cappuccino", p = "3.40 3.60" },
+  { n = "Iced flat white", p = "3.20 3.50" },
+  { n = "Iced mocha", p = "3.50 4.00" },
+  { n = "Iced white mocha", p = "3.60 4.10" },
+  { n = "Iced chai latte", p = "3.50 3.80" },
+  { n = "Espresso tonic", p = "3.50 3.70" },
+]
+
+[[category]]
+slug = "seasonal-iced"
+name = "Signature iced drinks"
+blurb = "Blue matcha, coconut water, rose and pistachio."
+sizes = ["S", "M"]
+items = [
+  { n = "Iced honey blue matcha", p = "4.60 4.80", description = "Pure blue matcha, creamy milk and sweet honey.", signature = true },
+  { n = "Iced citrus blue matcha", p = "4.60 4.80", description = "Blue matcha with lemon juice and sparkling water.", signature = true },
+  { n = "Iced coconut blue matcha", p = "4.60 4.80" },
+  { n = "Iced lavender blue matcha", p = "4.20 4.60" },
+  { n = "Iced vanilla blue matcha", p = "4.20 4.60" },
+  { n = "Iced coconut water latte", p = "4.20 4.50", description = "Smooth espresso over coconut water and ice. Light and naturally sweet.", signature = true },
+  { n = "Iced pistachio latte", p = "4.20 4.40", description = "Espresso and cold milk with rich pistachio cream." },
+  { n = "Iced lavender latte", p = "3.90 4.10" },
+  { n = "Iced honey vanilla latte", p = "4.20 4.40" },
+  { n = "Iced rose mocha", p = "4.20 4.50" },
+  { n = "Iced rose white mocha", p = "4.30 4.60", description = "Espresso, creamy milk, rose and white chocolate." },
+  { n = "Iced raspberry mocha", p = "4.20 4.50" },
+  { n = "Iced white raspberry mocha", p = "4.30 4.60" },
+]
+
+[[category]]
+slug = "iced-matcha"
+name = "Iced green matcha"
+blurb = "Every one of them 4.00 / 4.40."
+sizes = ["S", "M"]
+items = [
+  { n = "Iced mango matcha", p = "4.00 4.40" },
+  { n = "Iced strawberry matcha", p = "4.00 4.40" },
+  { n = "Iced peach matcha", p = "4.00 4.40" },
+  { n = "Iced coconut matcha", p = "4.00 4.40" },
+  { n = "Iced banana matcha", p = "4.00 4.40" },
+  { n = "Iced green apple matcha", p = "4.00 4.40" },
+  { n = "Iced vanilla matcha", p = "4.00 4.40" },
+  { n = "Iced kiwi matcha", p = "4.00 4.40" },
+  { n = "Iced rose matcha", p = "4.00 4.40" },
+  { n = "Iced lavender matcha", p = "4.00 4.40" },
+  { n = "Iced citrus matcha", p = "4.00 4.40" },
+  { n = "Iced white chocolate matcha", p = "4.00 4.40" },
+  { n = "Iced raspberry matcha", p = "4.00 4.40" },
+]
+
+[[category]]
+slug = "bubble-tea"
+name = "Creamy bubble tea"
+blurb = "Milk tea with tapioca pearls."
+sizes = ["S", "M"]
+items = [
+  { n = "Green apple bubble tea", p = "4.40 4.80" },
+  { n = "Passion fruit bubble tea", p = "4.40 4.80" },
+  { n = "Kiwi bubble tea", p = "4.40 4.80" },
+  { n = "Honey bubble tea", p = "4.40 4.80" },
+  { n = "Strawberry bubble tea", p = "4.40 4.80" },
+  { n = "Honey banana bubble tea", p = "4.40 4.80" },
+  { n = "Raspberry bubble tea", p = "4.40 4.80" },
+]
+
+[[category]]
+slug = "milkshakes"
+name = "Milkshakes"
+blurb = "Made with fresh fruit where it says so."
+sizes = ["S", "M"]
+items = [
+  { n = "Strawberry milkshake", p = "4.20 4.60" },
+  { n = "Banana milkshake", p = "4.40 4.60" },
+  { n = "Kiwi milkshake", p = "4.20 4.60" },
+  { n = "Mango milkshake", p = "4.20 4.60" },
+  { n = "Chocolate milkshake", p = "4.20 4.60" },
+  { n = "Chocolate coffee milkshake", p = "4.40 4.60" },
+  { n = "Coffee milkshake", p = "4.10 4.50" },
+  { n = "Salted caramel milkshake", p = "4.20 4.60" },
+  { n = "Salted caramel coffee milkshake", p = "4.40 4.80" },
+]
+
+[[category]]
+slug = "cold"
+name = "Iced teas, refreshers & smoothies"
+blurb = "No coffee, lots of ice."
+sizes = ["S", "M"]
+items = [
+  { n = "Peach iced tea", p = "3.60 3.90" },
+  { n = "Iced rose tea", p = "3.60 3.90" },
+  { n = "Iced lemon & honey tea", p = "3.70 4.00" },
+  { n = "Tropical Mint Bliss", p = "4.50 4.90", note = "Refresher" },
+  { n = "Berry Breeze Lemonade", p = "4.50 4.90", note = "Refresher" },
+  { n = "Emerald Zest", p = "4.50 4.90", note = "Refresher" },
+  { n = "Passion fruit smoothie", p = "4.00 4.20" },
+  { n = "Strawberry blast smoothie", p = "4.00 4.20" },
+  { n = "Pineapple & passion fruit smoothie", p = "4.00 4.20" },
+]
+
+[[category]]
+slug = "breakfast"
+name = "Breakfast"
+blurb = "Order at the counter."
+sizes = ["One"]
+items = [
+  { n = "Toast with butter", p = "2.00", note = "Jam, marmalade, honey or beans +50p" },
+  { n = "Avocado toast", p = "5.00", note = "With salad on the side" },
+  { n = "Granola pot", p = "4.00" },
+  { n = "Porridge", p = "4.00", note = "With milk and fresh fruit" },
+  { n = "Cheese & vegetable omelette", p = "4.50", note = "With salad on the side" },
+  { n = "Chia pudding", p = "4.00" },
+  { n = "Bacon roll", p = "3.80" },
+  { n = "Sausage roll", p = "3.80" },
+]
+
+[[category]]
+slug = "lunch"
+name = "Lunch"
+blurb = "Soup, salads and something toasted."
+sizes = ["One"]
+items = [
+  { n = "Soup of the day", p = "5.00", note = "+ £1 for toast on the side" },
+  { n = "Caesar salad", p = "6.00", note = "+ £1 chicken" },
+  { n = "Tuna salad", p = "6.00" },
+  { n = "Croissant", p = "4.00", note = "Ham & cheese, salami & cheese, or rocket & salmon" },
+  { n = "Panini", p = "3.80", note = "Selection in the fridge" },
+  { n = "Fresh ciabatta", p = "4.50", note = "Selection on the counter" },
+]
+
+[[category]]
+slug = "waffles"
+name = "Brunch waffles"
+blurb = "Savoury with salad, sweet with fruit and ice cream."
+sizes = ["One"]
+items = [
+  { n = "Cheesy waffles", p = "8.00", note = "With salad on the side" },
+  { n = "Cheesy potato waffles", p = "8.00", note = "With salad on the side" },
+  { n = "Chocolate waffles", p = "9.00", note = "Fresh fruit, ice cream and sauce" },
+  { n = "Maple fruity waffles", p = "9.00", note = "Fresh fruit, ice cream and sauce" },
+  { n = "Pistachio waffles", p = "9.00", note = "Pistachio spread, fresh fruit, ice cream and sauce", signature = true, description = "Pistachio spread, fresh fruit, ice cream and sauce." },
+]
+
+[[category]]
+slug = "cakes"
+name = "Cakes & bakes"
+blurb = "What's on the counter changes daily."
+sizes = ["One"]
+items = [
+  { n = "Kyiv cake (slice)", p = "4.00", description = "Hazelnut meringue, buttercream and cocoa — Kyiv's own celebration cake.", signature = true },
+  { n = "Kyiv cake (whole)", p = "25.00", note = "Order ahead" },
+  { n = "Tiramisu blondie", p = "3.60", description = "The ideal partner for your coffee." },
+  { n = "Raspberry & matcha cheesecake", p = "3.40" },
+  { n = "Raspberry brownie cheesecake", p = "3.60" },
+  { n = "Lemon & pistachio", p = "3.40" },
+  { n = "Billionaire's shortbread", p = "3.60" },
+  { n = "Salted caramel brownie", p = "3.10" },
+  { n = "Sticky toffee Biscoff", p = "3.10" },
+  { n = "Blueberry muffin", p = "3.20" },
+  { n = "Banana & pecan muffin", p = "3.20" },
+  { n = "Raspberry & almond muffin", p = "3.20" },
+  { n = "Cinnamon classic", p = "3.00" },
+  { n = "Strawberry pancake", p = "3.00" },
+  { n = "Croissant with jam", p = "2.50" },
+]
+
+[extras]
+title = "Extras"
+items = [
+  { n = "Caramel, vanilla or hazelnut syrup (sugar-free available)", p = "+40p" },
+  { n = "Oat, almond or coconut milk", p = "+50p" },
+  { n = "Soya milk", p = "free" },
+  { n = "Extra shot", p = "+50p" },
+]
+
+# Board name -> ops menu_item name, for `sashasite doctor`'s drift report only
+# (the website never reads ops for the menu). Only pairs that are plainly the same
+# drink under a different POS name; anything doubtful is left to show as drift.
+[aliases]
+"Single espresso con panna" = "Single Espresso Con Pana"
+"Double espresso con panna" = "Double Espresso Con Pana"
+"Lavender latte" = "Butterfly (lavender) Latte"
+"Matcha latte" = "Hot Matcha"
+"Strawberry matcha" = "Hot Strawberry Matcha"
+"Vanilla matcha" = "Hot Vanilla Matcha"
+"Banana matcha" = "Hot banana matcha"
+"Lavender matcha" = "Hot Lavender Matcha"
+"Rose matcha" = "Hot Rose Matcha"
+"White chocolate matcha" = "Hot White Choc Matcha"
+"Berry" = "Berry Tea"
+"Decaf" = "Decaf Tea"
+"Jasmine and mint green" = "Jasmine and Mint Green Tea"
+"Ginger and lemongrass" = "Ginger and Lemongrass Tea"
+"Forest fruits" = "Forest Fruits Tea"
+"Iced coconut blue matcha" = "Iced Coconut Water Blue Matcha"
+"Strawberry milkshake" = "Strawberry"
+"Panini" = "Homemade Panini"

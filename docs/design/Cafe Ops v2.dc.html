@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet"><script src="sc-fin.js"></script><style>html,body{font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;margin:0;height:100%}body{font-family:'Nunito',system-ui,sans-serif;color:#1f2633;background:#fff}a{color:#1f2633}a:hover{color:#4a6fd1}input,select{font-family:'Nunito',sans-serif;color:#1f2633;background:#fff}</style></helmet>
+<div style="width:100%;height:100%;min-height:600px;display:flex;background:#fff;font-family:'Nunito',sans-serif;color:#1f2633;overflow:hidden">
+
+<sc-if value="{{ showLogin }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;display:flex;align-items:center;justify-content:center;background:#f6f7fa">
+<div style="width:380px;border-radius:24px;padding:36px 32px 28px;background:#fff;box-shadow:0 1px 2px rgba(31,38,51,.04),0 12px 32px rgba(31,38,51,.06)"><div style="width:44px;height:44px;border-radius:14px;background:#4a6fd1;color:#fff;display:flex;align-items:center;justify-content:center;font:800 20px 'Nunito',sans-serif;margin-bottom:18px">S</div>
+<div style="font:800 26px 'Nunito',sans-serif;letter-spacing:-.01em">Sasha's Corner</div>
+<div style="color:#5b6475;font-size:15px;margin-bottom:18px">Back office · 23 Commercial Street</div>
+<div style="font-size:14px;margin-bottom:6px">Password</div>
+<input type="password" value="{{ pw }}" onChange="{{ setPw }}" onKeyDown="{{ pwKey }}" placeholder="shared password" style="width:100%;box-sizing:border-box;border:1px solid #d5dae3;border-radius:14px;padding:13px 14px;font-size:17px;outline:none"></input>
+<div style="min-height:24px;color:#d4554a;font-size:14px;margin:6px 0">{{ pwErr }}</div>
+<div onClick="{{ login }}" style="cursor:pointer;background:#4a6fd1;color:#fff;border-radius:14px;padding:14px;text-align:center;font-size:16px;font-weight:700;transition:background .15s,border-color .15s">Open</div>
+<div style="color:#8a93a3;font-size:13px;margin-top:14px">One password for everyone on the team. Change it in Settings. (Demo: corner)</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ showApp }}" hint-placeholder-val="{{ true }}">
+<div style="width:{{ navW }};flex:none;background:#f6f7fa;border-right:1px solid #eef0f4;display:flex;flex-direction:column;padding:18px 10px 14px;overflow-y:auto;scrollbar-width:none;gap:2px">
+<div style="display:flex;align-items:center;gap:10px;padding:0 8px 14px"><div style="width:34px;height:34px;flex:none;border-radius:11px;background:#4a6fd1;color:#fff;display:flex;align-items:center;justify-content:center;font:800 16px 'Nunito',sans-serif">S</div><div style="min-width:0"><div style="font:800 16px 'Nunito',sans-serif;letter-spacing:-.01em;line-height:1.15">Sasha's Corner</div><div style="color:#8a93a3;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ syncShort }}</div></div></div>
+<sc-for list="{{ nav }}" as="n" hint-placeholder-count="14">
+<sc-if value="{{ n.isHead }}" hint-placeholder-val="{{ false }}"><div style="padding:16px 10px 6px;font:700 11px 'Nunito',sans-serif;color:#8a93a3;text-transform:uppercase;letter-spacing:.08em">{{ n.label }}</div></sc-if>
+<sc-if value="{{ n.isItem }}" hint-placeholder-val="{{ true }}"><div onClick="{{ n.go }}" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:40px;padding:0 10px;border-radius:12px;font-size:15px;font-weight:{{ n.fw }};background:{{ n.bg }};color:{{ n.fg }};box-shadow:{{ n.sh }}"><span>{{ n.label }}</span><span style="font:700 11px 'Nunito',sans-serif;color:#fff;background:{{ n.badgeC }};border-radius:999px;padding:2px 7px;display:{{ n.badgeD }}">{{ n.badge }}</span></div></sc-if>
+</sc-for>
+<div style="flex:1"></div>
+<div onClick="{{ goSettings }}" style="cursor:pointer;min-height:40px;display:flex;align-items:center;padding:0 10px;border-radius:12px;font-size:15px;background:{{ setBg }};color:{{ setFg }}">Settings</div>
+<div onClick="{{ logout }}" style="cursor:pointer;min-height:36px;display:flex;align-items:center;padding:0 10px;font-size:14px;color:#8a93a3">Sign out</div>
+</div>
+
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">
+<sc-for list="{{ banners }}" as="b" hint-placeholder-count="1">
+<div style="display:flex;gap:12px;align-items:center;margin:10px 16px 0;padding:10px 12px 10px 16px;border-radius:14px;background:{{ b.bg }};font-size:14px;flex:none">
+<span style="width:8px;height:8px;border-radius:50%;background:{{ b.c }};flex:none"></span>
+<span style="flex:1">{{ b.text }}</span>
+<span onClick="{{ b.act }}" style="cursor:pointer;background:#fff;border-radius:10px;padding:7px 14px;white-space:nowrap;font-weight:700;color:#1f2633">{{ b.actLabel }}</span>
+<span onClick="{{ b.close }}" style="cursor:pointer;color:#8a93a3;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:18px">×</span>
+</div>
+</sc-for>
+<div style="flex:1;min-height:0;display:flex;flex-direction:column">
+
+<sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;overflow-y:auto;padding:36px 44px">
+<div style="font:800 30px 'Nunito',sans-serif;letter-spacing:-.01em">Nothing here yet.</div>
+<div style="color:#5b6475;font-size:16px;max-width:640px;margin:6px 0 24px">Five things before the numbers mean anything. Do them in order; each one makes the next more accurate.</div>
+<div style="display:flex;flex-direction:column;gap:10px;max-width:720px">
+<sc-for list="{{ steps }}" as="s" hint-placeholder-count="5">
+<div style="display:flex;gap:14px;align-items:center;border:1px solid #e8ebf0;border-radius:14px;padding:12px 16px">
+<div style="width:30px;height:30px;flex:none;border:1px solid #e8ebf0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px">{{ s.n }}</div>
+<div style="flex:1"><div style="font-size:16px">{{ s.title }}</div><div style="color:#5b6475;font-size:14px">{{ s.body }}</div></div>
+<div onClick="{{ s.go }}" style="cursor:pointer;border:1px solid #e8ebf0;border-radius:16px;padding:6px 14px;font-size:14px;white-space:nowrap;background:{{ s.bg }};color:{{ s.fg }};transition:background .15s,border-color .15s">{{ s.cta }}</div>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isMS }}" hint-placeholder-val="{{ true }}"><dc-import name="Menu Stock App v2" embedded="{{ true }}" tab="{{ msTab }}" on-nav="{{ onNav }}" compact="{{ compact }}" hint-size="100%,100%" style="flex:1;min-height:0;width:100%"></dc-import></sc-if>
+<sc-if value="{{ isFin }}" hint-placeholder-val="{{ false }}"><dc-import name="Finance App v2" embedded="{{ true }}" tab="{{ finTab }}" on-nav="{{ onFinNav }}" hint-size="100%,100%" style="flex:1;min-height:0;width:100%"></dc-import></sc-if>
+<sc-if value="{{ isAgents }}" hint-placeholder-val="{{ false }}"><dc-import name="Agents App v2" hint-size="100%,100%" style="flex:1;min-height:0;width:100%"></dc-import></sc-if>
+
+<sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;overflow-y:auto;padding:20px 28px">
+<div style="font:800 22px 'Nunito',sans-serif;letter-spacing:-.01em;margin-bottom:14px">Settings</div>
+<div style="display:grid;grid-template-columns:220px minmax(0,1fr);gap:16px 20px;max-width:820px;font-size:15px;align-items:center">
+<span style="color:#5b6475">Shared password</span><span style="display:flex;gap:8px;align-items:center"><input value="{{ newPw }}" onChange="{{ setNewPw }}" placeholder="new password" style="border:1px solid #e8ebf0;border-radius:10px;padding:4px 8px;font-size:15px"></input><span onClick="{{ savePw }}" style="cursor:pointer;border:1px solid #d5dae3;border-radius:12px;padding:6px 14px;transition:background .15s,border-color .15s">Change</span><span style="color:#8a93a3;font-size:14px">{{ pwMsg }}</span></span>
+<span style="color:#5b6475">Lightspeed</span><span style="display:flex;gap:8px;align-items:center">Connected (demo) · sales last came in {{ syncAgo }}<span onClick="{{ syncNow }}" style="cursor:pointer;border:1px solid #d5dae3;border-radius:12px;padding:6px 14px;transition:background .15s,border-color .15s">Sync now</span><span onClick="{{ makeStale }}" style="cursor:pointer;color:#8a93a3;font-size:14px;text-decoration:underline">pretend it's stale</span></span>
+<span style="color:#5b6475">Telegram bot language</span><select value="{{ lang }}" onChange="{{ setLang }}" style="width:200px;border:1px solid #e8ebf0;border-radius:10px;padding:3px;font-size:15px"><option value="ru">Russian</option><option value="en">English</option><option value="both">Both</option></select>
+<span style="color:#5b6475">Fresh start</span><span style="display:flex;gap:8px;align-items:center"><span onClick="{{ showEmpty }}" style="cursor:pointer;border:1px solid #d5dae3;border-radius:12px;padding:6px 14px;transition:background .15s,border-color .15s">Show the empty-install screen</span></span>
+<span style="color:#5b6475">Demo data</span><span style="display:flex;gap:8px;align-items:center"><span onClick="{{ reset }}" style="cursor:pointer;border:1px solid #d4554a;color:#d4554a;border-radius:12px;padding:6px 14px;transition:background .15s,border-color .15s">{{ resetLabel }}</span><span style="color:#8a93a3;font-size:14px">puts every screen back to the workbook data</span></span>
+</div>
+</div>
+</sc-if>
+
+</div>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;startPage&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;stock&quot;,&quot;orders&quot;,&quot;agents&quot;,&quot;rec&quot;,&quot;menu&quot;,&quot;ing&quot;,&quot;sup&quot;,&quot;m-overview&quot;,&quot;m-sales&quot;,&quot;m-exp&quot;,&quot;m-rec&quot;,&quot;m-pl&quot;,&quot;m-dir&quot;,&quot;settings&quot;],&quot;default&quot;:&quot;stock&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;skipLogin&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;compact&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;forceState&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;none&quot;,&quot;login&quot;,&quot;empty&quot;],&quot;default&quot;:&quot;none&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const SH = 'sc-shell-v1';
+const MS = { stock: 'Stock', orders: 'Orders', rec: 'Recipes', menu: 'Menu items', ing: 'Ingredients & prices', sup: 'Suppliers' };
+const FIN = { 'm-overview': 'Overview', 'm-sales': 'Sales', 'm-exp': 'Expenses', 'm-rec': 'Reconcile', 'm-pl': 'Profit & loss', 'm-dir': "Director's account" };
+const ago = t => { const m = Math.round((Date.now() - t) / 60000); return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : m < 2880 ? Math.round(m / 60) + ' hours ago' : Math.round(m / 1440) + ' days ago'; };
+const on = a => ({ bg: a ? '#fff' : 'transparent', fg: a ? '#3558b8' : '#1f2633', fw: a ? 700 : 500, sh: a ? '0 1px 2px rgba(31,38,51,.06),0 0 0 1px rgba(31,38,51,.04)' : 'none' });
+const gbp = p => (p < 0 ? '−£' : '£') + (Math.abs(p) / 100).toFixed(2);
+function readJSON(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
+class Component extends DCLogic {
+  state = { authed: false, pw: '', pwErr: '', page: this.props.startPage || 'stock', empty: this.props.forceState === 'empty', cfg: null, closed: {}, newPw: '', pwMsg: '', resetArm: false, tick: 0 };
+  componentDidMount() {
+    let cfg = readJSON(SH); if (!cfg) { cfg = { password: 'corner', syncAt: Date.now() - 26 * 3600e3, lang: 'ru' }; this.saveCfg(cfg); }
+    let authed = !!this.props.skipLogin; try { if (sessionStorage.getItem('sc-auth') === '1') authed = true; } catch (e) {}
+    if (this.props.forceState === 'login') authed = false;
+    this.setState({ cfg, authed });
+    this.refresh = () => this.setState(s => ({ tick: s.tick + 1 }));
+    ['sc-agents-sync', 'sc-fin-sync', 'sc-sync'].forEach(e => window.addEventListener(e, this.refresh));
+  }
+  componentWillUnmount() { ['sc-agents-sync', 'sc-fin-sync', 'sc-sync'].forEach(e => window.removeEventListener(e, this.refresh)); }
+  saveCfg(cfg) { try { localStorage.setItem(SH, JSON.stringify(cfg)); } catch (e) {} this.setState({ cfg }); }
+  cashIssue() {
+    const F = readJSON('sc-fin-v1'); let sales, decl;
+    if (F && F.cashDecl) { sales = F.sales; decl = F.cashDecl; }
+    else if (window.SC_FIN) { sales = window.SC_FIN.sales; decl = {}; sales.filter(x => x.sqCash + x.ownCash > 0).forEach((x, i) => { const e = x.sqCash + x.ownCash; decl[x.date] = i % 7 === 3 ? e - 420 : i % 11 === 5 ? e + 1200 : e; }); }
+    if (!sales) return null;
+    const bad = sales.filter(x => decl[x.date] != null && Math.abs(decl[x.date] - (x.sqCash + x.ownCash)) > 500).sort((a, b) => b.date.localeCompare(a.date))[0];
+    return bad ? { date: bad.date, diff: decl[bad.date] - (bad.sqCash + bad.ownCash) } : null;
+  }
+  renderVals() {
+    const s = this.state, cfg = s.cfg || { syncAt: Date.now(), password: 'corner', lang: 'ru' };
+    const compact = !!this.props.compact;
+    const go = page => () => this.setState({ page, empty: false });
+    const A = readJSON('sc-agents-v1'); const waiting = A ? A.proposals.filter(p => p.status === 'waiting').length : 2;
+    const Sd = readJSON('sc-menu-stock-v1'); const ordWait = Sd && Sd.orders ? Sd.orders.filter(o => o.status === 'Waiting').length : 0;
+    const item = (id, label, badge, badgeC) => ({ isItem: true, label, badge: badge || '', badgeD: badge ? 'inline-block' : 'none', badgeC: badgeC || '#4a6fd1', ...on(s.page === id && !s.empty), go: go(id) });
+    const nav = [{ isHead: true, label: 'Every day' }, item('stock', 'Stock'), item('orders', 'Orders', ordWait ? String(ordWait) : ''), item('agents', 'Agents', waiting ? String(waiting) : ''),
+      { isHead: true, label: 'Menu' }, item('rec', 'Recipes'), item('menu', 'Menu items'), item('ing', 'Ingredients'), item('sup', 'Suppliers'),
+      { isHead: true, label: 'Money' }, ...Object.entries(FIN).map(([k, l]) => item(k, l))];
+    const banners = [];
+    const stale = Date.now() - cfg.syncAt > 12 * 3600e3;
+    if (stale && !s.closed.stale) banners.push({ tag: 'STALE', c: '#8a93a3', bg: '#f1f3f7', text: 'Lightspeed sales last came in ' + ago(cfg.syncAt) + '. Stock estimates and takings are behind until the next sync.', actLabel: 'Sync now', act: () => this.saveCfg({ ...cfg, syncAt: Date.now() }), close: () => this.setState({ closed: { ...s.closed, stale: 1 } }) });
+    const ci = this.cashIssue();
+    if (ci && !s.closed.cash) banners.push({ tag: 'CASH', c: '#d4554a', bg: '#fdf1ef', text: 'Cash was ' + gbp(Math.abs(ci.diff)) + (ci.diff < 0 ? ' short' : ' over') + ' on ' + new Date(ci.date + 'T12:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) + ' and nobody has explained it yet.', actLabel: 'Look at it', act: go('m-rec'), close: () => this.setState({ closed: { ...s.closed, cash: 1 } }) });
+    const msTab = MS[s.page] ? s.page : 'stock';
+    const finTab = FIN[s.page] ? s.page.slice(2) : 'overview';
+    const login = () => { if (s.pw === cfg.password) { try { sessionStorage.setItem('sc-auth', '1'); } catch (e) {} this.setState({ authed: true, pw: '', pwErr: '' }); } else this.setState({ pwErr: 'That’s not it. Ask whoever runs the café.' }); };
+    const Ssup = Sd && Sd.suppliers ? Sd.suppliers.filter(x => !x.termsConfirmed).length : 8;
+    const shelfMissing = Sd && Sd.ingredients ? Sd.ingredients.filter(i => ['Dairy', 'Dairy alt', 'Food', 'Cake', 'Cake (CakeSmiths)'].includes(i.cat) && !(i.stk && i.stk.shelf)).length : 0;
+    const steps = [
+      ['Bring in the spreadsheet', 'Ingredients, prices, recipes and menu from the finance workbook. It proposes recipes; you confirm them.', 'Import workbook', () => this.setState({ empty: false, page: 'rec' })],
+      ['Add shelf lives for fresh stock', 'Not in the workbook. Without them, orders can’t be capped to what will keep. ' + (shelfMissing ? shelfMissing + ' still missing.' : ''), 'Open Stock', () => this.setState({ empty: false, page: 'stock' })],
+      ['Confirm supplier terms', 'Delivery days, cut-offs, minimums and fees. ' + Ssup + ' are still guesses.', 'Open Suppliers', () => this.setState({ empty: false, page: 'sup' })],
+      ['Connect Lightspeed', 'So sales come in by themselves and stock is worked out from them.', 'Settings', () => this.setState({ empty: false, page: 'settings' })],
+      ['Do a first count', 'Tier A first. Every estimate starts from a real count.', 'Start counting', () => this.setState({ empty: false, page: 'stock' })]];
+    return {
+      showLogin: !s.authed, showApp: s.authed, pw: s.pw, pwErr: s.pwErr, setPw: e => this.setState({ pw: e.target.value, pwErr: '' }), pwKey: e => { if (e.key === 'Enter') login(); }, login,
+      logout: () => { try { sessionStorage.removeItem('sc-auth'); } catch (e) {} this.setState({ authed: false }); },
+      navW: compact ? '200px' : '232px', compact, nav, banners, syncShort: 'sales synced ' + ago(cfg.syncAt),
+      goSettings: go('settings'), ...(() => { const o = on(s.page === 'settings' && !s.empty); return { setBg: o.bg, setFg: o.fg }; })(),
+      isEmpty: s.empty, isMS: !s.empty && !!MS[s.page], isFin: !s.empty && !!FIN[s.page], isAgents: !s.empty && s.page === 'agents', isSettings: !s.empty && s.page === 'settings',
+      msTab, finTab,
+      onNav: tab => this.setState({ page: tab }), onFinNav: tab => this.setState({ page: 'm-' + tab }),
+      steps: steps.map(([title, body, cta, fn], i) => ({ n: i + 1, title, body, cta, go: fn, ...on(i === 0) })),
+      newPw: s.newPw, setNewPw: e => this.setState({ newPw: e.target.value, pwMsg: '' }), pwMsg: s.pwMsg,
+      savePw: () => { if (s.newPw.trim().length < 4) return this.setState({ pwMsg: 'At least 4 characters.' }); this.saveCfg({ ...cfg, password: s.newPw.trim() }); this.setState({ newPw: '', pwMsg: 'Changed. Tell the team.' }); },
+      syncAgo: ago(cfg.syncAt), syncNow: () => this.saveCfg({ ...cfg, syncAt: Date.now() }), makeStale: () => { this.saveCfg({ ...cfg, syncAt: Date.now() - 26 * 3600e3 }); this.setState({ closed: {} }); },
+      lang: cfg.lang, setLang: e => this.saveCfg({ ...cfg, lang: e.target.value }),
+      showEmpty: () => this.setState({ empty: true }),
+      resetLabel: s.resetArm ? 'Tap again to reset' : 'Reset demo data',
+      reset: () => { if (!s.resetArm) return this.setState({ resetArm: true }); ['sc-menu-stock-v1', 'sc-fin-v1', 'sc-agents-v1'].forEach(k => { try { localStorage.removeItem(k); } catch (e) {} }); location.reload(); },
+    };
+  }
+}
+</script>
+</body>
+</html>

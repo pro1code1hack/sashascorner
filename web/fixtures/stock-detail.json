@@ -17,7 +17,7 @@
     "on_hand": {
       "qty": "48.123",
       "unit": "L",
-      "as_of": "2026-09-23T18:34:24.446375Z",
+      "as_of": "2026-09-24T20:02:34.991968Z",
       "is_theoretical": true,
       "has_count_basis": true,
       "basis_count_qty": "12.037",
@@ -45,15 +45,15 @@
         "expires_at": "2026-09-28T06:30:00Z",
         "opened_at": null,
         "effective_expiry": "2026-09-28T06:30:00Z",
-        "days_left": 4,
+        "days_left": 3,
         "unit_cost_pence": "69.705882",
         "value_pence": "3354.456159"
       }
     ],
     "batch_qty": "48.123",
     "batch_coverage_gap": "0.000",
-    "soonest_expiry_days": 4,
-    "is_short_dated": false,
+    "soonest_expiry_days": 3,
+    "is_short_dated": true,
     "drift": {
       "has_observation": true,
       "observed_at": "2026-09-19T20:00:00Z",
@@ -86,7 +86,7 @@
     },
     "run_out": {
       "forecast": {
-        "qty": "235.536529",
+        "qty": "162.666350",
         "unit": "L",
         "window_days": 28,
         "is_low_confidence": false,
@@ -94,9 +94,9 @@
         "used_flat_average": false,
         "history_days": 28
       },
-      "daily_rate_qty": "8.412019",
-      "days": "5.72",
-      "on": "2026-09-28",
+      "daily_rate_qty": "5.809513",
+      "days": "8.28",
+      "on": "2026-10-02",
       "is_out_of_stock": false,
       "note": null
     }

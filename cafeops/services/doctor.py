@@ -39,6 +39,7 @@ from cafeops.db.models import (
     PriceSource,
     PurchaseOrder,
     Sale,
+    StockMovement,
     Supplier,
 )
 from cafeops.services.read_stock import read_on_hand
@@ -125,6 +126,9 @@ def run_doctor(session: Session, *, as_of: datetime | None = None) -> DoctorRepo
     _guarded(r, "invariant 1", _check_invariant_1, session, r)
     _guarded(r, "invariant 8", _check_invariant_8, session, r)
     _guarded(r, "invariant 2", _check_auto_order_evidence, session, r)
+    _guarded(r, "invariant 12", _check_invariant_12, session, r)
+    _guarded(r, "seasons", _check_seasons, session, r)
+    _guarded(r, "takings", _check_takings, session, r)
     _guarded(r, "input trust", _check_trust_of_inputs, session, r)
     _guarded(r, "credentials", _check_credentials, r)
     return r
@@ -229,6 +233,150 @@ def _check_batch_coverage(session: Session, r: DoctorReport, at: datetime) -> No
     )
 
 
+def _check_takings(session: Session, r: DoctorReport) -> None:
+    """Is there any record of what the cafe actually took?
+
+    Without payment days, `Money & P&L` is the purchase side only -- draft spend,
+    supplier terms and waste -- and no contribution figure is possible. This is the
+    one item from the owner's architecture sketches that the written brief never
+    covered (ARCHITECTURE 8T).
+    """
+    from cafeops.db.models.payment import PaymentDay
+
+    days = int(session.scalar(select(func.count(func.distinct(PaymentDay.business_date)))) or 0)
+    if days == 0:
+        r.add(
+            Severity.INFO,
+            "takings",
+            "no payment days recorded, so nothing knows what the cafe took. Money & P&L "
+            "can show what is being SPENT and what was wasted, but not contribution",
+            "export a payment report from the back office and run `cafeops payments "
+            "import --commit`, or point CAFEOPS_PAYMENTS_CSV_DIR at it",
+        )
+        return
+    missing_net = int(
+        session.scalar(
+            select(func.count(PaymentDay.id)).where(
+                (PaymentDay.refunds_pence.is_(None))
+                | (PaymentDay.fees_pence.is_(None))
+                | (PaymentDay.discounts_pence.is_(None))
+            )
+        )
+        or 0
+    )
+    if missing_net:
+        r.add(
+            Severity.INFO,
+            "takings",
+            f"{days} day(s) of takings recorded, but {missing_net} row(s) omit a "
+            "deduction, so net is withheld rather than computed from the parts that "
+            "were reported (invariant 8)",
+            "an export that breaks out refunds, fees AND discounts makes net figures "
+            "possible; without one, gross is the only honest headline",
+        )
+        return
+    r.add(Severity.OK, "takings", f"{days} day(s) of takings recorded, fully deducted")
+
+
+def _check_seasons(session: Session, r: DoctorReport) -> None:
+    """Can the season rules actually reach the menu?
+
+    Spec 4.3 gives seasons two jobs: keep out-of-season history out of the ordinary
+    baseline, and cap an order at the days left in the window. Both are driven by
+    `SqlSeasonRepository.seasons_by_ingredient`, which walks **variant options**.
+
+    An ingredient reached only through a `manual_recipe_line` therefore has no
+    season, however clearly seasonal it is -- and until the detected templates are
+    confirmed most of the menu is manual. That is not a bug in the season code; it
+    is the import being unfinished, and it is invisible until a pumpkin sale lands
+    in a December forecast.
+    """
+    from cafeops.db.models.batch import Season
+    from cafeops.db.models.composition import VariantOption
+
+    seasons = int(session.scalar(select(func.count(Season.id))) or 0)
+    if seasons == 0:
+        return
+    wired = int(
+        session.scalar(
+            select(func.count(func.distinct(VariantOption.season_id))).where(
+                VariantOption.season_id.isnot(None)
+            )
+        )
+        or 0
+    )
+    if wired >= seasons:
+        r.add(
+            Severity.OK,
+            "seasons",
+            f"all {seasons} season(s) are attached to a variant option, so out-of-season "
+            "history is excluded and orders are capped at the window",
+        )
+        return
+    names = [
+        n
+        for (n,) in session.execute(
+            select(Season.name).where(
+                Season.id.notin_(
+                    select(VariantOption.season_id).where(VariantOption.season_id.isnot(None))
+                )
+            )
+        )
+    ]
+    r.add(
+        Severity.WARN,
+        "seasons",
+        f"{seasons - wired} of {seasons} season(s) drive nothing: {', '.join(names)}. "
+        "Seasonality is resolved through variant options, so an ingredient reached only "
+        "by a manual recipe is never treated as seasonal -- its sales stay in the "
+        "ordinary 28-day baseline and its orders are not capped at the window (spec 4.3). "
+        "The effect shows up a season LATER, as a forecast inflated by a line that is no "
+        "longer on the menu",
+        "confirm the detected templates -- `cafeops proposals` lists them, and the "
+        "Import review screen confirms one. Materialising a template is what turns its "
+        "flavour options into variant options the season rules can see",
+    )
+
+
+def _check_invariant_12(session: Session, r: DoctorReport) -> None:
+    """Has anything been deleted from an append-only ledger?
+
+    There is no audit column to compare against, but the primary key is a cheap
+    proxy: SQLite hands out increasing rowids and never reuses them within a table,
+    so on a ledger that has only ever been appended to, `max(id) == count(*)`. A gap
+    means rows existed and are gone.
+
+    One legitimate cause: `rebuild_batches(purge=True)` deletes derived `EXPIRED`
+    movements before replaying, and `cafeops seed --demo` calls it. That is why this
+    is a WARN naming the likely cause rather than a FAIL -- on a live database with
+    no reseed, a gap is history that somebody removed.
+    """
+    total = int(session.scalar(select(func.count(StockMovement.id))) or 0)
+    if total == 0:
+        return
+    highest = int(session.scalar(select(func.max(StockMovement.id))) or 0)
+    missing = highest - total
+    if missing <= 0:
+        r.add(
+            Severity.OK,
+            "invariant 12",
+            f"the stock ledger is intact: {total} movement(s), no gaps in the id "
+            "sequence, so nothing has been deleted",
+        )
+        return
+    r.add(
+        Severity.WARN,
+        "invariant 12",
+        f"{missing} id(s) are missing from the stock ledger ({total} rows, highest id "
+        f"{highest}). The ledger is append-only and corrections are ADJUSTMENT "
+        "movements, so rows should never disappear. A reseed explains it -- "
+        "`rebuild_batches(purge=True)` drops derived EXPIRED rows before replaying -- "
+        "and on a live database nothing else should",
+        "if this box has not been reseeded, find out what deleted them before "
+        "trusting any on-hand figure: every stock number is a sum over this table",
+    )
+
+
 def _check_invariant_1(session: Session, r: DoctorReport) -> None:
     bad = int(
         session.scalar(
@@ -328,7 +476,8 @@ def _check_trust_of_inputs(session: Session, r: DoctorReport) -> None:
             f"{len(placeholders)} supplier(s) have INVENTED lead times, delivery days, "
             f"cutoffs and minimums: {names}. Every quantity on their orders rests on "
             "those guesses",
-            "confirm with each supplier, then edit cafeops/seed/suppliers.py",
+            "`cafeops supplier list` shows which; `cafeops supplier confirm <name>` "
+            "records what they tell you and clears this warning",
         )
     estimated_life = int(
         session.scalar(
@@ -346,7 +495,8 @@ def _check_trust_of_inputs(session: Session, r: DoctorReport) -> None:
             f"{estimated_life} perishable(s) have an ESTIMATE shelf life, not a measured "
             "one. Shelf life CAPS order size, so a wrong one either wastes stock or "
             "causes a stockout",
-            "confirm the perishables that actually move, starting with the milks",
+            "`cafeops shelf-life list` ranks them by how much stock actually moves; "
+            "`cafeops shelf-life set <name> --days N` records one. Start with the milks",
         )
     estimated_price = int(
         session.scalar(
@@ -364,6 +514,13 @@ def _check_trust_of_inputs(session: Session, r: DoctorReport) -> None:
             f"{estimated_price} current price(s) are ESTIMATE. They stay flagged through "
             "every rollup and are excluded from margin aggregates, so nothing is being "
             "presented as more certain than it is",
+            # Stating the fact without naming the remedy is the mistake 8O records:
+            # a warning whose only fix is a code change is aimed at the wrong person.
+            # This one has a real operator path, and it is the highest-value data task
+            # available to the owner (8.8) -- the 46% COGS figure stays untrustworthy
+            # until the estimates are replaced by invoices.
+            "`cafeops set-price --ingredient <name> --pack-cost <pence> --commit` "
+            "replaces one with an invoiced price and cascades it to every menu cost",
         )
 
 

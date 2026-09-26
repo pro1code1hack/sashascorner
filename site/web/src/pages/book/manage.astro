@@ -1,0 +1,143 @@
+---
+import Base from '../../layouts/Base.astro';
+---
+
+<Base title="Your booking" description="View or cancel your Sasha's Corner booking." noindex>
+  <section class="mg wrap" data-manage aria-live="polite">
+    <p class="label">Your booking</p>
+    <h1 data-title>Finding your booking…</h1>
+    <dl class="mg__list" data-list hidden>
+      <div><dt>Reference</dt><dd class="num" data-f="reference"></dd></div>
+      <div><dt>Name</dt><dd data-f="name"></dd></div>
+      <div><dt>When</dt><dd data-f="when"></dd></div>
+      <div><dt>Guests</dt><dd class="num" data-f="party"></dd></div>
+      <div><dt>Status</dt><dd data-f="status"></dd></div>
+    </dl>
+    <p class="mg__msg" data-msg></p>
+    <div class="mg__actions" data-actions hidden>
+      <button class="btn btn--ghost" type="button" data-cancel>Cancel this booking</button>
+      <div class="mg__confirm" data-confirm hidden>
+        <p>Cancel the table? This can't be undone, but you can always book again.</p>
+        <button class="btn" type="button" data-yes>Yes, cancel it</button>
+        <button class="btn btn--ghost" type="button" data-no>Keep it</button>
+      </div>
+    </div>
+    <p class="mg__back"><a href="/book">Make a new booking</a> · <a href="/visit">Contact the café</a></p>
+  </section>
+</Base>
+
+<script>
+  import { clock } from '../../lib/format';
+  import type { Booking } from '../../lib/types';
+
+  const root = document.querySelector<HTMLElement>('[data-manage]')!;
+  const q = (s: string) => root.querySelector<HTMLElement>(s)!;
+  const token = new URLSearchParams(location.search).get('t');
+  const long = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
+
+  function render(b: Booking) {
+    q('[data-title]').textContent = b.status === 'cancelled' ? 'This booking is cancelled.' : `See you soon, ${b.name.split(' ')[0]}.`;
+    q('[data-f="reference"]').textContent = b.reference;
+    q('[data-f="name"]').textContent = b.name;
+    q('[data-f="when"]').textContent = `${long.format(new Date(`${b.date}T12:00:00Z`))}, ${clock(b.time)}`;
+    q('[data-f="party"]').textContent = String(b.party);
+    q('[data-f="status"]').textContent = b.status === 'cancelled' ? 'Cancelled' : 'Confirmed';
+    q('[data-list]').hidden = false;
+    q('[data-actions]').hidden = b.status === 'cancelled';
+  }
+
+  async function load() {
+    if (!token) {
+      q('[data-title]').textContent = 'No booking link found.';
+      q('[data-msg]').textContent = 'Open the manage link from your booking confirmation.';
+      return;
+    }
+    const r = await fetch(`/api/bookings/${encodeURIComponent(token)}`).catch(() => null);
+    if (!r || !r.ok) {
+      q('[data-title]').textContent = "We couldn't find that booking.";
+      q('[data-msg]').textContent = r ? 'The link may be incomplete. Contact the café if you need help.' : 'Could not reach the café — try again shortly.';
+      return;
+    }
+    render(await r.json());
+  }
+
+  q('[data-cancel]').addEventListener('click', () => {
+    q('[data-confirm]').hidden = false;
+    q('[data-cancel]').hidden = true;
+    q('[data-yes]').focus();
+  });
+  q('[data-no]').addEventListener('click', () => {
+    q('[data-confirm]').hidden = true;
+    q('[data-cancel]').hidden = false;
+  });
+  q('[data-yes]').addEventListener('click', async () => {
+    const r = await fetch(`/api/bookings/${encodeURIComponent(token!)}/cancel`, { method: 'POST' }).catch(() => null);
+    const body = r ? await r.json().catch(() => ({})) : {};
+    if (!r || !r.ok) {
+      q('[data-msg]').textContent = body.detail ?? 'Could not cancel — please contact the café.';
+      return;
+    }
+    render(body as Booking);
+    q('[data-msg]').textContent = 'Cancelled. Thanks for letting us know.';
+  });
+  load();
+</script>
+
+<style>
+  .mg {
+    padding-block: clamp(48px, 7vw, 96px) clamp(64px, 9vw, 120px);
+    max-width: 760px;
+  }
+  .mg .label {
+    color: var(--coffee);
+  }
+  .mg h1 {
+    font-size: var(--step-4);
+    margin-top: 14px;
+  }
+  .mg__list {
+    margin: 32px 0 0;
+    display: grid;
+    gap: 0;
+    border-top: 1px solid var(--rule-strong);
+  }
+  .mg__list div {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .mg__list dt {
+    color: var(--olive-700);
+  }
+  .mg__list dd {
+    margin: 0;
+    text-align: right;
+  }
+  .mg__msg {
+    margin-top: 18px;
+    color: var(--olive-900);
+  }
+  .mg__actions {
+    margin-top: 28px;
+  }
+  .mg__confirm {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+  }
+  .mg__confirm p {
+    flex-basis: 100%;
+  }
+  .mg__back {
+    margin-top: 40px;
+    font-size: var(--step--1);
+  }
+  .mg__back a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+</style>

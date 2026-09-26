@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<title>Prices — import and history</title>
+<script src="58b33667-738e-4ed5-ab21-afdbba697bf8"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>/* vietnamese */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("e54f851b-e102-4a2b-a824-23a634cf62c8") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("d0c01411-ae86-44ca-8bd1-769ce595247c") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("7eafe412-9845-417f-9a32-b81801408bc2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("e54f851b-e102-4a2b-a824-23a634cf62c8") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("d0c01411-ae86-44ca-8bd1-769ce595247c") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("7eafe412-9845-417f-9a32-b81801408bc2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("95d91268-2816-4692-8771-409aed30e4a4") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("edfc5bcc-aa05-4aad-a3a0-c91703c6f0be") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("8139d846-8c4a-48af-a2b3-15de1799cf8f") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("cdc49fd7-647a-40f0-9570-a19d5bc5d195") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("8075afd4-344a-44d3-95e5-da4a75e2906b") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("9983bdc8-85f1-422c-9914-5df62145b981") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("2bb34f03-93e1-4ffc-910b-a3719c1ed41b") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("0148df14-5d12-4b7c-b3d9-24cd6e2b01ec") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("033b11be-a6a0-4053-9165-32552ee8f4b0") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("1c5028f0-9aa2-4745-b736-074e1d171d80") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("ae6c2340-1e14-4c94-886b-aed588b24724") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("90a41cf3-1433-44c1-9282-e6fad9e2cfb1") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("e75f8609-56df-4e20-9816-805978ed9eaa") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("ae6c2340-1e14-4c94-886b-aed588b24724") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("90a41cf3-1433-44c1-9282-e6fad9e2cfb1") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("e75f8609-56df-4e20-9816-805978ed9eaa") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("ae6c2340-1e14-4c94-886b-aed588b24724") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("90a41cf3-1433-44c1-9282-e6fad9e2cfb1") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("e75f8609-56df-4e20-9816-805978ed9eaa") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("ae6c2340-1e14-4c94-886b-aed588b24724") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("90a41cf3-1433-44c1-9282-e6fad9e2cfb1") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("e75f8609-56df-4e20-9816-805978ed9eaa") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+</style>
+<style>
+body{margin:0;background:#e9e9ec;font-family:'Public Sans',system-ui,sans-serif;color:#18181b;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+h1,h2,h3,h4,p{margin:0}
+.fg{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.disp{font-family:'Fraunces',Georgia,serif}
+.railh{font:600 11px/1.4 'IBM Plex Mono',monospace;letter-spacing:.05em;color:#71717a;padding-bottom:9px;border-bottom:1px solid #d4d4d8}
+.ar{display:flex;gap:9px;padding:9px 0;border-bottom:1px solid #ececef}
+.num{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:9px;background:#4f35c9;color:#fff;font:500 10px/1 'IBM Plex Mono',monospace;flex:0 0 17px;margin-top:2px}
+.fld{font:500 11.5px/1.5 'IBM Plex Mono',monospace;color:#4f35c9;word-break:break-word}
+.txt{font:400 11.5px/1.6 'Public Sans',sans-serif;color:#52525b;margin-top:2px}
+.ex{font:400 10.5px/1.5 'IBM Plex Mono',monospace;color:#18181b;background:#f4f4f5;border:1px solid #e4e4e7;border-radius:4px;padding:1px 5px;display:inline-block;margin-top:4px}
+.src{font:400 10.5px/1.5 'IBM Plex Mono',monospace;color:#a1a1aa;margin-top:3px}
+.mk{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:8px;background:#ece8fb;color:#4f35c9;font:500 9.5px/1 'IBM Plex Mono',monospace;border:1px solid #cfc4f5;flex:0 0 16px}
+.nav{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:8px;font-size:12.5px;color:#52525b}
+.navon{background:#ece8fb;color:#2e1f7d;font-weight:600}
+.navgrp{font:500 10.5px/1 'Public Sans',sans-serif;letter-spacing:.02em;color:#a1a1aa;padding:0 10px;margin:18px 0 7px}
+.card{background:#fff;border:1px solid #e7e7ea;border-radius:12px}
+.pill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:3px 9px;font:600 11px/1.5 'Public Sans',sans-serif;white-space:nowrap}
+.p-ok{background:#e6f4ed;color:#0f6b46}
+.p-warn{background:#fdf1dc;color:#8a5300}
+.p-bad{background:#fdeceb;color:#b42318}
+.p-mut{background:#f4f4f5;color:#52525b}
+.dot{width:6px;height:6px;border-radius:4px;flex:0 0 6px}
+.th{font:500 11px/1.4 'Public Sans',sans-serif;color:#8b8b93}
+.est{text-decoration:underline dotted #a1a1aa;text-underline-offset:3px}
+.btn{display:inline-flex;align-items:center;gap:7px;border-radius:9px;padding:8px 14px;font:600 12.5px/1 'Public Sans',sans-serif;border:1px solid #e0e0e4;background:#fff;color:#27272a}
+.btn-pri{background:#4f35c9;border-color:#4f35c9;color:#fff}
+.tab{border-radius:8px;padding:6px 11px;font:500 12px/1.4 'Public Sans',sans-serif;color:#71717a;border:1px solid transparent}
+.tabon{background:#18181b;color:#fff;border-color:#18181b}
+.frame{background:#fff;border:1px solid #d9d9de;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(24,24,27,.06)}
+.blab{font:500 11px/1 'IBM Plex Mono',monospace;color:#8b8b93;margin-bottom:9px;letter-spacing:.03em}
+.gh{font:500 11px/1 'Public Sans',sans-serif;color:#8b8b93;padding:0 8px;display:flex;align-items:center;height:30px;border-right:1px solid #ececef;box-sizing:border-box;background:#fafafa}
+.gc{font:400 12px/1 'Public Sans',sans-serif;color:#27272a;padding:0 8px;display:flex;align-items:center;height:34px;border-right:1px solid #f2f2f4;border-bottom:1px solid #f2f2f4;box-sizing:border-box;overflow:hidden;white-space:nowrap}
+.gn{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums;justify-content:flex-end}
+.grow{display:flex}
+.gsel{background:#efecfb;box-shadow:inset 0 0 0 1px #b9abf0}
+</style>
+</helmet>
+<div style="width: 1248px; height: 1080px; box-sizing: border-box; padding: 36px; display: flex; flex-direction: row; gap: 44px; background: #e9e9ec">
+<div style="flex: 0 0 700px; display: flex; flex-direction: column; gap: 18px">
+<div class="blab">Getting the spreadsheet in, and what happens to a price afterwards</div>
+
+<div class="frame" style="padding: 0; overflow: hidden">
+  <div style="padding: 16px 18px; border-bottom: 1px solid #f0f0f2; display: flex; align-items: flex-start; justify-content: space-between; gap: 14px">
+    <div>
+      <div style="display: flex; align-items: center; gap: 8px"><h2 class="disp" style="font-size: 20px; font-weight: 600">Paste from your spreadsheet</h2><span class="mk">1</span></div>
+      <p style="font-size: 12px; color: #71717a; margin-top: 3px">34 rows read. Nothing is saved until you press the button at the bottom.</p>
+    </div>
+    <span style="font-size: 17px; color: #a1a1aa">×</span>
+  </div>
+
+  <div style="padding: 14px 18px; border-bottom: 1px solid #f0f0f2">
+    <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 9px"><span class="th">Which column is which</span><span class="mk">2</span></div>
+    <div style="border: 1px solid #e0e0e4; border-radius: 9px; overflow: hidden">
+      <div class="grow" style="background: #fafafa; border-bottom: 1px solid #e0e0e4">
+        <span class="gh" style="flex: 0 0 200px">Ingredient ▾</span>
+        <span class="gh" style="flex: 0 0 74px">Unit ▾</span>
+        <span class="gh" style="flex: 0 0 110px">Price ▾</span>
+        <span class="gh" style="flex: 0 0 132px">Supplier ▾</span>
+        <span class="gh" style="flex-grow: 1; border-right: 0; color: #b9b9c0">Notes — skip ▾</span>
+      </div>
+      <div class="grow"><span class="gc" style="flex: 0 0 200px">Whole milk</span><span class="gc" style="flex: 0 0 74px">L</span><span class="gc gn" style="flex: 0 0 110px">0.724</span><span class="gc" style="flex: 0 0 132px">Brakes</span><span class="gc" style="flex-grow: 1; border-right: 0; color: #b9b9c0">inv 88214</span></div>
+      <div class="grow"><span class="gc" style="flex: 0 0 200px">Oat milk (barista)</span><span class="gc" style="flex: 0 0 74px">L</span><span class="gc gn" style="flex: 0 0 110px">1.18</span><span class="gc" style="flex: 0 0 132px">Cups Direct</span><span class="gc" style="flex-grow: 1; border-right: 0; color: #b9b9c0"></span></div>
+      <div class="grow" style="background: #fffdf8"><span class="gc" style="flex: 0 0 200px">Whole milk</span><span class="gc" style="flex: 0 0 74px; color: #8a5300; font-weight: 600">2L</span><span class="gc gn" style="flex: 0 0 110px">1.39</span><span class="gc" style="flex: 0 0 132px">Brakes</span><span class="gc" style="flex-grow: 1; border-right: 0; color: #b9b9c0">case of 6</span></div>
+      <div class="grow"><span class="gc" style="flex: 0 0 200px">Napkin</span><span class="gc" style="flex: 0 0 74px">EACH</span><span class="gc gn" style="flex: 0 0 110px; color: #b9b9c0; font-style: italic">—</span><span class="gc" style="flex: 0 0 132px">Booker</span><span class="gc" style="flex-grow: 1; border-right: 0; color: #b9b9c0"></span></div>
+      <div class="grow"><span class="gc" style="flex-grow: 1; border-right: 0; border-bottom: 0; color: #a1a1aa; height: 30px">30 more rows</span></div>
+    </div>
+  </div>
+
+  <div style="padding: 14px 18px; border-bottom: 1px solid #f0f0f2">
+    <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 9px"><span class="th">Three things to look at first</span><span class="mk">3</span></div>
+
+    <div style="border: 1px solid #f6e0b8; background: #fffdf8; border-radius: 9px; padding: 11px 13px; margin-bottom: 8px">
+      <p style="font-size: 12.5px; font-weight: 600; color: #6b4200">Row 3 says the unit is “2L”</p>
+      <p style="font-size: 11.5px; line-height: 1.6; color: #6b4200; margin-top: 3px">Whole milk is measured in litres. That looks like a pack size, not a unit — a 2 L bottle at £1.39. Shall it go in as the pack instead?</p>
+      <div style="display: flex; gap: 7px; margin-top: 9px"><span class="btn" style="background: #fff; font-size: 11.5px; padding: 5px 11px">Yes, it is the pack</span><span class="btn" style="background: #fff; font-size: 11.5px; padding: 5px 11px; color: #71717a">Skip this row</span></div>
+    </div>
+
+    <div style="border: 1px solid #e0e0e4; background: #fafafa; border-radius: 9px; padding: 11px 13px; margin-bottom: 8px">
+      <p style="font-size: 12.5px; font-weight: 600">Row 4 has no price</p>
+      <p style="font-size: 11.5px; line-height: 1.6; color: #52525b; margin-top: 3px">It will be left empty, not set to zero. A napkin that costs nothing would quietly make every drink’s margin look better than it is.</p>
+    </div>
+
+    <div style="border: 1px solid #e0e0e4; background: #fafafa; border-radius: 9px; padding: 11px 13px">
+      <p style="font-size: 12.5px; font-weight: 600">Row 19 matches two ingredients</p>
+      <p style="font-size: 11.5px; line-height: 1.6; color: #52525b; margin-top: 3px">“Rose” could be the syrup or the dried petals. Pick one — the importer will not guess.</p>
+    </div>
+  </div>
+
+  <div style="padding: 13px 18px; display: flex; align-items: center; justify-content: space-between; gap: 14px; background: #fafafa">
+    <div style="display: flex; align-items: center; gap: 8px">
+      <span class="mk">4</span>
+      <span style="font-size: 12px; color: #52525b"><span class="fg" style="font-weight: 600">31</span> prices updated · <span class="fg" style="font-weight: 600">3</span> new ingredients · <span class="fg" style="font-weight: 600">0</span> overwritten</span>
+    </div>
+    <div style="display: flex; gap: 8px"><span class="btn" style="font-size: 12px">Back</span><a class="btn btn-pri" href="Ingredients.dc.html" style="font-size: 12px">Bring these in</a></div>
+  </div>
+</div>
+
+<div class="frame" style="padding: 16px 18px">
+  <div style="display: flex; align-items: center; gap: 8px"><h2 class="disp" style="font-size: 19px; font-weight: 600">What whole milk has cost</h2><span class="mk">5</span></div>
+  <p style="font-size: 12px; color: #71717a; margin-top: 3px">Nothing is ever overwritten. Each price owns a stretch of time.</p>
+
+  <div style="margin-top: 13px">
+    <div style="display: flex; padding-bottom: 7px; border-bottom: 1px solid #e0e0e4">
+      <span class="th" style="flex: 0 0 168px">From</span>
+      <span class="th" style="flex: 0 0 104px; text-align: right">Price a litre</span>
+      <span class="th" style="flex: 0 0 104px; padding-left: 18px">Where from</span>
+      <span class="th" style="flex: 0 0 112px">Supplier</span>
+      <span class="th" style="flex-grow: 1; text-align: right">Drinks costed</span>
+    </div>
+    <div style="display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #f4f4f5; background: #f6f5fd">
+      <span class="fg" style="flex: 0 0 168px; font-size: 12px; font-weight: 600">25 Sept → now</span>
+      <span class="fg" style="flex: 0 0 104px; text-align: right; font-size: 13px; font-weight: 600">72.400</span>
+      <span style="flex: 0 0 104px; padding-left: 18px"><span class="pill p-ok" style="font-size: 10px; padding: 1px 6px">invoice</span></span>
+      <span style="flex: 0 0 112px; font-size: 12px">Brakes</span>
+      <span class="fg" style="flex-grow: 1; text-align: right; font-size: 12px; color: #71717a">0 so far</span>
+    </div>
+    <div style="display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #f4f4f5">
+      <span class="fg" style="flex: 0 0 168px; font-size: 12px">12 Sept → 24 Sept</span>
+      <span class="fg" style="flex: 0 0 104px; text-align: right; font-size: 13px">69.706</span>
+      <span style="flex: 0 0 104px; padding-left: 18px"><span class="pill p-ok" style="font-size: 10px; padding: 1px 6px">invoice</span></span>
+      <span style="flex: 0 0 112px; font-size: 12px">Brakes</span>
+      <span class="fg" style="flex-grow: 1; text-align: right; font-size: 12px; color: #71717a">1,331 drinks</span>
+    </div>
+    <div style="display: flex; align-items: center; padding: 10px 0">
+      <span class="fg" style="flex: 0 0 168px; font-size: 12px; color: #71717a">1 Nov 2025 → 11 Sept</span>
+      <span class="fg est" style="flex: 0 0 104px; text-align: right; font-size: 13px; color: #71717a">66.200</span>
+      <span style="flex: 0 0 104px; padding-left: 18px"><span class="pill p-warn" style="font-size: 10px; padding: 1px 6px">a guess</span></span>
+      <span style="flex: 0 0 112px; font-size: 12px; color: #b9b9c0; font-style: italic">not set</span>
+      <span class="fg" style="flex-grow: 1; text-align: right; font-size: 12px; color: #71717a">9,204 drinks</span>
+    </div>
+  </div>
+
+  <div style="margin-top: 13px; display: flex; gap: 9px; align-items: flex-start; background: #f6f5fd; border: 1px solid #e4dffb; border-radius: 9px; padding: 11px 13px">
+    <span class="mk" style="margin-top: 1px">6</span>
+    <p style="font-size: 12px; line-height: 1.65; color: #3f3f46">A latte you sold on 15 September is still costed at <span class="fg">69.706p</span> of milk, not at today’s price. That is the whole reason a price is dated instead of typed over — and it is the one thing a spreadsheet cannot give you.</p>
+  </div>
+</div>
+
+</div>
+
+<div style="flex: 0 0 432px; display: flex; flex-direction: column">
+<div class="railh">What each thing is · api field · where it comes from · real example</div>
+<div style="margin-top: 2px">
+<div class="ar"><span class="num">1</span><div style="min-width: 0"><div class="fld">POST /api/ingredients/bulk (to build) — dry run first</div><div class="txt">The migration path off the real spreadsheet. Paste, look, then commit. The same three-pass shape the legacy importer already uses: read, stage, let a person confirm.</div><div class="ex">34 rows pasted · writes nothing yet</div><div class="src">seed/ · cafeops import-legacy</div></div></div>
+<div class="ar"><span class="num">2</span><div style="min-width: 0"><div class="fld">column mapping, guessed then confirmed</div><div class="txt">Headers are matched by name and the guess is shown as a dropdown, never assumed. A column you do not want becomes "skip".</div><div class="ex">"Price £" → ingredient_price.unit_cost_pence</div></div></div>
+<div class="ar"><span class="num">3</span><div style="min-width: 0"><div class="fld">validation, per row</div><div class="txt">Unit is an enum (L, KG, ML, G, EACH), so "2L" cannot be stored — it is caught and offered as a pack size instead. Money is parsed to integer pence; a float touching money is a bug.</div><div class="ex">"2L" · £1.39 → supplier_product(pack_size 2, pack_price 139)</div><div class="src">invariant 11</div></div></div>
+<div class="ar"><span class="num">4</span><div style="min-width: 0"><div class="fld">counts before the write</div><div class="txt">31 updated, 3 created, <b>0 overwritten</b> — because nothing is ever overwritten. Stating the zero is the point.</div><div class="src">ingredient_price</div></div></div>
+<div class="ar"><span class="num">5</span><div style="min-width: 0"><div class="fld">GET /api/ingredients/{id}/prices → effective-dated rows</div><div class="txt">Every price the ingredient has ever had, each owning a stretch of time. Editing closes the old row and opens a new one; history is never rewritten (invariant 3).</div><div class="ex">3 rows · current from 2026-09-25</div><div class="src">ingredient_price.effective_from</div></div></div>
+<div class="ar"><span class="num">6</span><div style="min-width: 0"><div class="fld">menu_item_cost, costed at the sale date</div><div class="txt">A sale is costed with the price that was in force on the day it happened. This is the difference between a ledger and a spreadsheet, and it is why the old rows have to stay.</div><div class="ex">sale 15 Sept → 69.705882p</div><div class="src">resolve_recipe(…, at=sale.sold_at)</div></div></div>
+<div class="ar"><span class="num">7</span><div style="min-width: 0"><div class="fld">source: INVOICE | ESTIMATE | SUPPLIER_FEED</div><div class="txt">Where a number came from travels with it. An estimate stays flagged through every rollup, aggregate and export (invariant 8) — marked by the dotted rule, never by colour.</div><div class="ex">42 of 113 are ESTIMATE</div><div class="src">ingredient_price.source</div></div></div>
+<div class="ar"><span class="num">8</span><div style="min-width: 0"><div class="fld">supplier_id on the price row</div><div class="txt">The same ingredient can have a price per supplier. That is what lets the ordering run compare Booker against Monolith and say what switching would save.</div><div class="ex">Booker 1900p/KG vs Monolith 2100p/KG</div><div class="src">domain/sourcing.py</div></div></div>
+</div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script="" data-props="{&quot;$preview&quot;:{&quot;width&quot;:1248,&quot;height&quot;:1080}}">
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+
+
+</body></html>

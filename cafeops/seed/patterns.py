@@ -23,6 +23,7 @@ Pure: takes staged rows in, returns proposals out. No DB writes, no I/O.
 
 from __future__ import annotations
 
+import hashlib
 from collections import defaultdict
 from dataclasses import dataclass, field, replace
 from decimal import Decimal
@@ -112,6 +113,35 @@ class TemplateProposal:
     def is_singleton(self) -> bool:
         """One base item -- not a pattern. Becomes a manual_recipe item."""
         return len(self.base_item_names) == 1
+
+    @property
+    def proposal_id(self) -> str:
+        """A stable, unambiguous handle for this proposal.
+
+        **Names are not unique.** Detection derives a name from the defining
+        ingredient, so two structurally different groups can land on the same
+        one -- `Flavoured Matcha (Matcha powder)` is currently two proposals, 18
+        items and 5. Addressing a proposal by name therefore cannot say which is
+        meant, and confirming the wrong one attaches the wrong recipe to real
+        drinks.
+
+        The signature is the structural fingerprint and IS distinct (27 of 27
+        today), so it is what identifies a proposal. Hashed rather than used raw
+        because it contains `|`, `:` and `*` and has to survive a URL path.
+        """
+        return hashlib.sha256(self.signature.encode("utf-8")).hexdigest()[:12]
+
+    @property
+    def is_hollow(self) -> bool:
+        """No components and no axes -- there is no recipe here to write.
+
+        Confirming one produces an empty template AND takes its menu items off
+        the manual recipes they currently resolve through, so the items end up
+        costing and depleting nothing. Four proposals are in this state (Cake,
+        Juice, Panini and Water ranges): the legacy rows for them carry no
+        ingredient lines at all.
+        """
+        return not self.components and not self.axes
 
 
 # --------------------------------------------------------------------------

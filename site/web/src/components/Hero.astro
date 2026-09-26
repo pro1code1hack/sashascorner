@@ -1,0 +1,405 @@
+---
+import { info, menu, signatures } from '../lib/data';
+import { gbp } from '../lib/format';
+import OpenNow from './OpenNow.astro';
+
+// Rows for the chalkboard inside the model: signatures first, then coffee.
+const coffee = menu.categories.find((c) => c.slug === 'hot-drinks')?.items ?? [];
+const seen = new Set<string>();
+const rows: Array<[string, string]> = [];
+for (const it of [...signatures, ...coffee]) {
+  if (seen.has(it.id) || rows.length >= 12) continue;
+  seen.add(it.id);
+  const p = it.sizes[0];
+  if (p) rows.push([it.name, gbp(p.price_pence)]);
+}
+const instagram = info?.socials.instagram ?? '';
+const spots = [
+  // `flip`: spots whose anchor sits right of centre, or swings there when the room
+  // turns. On phones their label stands above the dot instead of to its right, so it
+  // never runs off the edge (measured at 360-414 in all four turn positions).
+  { key: 'menu', href: '/menu', label: 'The menu', hint: 'Counter', flip: true },
+  { key: 'book', href: '/book', label: 'Book a table', hint: 'Table' },
+  { key: 'visit', href: '/visit', label: 'Find us', hint: 'Front door' },
+  ...(instagram ? [{ key: 'instagram', href: instagram, label: 'Instagram', hint: 'Photo wall', external: true, flip: true }] : []),
+];
+---
+
+<section class="hero" aria-labelledby="hero-title">
+  <div class="hero__grid wrap">
+    <div class="hero__copy">
+      <p class="label hero__kicker">Independent café · Dundee</p>
+      <h1 id="hero-title" class="hero__title">
+        A warm corner <span class="hero__soft">for coffee</span> in Dundee.
+      </h1>
+      <p class="hero__lede">
+        More than a hundred drinks on the board — matcha whisked in front of you, blue matcha, Raff coffee,
+        bubble tea — plus waffles, soup and homemade cake. On Commercial Street, 9 till 7.
+      </p>
+      <div class="hero__cta">
+        <a class="btn btn--caramel" href="/book">Book a table <span class="arrow" aria-hidden="true">→</span></a>
+        <a class="btn btn--ghost" href="/menu">See the menu</a>
+      </div>
+      <OpenNow tone="dark" />
+    </div>
+
+    <div
+      class="diorama"
+      data-diorama
+      data-rows={JSON.stringify(rows)}
+      data-spots={JSON.stringify(spots.map(({ key, href, external }) => ({ key, href, external })))}
+    >
+      <img class="diorama__poster" src="/img/diorama-poster.webp" alt="" width="1200" height="960" fetchpriority="high" onerror="this.remove()" />
+      <canvas aria-hidden="true"></canvas>
+      <ul class="diorama__pins" aria-label="Explore the café">
+        {
+          spots.map((s) => (
+            <li>
+              <a
+                class:list={['pin', { 'pin--flip': 'flip' in s && s.flip }]}
+                data-spot={s.key}
+                href={s.href}
+                {...(s.external ? { target: '_blank', rel: 'noopener' } : {})}
+              >
+                <span class="pin__dot" aria-hidden="true" />
+                <span class="pin__label">{s.label}</span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+      <div class="diorama__turn" role="group" aria-label="Turn the café">
+        <button type="button" data-turn="-1" aria-label="Turn left">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M9 7H4V2" /><path d="M4.5 7A8.5 8.5 0 1 1 3.5 13" /></svg>
+        </button>
+        <span class="diorama__hint" aria-hidden="true">Drag to turn · tap the counter, a table or the board</span>
+        <button type="button" data-turn="1" aria-label="Turn right">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M15 7h5V2" /><path d="M19.5 7A8.5 8.5 0 1 0 20.5 13" /></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import type { Spot } from '../scripts/diorama/scene';
+
+  const host = document.querySelector<HTMLElement>('[data-diorama]');
+  const gl = (() => {
+    try {
+      const c = document.createElement('canvas');
+      return !!(c.getContext('webgl2') || c.getContext('webgl'));
+    } catch {
+      return false;
+    }
+  })();
+
+  // Keep the 3D model off constrained devices: data-saver, very low memory or
+  // cores. They keep the poster image, which is the same room.
+  const nav = navigator as Navigator & { connection?: { saveData?: boolean }; deviceMemory?: number };
+  const constrained =
+    !!nav.connection?.saveData || (nav.deviceMemory ?? 8) <= 2 || (navigator.hardwareConcurrency ?? 8) <= 2;
+
+  if (host && gl && !constrained) {
+    const start = async () => {
+      const { mountDiorama } = await import('../scripts/diorama/scene');
+      await document.fonts.ready; // the chalkboard is drawn with the web fonts
+      mountDiorama(host, {
+        menuRows: JSON.parse(host.dataset.rows ?? '[]'),
+        spots: JSON.parse(host.dataset.spots ?? '[]') as Spot[],
+        reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
+      });
+      host.classList.add('is-live');
+    };
+    // Desktop: let the text paint, then bring the model in on idle. Touch and
+    // narrow screens: the model sits below the headline, so build it only when it
+    // scrolls into view -- a phone that never scrolls never pays for three.js.
+    const desktop = matchMedia('(pointer: fine) and (min-width: 901px)').matches;
+    if (desktop) {
+      if ('requestIdleCallback' in window) requestIdleCallback(start, { timeout: 600 });
+      else setTimeout(start, 200);
+    } else {
+      const io = new IntersectionObserver(
+        (entries) => {
+          if (entries.some((e) => e.isIntersecting)) {
+            io.disconnect();
+            start();
+          }
+        },
+        { threshold: 0.35 },
+      );
+      io.observe(host);
+    }
+  } else {
+    host?.classList.add('is-static');
+  }
+</script>
+
+<style>
+  .hero {
+    background:
+      radial-gradient(70% 60% at 72% 42%, color-mix(in oklab, var(--olive-700) 70%, transparent), transparent 70%),
+      var(--olive-900);
+    color: var(--on-dark);
+    overflow: hidden;
+  }
+  .hero__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 4.3fr) minmax(0, 7.7fr);
+    align-items: center;
+    gap: clamp(8px, 2vw, 32px);
+    min-height: min(88svh, 900px);
+    padding-block: clamp(24px, 4vw, 48px) clamp(32px, 5vw, 64px);
+  }
+  .hero__kicker {
+    color: var(--sage-on-dark);
+    margin-bottom: 22px;
+  }
+  .hero__title {
+    font-size: var(--step-5);
+    line-height: 0.9;
+    letter-spacing: -0.02em;
+  }
+  .hero__soft {
+    font-family: var(--font-light);
+    font-weight: 200;
+    font-stretch: 100%;
+    letter-spacing: -0.035em;
+    color: var(--caramel);
+  }
+  .hero__lede {
+    margin-top: 26px;
+    max-width: 34ch;
+    font-size: var(--step-1);
+    font-weight: 300;
+    line-height: 1.5;
+    color: var(--on-dark-soft);
+  }
+  .hero__cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-block: 34px 26px;
+  }
+
+  .diorama {
+    position: relative;
+    aspect-ratio: 5 / 4;
+    width: calc(100% + var(--gutter) + max(0px, (100vw - var(--maxw)) / 2));
+    margin-right: calc(-1 * (var(--gutter) + max(0px, (100vw - var(--maxw)) / 2)));
+  }
+  .diorama canvas,
+  .diorama__poster {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  .diorama canvas {
+    opacity: 0;
+    transition: opacity 0.6s;
+    touch-action: pan-y;
+  }
+  .diorama.is-live canvas {
+    opacity: 1;
+  }
+  .diorama.is-live .diorama__poster {
+    opacity: 0;
+    transition: opacity 0.6s 0.3s;
+  }
+
+  .diorama__pins {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  /* Before the model is live the pins are a plain link list under the poster. */
+  .diorama:not(.is-live) .diorama__pins {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+  }
+  .diorama.is-live .pin {
+    position: absolute;
+    left: 0;
+    top: 0;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s;
+  }
+  .diorama.is-live.is-ready .pin {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .pin {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    color: var(--ink);
+    will-change: transform;
+  }
+  /* The pill is ~30px tall; this invisible pad makes the whole pin a 44px target. */
+  .pin::before {
+    content: '';
+    position: absolute;
+    inset: -7px -4px;
+  }
+  .diorama.is-live .pin {
+    margin: -9px 0 0 -9px; /* centre the dot on the anchor */
+  }
+  .pin__dot {
+    position: relative;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--caramel);
+    box-shadow: 0 0 0 4px color-mix(in oklab, var(--caramel) 35%, transparent);
+    flex: none;
+  }
+  .pin__dot::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 1px solid var(--caramel);
+    animation: ping 2.4s var(--ease-out) infinite;
+  }
+  @keyframes ping {
+    from {
+      transform: scale(0.8);
+      opacity: 0.9;
+    }
+    to {
+      transform: scale(2.1);
+      opacity: 0;
+    }
+  }
+  .pin__label {
+    padding: 7px 12px;
+    border-radius: 999px;
+    background: var(--paper);
+    font-size: var(--step--1);
+    font-weight: 500;
+    white-space: nowrap;
+    box-shadow: 0 6px 20px rgb(13 13 11 / 0.25);
+    transform: translateX(-4px);
+    opacity: 0.92;
+    transition:
+      transform 0.35s var(--ease-out),
+      opacity 0.35s,
+      background-color 0.25s;
+  }
+  .pin:hover .pin__label,
+  .pin:focus-visible .pin__label,
+  .pin.is-hot .pin__label {
+    transform: translateX(0);
+    opacity: 1;
+    background: var(--caramel);
+  }
+  .diorama__turn {
+    position: absolute;
+    left: 50%;
+    bottom: 6px;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.6s 0.4s;
+  }
+  .diorama.is-ready .diorama__turn {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .diorama__turn button {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid color-mix(in oklab, var(--paper) 35%, transparent);
+    background: color-mix(in oklab, var(--olive-900) 70%, transparent);
+    color: var(--paper);
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+  }
+  .diorama__turn button:hover {
+    background: var(--olive-700);
+    border-color: var(--paper);
+  }
+  .diorama__hint {
+    font-size: var(--step--1);
+    color: var(--on-dark-soft);
+    white-space: nowrap;
+    transition: opacity 0.4s;
+  }
+  .diorama.is-turned .diorama__hint {
+    opacity: 0.5;
+  }
+  .diorama.is-live .pin.is-away {
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+
+  @media (max-width: 900px) {
+    .hero__grid {
+      grid-template-columns: 1fr;
+      min-height: 0;
+    }
+    .diorama {
+      margin-inline: calc(-1 * var(--gutter));
+      width: calc(100% + 2 * var(--gutter));
+      aspect-ratio: 1 / 0.95;
+    }
+    .diorama__hint {
+      display: none;
+    }
+  }
+  @media (max-width: 520px) {
+    /* a little more floor under the model, so the turn buttons clear the pins */
+    .diorama {
+      aspect-ratio: 1 / 1.06;
+    }
+    .pin__label {
+      padding: 6px 10px;
+      font-size: 0.875rem;
+    }
+    /* Flipped pins: label centred above the dot. The dot stays on the anchor; only
+       the pill moves, so the script's translate3d on the pin is untouched. */
+    .diorama.is-live .pin.pin--flip .pin__label {
+      position: absolute;
+      left: 9px;
+      bottom: calc(100% + 6px);
+      transform: translate(-50%, 3px);
+    }
+    .diorama.is-live .pin.pin--flip:hover .pin__label,
+    .diorama.is-live .pin.pin--flip:focus-visible .pin__label,
+    .diorama.is-live .pin.pin--flip.is-hot .pin__label {
+      transform: translate(-50%, 0);
+    }
+    .diorama.is-live .pin.pin--flip::before {
+      inset: -13px;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pin__dot::after {
+      animation: none;
+      opacity: 0;
+    }
+    .pin__label,
+    .diorama canvas,
+    .diorama__poster,
+    .diorama__turn {
+      transition: none;
+    }
+  }
+</style>

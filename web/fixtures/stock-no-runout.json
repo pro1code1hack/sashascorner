@@ -1,15 +1,15 @@
 {
-  "as_of": "2026-09-23T18:34:24.406505Z",
+  "as_of": "2026-09-24T20:02:34.889768Z",
   "basis": "THEORETICAL",
   "summary": {
     "ingredients": 11,
     "unanchored": 0,
     "negative": 0,
-    "short_dated": 0,
+    "short_dated": 1,
     "unbatched": 0,
-    "auto_order_enabled": 6,
+    "auto_order_enabled": 5,
     "forced_manual": 1,
-    "expiring_value_pence": "0",
+    "expiring_value_pence": "3354.456159",
     "notes": []
   },
   "rows": [
@@ -29,15 +29,15 @@
         "note": null
       },
       "on_hand": {
-        "qty": "47.162",
+        "qty": "12",
         "unit": "EACH",
-        "as_of": "2026-09-23T18:34:24.406505Z",
+        "as_of": "2026-09-24T20:02:34.889768Z",
         "is_theoretical": true,
         "has_count_basis": true,
-        "basis_count_qty": "105.742",
-        "basis_counted_at": "2026-09-19T20:00:00Z",
-        "movement_sum": "-58.58",
-        "movement_count": 58,
+        "basis_count_qty": "12",
+        "basis_counted_at": "2026-09-24T15:53:55.324166Z",
+        "movement_sum": "0",
+        "movement_count": 0,
         "basis_label": "counted + ledger",
         "is_negative": false
       },
@@ -53,7 +53,7 @@
       "batches": [
         {
           "batch_id": 113,
-          "qty_remaining": "47.162",
+          "qty_remaining": "12",
           "unit": "EACH",
           "received_at": "2026-08-11T06:30:00Z",
           "expires_at": null,
@@ -61,41 +61,41 @@
           "effective_expiry": null,
           "days_left": null,
           "unit_cost_pence": "2.574",
-          "value_pence": "121.394988"
+          "value_pence": "30.888"
         }
       ],
-      "batch_qty": "47.162",
-      "batch_coverage_gap": "0.000",
+      "batch_qty": "12",
+      "batch_coverage_gap": "0",
       "soonest_expiry_days": null,
       "is_short_dated": false,
       "drift": {
         "has_observation": true,
-        "observed_at": "2026-09-19T20:00:00Z",
-        "theoretical_qty": "109.012",
-        "counted_qty": "105.742",
-        "drift_pct": 3.092,
+        "observed_at": "2026-09-24T15:53:55.324166Z",
+        "theoretical_qty": "12",
+        "counted_qty": "12",
+        "drift_pct": 0.0,
         "verdict": "ELIGIBLE",
-        "mean_abs_drift_pct": 3.093,
+        "mean_abs_drift_pct": 50.898,
         "observation_count": 6,
-        "auto_order_enabled": true,
-        "auto_order_reason": "8 consecutive counts under 10.0% (+3.09%, +3.09%): auto-ordering earned",
-        "clean_streak": 8,
+        "auto_order_enabled": false,
+        "auto_order_reason": "1 of 2 consecutive counts under 10.0% (latest +0.00%): stays manual until the next clean count",
+        "clean_streak": 1,
         "required_streak": 2,
         "gate_action": "HOLD",
         "trust_status": "trusted",
         "attribution": {
-          "cause": "MEASUREMENT",
-          "headline": "RECIPE OR WASTE FACTOR",
-          "action": "only 0% of the loss is expiry, so the stock left unrecorded. FIX THE RECIPE or tune waste_factor: order size is not the problem, and cutting it would cause a stockout while the real gap stayed.",
-          "gap_qty": "3.270",
+          "cause": "NEGLIGIBLE",
+          "headline": "NOTHING TO FIX",
+          "action": "no material loss in this window: the count agrees with the ledger and nothing expired. Do not tune anything.",
+          "gap_qty": "0",
           "expired_qty": "0",
-          "measurement_qty": "3.270",
+          "measurement_qty": "0",
           "expiry_qty": "0",
-          "expiry_share": 0.0,
-          "unexplained_loss_qty": "3.270",
+          "expiry_share": null,
+          "unexplained_loss_qty": "0",
           "surplus_qty": "0",
           "surplus_note": null,
-          "loss_pct_of_consumption": 2.116
+          "loss_pct_of_consumption": null
         }
       },
       "run_out": {
@@ -125,7 +125,7 @@
       "on_hand": {
         "qty": "106.534",
         "unit": "EACH",
-        "as_of": "2026-09-23T18:34:24.406505Z",
+        "as_of": "2026-09-24T20:02:34.889768Z",
         "is_theoretical": true,
         "has_count_basis": true,
         "basis_count_qty": "165.114",
@@ -219,7 +219,7 @@
       "on_hand": {
         "qty": "412.724",
         "unit": "EACH",
-        "as_of": "2026-09-23T18:34:24.406505Z",
+        "as_of": "2026-09-24T20:02:34.889768Z",
         "is_theoretical": true,
         "has_count_basis": true,
         "basis_count_qty": "454.134",
@@ -313,7 +313,7 @@
       "on_hand": {
         "qty": "118.34",
         "unit": "EACH",
-        "as_of": "2026-09-23T18:34:24.406505Z",
+        "as_of": "2026-09-24T20:02:34.889768Z",
         "is_theoretical": true,
         "has_count_basis": true,
         "basis_count_qty": "159.75",
@@ -407,7 +407,7 @@
       "on_hand": {
         "qty": "413.645",
         "unit": "EACH",
-        "as_of": "2026-09-23T18:34:24.406505Z",
+        "as_of": "2026-09-24T20:02:34.889768Z",
         "is_theoretical": true,
         "has_count_basis": true,
         "basis_count_qty": "445.965",
@@ -501,7 +501,7 @@
       "on_hand": {
         "qty": "26.755",
         "unit": "EACH",
-        "as_of": "2026-09-23T18:34:24.406505Z",
+        "as_of": "2026-09-24T20:02:34.889768Z",
         "is_theoretical": true,
         "has_count_basis": true,
         "basis_count_qty": "59.075",
@@ -595,7 +595,7 @@
       "on_hand": {
         "qty": "5",
         "unit": "KG",
-        "as_of": "2026-09-23T18:34:24.406505Z",
+        "as_of": "2026-09-24T20:02:34.889768Z",
         "is_theoretical": true,
         "has_count_basis": true,
         "basis_count_qty": "5",
@@ -623,14 +623,14 @@
           "expires_at": "2028-01-16T06:00:00Z",
           "opened_at": null,
           "effective_expiry": "2028-01-16T06:00:00Z",
-          "days_left": 479,
+          "days_left": 478,
           "unit_cost_pence": "700",
           "value_pence": "3500"
         }
       ],
       "batch_qty": "5",
       "batch_coverage_gap": "0",
-      "soonest_expiry_days": 479,
+      "soonest_expiry_days": 478,
       "is_short_dated": false,
       "drift": {
         "has_observation": false,
@@ -676,7 +676,7 @@
       "on_hand": {
         "qty": "2.28665",
         "unit": "KG",
-        "as_of": "2026-09-23T18:34:24.406505Z",
+        "as_of": "2026-09-24T20:02:34.889768Z",
         "is_theoretical": true,
         "has_count_basis": true,
         "basis_count_qty": "5.15",
@@ -704,14 +704,14 @@
           "expires_at": "2027-09-13T06:30:00Z",
           "opened_at": null,
           "effective_expiry": "2027-09-13T06:30:00Z",
-          "days_left": 354,
+          "days_left": 353,
           "unit_cost_pence": "1900",
           "value_pence": "4344.63500"
         }
       ],
       "batch_qty": "2.28665",
       "batch_coverage_gap": "0.00000",
-      "soonest_expiry_days": 354,
+      "soonest_expiry_days": 353,
       "is_short_dated": false,
       "drift": {
         "has_observation": true,
@@ -770,7 +770,7 @@
       "on_hand": {
         "qty": "5",
         "unit": "KG",
-        "as_of": "2026-09-23T18:34:24.406505Z",
+        "as_of": "2026-09-24T20:02:34.889768Z",
         "is_theoretical": true,
         "has_count_basis": true,
         "basis_count_qty": "5",
@@ -798,14 +798,14 @@
           "expires_at": "2028-01-16T06:00:00Z",
           "opened_at": null,
           "effective_expiry": "2028-01-16T06:00:00Z",
-          "days_left": 479,
+          "days_left": 478,
           "unit_cost_pence": "20000",
           "value_pence": "100000"
         }
       ],
       "batch_qty": "5",
       "batch_coverage_gap": "0",
-      "soonest_expiry_days": 479,
+      "soonest_expiry_days": 478,
       "is_short_dated": false,
       "drift": {
         "has_observation": false,
@@ -851,7 +851,7 @@
       "on_hand": {
         "qty": "295.845",
         "unit": "EACH",
-        "as_of": "2026-09-23T18:34:24.406505Z",
+        "as_of": "2026-09-24T20:02:34.889768Z",
         "is_theoretical": true,
         "has_count_basis": true,
         "basis_count_qty": "428.155",
@@ -945,7 +945,7 @@
       "on_hand": {
         "qty": "48.123",
         "unit": "L",
-        "as_of": "2026-09-23T18:34:24.406505Z",
+        "as_of": "2026-09-24T20:02:34.889768Z",
         "is_theoretical": true,
         "has_count_basis": true,
         "basis_count_qty": "12.037",
@@ -973,15 +973,15 @@
           "expires_at": "2026-09-28T06:30:00Z",
           "opened_at": null,
           "effective_expiry": "2026-09-28T06:30:00Z",
-          "days_left": 4,
+          "days_left": 3,
           "unit_cost_pence": "69.705882",
           "value_pence": "3354.456159"
         }
       ],
       "batch_qty": "48.123",
       "batch_coverage_gap": "0.000",
-      "soonest_expiry_days": 4,
-      "is_short_dated": false,
+      "soonest_expiry_days": 3,
+      "is_short_dated": true,
       "drift": {
         "has_observation": true,
         "observed_at": "2026-09-19T20:00:00Z",

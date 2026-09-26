@@ -35,7 +35,13 @@ from typing import Annotated
 
 from fastapi import Depends, Header, HTTPException, status
 
-__all__ = ["ApiAuth", "api_password", "require_password"]
+__all__ = [
+    "ApiAuth",
+    "OptionalApiAuth",
+    "api_password",
+    "presented_password_is_valid",
+    "require_password",
+]
 
 _UNSET_MESSAGE = (
     "CAFEOPS_API_PASSWORD is not set, so this API is refusing to serve rather than "
@@ -95,3 +101,35 @@ def require_password(
 
 #: Attach to a router to protect every route on it.
 ApiAuth = Depends(require_password)
+
+
+def presented_password_is_valid(
+    x_api_key: Annotated[str | None, Header(alias="X-API-Key")] = None,
+    authorization: Annotated[str | None, Header()] = None,
+) -> bool:
+    """Did this caller present the right password? Never rejects.
+
+    For the handful of endpoints that must answer WITHOUT a key but should say less
+    to a stranger -- `/api/health` is the case: it has to work before anyone has the
+    password, or "is it up?" and "is my password right?" collapse into one question,
+    but a liveness probe does not need the size of the inventory.
+
+    Same constant-time comparison as `require_password`, and the same "compare every
+    presented form, then decide" shape, so which header was right is not leaked
+    through timing.
+    """
+    configured = api_password()
+    if configured is None:
+        return False
+    presented: list[str] = []
+    if x_api_key:
+        presented.append(x_api_key)
+    if authorization and authorization.lower().startswith("bearer "):
+        presented.append(authorization[7:].strip())
+    if not presented:
+        return False
+    return any(secrets.compare_digest(candidate, configured) for candidate in presented)
+
+
+#: For an open route that discloses more to a caller who belongs here.
+OptionalApiAuth = Depends(presented_password_is_valid)

@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<title>Stock — counting on a phone</title>
+<script src="218e470b-11a3-4ad3-8ce0-0857dd7ebd13"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>/* vietnamese */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("34a55607-6873-4bfe-9028-36ec04dc615f") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("4db970b2-5c58-4023-ae47-2855df4fafbe") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("5e2b2824-cae1-4eb4-b6ef-07f95216195a") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("34a55607-6873-4bfe-9028-36ec04dc615f") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("4db970b2-5c58-4023-ae47-2855df4fafbe") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("5e2b2824-cae1-4eb4-b6ef-07f95216195a") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("9093d070-1fe8-4146-bbf9-1db0215ea09b") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("2ad51baa-c8e3-46f2-ae47-7e70e08fabf4") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("9c040311-93cc-4e69-9ba1-16e9f64ca702") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("8a0abe78-c869-4299-91d3-523edd210f1e") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("f3d0f9f2-f933-420a-86f8-41127881cf3f") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("932bfbcc-4075-409d-8371-09f5b117b155") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("cdb6efee-b5b9-487b-82fb-d0831da762c3") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("8641d1be-ea3b-4001-977d-89ce84a7dead") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("0547a190-48d9-4bf9-8d62-42c45cdbe5c9") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("70fee9ea-80d0-44db-85bc-54bd5868ab71") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("1b8347e3-a6fa-416f-9785-1a6f03119489") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("aa652aa1-588c-448e-891f-6f6ce1081447") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("54c36097-e30d-47dd-8127-a727d401a097") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("1b8347e3-a6fa-416f-9785-1a6f03119489") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("aa652aa1-588c-448e-891f-6f6ce1081447") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("54c36097-e30d-47dd-8127-a727d401a097") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("1b8347e3-a6fa-416f-9785-1a6f03119489") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("aa652aa1-588c-448e-891f-6f6ce1081447") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("54c36097-e30d-47dd-8127-a727d401a097") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("1b8347e3-a6fa-416f-9785-1a6f03119489") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("aa652aa1-588c-448e-891f-6f6ce1081447") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("54c36097-e30d-47dd-8127-a727d401a097") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+</style>
+<style>
+body{margin:0;background:#e9e9ec;font-family:'Public Sans',system-ui,sans-serif;color:#18181b;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+h1,h2,h3,h4,p{margin:0}
+.fg{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.disp{font-family:'Fraunces',Georgia,serif}
+.railh{font:600 11px/1.4 'IBM Plex Mono',monospace;letter-spacing:.05em;color:#71717a;padding-bottom:9px;border-bottom:1px solid #d4d4d8}
+.ar{display:flex;gap:9px;padding:9px 0;border-bottom:1px solid #ececef}
+.num{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:9px;background:#4f35c9;color:#fff;font:500 10px/1 'IBM Plex Mono',monospace;flex:0 0 17px;margin-top:2px}
+.fld{font:500 11.5px/1.5 'IBM Plex Mono',monospace;color:#4f35c9;word-break:break-word}
+.txt{font:400 11.5px/1.6 'Public Sans',sans-serif;color:#52525b;margin-top:2px}
+.ex{font:400 10.5px/1.5 'IBM Plex Mono',monospace;color:#18181b;background:#f4f4f5;border:1px solid #e4e4e7;border-radius:4px;padding:1px 5px;display:inline-block;margin-top:4px}
+.src{font:400 10.5px/1.5 'IBM Plex Mono',monospace;color:#a1a1aa;margin-top:3px}
+.mk{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:8px;background:#ece8fb;color:#4f35c9;font:500 9.5px/1 'IBM Plex Mono',monospace;border:1px solid #cfc4f5;flex:0 0 16px}
+.nav{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:8px;font-size:12.5px;color:#52525b}
+.navon{background:#ece8fb;color:#2e1f7d;font-weight:600}
+.navgrp{font:500 10.5px/1 'Public Sans',sans-serif;letter-spacing:.02em;color:#a1a1aa;padding:0 10px;margin:18px 0 7px}
+.card{background:#fff;border:1px solid #e7e7ea;border-radius:12px}
+.pill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:3px 9px;font:600 11px/1.5 'Public Sans',sans-serif;white-space:nowrap}
+.p-ok{background:#e6f4ed;color:#0f6b46}
+.p-warn{background:#fdf1dc;color:#8a5300}
+.p-bad{background:#fdeceb;color:#b42318}
+.p-mut{background:#f4f4f5;color:#52525b}
+.dot{width:6px;height:6px;border-radius:4px;flex:0 0 6px}
+.th{font:500 11px/1.4 'Public Sans',sans-serif;color:#8b8b93}
+.est{text-decoration:underline dotted #a1a1aa;text-underline-offset:3px}
+.btn{display:inline-flex;align-items:center;gap:7px;border-radius:9px;padding:8px 14px;font:600 12.5px/1 'Public Sans',sans-serif;border:1px solid #e0e0e4;background:#fff;color:#27272a}
+.btn-pri{background:#4f35c9;border-color:#4f35c9;color:#fff}
+.tab{border-radius:8px;padding:6px 11px;font:500 12px/1.4 'Public Sans',sans-serif;color:#71717a;border:1px solid transparent}
+.tabon{background:#18181b;color:#fff;border-color:#18181b}
+.frame{background:#fff;border:1px solid #d9d9de;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(24,24,27,.06)}
+.blab{font:500 11px/1 'IBM Plex Mono',monospace;color:#8b8b93;margin-bottom:9px;letter-spacing:.03em}
+.gh{font:500 11px/1 'Public Sans',sans-serif;color:#8b8b93;padding:0 8px;display:flex;align-items:center;height:30px;border-right:1px solid #ececef;box-sizing:border-box;background:#fafafa}
+.gc{font:400 12px/1 'Public Sans',sans-serif;color:#27272a;padding:0 8px;display:flex;align-items:center;height:34px;border-right:1px solid #f2f2f4;border-bottom:1px solid #f2f2f4;box-sizing:border-box;overflow:hidden;white-space:nowrap}
+.gn{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums;justify-content:flex-end}
+.grow{display:flex}
+.gsel{background:#efecfb;box-shadow:inset 0 0 0 1px #b9abf0}
+</style>
+</helmet>
+<div style="width: 1358px; height: 1000px; box-sizing: border-box; padding: 36px; display: flex; flex-direction: row; gap: 44px; background: #e9e9ec">
+<div style="flex: 0 0 810px; display: flex; flex-direction: column">
+<div class="blab">Stock on a phone, 390px · where a count actually happens — standing in the fridge doorway</div>
+<div style="flex-grow: 1; display: flex; flex-direction: row; gap: 30px">
+
+  <div class="frame" style="flex: 0 0 390px; display: flex; flex-direction: column; border-radius: 22px">
+    <div style="padding: 16px 16px 12px; border-bottom: 1px solid #f0f0f2">
+      <div style="display: flex; align-items: center; justify-content: space-between">
+        <h1 class="disp" style="font-size: 23px; font-weight: 600">Stock</h1>
+        <span style="width: 32px; height: 32px; border-radius: 16px; background: #f4f4f5; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #71717a">SK</span>
+      </div>
+      <p style="font-size: 12px; color: #71717a; margin-top: 3px">Estimates. Counting is the only real number.</p>
+      <label style="display: flex; align-items: center; gap: 8px; border: 1px solid #e0e0e4; border-radius: 10px; padding: 9px 11px; margin-top: 11px">
+        <svg width="14" height="14" sc-camel-view-box="0 0 16 16" fill="none" stroke="#a1a1aa" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="7.2" cy="7.2" r="4.4"></circle><path d="m10.6 10.6 2.6 2.6"></path></svg>
+        <span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Search ingredients</span>
+        <input type="text" placeholder="Search" style="border: 0; outline: 0; font: 400 13px/1 'Public Sans', sans-serif; width: 100%; background: transparent">
+      </label>
+      <div style="display: flex; gap: 6px; margin-top: 10px; align-items: center">
+        <span class="tab tabon" style="font-size: 11.5px">Count these 3</span>
+        <span class="tab" style="font-size: 11.5px">Running out 4</span>
+        <span class="tab" style="font-size: 11.5px">All 11</span>
+        <span class="mk">2</span>
+      </div>
+    </div>
+
+    <div style="flex-grow: 1; overflow: hidden">
+      <a href="StockMobile.dc.html" style="display: block; padding: 13px 16px; border-bottom: 1px solid #f0f0f2; background: #fffdfd">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px">
+          <div style="min-width: 0">
+            <div style="font-size: 14.5px; font-weight: 600">16oz paper cup</div>
+            <div style="font-size: 11.5px; color: #8b8b93; margin-top: 2px">160 counted 19 Sept · 41 sold since</div>
+          </div>
+          <div style="text-align: right; flex-shrink: 0"><span class="fg" style="font-size: 19px; font-weight: 500">118</span><div style="font-size: 10.5px; color: #a1a1aa">estimated</div></div>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 9px">
+          <span class="pill p-bad"><span class="dot" style="background: #b42318"></span>Count today</span>
+          <span style="font-size: 11.5px; color: #71717a">Runs out Sun 4 Oct</span>
+        </div>
+      </a>
+
+      <a href="StockMobile.dc.html" style="display: block; padding: 13px 16px; border-bottom: 1px solid #f0f0f2">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px">
+          <div style="min-width: 0">
+            <div style="font-size: 14.5px; font-weight: 600">Whole milk</div>
+            <div style="font-size: 11.5px; color: #8b8b93; margin-top: 2px">12.0 L counted 19 Sept · 105 drinks since</div>
+          </div>
+          <div style="text-align: right; flex-shrink: 0"><span class="fg" style="font-size: 19px; font-weight: 500">48.1</span><span style="font-size: 11px; color: #8b8b93"> L</span><div style="font-size: 10.5px; color: #a1a1aa">estimated</div></div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-top: 9px">
+          <span class="pill p-warn"><span class="dot" style="background: #b8770b"></span>Count again</span>
+          <span class="pill p-warn" style="font-size: 10.5px">Use by Mon</span>
+          <span style="font-size: 11.5px; color: #71717a; margin-left: auto">Runs out Fri 2 Oct</span>
+        </div>
+      </a>
+
+      <a href="StockMobile.dc.html" style="display: block; padding: 13px 16px; border-bottom: 1px solid #f0f0f2">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px">
+          <div><div style="font-size: 14.5px; font-weight: 600">Napkin</div><div style="font-size: 11.5px; color: #8b8b93; margin-top: 2px">428 counted 19 Sept · 131 used since</div></div>
+          <div style="text-align: right"><span class="fg" style="font-size: 19px; font-weight: 500">296</span><div style="font-size: 10.5px; color: #a1a1aa">estimated</div></div>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 9px">
+          <span class="pill p-warn"><span class="dot" style="background: #b8770b"></span>Count again</span>
+          <span style="font-size: 11.5px; color: #71717a">Runs out Fri 2 Oct</span>
+        </div>
+      </a>
+
+      <a href="StockMobile.dc.html" style="display: block; padding: 13px 16px; border-bottom: 1px solid #f0f0f2">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px">
+          <div><div style="font-size: 14.5px; font-weight: 600">Chocolate powder</div><div style="font-size: 11.5px; color: #8b8b93; margin-top: 2px">5 kg counted 25 Jul · nothing since</div></div>
+          <div style="text-align: right"><span class="fg" style="font-size: 19px; font-weight: 500">5</span><span style="font-size: 11px; color: #8b8b93"> kg</span></div>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 9px">
+          <span class="pill p-mut"><span class="dot" style="background: #a1a1aa"></span>Never checked</span>
+          <span style="font-size: 11.5px; color: #a1a1aa; font-style: italic">Not enough sales to say</span>
+        </div>
+      </a>
+    </div>
+
+    <div style="padding: 11px 16px; border-top: 1px solid #ececef; display: flex; gap: 9px; align-items: center">
+      <span class="mk">1</span>
+      <a class="btn btn-pri" href="StockMobile.dc.html" style="flex-grow: 1; justify-content: center">Start a count</a>
+    </div>
+  </div>
+
+  <div class="frame" style="flex: 0 0 390px; display: flex; flex-direction: column; border-radius: 22px">
+    <div style="padding: 16px; border-bottom: 1px solid #f0f0f2; display: flex; align-items: center; justify-content: space-between">
+      <div><h1 class="disp" style="font-size: 21px; font-weight: 600">Counting</h1><p style="font-size: 11.5px; color: #71717a; margin-top: 2px">Thu 25 Sept · 3 of 11 done</p></div>
+      <span style="font-size: 12px; color: #4f35c9; font-weight: 600">Save</span>
+    </div>
+
+    <div style="height: 4px; background: #f0f0f2"><span style="display: block; width: 27%; height: 4px; background: #4f35c9"></span></div>
+
+    <div style="padding: 18px 16px; border-bottom: 1px solid #f0f0f2">
+      <div style="display: flex; align-items: center; gap: 6px"><span style="font-size: 11.5px; color: #8b8b93">Ingredient 4 of 11</span><span class="mk">3</span></div>
+      <h2 style="font-size: 21px; font-weight: 600; margin-top: 5px">Whole milk</h2>
+      <p style="font-size: 12.5px; color: #71717a; margin-top: 3px">Count every carton in the fridge, open ones too. In litres.</p>
+
+      <div style="margin-top: 16px; border: 1px solid #e0e0e4; border-radius: 13px; padding: 14px; display: flex; align-items: center; gap: 12px">
+        <span style="width: 40px; height: 40px; border-radius: 10px; border: 1px solid #e0e0e4; display: flex; align-items: center; justify-content: center; font-size: 19px; color: #71717a">−</span>
+        <label style="flex-grow: 1; text-align: center"><span style="display: block; font-size: 10.5px; color: #8b8b93; margin-bottom: 2px">Litres you can see</span><input type="text" value="46" style="width: 100%; border: 0; outline: 0; text-align: center; font: 500 30px/1 'IBM Plex Mono', monospace; background: transparent"></label>
+        <span style="width: 40px; height: 40px; border-radius: 10px; border: 1px solid #e0e0e4; display: flex; align-items: center; justify-content: center; font-size: 19px; color: #71717a">+</span>
+      </div>
+
+      <div style="margin-top: 12px; background: #f6f5fd; border: 1px solid #e4dffb; border-radius: 10px; padding: 11px 13px; display: flex; gap: 9px">
+        <span class="mk" style="margin-top: 1px">4</span>
+        <p style="font-size: 12px; line-height: 1.6; color: #3f3f46">The app expected <span class="fg" style="font-weight: 600">48.1 L</span>. You are <span class="fg" style="font-weight: 600">2.1 L</span> under — close enough, nothing to chase.</p>
+      </div>
+    </div>
+
+    <div style="padding: 14px 16px; flex-grow: 1">
+      <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 9px"><span class="th">Coming up</span><span class="mk">5</span></div>
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid #f4f4f5"><span style="font-size: 13px">Napkin</span><span style="font-size: 11.5px; color: #a1a1aa">296 expected</span></div>
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid #f4f4f5"><span style="font-size: 13px">Chocolate powder</span><span style="font-size: 11.5px; color: #a1a1aa">5 kg expected</span></div>
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 9px 0"><span style="font-size: 13px; color: #a1a1aa">12oz cup lid</span><span class="pill p-ok" style="font-size: 10.5px">done · 12</span></div>
+    </div>
+
+    <div style="padding: 12px 16px; border-top: 1px solid #ececef; display: flex; gap: 9px">
+      <span class="btn" style="flex: 0 0 auto">Skip</span>
+      <a class="btn btn-pri" href="StockMobile.dc.html" style="flex-grow: 1; justify-content: center">Next ingredient</a>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<div style="flex: 0 0 432px; display: flex; flex-direction: column">
+<div class="railh">What each thing is · api field · where it comes from · real example</div>
+<div style="margin-top: 2px">
+<div class="ar"><span class="num">1</span><div style="min-width: 0"><div class="fld">POST /api/stock/count (to build)</div><div class="txt">The count flow is the reason the phone layout exists. One ingredient at a time, thumb-sized targets, no table. Each answer writes one <b>stock_count</b> row and one <b>drift_observation</b>.</div><div class="ex">stock_count(ingredient_id 1, counted_qty "46", counted_at now)</div><div class="src">db/models/stock_count.py</div></div></div>
+<div class="ar"><span class="num">2</span><div style="min-width: 0"><div class="fld">same rows[] as desktop</div><div class="txt">No separate mobile endpoint. Below 1280 the table becomes cards and every value carries its own label, because a column header scrolled off the top is a label that is not there.</div><div class="ex">11 rows, 4 shown</div></div></div>
+<div class="ar"><span class="num">3</span><div style="min-width: 0"><div class="fld">ordered by drift.trust_status, then run_out.days</div><div class="txt">The queue is the same order as the list: what the app is least sure about first, so a count that stops halfway has still done the useful part.</div><div class="ex">4 of 11</div></div></div>
+<div class="ar"><span class="num">4</span><div style="min-width: 0"><div class="fld">on_hand.qty compared live to the entered figure</div><div class="txt">Shown <b>after</b> she types, never before — an expected number on screen first is a number people count toward. Under 10% reads as fine; over 15% says so and explains what happens next.</div><div class="ex">expected 48.123, entered 46 → −4.4%</div><div class="src">spec 5.2 bands</div></div></div>
+<div class="ar"><span class="num">5</span><div style="min-width: 0"><div class="fld">rows[] not yet counted this session</div><div class="txt">Progress is stated in items, not a percentage. Done items keep their figure visible so a mistake can be caught before saving.</div><div class="ex">3 of 11 done</div></div></div>
+</div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script="" data-props="{&quot;$preview&quot;:{&quot;width&quot;:1358,&quot;height&quot;:1000}}">
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+
+
+</body></html>

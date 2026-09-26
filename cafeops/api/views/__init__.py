@@ -18,9 +18,12 @@ API that creates, confirms or sends one.
 from __future__ import annotations
 
 from cafeops.api.views.channels import channels_view
+from cafeops.api.views.confirm import confirm_shelf_life_view, confirm_supplier_terms_view
 from cafeops.api.views.margin import margin_view
 from cafeops.api.views.meta import health_view, meta_view
 from cafeops.api.views.orders import draft_orders_view, suppliers_view
+from cafeops.api.views.payments import takings_view
+from cafeops.api.views.proposals import materialise_proposal_view, proposals_view
 from cafeops.api.views.stock import stock_detail_view, stock_view
 from cafeops.api.views.templates import (
     apply_edit_view,
@@ -33,14 +36,19 @@ from cafeops.api.views.today import today_view
 __all__ = [
     "apply_edit_view",
     "channels_view",
+    "confirm_shelf_life_view",
+    "confirm_supplier_terms_view",
     "draft_orders_view",
     "health_view",
     "margin_view",
+    "materialise_proposal_view",
     "meta_view",
     "preview_edit_view",
+    "proposals_view",
     "stock_detail_view",
     "stock_view",
     "suppliers_view",
+    "takings_view",
     "template_detail_view",
     "templates_view",
     "today_view",

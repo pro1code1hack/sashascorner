@@ -1,0 +1,97 @@
+---
+// The logo's continuous line, drawn as you scroll past it. Same trace as the wire
+// on the diorama wall (src/data/logo-line.json): each segment starts drawing when
+// the "pour" reaches it, so the line flows out from the steam like coffee does.
+import line from '../data/logo-line.json';
+import blobs from '../data/logo-blobs.svg.txt?raw';
+
+interface Props {
+  class?: string;
+  label?: string;
+}
+const { class: cls, label = 'Line drawing of a portafilter pouring espresso into a cup' } = Astro.props;
+type Edge = { t0: number; pts: number[][] };
+const edges = (line.edges as Edge[]).map((e) => {
+  let len = 0;
+  for (let i = 1; i < e.pts.length; i++) len += Math.hypot(e.pts[i][0] - e.pts[i - 1][0], e.pts[i][1] - e.pts[i - 1][1]);
+  const d = 'M' + e.pts.map(([x, y]) => `${x} ${y}`).join('L');
+  return { d, t0: e.t0, len };
+});
+const [x0, y0, x1, y1] = line.bbox as number[];
+const pad = 8;
+const vb = `${x0 - pad} ${y0 - pad} ${x1 - x0 + 2 * pad} ${y1 - y0 + 2 * pad}`;
+---
+
+<svg class:list={['linedraw', cls]} viewBox={vb} role="img" aria-label={label} data-linedraw data-total={line.total}>
+  <g class="linedraw__blobs" set:html={blobs} />
+  <g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    {edges.map((e) => <path d={e.d} pathLength="1" data-t0={e.t0} data-len={e.len} />)}
+  </g>
+</svg>
+
+<script>
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  for (const svg of document.querySelectorAll<SVGSVGElement>('[data-linedraw]')) {
+    const total = Number(svg.dataset.total);
+    const paths = [...svg.querySelectorAll<SVGPathElement>('path[data-t0]')].map((p) => ({
+      p,
+      t0: Number(p.dataset.t0),
+      len: Number(p.dataset.len),
+    }));
+    if (reduce) continue; // leave it fully drawn
+    svg.classList.add('is-animated');
+    const draw = () => {
+      const r = svg.getBoundingClientRect();
+      const vh = window.innerHeight;
+      // 0 when the drawing's top meets the bottom of the viewport, 1 by the time
+      // its middle reaches the middle of the screen.
+      const k = Math.min(1, Math.max(0, (vh - r.top) / (vh * 0.5 + r.height * 0.5)));
+      const at = k * total * 1.02;
+      for (const { p, t0, len } of paths) {
+        const f = Math.min(1, Math.max(0, (at - t0) / len));
+        p.style.strokeDashoffset = String(1 - f);
+      }
+      svg.classList.toggle('is-complete', k >= 1);
+    };
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        draw();
+        ticking = false;
+      });
+    };
+    new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) window.addEventListener('scroll', onScroll, { passive: true });
+      else window.removeEventListener('scroll', onScroll);
+    }).observe(svg);
+    draw();
+  }
+</script>
+
+<style>
+  .linedraw {
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+  .linedraw.is-animated path[data-t0] {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+  }
+  .linedraw__blobs {
+    transition:
+      opacity 1.2s var(--ease-out),
+      transform 1.2s var(--ease-out);
+    transform-origin: 50% 50%;
+  }
+  .linedraw.is-animated .linedraw__blobs {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  .linedraw.is-animated.is-complete .linedraw__blobs {
+    opacity: 1;
+    transform: none;
+  }
+</style>

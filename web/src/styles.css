@@ -1,187 +1,158 @@
 @import 'tailwindcss';
+@import '@fontsource-variable/inter';
+@import '@fontsource/dm-mono/300.css';
+@import '@fontsource/dm-mono/400.css';
+@import '@fontsource/dm-mono/500.css';
 
-/* Latin only. @fontsource's bundled stylesheets also ship Vietnamese and
- * latin-ext, which is ~380KB of woff2 this English-only app never renders.
- * DM Mono comes in through its own latin-*.css imports in main.tsx. */
-@font-face {
-  font-family: 'Newsreader Variable';
-  font-style: normal;
-  font-display: swap;
-  font-weight: 200 800;
-  src: url('@fontsource-variable/newsreader/files/newsreader-latin-opsz-normal.woff2')
-    format('woff2-variations');
-}
-@font-face {
-  font-family: 'Newsreader Variable';
-  font-style: italic;
-  font-display: swap;
-  font-weight: 200 800;
-  src: url('@fontsource-variable/newsreader/files/newsreader-latin-opsz-italic.woff2')
-    format('woff2-variations');
-}
+/*
+ * Café Ops — dark surface system.
+ *
+ * The palette is the Tailwind zinc ramp on zinc-950, measured from finsepa.com
+ * rather than invented: body #09090b, cards #18181b, raised #27272a, hairlines
+ * #27272a/#3f3f46, blue-500 as the single accent. The previous build used a warm
+ * brown-and-amber palette of my own devising, which is precisely what made it
+ * read as arbitrary. A borrowed system is coherent because someone already did
+ * the work of making it so.
+ *
+ * Semantics stay vivid and narrow: green for good, red for bad, amber for
+ * "needs a human". Colour marks a state the backend has classified, never a mood.
+ */
 
-/* ------------------------------------------------------------------ *
- * Tokens. See DESIGN.md §2 (palette) and §3 (type).
- * Six colour roles. Colour means a crossed threshold and nothing else;
- * there is deliberately no positive colour in this palette.
- * ------------------------------------------------------------------ */
 @theme {
-  --color-paper: #f1f2f4;
-  --color-paper-sunk: #e9ebee;
-  --color-slab: #fdfdfe;
-  --color-ink: #15191e;
-  --color-ink-soft: #2b323a;
-  --color-muted: #5a636d;
-  --color-faint: #8a939d;
-  --color-rule: #d3d8dd;
-  --color-rule-strong: #9aa3ac;
-  --color-flag: #96262b;
-  --color-flag-wash: #f6e9e7;
-  --color-flag-light: #e8a29c;
+  /* ---- surfaces, darkest to lightest ---------------------------------- */
+  --color-canvas: #09090b; /* zinc-950 — the page */
+  --color-surface: #18181b; /* zinc-900 — cards */
+  --color-raised: #27272a; /* zinc-800 — controls, active states, chips */
+  --color-sunk: #0c0c0e; /* wells inside a card */
 
-  --font-serif: 'Newsreader Variable', 'Newsreader', Georgia, 'Times New Roman', serif;
+  /* ---- ink, brightest to faintest ------------------------------------- */
+  --color-ink: #fafafa; /* zinc-50  — figures and headings */
+  --color-ink-2: #d4d4d8; /* zinc-300 — body copy */
+  --color-ink-3: #a1a1aa; /* zinc-400 — labels, secondary */
+  --color-ink-4: #71717a; /* zinc-500 — the quietest readable ink */
+  --color-ink-5: #52525b; /* zinc-600 — disabled, rules that must be seen */
+
+  /* ---- hairlines ------------------------------------------------------- */
+  --color-line: #27272a; /* the default card edge */
+  --color-line-2: #3f3f46; /* a rule that must read as a divider */
+
+  /* ---- accent ---------------------------------------------------------- */
+  --color-brand: #3b82f6; /* blue-500 */
+  --color-brand-2: #60a5fa; /* blue-400, for ink on dark */
+  --color-brand-wash: #17233d;
+
+  /* ---- semantic. Each has a wash for pill backgrounds. ----------------- */
+  --color-ok: #22c55e;
+  --color-ok-ink: #4ade80;
+  --color-ok-wash: #0f2417;
+  --color-warn: #f59e0b;
+  --color-warn-ink: #fbbf24;
+  --color-warn-wash: #2a1f08;
+  --color-bad: #ef4444;
+  --color-bad-ink: #f87171;
+  --color-bad-wash: #2a1315;
+  --color-info: #3b82f6;
+  --color-info-ink: #60a5fa;
+  --color-info-wash: #17233d;
+
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
+    Roboto, sans-serif;
   --font-mono: 'DM Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
 
-  /* Fluid scale — DESIGN.md §8.3 */
-  --text-micro: clamp(0.625rem, 0.6rem + 0.1vw, 0.6875rem);
-  --text-fig-sub: clamp(0.75rem, 0.72rem + 0.12vw, 0.8125rem);
-  --text-fig: clamp(0.8125rem, 0.78rem + 0.16vw, 0.9375rem);
-  --text-fig-lg: clamp(1.0625rem, 1rem + 0.4vw, 1.375rem);
-  --text-prose: clamp(0.8125rem, 0.79rem + 0.16vw, 0.9375rem);
-  --text-title: clamp(1.125rem, 1rem + 0.7vw, 1.625rem);
+  /* The reference's ladder, re-measured: 20px dominates (126 uses), then 12 (113),
+   * 16 (82), a 100px pill (75) and 10 (63). The first pass leaned on 8px, which
+   * read tighter and squarer than the reference at every size. */
+  --radius-surface: 1.25rem; /* 20px -- the largest containers */
+  --radius-card-lg: 1rem; /* 16px -- cards */
+  --radius-card: 0.75rem; /* 12px -- stat cards, panels */
+  --radius-control: 0.625rem; /* 10px -- buttons, inputs */
+  --radius-chip: 0.375rem;
+  --radius-pill: 100px;
+
+
+  /* On a near-black ground a drop shadow does almost nothing; elevation is
+   * carried by the surface step plus a hairline. These stay subtle. */
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.5);
+  --shadow-lift: 0 4px 16px rgb(0 0 0 / 0.55);
+  --shadow-pop: 0 16px 40px rgb(0 0 0 / 0.65);
 }
 
 @layer base {
   :root {
-    color-scheme: light;
-    --gutter: clamp(0px, calc((100vw - 380px) * 10), 9.5rem);
+    color-scheme: dark;
   }
 
   html {
-    -webkit-text-size-adjust: 100%;
+    background: var(--color-canvas);
   }
 
   body {
-    margin: 0;
-    background: var(--color-paper);
-    color: var(--color-ink);
-    font-family: var(--font-serif);
-    font-size: var(--text-prose);
-    font-optical-sizing: auto;
-    line-height: 1.5;
+    background: var(--color-canvas);
+    color: var(--color-ink-2);
+    font-family: var(--font-sans);
+    /* 12px, the reference's workhorse size: measured at 1,459 of its 3,913
+     * elements, and it holds with marketing chrome excluded. The first pass used
+     * 14px on my own judgement about the audience -- that was substituting taste
+     * for the brief, which named the reference twice.
+     *
+     * Line height is pushed to 1.6 to buy back at 12px what the reference gets
+     * from its own font's larger x-height. One token: raise `font-size` here and
+     * the whole scale steps back up together. */
+    font-size: 0.75rem;
+    /* A whole-pixel line box, not a unitless multiplier. The reference's line
+     * heights are 16 / 20 / 24 / 28px; 1.6 x 12px gives 19.2px, which puts every
+     * baseline a fifth of a pixel off the grid and softens the text. */
+    line-height: 20px;
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
 
-  /* Every figure in this application goes through .fig. A monospace is
-     tabular by construction, so alignment cannot silently break. §3. */
+  /* Every figure goes through .fig. Tabular by font feature rather than by a
+   * monospace face, so figures align without the copy turning into code. */
   .fig {
-    font-family: var(--font-mono);
     font-variant-numeric: tabular-nums lining-nums;
+    font-feature-settings: 'tnum' 1, 'lnum' 1, 'ss01' 1;
     letter-spacing: -0.01em;
-    font-feature-settings: 'tnum' 1;
   }
 
-  input,
-  button,
-  select,
-  textarea {
-    font: inherit;
-    color: inherit;
-  }
-
-  /* Quality floor: the focus ring is visible on every ground, including
-     the inverted commit gate. */
-  :focus-visible {
-    outline: 2px solid var(--color-ink);
-    outline-offset: 2px;
-    border-radius: 1px;
-  }
-  .on-ink :focus-visible {
-    outline-color: var(--color-paper);
-  }
-
-  ::selection {
-    background: #d8dde2;
-  }
-}
-
-@layer components {
-  /* Hanging marginalia. DESIGN.md §8.3: flags and attribution headlines
-     hang in a reserved left gutter, the way a marginal note hangs in a
-     printed book. Nothing else may occupy it. Below the gutter's minimum
-     width the note reflows to the line above, same reading order. */
-  .sheet {
-    display: grid;
-    grid-template-columns: var(--gutter) minmax(0, 1fr);
-    column-gap: clamp(0px, calc((100vw - 380px) * 10), 1.25rem);
-  }
-  .marg {
-    grid-column: 1;
-    text-align: right;
-    font-family: var(--font-mono);
-    font-size: var(--text-micro);
-    line-height: 1.45;
-    color: var(--color-muted);
-    padding-top: 0.15rem;
-  }
-  .body-col {
-    grid-column: 2;
-    min-width: 0;
-  }
-  @media (max-width: 719px) {
-    .sheet {
-      grid-template-columns: minmax(0, 1fr);
-    }
-    .marg,
-    .body-col {
-      grid-column: 1;
-    }
-    .marg {
-      text-align: left;
-      padding-bottom: 0.2rem;
-    }
-  }
-
-  /* An estimated figure is marked typographically, never chromatically:
-     42 of 113 prices are estimates, so it is the ambient condition and
-     not an alarm. DESIGN.md §2. */
+  /* An estimate is marked typographically, never chromatically: 280 of 298
+   * costed items are estimates, so it is the ambient condition, not an alarm. */
   .est {
-    text-decoration: underline dotted var(--color-rule-strong);
-    text-underline-offset: 0.22em;
-    text-decoration-thickness: from-font;
+    text-decoration: underline dotted var(--color-ink-5);
+    text-underline-offset: 3px;
   }
 
-  .rule-t {
-    border-top: 1px solid var(--color-rule);
+
+  /* Anything too wide scrolls inside itself. The page must never scroll
+   * sideways: a figure sliced mid-digit still reads as a number. */
+  .scroll-x {
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line-2) transparent;
   }
-  .rule-b {
-    border-bottom: 1px solid var(--color-rule);
+  .scroll-x::-webkit-scrollbar {
+    height: 8px;
+  }
+  .scroll-x::-webkit-scrollbar-thumb {
+    background: var(--color-line-2);
+    border-radius: var(--radius-pill);
+  }
+  .scroll-x::-webkit-scrollbar-track {
+    background: transparent;
   }
 
-  /* One orchestrated reveal on first paint, 160ms, staggered. §8.3. */
-  @keyframes settle {
-    from {
-      opacity: 0;
-      transform: translate3d(0, 3px, 0);
-    }
-    to {
-      opacity: 1;
-      transform: none;
-    }
-  }
-  .settle {
-    animation: settle 160ms cubic-bezier(0.22, 1, 0.36, 1) both;
-    animation-delay: calc(var(--i, 0) * 22ms);
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+    border-radius: 3px;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .settle {
-      animation: none;
-    }
     *,
     *::before,
     *::after {
-      transition-duration: 1ms !important;
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
     }
   }
 }

@@ -1679,3 +1679,393 @@ Three deliberate choices:
 8. **The 46% COGS figure is untrustworthy** and will stay so while 42 of 113 prices
    are estimates. Replacing estimates with invoices is the highest-value data task
    available to the owner.
+
+---
+
+## §8M — A truncating inspection script is a silent source of wrong contracts
+
+Twice now normative content has been lost not by disagreement but by a **tool that
+shortened its output without saying so**.
+
+1. §10.9's API shapes were dropped when the v2 brief was condensed into `CLAUDE.md`,
+   and the condensed version was then cited to an agent as authority. The agent
+   checked, found no `/api/` string in the file, and said so.
+2. Phase 4's frontend types were generated from a throwaway shape-dumper containing
+   `list(v.items())[:14]`. `TodaySummary` lost `alerts`, `data_quality` and `notes`;
+   `MarginResponse` lost `menu`, `by_template`, `warnings`,
+   `estimated_cost_item_count` and `invoice_cost_item_count`. Five agents then built
+   against those types, two of them writing local `TodayFull` / `MarginFull`
+   extensions to work around gaps they could see but had been told not to fix.
+
+Both failures look identical from the inside: the output was **well-formed and
+plausible**, so nothing prompted a second look. A truncated list of keys is not
+distinguishable from a complete one unless the truncation announces itself.
+
+The consequence in case 2 was not merely cosmetic. `MarginResponse.warnings` carries
+the sentence *"280 of 298 ranked item(s) are costed from ESTIMATE prices"* — the
+caveat that makes the aggregate COGS figure honest (§8.8). A margin screen built
+without it would have presented estimate-derived totals as measured ones, which is
+invariant 8 failing in the one place the owner actually reads.
+
+**The rule:** a script that inspects a contract must either print everything or state
+what it withheld. `[:14]` with no "… and 3 more" is a lie by omission. The same test
+as §8I applies, one level up: *if this output were incomplete, would anything tell
+me?* If the answer is no, the output cannot be used as a source of truth.
+
+**Also:** the two agents that hit the gaps were right, and one said so explicitly.
+When a subagent reports that a shared type is missing fields, that is evidence about
+the contract, not a complaint about its own convenience. Verify it against the
+fixture before defending the type — here the fixture agreed with the agent both times.
+
+---
+
+## §8N — An invented design system reads as arbitrary, because it is
+
+The frontend was rejected twice by the owner. The second rejection was the useful
+one: *"the whole interface and UI is too vibecoded… the design I currently observe is
+shocking and completely wrong, needs to be done from scratch."*
+
+The first build failed for an obvious reason — two screens existed and five were
+stubs. The **second** failed for a subtler one, and it is worth recording because the
+work looked careful throughout.
+
+Every value in that build was chosen by feel: a warm brown ground (`#12110f`), an
+amber accent (`#e8a33d`), radii at 0.875/0.5rem, six ink levels spaced by eye. Each
+decision was defensible on its own. Together they read as arbitrary, because they
+*were* arbitrary — nothing outside my own judgement constrained any of them, so
+nothing made them cohere.
+
+The owner had named the reference three times. The fix was to stop designing and
+start **measuring**: drive finsepa.com in headless Chrome, read `getComputedStyle`
+off the real DOM, and find that the whole product sits on the **Tailwind zinc ramp**
+— `#09090b` ground, `#18181b` cards, `#27272a` raised, blue-500 accent, radii at
+20/16/12/10/8 — with green and red reserved for classified states. That is a system
+someone else already made coherent. Borrowing it wholesale produced a better result
+in an hour than three iterations of taste had.
+
+**The rule:** when a user names a design reference, the reference is a *specification*,
+not a mood board. Measure it — colours, radii, type scale, spacing, the signature
+components — and adopt it. "Inspired by" is how you end up with the uncanny near-miss
+that reads as vibecoded. The distance between "dark theme with cards" and the actual
+thing is entirely in values you cannot guess.
+
+**Corollary, learned the same day:** two rejections cost far more than the ten minutes
+it would have taken to screenshot the reference before starting. When a brief cites a
+URL, open it first.
+
+**What carried over unchanged:** every screen's data handling — null-vs-zero, the
+estimate marking, low-confidence forecasts rendering a reason in place of a figure,
+the backend's own sentences printed verbatim. That layer was reviewed and correct, so
+the second pass was scoped as a re-skin. Design failure did not imply data failure,
+and conflating them would have thrown away the good half.
+
+---
+
+## §8O — A warning with no remedy is an accusation
+
+`cafeops doctor` has always been able to say two true and important things:
+
+- six of eight suppliers carry **invented** lead times, delivery days, cutoffs and
+  minimums, and every cover window is computed from them;
+- **100 shelf lives are ESTIMATE defaults**, and shelf life *caps order size*
+  (invariant 4), so a wrong one either wastes stock or causes a stockout.
+
+Both were surfaced honestly, everywhere: on the orders screen, on each supplier
+card, in the Telegram order cards, in the API payloads. What neither had was a way
+to ever stop being true. The doctor's own remedy read:
+
+> confirm with each supplier, then **edit `cafeops/seed/suppliers.py`**
+
+That is a code change, in a repository, offered to the person whose job is to
+telephone Booker. The result is a system that repeats a criticism it gives you no
+way to answer — and, worse, whose two loudest warnings were structurally permanent.
+Every honest caveat downstream inherited that permanence.
+
+**The gap was never in the model.** `supplier.terms_are_placeholders` and
+`ingredient.shelf_life_source` both already existed and were both already read by
+the code that matters. Only the *write* was missing, at every layer: no service, no
+CLI, no endpoint, no screen. It is an easy gap to miss precisely because nothing is
+broken — the data model looks complete, the reads all work, and the warning fires
+correctly forever.
+
+Closed with one service (`services/confirm_terms.py`) and three clients, per §8's
+rule that every write goes through the services layer:
+
+- `cafeops supplier list` / `confirm`, `cafeops shelf-life list` / `set`
+- `POST /api/suppliers/{id}/confirm`, `POST /api/ingredients/{id}/shelf-life`
+- the Money and Stock screens
+
+Three decisions worth keeping:
+
+1. **Supplier confirmation is all-or-nothing.** `terms_are_placeholders` covers six
+   fields as one fact because the cover window is computed from several at once.
+   Clearing it while one field is still a guess would silence the warning on an
+   order that is still partly fiction, so a partial confirmation is refused.
+2. **The response reports the consequence, not the write.** Confirming a shelf life
+   returns `usable_days_changed_by`, because the honest answer to "what did I just
+   do" is *a single order may now cover three more days of trade*, not *saved*.
+3. **`shelf-life set --source estimate` is refused.** Confirming a guess *as* a
+   guess would quiet the warning without adding knowledge, which is the one outcome
+   worse than the warning.
+
+`cafeops shelf-life list` ranks by movement count, not alphabetically: confirming
+the shelf life of something nobody buys changes no order. Coffee beans (2,782
+movements) comes first.
+
+**The general rule:** every warning a system raises should name an action its own
+user can take. If the only remedy is a code change, the warning is telling the
+wrong person. Audit the other checks against this before adding a new one.
+
+---
+
+## §8P — Auditing the twelve invariants for actual enforcement
+
+With no test suite (§1), §13's invariants are enforced by whatever the code and the
+doctor happen to check. That is worth auditing rather than assuming, so each was
+traced to an enforcement site:
+
+| inv | enforced by |
+|---|---|
+| 1 nothing ordered without a human | `CHECK` constraint + doctor `invariant 1` |
+| 2 auto-order earned, never set | repository raises in `set_auto_order` + doctor |
+| 3 recipe edits effective-dated | `db/repositories/composition.py` closes and opens rows |
+| 4 order never exceeds shelf life / season | `domain/ordering.py`, `CapKind` |
+| 5 top-ups never perishable | `domain/ordering.py` |
+| 6 theoretical vs counted never blurred | API types carry the basis; screens render it |
+| 7 waste factor never touches menu cost | `domain/composition.py` vs `domain/stock.py` |
+| 8 estimates stay flagged, missing is None | `Cost` type + doctor `invariant 8` |
+| 9 low-confidence says so in place of the number | `ForecastNoteKind`, `Withheld` renderer |
+| 10 agent never writes directly | allowlist dispatch + read-only engine + `agent_action_log` |
+| 11 money is integer pence | `Qty` raises on a float |
+| 12 ledger append-only | **was undocumented and unchecked — see below** |
+
+Two findings.
+
+**Invariant 12 had an undocumented exception.** `rebuild_batches(purge=True)` — and
+`purge` defaults to True — deletes every `StockBatch` and every `EXPIRED` movement
+before replaying the ledger. That is defensible, because both are *derived*: the
+expiry sweep computes them from batch state, so a replay reproduces them and nothing
+observed is lost. But §13 stated the invariant with no exception, the docstring said
+only "this is a rebuild, not an incremental update", and the sole caller being
+`cafeops seed --demo` was a fact you had to go and check. An invariant with a silent
+exception is §8I again: the rule existed, the exception did not travel with it. Both
+now say so, and the docstring states plainly that adding a caller is a decision
+rather than a refactor — on a live database this discards real expiry write-offs.
+
+**Invariant 12 was the only one with no check at all.** There is no audit column to
+compare against, but the primary key is a cheap proxy: SQLite hands out increasing
+rowids and does not reuse them within a table, so on a ledger that has only ever been
+appended to, `max(id) == count(*)`. A gap means rows existed and are gone. Added as a
+WARN naming the one legitimate cause. Verified both ways — clean on the live database
+(16,732 rows, no gaps), and deleting three rows from a copy produces
+*"3 id(s) are missing from the stock ledger (16729 rows, highest id 16732)"*.
+
+Every stock figure in the product is a sum over that table, so a silent deletion
+makes every on-hand number quietly wrong with nothing to notice it by.
+
+---
+
+## §8Q — A name is not an identifier
+
+The import-review API addressed a proposal by name: `POST /api/proposals/{name}/materialise`,
+resolved by `find_proposal`'s first case-folded match. That was mine, and it was wrong.
+
+Pattern detection names a group after its defining ingredient, so two structurally
+different groups can land on the same name. Two pairs do:
+
+- `Flavoured Matcha (Matcha powder)` — 18 items, and 5
+- `Flavoured Tea (Loose-leaf tea (black))` — 6 items, and 4
+
+The failure was quiet in the worst way. `find_proposal` returned the *first* match, so
+confirming by name would have written one recipe and silently attached it to the other
+group's menu items — real drinks, costing and depleting from a recipe that is not
+theirs. Nothing would have raised. The screen agent found it because it tried to build
+a button and could not work out what the button would do.
+
+**Three fixes, and the ordering matters.**
+
+1. **A real identifier.** `TemplateProposal.proposal_id` is a hash of the structural
+   signature, which is already distinct for all 27. Hashed rather than used raw
+   because the signature contains `|`, `:` and `*` and has to survive a URL path.
+2. **Ambiguity raises.** `find_proposal` accepts an id or a name, but a name matching
+   more than one proposal now raises `AmbiguousProposal` listing the ids and their
+   item counts, instead of picking one. Returning *a* plausible answer to an
+   unanswerable question is the defect; refusing is the fix.
+3. **The screen posts the id.** Both are `string`, so passing the wrong one
+   type-checks — which is exactly why the call site now carries a comment saying so.
+
+**A second refusal found in the same pass.** Four proposals (Cake, Juice, Panini and
+Water ranges) have no components and no axes: the legacy rows carry no ingredient
+lines. Confirming one created an empty template *and* re-pointed its menu items off
+the manual recipes they resolve through today, so they would cost and deplete nothing
+— a silent data loss that would surface weeks later as a margin figure nobody could
+explain. Now refused, with the reason naming the item count at risk.
+
+**The rule:** before letting a human-readable string address a resource, check it is
+unique *in the data*, not merely unique-looking. The question to ask is the §8I one
+again — *if two of these collided, would anything tell me?* Here the answer was no,
+and the cost would have been wrong recipes on real drinks.
+
+---
+
+## §8R — "Nothing is sent" was about the wire, not the database
+
+`cafeops bot-preview` drives the real dispatcher, routers, filters, FSM and keyboards,
+with only the HTTP session replaced. Its module docstring says so plainly — *"Nothing
+is stubbed except the wire"* — and that is the whole point: with no test suite, the
+only proof the +/- buttons adjust the line they claim to is watching the card change.
+
+The CLI help and the console banner said **"nothing is sent"**. Read quickly, that
+means *nothing happens*. It does not. `delivery` really receives a delivery, `orders`
+really confirms a purchase order, `count` really writes a count. Running the seven
+flows against the live database left a real batch, a real `DELIVERY` movement and a
+`RECEIVED` purchase order behind — found later by noticing the ledger had grown by one
+row that no scheduler job explained.
+
+Every other writing command here already defaults to dry run: `import-legacy`,
+`channels import`, `materialise-template`. `bot-preview` was the one that wrote by
+default while sounding like it did not. It now takes `--commit/--dry-run`, defaults to
+dry run, and the banner states which mode is in force.
+
+### The part that actually cost time: pysqlite silently ignores the rollback
+
+The obvious implementation of a dry run is a Session bound to a Connection inside a
+transaction nobody commits. SQLAlchemy's `join_transaction_mode` picks how the Session
+relates to that outer transaction, and `create_savepoint` is the mode most examples
+reach for.
+
+**On pysqlite it leaks.** Measured on this stack, same row, same engine:
+
+| mode | before → after |
+|---|---|
+| `create_savepoint` | 131 → 132 — **LEAKED** |
+| `rollback_only` | 132 → 132 — rolled back |
+| `conditional_savepoint` | 132 → 132 — rolled back |
+
+The driver's legacy implicit-transaction handling turns the RELEASE of a savepoint
+into a real commit, so by the time the outer `rollback()` runs there is nothing left
+to undo — and it reports success. A "dry run" that writes for real and says it did not
+is worse than no dry run at all.
+
+`rollback_only` needs no savepoints and was verified. **Do not reach for
+`create_savepoint` anywhere in this codebase without re-measuring it.**
+
+Worth stating, because it was the first thing checked and it is load-bearing
+everywhere else: ordinary transactions are *fine*. A bare connection rollback undoes
+its work, and `session_scope`'s rollback-on-exception was verified to leave nothing
+behind. The defect is specific to savepoints.
+
+---
+
+## §8S — Seasonality reaches the menu only through variant options
+
+Spec §4.3 gives seasons two jobs, and both are real arithmetic: keep out-of-season
+history out of the ordinary baseline, and cap an order at the days left in the window.
+Both are driven by `SqlSeasonRepository.seasons_by_ingredient()`, which walks
+**`VariantOption.season_id`**.
+
+That is a sound design and it works — Pistachio syrup is correctly skipped as
+out-of-season, and the Today screen correctly pulls three Pistachio Lattes off the
+menu. What it is not is *complete*, and the reason is easy to miss:
+
+**An ingredient reached only through a `manual_recipe_line` can never be seasonal.**
+Only 1 of 27 detected templates has been materialised, so 312 of 320 menu items still
+resolve through manual recipes. Measured today:
+
+- `Pumpkin season` (2026-09-15 → 11-30, recurring) exists and is **currently open**
+- `Pumpkin spice syrup (Monin)` drives **8 menu items**
+- **Zero** variant options reference that season, so `seasons_by_ingredient()` returns
+  exactly one entry — Pistachio
+
+Nothing is broken and nothing errors. The consequence arrives **a season later**: when
+pumpkin closes on 30 November its sales sit in the ordinary 28-day window and inflate
+the December forecast for a line that is no longer on the menu. That is precisely the
+failure §4.3 was written to prevent, arriving through the one path the mechanism does
+not cover.
+
+Surfaced as a doctor WARN rather than patched, because the fix is not a data edit:
+**confirming a template is what turns its flavour options into variant options the
+season rules can see.** So the remedy names the import-review screen, and the screen
+now has a concrete payoff beyond tidiness — materialising `Flavoured Latte` is what
+made Pistachio seasonal in the first place.
+
+Worth noting for whoever extends this: attaching a season directly to an `Ingredient`,
+or teaching `seasons_by_ingredient()` to read manual recipe lines, would close the gap
+without the import. Both are schema or repository changes and neither was needed to
+make the limitation visible, which was the urgent part.
+
+---
+
+## §8T — Payment reports: the one thing the sketches had and the brief did not
+
+The owner's three architecture sketches were attached to the brief but never arrived
+as images. They were found on disk at `~/Downloads/Untitled-2/` — four photos of a
+notepad, one a duplicate — and auditing the build against them turned up exactly two
+deltas.
+
+The first is the **load balancer** drawn in front of the app. Deliberately not built:
+one box, ~40 transactions a day, one SQLite file with a single writer. A second
+instance would contend on that file and make things *worse* (`CLAUDE.md` §3).
+
+The second was real. Under the Lightspeed box, beside "stock management" and
+"best/least positions", the sketch reads **"payment reports"** — and nothing in the
+system modelled it. Spec §4.5 models `sale`, which is what was *ordered*. It never
+models what was *settled*, and the gap between those two numbers is refunds,
+discounts, service charges and card fees.
+
+That gap is why `Money & P&L` could only ever be the purchase side. It had no way to
+say what the café took, so it could not show contribution — and the screen said so.
+
+### Built CSV-first, for the reason §4.6 already established
+
+The Lightspeed payments endpoint has never been probed and its shape is unknown.
+Guessing a mapper would read some column into `fees_pence` and make every net figure
+wrong with no symptom — the one class of error worth refusing outright. So the same
+shape as channels: a `PaymentSource` protocol with a CSV implementation first, and
+room for a `LightspeedPaymentSource` when someone has credentials to probe with.
+
+`integrations/payments/` reuses the hardening `channels/columns.py` already earned
+against real hand-made exports — delimiter sniffing, currency symbols, day-first
+dates, blank-vs-zero — rather than writing it twice.
+
+### Two things this got right by being strict
+
+**Aliases are normalised at import, not by hand.** `normalise_header` lowercases and
+underscores, so `"Payment method"` becomes `payment_method`. The first pass wrote
+`"paymentmethod"` in the alias list and both fixtures were refused — correctly, and
+with a message naming the exact missing column. Hand-writing pre-normalised spellings
+is how a mapper silently stops matching.
+
+**A bare number in an export means pounds, not pence.** The first fixture wrote
+`23880` meaning £238.80 and the reader produced £271,172 gross for a café taking
+£3–5k a month. The parser was right; the fixture was wrong. Worth stating because the
+instinct is to "fix" the parser.
+
+### The behaviour that matters
+
+`net_pence` is `None` unless **every** deduction was reported on **every** day. One
+shipped sample omits a discounts column, so the live response returns
+`discounts_pence: null, net_pence: null` with a caveat naming it. Subtracting only the
+days that reported fees would produce a net that is too high and entirely plausible —
+invariant 8 applied to revenue, where it matters most.
+
+Reachable from `cafeops payments import|report`, `GET /api/takings`, and the Money
+screen. Still missing, and needing the owner rather than code: a real export to map
+against, or Lightspeed credentials to probe the payments endpoint with.
+
+**Second implementation added.** §4.6's pattern is CSV first, browser agent second,
+and channels had both while payments had only the first -- leaving it dependent on
+somebody remembering to export a file. `BrowserAgentPaymentSource` closes that, built
+to the same rules as `channels/browser_source.py`:
+
+* the agent **downloads the export the back office already offers**; it never reads a
+  figure off the screen, because a scraped total cannot be re-checked against
+  anything;
+* the downloaded file goes through the **same reader, the same column mapping and the
+  same refusals** as a hand export -- verified: a file with unrecognisable headers is
+  refused identically whichever way it arrived;
+* with no driver wired it raises `PaymentSourceUnavailable` and the caller falls back
+  to the CSV directory, rather than recording a half-scraped day;
+* the plan is navigate-and-download only, and `TakingsPlan` is inert. `cafeops
+  payments browser-plan` prints it and contacts nothing (invariant 10: the agent
+  emits a proposal, it does not act).

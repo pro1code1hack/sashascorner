@@ -1,0 +1,15 @@
+{
+  "name": "Sasha's Corner",
+  "short_name": "Sasha's Corner",
+  "description": "Independent café on Commercial Street, Dundee.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "browser",
+  "theme_color": "#474531",
+  "background_color": "#F3F1EB",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

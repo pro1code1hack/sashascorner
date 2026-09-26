@@ -1,0 +1,630 @@
+---
+import Base from '../layouts/Base.astro';
+import LineDraw from '../components/LineDraw.astro';
+import Icon from '../components/Icon.astro';
+import AboutGallery, { type Photo } from '../components/AboutGallery.astro';
+import Slot from '../components/Slot.astro';
+import { info } from '../lib/data';
+
+const site = Astro.site!;
+const title = "About Sasha's Corner, a café on Commercial Street, Dundee";
+const description =
+  'Women-owned independent café at 23 Commercial Street, Dundee, open since November 2025: sage walls, dark panelling, chess, board games and over 100 drinks.';
+
+const instagram = info?.socials.instagram || 'https://www.instagram.com/sashascorner_uk';
+const handle = instagram.replace(/\/$/, '').split('/').pop();
+const reviewsUrl = 'https://www.google.com/maps/search/?api=1&query=Sasha%27s+Corner+Dundee';
+
+// Alt text is written from what is actually in each frame.
+const photos: Photo[] = [
+  {
+    src: '/img/cafe/storefront.webp',
+    w: 933,
+    h: 1400,
+    alt: "The front window from the street: the white Sasha's Corner logo, a line-drawn portafilter pouring into a cup, pink and white balloons above, two people inside drinking from takeaway cups at a white table",
+    caption: 'The front window on Commercial Street.',
+  },
+  {
+    src: '/img/cafe/interior.webp',
+    w: 1050,
+    h: 1400,
+    alt: 'Inside the café: sage-green walls over dark wood panelling, a grey marble-look floor, white tables and chairs, a shelf of chess pieces and board games, and a chessboard by the wall',
+    caption: 'Sage over dark panelling, with the games shelf on the right.',
+  },
+  {
+    src: '/img/cafe/window.webp',
+    w: 1050,
+    h: 1400,
+    alt: 'A green woven placemat with a cup of sugar sachets and stirrers on a white table, sunlight through the window vinyl of drawn drinks, cakes and a cat',
+    caption: 'A window table, looking out through the vinyl.',
+  },
+  {
+    src: '/img/cafe/cat-print.webp',
+    w: 1050,
+    h: 1400,
+    alt: 'A framed print of a scruffy black cat with a cigarette, sitting beside a steaming cup of coffee, hung on a textured sage wall',
+    caption: 'One of the cat prints on the sage wall.',
+  },
+  {
+    src: '/img/cafe/blue-and-green-matcha.webp',
+    w: 1050,
+    h: 1400,
+    alt: "An iced green matcha and an iced blue matcha, both layered over milk, in clear cups with Sasha's Corner logo stickers, on a table by the window",
+    caption: 'Green and blue matcha, over ice.',
+  },
+  {
+    src: '/img/cafe/matcha-from-above.webp',
+    w: 1050,
+    h: 1400,
+    alt: "Looking down on an iced green matcha and an iced blue matcha, each lid with a small 'Thank you' cat sticker, next to a green woven placemat",
+    caption: 'The same two from above, with thank-you stickers.',
+  },
+  {
+    src: '/img/cafe/muffin-and-cake.webp',
+    w: 1050,
+    h: 1400,
+    alt: 'A muffin on a white plate with a fork, and a frothy drink in a double-walled glass topped with dried rosebuds, beside a green woven placemat',
+    caption: 'A muffin, and a drink finished with dried rosebuds.',
+  },
+  {
+    src: '/img/cafe/winter-lattes.webp',
+    w: 1399,
+    h: 1400,
+    alt: 'Two milky coffees in glass mugs, one with leaf latte art, a small snowman ornament between them, a chocolate-topped crispy square and a slice of frosted chocolate cake on white plates over a green placemat',
+    caption: 'Two coffees and two bakes, with a snowman for company.',
+  },
+];
+
+const quotes = [
+  'By far the biggest selection of drinks in Dundee!',
+  'Wonderful place with good prices and a lot of variety in drinks.',
+  'Very friendly service with a great coffee and atmosphere.',
+];
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'AboutPage',
+  '@id': new URL('/about#page', site).href,
+  url: new URL('/about', site).href,
+  name: title,
+  description,
+  inLanguage: 'en-GB',
+  about: { '@id': new URL('/#cafe', site).href },
+  primaryImageOfPage: new URL('/img/cafe/storefront.webp', site).href,
+  image: photos.map((p) => new URL(p.src, site).href),
+};
+---
+
+<Base tone="light" title={title} description={description} extraJsonLd={jsonLd}>
+  <!-- Opening ---------------------------------------------------------------- -->
+  <section class="open" aria-labelledby="about-title">
+    <div class="wrap open__grid">
+      <div class="open__copy">
+        <p class="label">About</p>
+        <h1 id="about-title">
+          A corner of Commercial Street, <span class="soft">drawn in one line.</span>
+        </h1>
+        <p class="open__lede">
+          Sasha's Corner is an independent, women-owned café at 23 Commercial Street, Dundee. It opened in November 2025:
+          one room with sage walls over dark panelling, a chess set and a stack of board games, and a drinks board that runs
+          past a hundred.
+        </p>
+        <!-- OWNER TO CONFIRM: the founding story -- who Sasha is, who started the café and why.
+             Not known, so the page describes the room and the drinks instead. -->
+        <p class="open__line">
+          The logo is a single unbroken line. It starts at the portafilter, falls with the espresso and finishes as the
+          cup. You'll find it on the front window and on the stickers on the iced cups.
+        </p>
+      </div>
+      <div class="open__art">
+        <LineDraw label="The Sasha's Corner logo line: a portafilter pouring espresso into a cup, drawn as one continuous line" />
+      </div>
+    </div>
+  </section>
+
+  <!-- The room --------------------------------------------------------------- -->
+  <section class="room" aria-labelledby="room-title">
+    <div class="wrap">
+      <header class="room__head" data-reveal>
+        <p class="label">The room</p>
+        <h2 id="room-title" class="sec-title">What you'll <span class="soft">notice once you sit down.</span></h2>
+      </header>
+
+      <div class="spread spread--a">
+        <figure class="ph ph--xl" data-reveal>
+          <Slot key="about.room.hero" tone="paper" sizes="(max-width: 860px) 100vw, 58vw" />
+          <figcaption>Sage over dark panelling, and the games shelf.</figcaption>
+        </figure>
+        <ol class="notes" data-reveal>
+          <li>
+            <h3>The walls</h3>
+            <p>Sage green above, dark wood panelling below, and a grey marble-look floor underfoot.</p>
+          </li>
+          <li>
+            <h3>The tables</h3>
+            <p>White tables and chairs, softened with velvet cushions.</p>
+          </li>
+          <li>
+            <h3>The chess table</h3>
+            <p>There's a chess set out, and a shelf of board games for anyone staying a while.</p>
+          </li>
+        </ol>
+      </div>
+
+      <div class="spread spread--b">
+        <ol class="notes notes--wide" start="4" data-reveal>
+          <li>
+            <h3>The placemats</h3>
+            <p>Green and woven, with a thread of gold running through them.</p>
+          </li>
+          <li>
+            <h3>The light</h3>
+            <p>Warm LED strip lights, so the room stays soft when the day outside doesn't.</p>
+          </li>
+          <li>
+            <h3>The stars</h3>
+            <p>Gold stars, bright against the sage and the dark wood.</p>
+          </li>
+          <li>
+            <h3>The cats</h3>
+            <p>Framed cat prints on the sage walls, each one with a cup of coffee and an attitude.</p>
+          </li>
+          <li>
+            <h3>The tree</h3>
+            <p>A painted white tree, one more thing to find while you wait for your drink.</p>
+          </li>
+        </ol>
+        <figure class="ph ph--s ph--one" data-reveal>
+          <Slot key="about.room.window" tone="paper" sizes="(max-width: 860px) 50vw, 25vw" />
+          <figcaption>A window table, looking out through the drawings.</figcaption>
+        </figure>
+        <figure class="ph ph--s ph--two" data-reveal>
+          <Slot key="about.room.cat" tone="paper" sizes="(max-width: 860px) 50vw, 25vw" />
+          <figcaption>One of the cat prints on the sage wall.</figcaption>
+        </figure>
+      </div>
+
+      <div class="spread spread--c">
+        <div class="spread__text" data-reveal>
+          <p class="num spread__n">09</p>
+          <h3>The window</h3>
+          <p>
+            The logo line is drawn across the front glass, and around it the window is covered in line drawings of
+            milkshakes, cupcakes, croissants, coffee beans and a cat. From the street it tells you what's inside; from a
+            window table you look out through it.
+          </p>
+        </div>
+        <figure class="ph ph--l" data-reveal>
+          <Slot key="about.room.front" tone="paper" sizes="(max-width: 860px) 100vw, 58vw" />
+          <figcaption>The front window on Commercial Street.</figcaption>
+        </figure>
+      </div>
+
+      <div class="spread spread--d">
+        <figure class="ph ph--team" data-reveal>
+          <Slot key="about.team" tone="paper" sizes="(max-width: 860px) 100vw, 66vw" />
+        </figure>
+        <div class="spread__text" data-reveal>
+          <p class="num spread__n">10</p>
+          <h3>Behind the counter</h3>
+          <!-- OWNER TO CONFIRM: the team -- names, how many, anything they'd like said.
+               Not known, so the page only says what a visitor can see. -->
+          <p>The people who whisk the matcha in front of you, work through the drinks board and cut the cake.</p>
+        </div>
+      </div>
+      <!-- OWNER TO CONFIRM: where the coffee and matcha come from (roaster, bean origin,
+           matcha grade). Not known, so not stated. -->
+    </div>
+  </section>
+
+  <!-- What people say ---------------------------------------------------------- -->
+  <section class="say" aria-labelledby="say-title">
+    <div class="wrap say__grid">
+      <div class="say__head" data-reveal>
+        <p class="label">What people say</p>
+        <h2 id="say-title" class="sec-title">
+          <span class="num">4.9</span><span class="say__star" aria-hidden="true">★</span>
+          <span class="soft say__from">from <span class="num">54</span> Google reviews</span>
+        </h2>
+        <a class="say__link" href={reviewsUrl} target="_blank" rel="noopener">
+          Read them on Google Maps <Icon name="arrow" />
+        </a>
+      </div>
+      <ul class="say__list">
+        {
+          quotes.map((q) => (
+            <li data-reveal>
+              <figure>
+                <blockquote>
+                  <p>“{q}”</p>
+                </blockquote>
+                <figcaption>Google review</figcaption>
+              </figure>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <!-- Gallery ------------------------------------------------------------------ -->
+  <section class="gallery" aria-labelledby="gallery-title">
+    <div class="wrap">
+      <header class="room__head" data-reveal>
+        <p class="label">Photos</p>
+        <h2 id="gallery-title" class="sec-title">Have a look <span class="soft">before you come in.</span></h2>
+      </header>
+      <AboutGallery slotKey="about.gallery" />
+    </div>
+  </section>
+
+  <!-- Close -------------------------------------------------------------------- -->
+  <section class="close" aria-labelledby="close-title">
+    <div class="wrap close__in" data-reveal>
+      <h2 id="close-title" class="sec-title">Pull up a chair, <span class="soft">or set up the board.</span></h2>
+      <div class="close__cta">
+        <a class="btn btn--caramel" href="/book">Book a table <span class="arrow" aria-hidden="true">→</span></a>
+        <a class="btn btn--ghost" href="/menu">See the menu</a>
+        <a class="close__insta" href={instagram} target="_blank" rel="me noopener">
+          <Icon name="instagram" /> @{handle}
+        </a>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .label {
+    color: var(--coffee);
+  }
+  .sec-title {
+    font-size: var(--step-4);
+    line-height: 0.95;
+  }
+  .soft {
+    font-family: var(--font-light);
+    font-weight: 200;
+    font-stretch: 100%;
+    letter-spacing: -0.03em;
+  }
+
+  /* opening */
+  .open {
+    padding-block: clamp(40px, 7vw, 110px) clamp(64px, 9vw, 130px);
+  }
+  .open__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: clamp(32px, 6vw, 96px);
+    align-items: center;
+  }
+  .open h1 {
+    font-size: var(--step-5);
+    line-height: 0.92;
+    color: var(--olive-900);
+    margin-block: 16px clamp(24px, 3vw, 36px);
+  }
+  .open h1 .soft {
+    display: block;
+    color: var(--ink);
+  }
+  .open__lede {
+    font-size: var(--step-1);
+    font-weight: 300;
+    line-height: 1.5;
+    max-width: 38ch;
+  }
+  .open__line {
+    margin-top: 20px;
+    max-width: 46ch;
+    color: var(--ink-soft);
+    font-weight: 300;
+    padding-left: 18px;
+    border-left: 2px solid var(--caramel);
+  }
+  .open__art {
+    color: var(--olive-900);
+    max-width: 460px;
+    justify-self: center;
+    width: 100%;
+  }
+  @media (max-width: 900px) {
+    .open__grid {
+      grid-template-columns: 1fr;
+    }
+    .open__art {
+      max-width: 300px;
+      order: -1;
+      justify-self: start;
+    }
+  }
+
+  /* the room */
+  .room {
+    background: var(--oat);
+    padding-block: clamp(72px, 10vw, 140px);
+  }
+  .room__head {
+    display: grid;
+    gap: 14px;
+    margin-bottom: clamp(32px, 5vw, 64px);
+  }
+  .ph {
+    margin: 0;
+  }
+  .ph figcaption {
+    margin-top: 10px;
+    font-size: var(--step--1);
+    color: var(--olive-700);
+  }
+  .spread {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: clamp(20px, 3vw, 40px);
+    align-items: start;
+  }
+  .spread + .spread {
+    margin-top: clamp(56px, 8vw, 120px);
+  }
+  .spread--a .ph--xl {
+    grid-column: 1 / span 7;
+  }
+  .spread--a .notes {
+    grid-column: 9 / -1;
+    align-self: end;
+  }
+  .spread--b .notes {
+    grid-column: 1 / span 6;
+    grid-row: 1;
+  }
+  .spread--b .ph--one {
+    grid-column: 7 / span 3;
+    grid-row: 1;
+    margin-top: clamp(40px, 8vw, 120px);
+  }
+  .spread--b .ph--two {
+    grid-column: 10 / -1;
+    grid-row: 1;
+  }
+  .spread--c {
+    align-items: end;
+  }
+  .spread--c .spread__text {
+    grid-column: 1 / span 5;
+    grid-row: 1;
+  }
+  .spread--c .ph--l {
+    grid-column: 6 / -1;
+    grid-row: 1;
+  }
+  .spread--d {
+    align-items: end;
+  }
+  .spread--d .ph--team {
+    grid-column: 1 / span 8;
+    grid-row: 1;
+  }
+  .spread--d .spread__text {
+    grid-column: 9 / -1;
+    grid-row: 1;
+  }
+  .spread__n {
+    font-size: var(--step-1);
+    color: var(--coffee);
+    margin-bottom: 10px;
+  }
+  .spread__text h3 {
+    font-size: var(--step-3);
+    margin-bottom: 14px;
+  }
+  .spread__text p:not(.spread__n) {
+    font-weight: 300;
+    color: var(--ink-soft);
+    max-width: 42ch;
+  }
+
+  .notes {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    counter-reset: note calc(var(--start, 1) - 1);
+  }
+  .notes--wide {
+    --start: 4;
+  }
+  .notes li {
+    counter-increment: note;
+    display: grid;
+    grid-template-columns: 2.4em minmax(0, 1fr);
+    column-gap: 12px;
+    padding-block: 16px;
+    border-top: 1px solid var(--rule);
+  }
+  .notes li:last-child {
+    border-bottom: 1px solid var(--rule);
+  }
+  .notes li::before {
+    content: counter(note, decimal-leading-zero);
+    grid-row: 1 / span 2;
+    font-family: var(--font-display);
+    font-variant-numeric: tabular-nums;
+    font-stretch: 92%;
+    color: var(--coffee);
+    padding-top: 0.15em;
+  }
+  .notes h3 {
+    font-size: var(--step-2);
+    margin-bottom: 6px;
+  }
+  .notes p {
+    font-weight: 300;
+    color: var(--ink-soft);
+  }
+
+  @media (max-width: 860px) {
+    .spread {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+    .spread--a .ph--xl,
+    .spread--a .notes,
+    .spread--b .notes,
+    .spread--c .spread__text,
+    .spread--c .ph--l,
+    .spread--d .ph--team,
+    .spread--d .spread__text {
+      grid-column: 1 / -1;
+      grid-row: auto;
+    }
+    .spread--b .notes {
+      grid-row: 1;
+    }
+    .spread--b .ph--one {
+      grid-column: 1 / span 3;
+      grid-row: 2;
+      margin-top: 0;
+    }
+    .spread--b .ph--two {
+      grid-column: 4 / -1;
+      grid-row: 2;
+      margin-top: clamp(32px, 10vw, 64px);
+    }
+    .spread--c .ph--l :global(.slot) {
+      aspect-ratio: 3 / 4;
+    }
+  }
+
+  /* what people say */
+  .say {
+    background: var(--olive-900);
+    color: var(--on-dark);
+    padding-block: clamp(72px, 10vw, 140px);
+  }
+  .say .label {
+    color: color-mix(in oklab, var(--paper) 70%, var(--sage));
+  }
+  .say__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: clamp(40px, 6vw, 96px);
+    align-items: start;
+  }
+  .say__head {
+    display: grid;
+    gap: 16px;
+    justify-items: start;
+  }
+  .say__head .sec-title {
+    font-size: var(--step-5);
+  }
+  .say__star {
+    color: var(--caramel);
+    font-size: 0.6em;
+    vertical-align: 0.35em;
+    margin-left: 0.08em;
+  }
+  .say__from {
+    display: block;
+    font-size: var(--step-2);
+    margin-top: 10px;
+    color: var(--on-dark-soft);
+  }
+  .say__from .num {
+    font-family: inherit;
+  }
+  .say__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--caramel);
+    text-decoration: none;
+    font-size: var(--step-0);
+  }
+  .say__link:hover {
+    text-decoration: underline;
+  }
+  .say__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .say__list li {
+    padding-block: clamp(20px, 3vw, 32px);
+    border-top: 1px solid color-mix(in oklab, var(--paper) 20%, transparent);
+  }
+  .say__list li:nth-child(2) {
+    padding-left: clamp(0px, 6vw, 96px);
+  }
+  .say__list figure {
+    margin: 0;
+  }
+  .say__list blockquote {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-stretch: 88%;
+    font-size: var(--step-2);
+    line-height: 1.12;
+    text-wrap: balance;
+  }
+  .say__list li:first-child blockquote {
+    font-size: var(--step-3);
+    line-height: 1;
+  }
+  .say__list figcaption {
+    margin-top: 10px;
+    font-size: var(--step--1);
+    color: var(--sage);
+  }
+  @media (max-width: 860px) {
+    .say__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* gallery */
+  .gallery {
+    padding-block: clamp(72px, 10vw, 140px);
+  }
+
+  /* close */
+  .close {
+    background: var(--olive-700);
+    color: var(--on-dark);
+    padding-block: clamp(64px, 9vw, 120px);
+  }
+  .close__in {
+    display: grid;
+    gap: clamp(24px, 3vw, 36px);
+  }
+  .close__cta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 16px;
+  }
+  .close__insta {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 48px;
+    padding-inline: 8px;
+    text-decoration: none;
+    color: var(--paper);
+  }
+  .close__insta:hover {
+    text-decoration: underline;
+  }
+
+  /* QA pass: contrast and tap targets */
+  .label,
+  .spread__n {
+    color: var(--coffee-deep);
+  }
+  .say__list figcaption {
+    color: var(--sage-on-dark);
+  }
+  .say__link {
+    color: color-mix(in srgb, var(--caramel) 70%, var(--paper));
+    min-height: 44px;
+  }
+</style>

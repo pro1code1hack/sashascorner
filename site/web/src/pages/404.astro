@@ -1,0 +1,54 @@
+---
+import Base from '../layouts/Base.astro';
+import LineDraw from '../components/LineDraw.astro';
+---
+
+<Base title="Page not found" description="That page isn't here." noindex>
+  <section class="nf wrap">
+    <div class="nf__art"><LineDraw /></div>
+    <div>
+      <p class="label">404</p>
+      <h1>This cup's empty.</h1>
+      <p>The page you wanted isn't here — but the kettle's on.</p>
+      <div class="nf__go">
+        <a class="btn" href="/">Home</a>
+        <a class="btn btn--ghost" href="/menu">Menu</a>
+        <a class="btn btn--ghost" href="/book">Book a table</a>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .nf {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    gap: clamp(32px, 6vw, 96px);
+    align-items: center;
+    padding-block: clamp(56px, 9vw, 140px);
+  }
+  .nf .label {
+    color: var(--coffee);
+  }
+  .nf h1 {
+    font-size: var(--step-5);
+    margin: 14px 0 18px;
+  }
+  .nf__go {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 28px;
+  }
+  .nf__art {
+    max-width: 420px;
+  }
+  @media (max-width: 760px) {
+    .nf {
+      grid-template-columns: 1fr;
+    }
+    .nf__art {
+      max-width: 260px;
+    }
+  }
+</style>

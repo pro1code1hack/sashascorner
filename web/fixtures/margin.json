@@ -1,7 +1,7 @@
 {
   "window_days": 30,
-  "since": "2026-08-25",
-  "until": "2026-09-23",
+  "since": "2026-08-26",
+  "until": "2026-09-24",
   "loaded_hourly_rate_pence": 1450,
   "rate_is_set": true,
   "items_costed": 318,
@@ -2967,7 +2967,7 @@
         "excluded_from_aggregates": false,
         "note": null
       },
-      "units_sold": "106",
+      "units_sold": "101",
       "prep_seconds": 75,
       "prep_source": "TEMPLATE_SIZE",
       "prep_is_estimate": true,
@@ -4047,7 +4047,7 @@
         "excluded_from_aggregates": false,
         "note": null
       },
-      "units_sold": "221",
+      "units_sold": "213",
       "prep_seconds": 85,
       "prep_source": "TEMPLATE_SIZE",
       "prep_is_estimate": true,
@@ -4506,7 +4506,7 @@
         "excluded_from_aggregates": false,
         "note": null
       },
-      "units_sold": "147",
+      "units_sold": "142",
       "prep_seconds": 75,
       "prep_source": "TEMPLATE_SIZE",
       "prep_is_estimate": true,
@@ -4533,7 +4533,7 @@
         "excluded_from_aggregates": false,
         "note": null
       },
-      "units_sold": "127",
+      "units_sold": "123",
       "prep_seconds": 75,
       "prep_source": "TEMPLATE_SIZE",
       "prep_is_estimate": true,
@@ -4614,7 +4614,7 @@
         "excluded_from_aggregates": false,
         "note": null
       },
-      "units_sold": "184",
+      "units_sold": "177",
       "prep_seconds": 85,
       "prep_source": "TEMPLATE_SIZE",
       "prep_is_estimate": true,
@@ -4641,7 +4641,7 @@
         "excluded_from_aggregates": false,
         "note": null
       },
-      "units_sold": "208",
+      "units_sold": "204",
       "prep_seconds": 85,
       "prep_source": "TEMPLATE_SIZE",
       "prep_is_estimate": true,
@@ -5046,7 +5046,7 @@
         "excluded_from_aggregates": false,
         "note": null
       },
-      "units_sold": "124",
+      "units_sold": "123",
       "prep_seconds": 135,
       "prep_source": "MENU_ITEM",
       "prep_is_estimate": true,
@@ -5235,7 +5235,7 @@
         "excluded_from_aggregates": false,
         "note": null
       },
-      "units_sold": "129",
+      "units_sold": "125",
       "prep_seconds": 100,
       "prep_source": "TEMPLATE_SIZE",
       "prep_is_estimate": true,
@@ -10718,7 +10718,7 @@
         "excluded_from_aggregates": false,
         "note": null
       },
-      "units_sold": "106",
+      "units_sold": "101",
       "prep_seconds": 75,
       "prep_source": "TEMPLATE_SIZE",
       "prep_is_estimate": true,
@@ -12122,7 +12122,7 @@
         "excluded_from_aggregates": false,
         "note": null
       },
-      "units_sold": "221",
+      "units_sold": "213",
       "prep_seconds": 85,
       "prep_source": "TEMPLATE_SIZE",
       "prep_is_estimate": true,
@@ -13499,7 +13499,7 @@
         "excluded_from_aggregates": false,
         "note": null
       },
-      "units_sold": "147",
+      "units_sold": "142",
       "prep_seconds": 75,
       "prep_source": "TEMPLATE_SIZE",
       "prep_is_estimate": true,
@@ -13526,7 +13526,7 @@
         "excluded_from_aggregates": false,
         "note": null
       },
-      "units_sold": "127",
+      "units_sold": "123",
       "prep_seconds": 75,
       "prep_source": "TEMPLATE_SIZE",
       "prep_is_estimate": true,
@@ -13580,7 +13580,7 @@
         "excluded_from_aggregates": false,
         "note": null
       },
-      "units_sold": "184",
+      "units_sold": "177",
       "prep_seconds": 85,
       "prep_source": "TEMPLATE_SIZE",
       "prep_is_estimate": true,
@@ -13607,7 +13607,7 @@
         "excluded_from_aggregates": false,
         "note": null
       },
-      "units_sold": "208",
+      "units_sold": "204",
       "prep_seconds": 85,
       "prep_source": "TEMPLATE_SIZE",
       "prep_is_estimate": true,
@@ -14417,7 +14417,7 @@
         "excluded_from_aggregates": false,
         "note": null
       },
-      "units_sold": "129",
+      "units_sold": "125",
       "prep_seconds": 100,
       "prep_source": "TEMPLATE_SIZE",
       "prep_is_estimate": true,
@@ -15470,7 +15470,7 @@
         "excluded_from_aggregates": false,
         "note": null
       },
-      "units_sold": "124",
+      "units_sold": "123",
       "prep_seconds": 135,
       "prep_source": "MENU_ITEM",
       "prep_is_estimate": true,
@@ -19328,16 +19328,16 @@
     "template_id": null,
     "items_total": 318,
     "items_included": 298,
-    "units_total": "1369",
-    "staff_hours": "34.040278",
-    "prep_seconds_total": "122545",
-    "labour_cost_pence_total": "49358.402778",
-    "ingredient_cost_pence_total": "113023.938543",
-    "revenue_pence_total": "517390",
-    "contribution_pence_total": "404366.061457",
-    "true_margin_pence_total": "355007.658679",
-    "margin_per_minute_pence": "197.984118",
-    "labour_share_of_revenue_pct": 9.54,
+    "units_total": "1331",
+    "staff_hours": "33.151389",
+    "prep_seconds_total": "119345",
+    "labour_cost_pence_total": "48069.513889",
+    "ingredient_cost_pence_total": "110070.035183",
+    "revenue_pence_total": "503250",
+    "contribution_pence_total": "393179.964817",
+    "true_margin_pence_total": "345110.450928",
+    "margin_per_minute_pence": "197.668925",
+    "labour_share_of_revenue_pct": 9.552,
     "is_complete": false,
     "excluded": [
       [
@@ -19421,7 +19421,7 @@
         "prep time not set"
       ]
     ],
-    "summary": "whole menu: 298 of 318 item(s); 1369 unit(s) sold; 34.04 staff hours; labour GBP 493.58; 198.0p contribution per staff minute; 20 item(s) EXCLUDED (see below)"
+    "summary": "whole menu: 298 of 318 item(s); 1331 unit(s) sold; 33.15 staff hours; labour GBP 480.70; 197.7p contribution per staff minute; 20 item(s) EXCLUDED (see below)"
   },
   "by_template": [
     {
@@ -19429,19 +19429,19 @@
       "template_id": 1,
       "items_total": 9,
       "items_included": 9,
-      "units_total": "1369",
-      "staff_hours": "34.040278",
-      "prep_seconds_total": "122545",
-      "labour_cost_pence_total": "49358.402778",
-      "ingredient_cost_pence_total": "113023.938543",
-      "revenue_pence_total": "517390",
-      "contribution_pence_total": "404366.061457",
-      "true_margin_pence_total": "355007.658679",
-      "margin_per_minute_pence": "197.984118",
-      "labour_share_of_revenue_pct": 9.54,
+      "units_total": "1331",
+      "staff_hours": "33.151389",
+      "prep_seconds_total": "119345",
+      "labour_cost_pence_total": "48069.513889",
+      "ingredient_cost_pence_total": "110070.035183",
+      "revenue_pence_total": "503250",
+      "contribution_pence_total": "393179.964817",
+      "true_margin_pence_total": "345110.450928",
+      "margin_per_minute_pence": "197.668925",
+      "labour_share_of_revenue_pct": 9.552,
       "is_complete": true,
       "excluded": [],
-      "summary": "Flavoured Latte: 9 of 9 item(s); 1369 unit(s) sold; 34.04 staff hours; labour GBP 493.58; 198.0p contribution per staff minute"
+      "summary": "Flavoured Latte: 9 of 9 item(s); 1331 unit(s) sold; 33.15 staff hours; labour GBP 480.70; 197.7p contribution per staff minute"
     }
   ],
   "estimated_cost_item_count": 280,

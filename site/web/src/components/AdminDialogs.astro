@@ -1,0 +1,27 @@
+---
+// Modal dialogs for /admin: the library picker and the delete confirmation.
+// Native <dialog>: focus stays inside while open, Esc closes.
+---
+
+<dialog class="adm-dlg adm-dlg--wide" data-picker aria-labelledby="adm-pick-t">
+  <div class="adm-dlg__in">
+    <header class="adm-dlg__head">
+      <h2 id="adm-pick-t" data-picker-title>Choose a photo</h2>
+      <button type="button" class="adm-icon" data-picker-close aria-label="Close without choosing">×</button>
+    </header>
+    <ul class="adm-picker" data-picker-grid></ul>
+    <footer class="adm-dlg__foot">
+      <p class="adm-muted num" data-picker-note aria-live="polite"></p>
+      <button type="button" class="btn btn--caramel" data-picker-ok hidden>Add photo</button>
+    </footer>
+  </div>
+</dialog>
+
+<dialog class="adm-dlg" data-delete-dialog aria-labelledby="adm-del-t">
+  <div class="adm-dlg__in">
+    <h2 id="adm-del-t" data-delete-title>Delete this photo?</h2>
+    <div class="adm-dlg__body" data-delete-body></div>
+    <p class="adm-status" role="status" data-delete-msg></p>
+    <div class="adm-dlg__actions" data-delete-actions></div>
+  </div>
+</dialog>

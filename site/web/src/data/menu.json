@@ -1,0 +1,3200 @@
+{
+  "generated_at": "2026-09-25T22:55:15.259007Z",
+  "categories": [
+    {
+      "slug": "autumn",
+      "name": "Autumn specials",
+      "blurb": "On the board until the clocks change properly.",
+      "items": [
+        {
+          "id": "iced-banana-bread-hojicha",
+          "name": "Iced banana bread hojicha",
+          "description": "Fresh banana with cinnamon and fresh milk, finished with roasted green tea.",
+          "note": null,
+          "signature": true,
+          "seasonal": {
+            "name": "Autumn"
+          },
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 480
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 500
+            }
+          ]
+        },
+        {
+          "id": "iced-biscoff-hojicha",
+          "name": "Iced Biscoff hojicha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": {
+            "name": "Autumn"
+          },
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 460
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 480
+            }
+          ]
+        },
+        {
+          "id": "iced-brown-sugar-hojicha",
+          "name": "Iced brown sugar hojicha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": {
+            "name": "Autumn"
+          },
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 460
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 480
+            }
+          ]
+        },
+        {
+          "id": "iced-creamy-pumpkin-spice",
+          "name": "Iced creamy pumpkin spice",
+          "description": "Espresso, condensed milk and pumpkin-spice syrup over milk and ice, topped with cream.",
+          "note": null,
+          "signature": false,
+          "seasonal": {
+            "name": "Autumn"
+          },
+          "sizes": [
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 500
+            }
+          ]
+        },
+        {
+          "id": "brown-sugar-bubble-tea",
+          "name": "Brown sugar bubble tea",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": {
+            "name": "Autumn"
+          },
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 440
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 480
+            }
+          ]
+        },
+        {
+          "id": "mango-bubble-tea",
+          "name": "Mango bubble tea",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": {
+            "name": "Autumn"
+          },
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 440
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 480
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "hot-drinks",
+      "name": "Hot drinks",
+      "blurb": "The everyday list, in three sizes.",
+      "items": [
+        {
+          "id": "black-americano",
+          "name": "Black americano",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 280
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 310
+            },
+            {
+              "code": "XL",
+              "label": "Large",
+              "price_pence": 340
+            }
+          ]
+        },
+        {
+          "id": "white-americano",
+          "name": "White americano",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 280
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 310
+            },
+            {
+              "code": "XL",
+              "label": "Large",
+              "price_pence": 340
+            }
+          ]
+        },
+        {
+          "id": "latte",
+          "name": "Latte",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 320
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 350
+            },
+            {
+              "code": "XL",
+              "label": "Large",
+              "price_pence": 380
+            }
+          ]
+        },
+        {
+          "id": "cappuccino",
+          "name": "Cappuccino",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 320
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 350
+            },
+            {
+              "code": "XL",
+              "label": "Large",
+              "price_pence": 380
+            }
+          ]
+        },
+        {
+          "id": "raff-coffee",
+          "name": "Raff coffee",
+          "description": "Espresso steamed with cream and vanilla sugar — an Eastern European café favourite.",
+          "note": null,
+          "signature": true,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 350
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 380
+            },
+            {
+              "code": "XL",
+              "label": "Large",
+              "price_pence": 410
+            }
+          ]
+        },
+        {
+          "id": "mocha",
+          "name": "Mocha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 340
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 370
+            },
+            {
+              "code": "XL",
+              "label": "Large",
+              "price_pence": 400
+            }
+          ]
+        },
+        {
+          "id": "white-mocha",
+          "name": "White mocha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 350
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 380
+            },
+            {
+              "code": "XL",
+              "label": "Large",
+              "price_pence": 410
+            }
+          ]
+        },
+        {
+          "id": "orange-americano",
+          "name": "Orange americano",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 340
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 370
+            },
+            {
+              "code": "XL",
+              "label": "Large",
+              "price_pence": 400
+            }
+          ]
+        },
+        {
+          "id": "chai-latte",
+          "name": "Chai latte",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 340
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 370
+            },
+            {
+              "code": "XL",
+              "label": "Large",
+              "price_pence": 400
+            }
+          ]
+        },
+        {
+          "id": "hot-chocolate",
+          "name": "Hot chocolate",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 340
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 370
+            },
+            {
+              "code": "XL",
+              "label": "Large",
+              "price_pence": 400
+            }
+          ]
+        },
+        {
+          "id": "white-hot-chocolate",
+          "name": "White hot chocolate",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 340
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 370
+            },
+            {
+              "code": "XL",
+              "label": "Large",
+              "price_pence": 400
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "espresso",
+      "name": "Espresso bar",
+      "blurb": "One size, made to order.",
+      "items": [
+        {
+          "id": "single-espresso",
+          "name": "Single espresso",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 190
+            }
+          ]
+        },
+        {
+          "id": "double-espresso",
+          "name": "Double espresso",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 200
+            }
+          ]
+        },
+        {
+          "id": "single-macchiato",
+          "name": "Single macchiato",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 200
+            }
+          ]
+        },
+        {
+          "id": "double-macchiato",
+          "name": "Double macchiato",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 210
+            }
+          ]
+        },
+        {
+          "id": "single-espresso-con-panna",
+          "name": "Single espresso con panna",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 220
+            }
+          ]
+        },
+        {
+          "id": "double-espresso-con-panna",
+          "name": "Double espresso con panna",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 240
+            }
+          ]
+        },
+        {
+          "id": "cortado",
+          "name": "Cortado",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 310
+            }
+          ]
+        },
+        {
+          "id": "mocha-cortado",
+          "name": "Mocha cortado",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 315
+            }
+          ]
+        },
+        {
+          "id": "flat-white",
+          "name": "Flat white",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 325
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "seasonal-hot",
+      "name": "Signature hot drinks",
+      "blurb": "Lavender, rose, pistachio, honey — and blue matcha.",
+      "items": [
+        {
+          "id": "honey-vanilla-latte",
+          "name": "Honey vanilla latte",
+          "description": "Pure honey and vanilla with a smooth espresso.",
+          "note": null,
+          "signature": true,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 390
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 410
+            },
+            {
+              "code": "XL",
+              "label": "Large",
+              "price_pence": 430
+            }
+          ]
+        },
+        {
+          "id": "lavender-latte",
+          "name": "Lavender latte",
+          "description": "Espresso, creamy milk and a fresh note of lavender.",
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 390
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 410
+            },
+            {
+              "code": "XL",
+              "label": "Large",
+              "price_pence": 430
+            }
+          ]
+        },
+        {
+          "id": "rose-latte",
+          "name": "Rose latte",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 390
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 410
+            },
+            {
+              "code": "XL",
+              "label": "Large",
+              "price_pence": 430
+            }
+          ]
+        },
+        {
+          "id": "pistachio-latte",
+          "name": "Pistachio latte",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 390
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 410
+            },
+            {
+              "code": "XL",
+              "label": "Large",
+              "price_pence": 430
+            }
+          ]
+        },
+        {
+          "id": "salted-caramel-latte",
+          "name": "Salted caramel latte",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 400
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 410
+            },
+            {
+              "code": "XL",
+              "label": "Large",
+              "price_pence": 430
+            }
+          ]
+        },
+        {
+          "id": "rose-white-mocha",
+          "name": "Rose white mocha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 400
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 420
+            },
+            {
+              "code": "XL",
+              "label": "Large",
+              "price_pence": 460
+            }
+          ]
+        },
+        {
+          "id": "blue-vanilla-matcha",
+          "name": "Blue vanilla matcha",
+          "description": "Blue matcha and vanilla — warms you up on any day.",
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 400
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 420
+            },
+            {
+              "code": "XL",
+              "label": "Large",
+              "price_pence": 460
+            }
+          ]
+        },
+        {
+          "id": "blue-lavender-matcha",
+          "name": "Blue lavender matcha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 400
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 420
+            },
+            {
+              "code": "XL",
+              "label": "Large",
+              "price_pence": 460
+            }
+          ]
+        },
+        {
+          "id": "blue-honey-matcha",
+          "name": "Blue honey matcha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 400
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 420
+            },
+            {
+              "code": "XL",
+              "label": "Large",
+              "price_pence": 460
+            }
+          ]
+        },
+        {
+          "id": "black-honey",
+          "name": "Black honey",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 380
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 400
+            },
+            {
+              "code": "XL",
+              "label": "Large",
+              "price_pence": 420
+            }
+          ]
+        },
+        {
+          "id": "lavender-hot-chocolate",
+          "name": "Lavender hot chocolate",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 400
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 420
+            },
+            {
+              "code": "XL",
+              "label": "Large",
+              "price_pence": 440
+            }
+          ]
+        },
+        {
+          "id": "pistachio-hot-chocolate",
+          "name": "Pistachio hot chocolate",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 400
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 420
+            },
+            {
+              "code": "XL",
+              "label": "Large",
+              "price_pence": 440
+            }
+          ]
+        },
+        {
+          "id": "rose-hot-chocolate",
+          "name": "Rose hot chocolate",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 400
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 420
+            },
+            {
+              "code": "XL",
+              "label": "Large",
+              "price_pence": 440
+            }
+          ]
+        },
+        {
+          "id": "raspberry-hot-chocolate",
+          "name": "Raspberry hot chocolate",
+          "description": "A properly fruity hot chocolate.",
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 400
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 420
+            },
+            {
+              "code": "XL",
+              "label": "Large",
+              "price_pence": 440
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "hot-matcha",
+      "name": "Hot matcha",
+      "blurb": "Whisked fresh in front of you.",
+      "items": [
+        {
+          "id": "matcha-latte",
+          "name": "Matcha latte",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 340
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 370
+            },
+            {
+              "code": "XL",
+              "label": "Large",
+              "price_pence": 390
+            }
+          ]
+        },
+        {
+          "id": "strawberry-matcha",
+          "name": "Strawberry matcha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 360
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 390
+            },
+            {
+              "code": "XL",
+              "label": "Large",
+              "price_pence": 420
+            }
+          ]
+        },
+        {
+          "id": "vanilla-matcha",
+          "name": "Vanilla matcha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 360
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 390
+            },
+            {
+              "code": "XL",
+              "label": "Large",
+              "price_pence": 420
+            }
+          ]
+        },
+        {
+          "id": "banana-matcha",
+          "name": "Banana matcha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 360
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 390
+            },
+            {
+              "code": "XL",
+              "label": "Large",
+              "price_pence": 420
+            }
+          ]
+        },
+        {
+          "id": "lavender-matcha",
+          "name": "Lavender matcha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 360
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 390
+            },
+            {
+              "code": "XL",
+              "label": "Large",
+              "price_pence": 420
+            }
+          ]
+        },
+        {
+          "id": "rose-matcha",
+          "name": "Rose matcha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 360
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 390
+            },
+            {
+              "code": "XL",
+              "label": "Large",
+              "price_pence": 420
+            }
+          ]
+        },
+        {
+          "id": "white-chocolate-matcha",
+          "name": "White chocolate matcha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 360
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 390
+            },
+            {
+              "code": "XL",
+              "label": "Large",
+              "price_pence": 420
+            }
+          ]
+        },
+        {
+          "id": "raspberry-matcha",
+          "name": "Raspberry matcha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 360
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 390
+            },
+            {
+              "code": "XL",
+              "label": "Large",
+              "price_pence": 420
+            }
+          ]
+        },
+        {
+          "id": "green-apple-matcha",
+          "name": "Green apple matcha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 360
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 390
+            },
+            {
+              "code": "XL",
+              "label": "Large",
+              "price_pence": 420
+            }
+          ]
+        },
+        {
+          "id": "kiwi-matcha",
+          "name": "Kiwi matcha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 360
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 390
+            },
+            {
+              "code": "XL",
+              "label": "Large",
+              "price_pence": 420
+            }
+          ]
+        },
+        {
+          "id": "mango-matcha",
+          "name": "Mango matcha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 360
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 390
+            },
+            {
+              "code": "XL",
+              "label": "Large",
+              "price_pence": 420
+            }
+          ]
+        },
+        {
+          "id": "peach-matcha",
+          "name": "Peach matcha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 360
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 390
+            },
+            {
+              "code": "XL",
+              "label": "Large",
+              "price_pence": 420
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "tea",
+      "name": "Tea",
+      "blurb": "Classic teas, and loose-leaf specials.",
+      "items": [
+        {
+          "id": "english-breakfast",
+          "name": "English breakfast",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 190
+            }
+          ]
+        },
+        {
+          "id": "earl-grey",
+          "name": "Earl grey",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 190
+            }
+          ]
+        },
+        {
+          "id": "green",
+          "name": "Green",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 190
+            }
+          ]
+        },
+        {
+          "id": "mint",
+          "name": "Mint",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 190
+            }
+          ]
+        },
+        {
+          "id": "berry",
+          "name": "Berry",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 190
+            }
+          ]
+        },
+        {
+          "id": "decaf",
+          "name": "Decaf",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 190
+            }
+          ]
+        },
+        {
+          "id": "strawberry-black",
+          "name": "Strawberry black",
+          "description": null,
+          "note": "Special leaf tea",
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 200
+            }
+          ]
+        },
+        {
+          "id": "jasmine-and-mint-green",
+          "name": "Jasmine and mint green",
+          "description": null,
+          "note": "Special leaf tea",
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 200
+            }
+          ]
+        },
+        {
+          "id": "spiced-apple-chai",
+          "name": "Spiced apple chai",
+          "description": null,
+          "note": "Special leaf tea",
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 200
+            }
+          ]
+        },
+        {
+          "id": "ginger-and-lemongrass",
+          "name": "Ginger and lemongrass",
+          "description": null,
+          "note": "Special leaf tea",
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 200
+            }
+          ]
+        },
+        {
+          "id": "forest-fruits",
+          "name": "Forest fruits",
+          "description": null,
+          "note": "Special leaf tea",
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 200
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "iced-coffee",
+      "name": "Iced coffee",
+      "blurb": "The classics, over ice.",
+      "items": [
+        {
+          "id": "iced-black-americano",
+          "name": "Iced black americano",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 290
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 310
+            }
+          ]
+        },
+        {
+          "id": "iced-white-americano",
+          "name": "Iced white americano",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 290
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 310
+            }
+          ]
+        },
+        {
+          "id": "iced-latte",
+          "name": "Iced latte",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 340
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 360
+            }
+          ]
+        },
+        {
+          "id": "iced-cappuccino",
+          "name": "Iced cappuccino",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 340
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 360
+            }
+          ]
+        },
+        {
+          "id": "iced-flat-white",
+          "name": "Iced flat white",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 320
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 350
+            }
+          ]
+        },
+        {
+          "id": "iced-mocha",
+          "name": "Iced mocha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 350
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 400
+            }
+          ]
+        },
+        {
+          "id": "iced-white-mocha",
+          "name": "Iced white mocha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 360
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 410
+            }
+          ]
+        },
+        {
+          "id": "iced-chai-latte",
+          "name": "Iced chai latte",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 350
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 380
+            }
+          ]
+        },
+        {
+          "id": "espresso-tonic",
+          "name": "Espresso tonic",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 350
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 370
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "seasonal-iced",
+      "name": "Signature iced drinks",
+      "blurb": "Blue matcha, coconut water, rose and pistachio.",
+      "items": [
+        {
+          "id": "iced-honey-blue-matcha",
+          "name": "Iced honey blue matcha",
+          "description": "Pure blue matcha, creamy milk and sweet honey.",
+          "note": null,
+          "signature": true,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 460
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 480
+            }
+          ]
+        },
+        {
+          "id": "iced-citrus-blue-matcha",
+          "name": "Iced citrus blue matcha",
+          "description": "Blue matcha with lemon juice and sparkling water.",
+          "note": null,
+          "signature": true,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 460
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 480
+            }
+          ]
+        },
+        {
+          "id": "iced-coconut-blue-matcha",
+          "name": "Iced coconut blue matcha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 460
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 480
+            }
+          ]
+        },
+        {
+          "id": "iced-lavender-blue-matcha",
+          "name": "Iced lavender blue matcha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 420
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 460
+            }
+          ]
+        },
+        {
+          "id": "iced-vanilla-blue-matcha",
+          "name": "Iced vanilla blue matcha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 420
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 460
+            }
+          ]
+        },
+        {
+          "id": "iced-coconut-water-latte",
+          "name": "Iced coconut water latte",
+          "description": "Smooth espresso over coconut water and ice. Light and naturally sweet.",
+          "note": null,
+          "signature": true,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 420
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 450
+            }
+          ]
+        },
+        {
+          "id": "iced-pistachio-latte",
+          "name": "Iced pistachio latte",
+          "description": "Espresso and cold milk with rich pistachio cream.",
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 420
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 440
+            }
+          ]
+        },
+        {
+          "id": "iced-lavender-latte",
+          "name": "Iced lavender latte",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 390
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 410
+            }
+          ]
+        },
+        {
+          "id": "iced-honey-vanilla-latte",
+          "name": "Iced honey vanilla latte",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 420
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 440
+            }
+          ]
+        },
+        {
+          "id": "iced-rose-mocha",
+          "name": "Iced rose mocha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 420
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 450
+            }
+          ]
+        },
+        {
+          "id": "iced-rose-white-mocha",
+          "name": "Iced rose white mocha",
+          "description": "Espresso, creamy milk, rose and white chocolate.",
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 430
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 460
+            }
+          ]
+        },
+        {
+          "id": "iced-raspberry-mocha",
+          "name": "Iced raspberry mocha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 420
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 450
+            }
+          ]
+        },
+        {
+          "id": "iced-white-raspberry-mocha",
+          "name": "Iced white raspberry mocha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 430
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 460
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "iced-matcha",
+      "name": "Iced green matcha",
+      "blurb": "Every one of them 4.00 / 4.40.",
+      "items": [
+        {
+          "id": "iced-mango-matcha",
+          "name": "Iced mango matcha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 400
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 440
+            }
+          ]
+        },
+        {
+          "id": "iced-strawberry-matcha",
+          "name": "Iced strawberry matcha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 400
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 440
+            }
+          ]
+        },
+        {
+          "id": "iced-peach-matcha",
+          "name": "Iced peach matcha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 400
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 440
+            }
+          ]
+        },
+        {
+          "id": "iced-coconut-matcha",
+          "name": "Iced coconut matcha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 400
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 440
+            }
+          ]
+        },
+        {
+          "id": "iced-banana-matcha",
+          "name": "Iced banana matcha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 400
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 440
+            }
+          ]
+        },
+        {
+          "id": "iced-green-apple-matcha",
+          "name": "Iced green apple matcha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 400
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 440
+            }
+          ]
+        },
+        {
+          "id": "iced-vanilla-matcha",
+          "name": "Iced vanilla matcha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 400
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 440
+            }
+          ]
+        },
+        {
+          "id": "iced-kiwi-matcha",
+          "name": "Iced kiwi matcha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 400
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 440
+            }
+          ]
+        },
+        {
+          "id": "iced-rose-matcha",
+          "name": "Iced rose matcha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 400
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 440
+            }
+          ]
+        },
+        {
+          "id": "iced-lavender-matcha",
+          "name": "Iced lavender matcha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 400
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 440
+            }
+          ]
+        },
+        {
+          "id": "iced-citrus-matcha",
+          "name": "Iced citrus matcha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 400
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 440
+            }
+          ]
+        },
+        {
+          "id": "iced-white-chocolate-matcha",
+          "name": "Iced white chocolate matcha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 400
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 440
+            }
+          ]
+        },
+        {
+          "id": "iced-raspberry-matcha",
+          "name": "Iced raspberry matcha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 400
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 440
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "bubble-tea",
+      "name": "Creamy bubble tea",
+      "blurb": "Milk tea with tapioca pearls.",
+      "items": [
+        {
+          "id": "green-apple-bubble-tea",
+          "name": "Green apple bubble tea",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 440
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 480
+            }
+          ]
+        },
+        {
+          "id": "passion-fruit-bubble-tea",
+          "name": "Passion fruit bubble tea",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 440
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 480
+            }
+          ]
+        },
+        {
+          "id": "kiwi-bubble-tea",
+          "name": "Kiwi bubble tea",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 440
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 480
+            }
+          ]
+        },
+        {
+          "id": "honey-bubble-tea",
+          "name": "Honey bubble tea",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 440
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 480
+            }
+          ]
+        },
+        {
+          "id": "strawberry-bubble-tea",
+          "name": "Strawberry bubble tea",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 440
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 480
+            }
+          ]
+        },
+        {
+          "id": "honey-banana-bubble-tea",
+          "name": "Honey banana bubble tea",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 440
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 480
+            }
+          ]
+        },
+        {
+          "id": "raspberry-bubble-tea",
+          "name": "Raspberry bubble tea",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 440
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 480
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "milkshakes",
+      "name": "Milkshakes",
+      "blurb": "Made with fresh fruit where it says so.",
+      "items": [
+        {
+          "id": "strawberry-milkshake",
+          "name": "Strawberry milkshake",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 420
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 460
+            }
+          ]
+        },
+        {
+          "id": "banana-milkshake",
+          "name": "Banana milkshake",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 440
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 460
+            }
+          ]
+        },
+        {
+          "id": "kiwi-milkshake",
+          "name": "Kiwi milkshake",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 420
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 460
+            }
+          ]
+        },
+        {
+          "id": "mango-milkshake",
+          "name": "Mango milkshake",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 420
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 460
+            }
+          ]
+        },
+        {
+          "id": "chocolate-milkshake",
+          "name": "Chocolate milkshake",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 420
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 460
+            }
+          ]
+        },
+        {
+          "id": "chocolate-coffee-milkshake",
+          "name": "Chocolate coffee milkshake",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 440
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 460
+            }
+          ]
+        },
+        {
+          "id": "coffee-milkshake",
+          "name": "Coffee milkshake",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 410
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 450
+            }
+          ]
+        },
+        {
+          "id": "salted-caramel-milkshake",
+          "name": "Salted caramel milkshake",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 420
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 460
+            }
+          ]
+        },
+        {
+          "id": "salted-caramel-coffee-milkshake",
+          "name": "Salted caramel coffee milkshake",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 440
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 480
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "cold",
+      "name": "Iced teas, refreshers & smoothies",
+      "blurb": "No coffee, lots of ice.",
+      "items": [
+        {
+          "id": "peach-iced-tea",
+          "name": "Peach iced tea",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 360
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 390
+            }
+          ]
+        },
+        {
+          "id": "iced-rose-tea",
+          "name": "Iced rose tea",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 360
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 390
+            }
+          ]
+        },
+        {
+          "id": "iced-lemon-and-honey-tea",
+          "name": "Iced lemon & honey tea",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 370
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 400
+            }
+          ]
+        },
+        {
+          "id": "tropical-mint-bliss",
+          "name": "Tropical Mint Bliss",
+          "description": null,
+          "note": "Refresher",
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 450
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 490
+            }
+          ]
+        },
+        {
+          "id": "berry-breeze-lemonade",
+          "name": "Berry Breeze Lemonade",
+          "description": null,
+          "note": "Refresher",
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 450
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 490
+            }
+          ]
+        },
+        {
+          "id": "emerald-zest",
+          "name": "Emerald Zest",
+          "description": null,
+          "note": "Refresher",
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 450
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 490
+            }
+          ]
+        },
+        {
+          "id": "passion-fruit-smoothie",
+          "name": "Passion fruit smoothie",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 400
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 420
+            }
+          ]
+        },
+        {
+          "id": "strawberry-blast-smoothie",
+          "name": "Strawberry blast smoothie",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 400
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 420
+            }
+          ]
+        },
+        {
+          "id": "pineapple-and-passion-fruit-smoothie",
+          "name": "Pineapple & passion fruit smoothie",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 400
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 420
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "breakfast",
+      "name": "Breakfast",
+      "blurb": "Order at the counter.",
+      "items": [
+        {
+          "id": "toast-with-butter",
+          "name": "Toast with butter",
+          "description": null,
+          "note": "Jam, marmalade, honey or beans +50p",
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 200
+            }
+          ]
+        },
+        {
+          "id": "avocado-toast",
+          "name": "Avocado toast",
+          "description": null,
+          "note": "With salad on the side",
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 500
+            }
+          ]
+        },
+        {
+          "id": "granola-pot",
+          "name": "Granola pot",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 400
+            }
+          ]
+        },
+        {
+          "id": "porridge",
+          "name": "Porridge",
+          "description": null,
+          "note": "With milk and fresh fruit",
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 400
+            }
+          ]
+        },
+        {
+          "id": "cheese-and-vegetable-omelette",
+          "name": "Cheese & vegetable omelette",
+          "description": null,
+          "note": "With salad on the side",
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 450
+            }
+          ]
+        },
+        {
+          "id": "chia-pudding",
+          "name": "Chia pudding",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 400
+            }
+          ]
+        },
+        {
+          "id": "bacon-roll",
+          "name": "Bacon roll",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 380
+            }
+          ]
+        },
+        {
+          "id": "sausage-roll",
+          "name": "Sausage roll",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 380
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "lunch",
+      "name": "Lunch",
+      "blurb": "Soup, salads and something toasted.",
+      "items": [
+        {
+          "id": "soup-of-the-day",
+          "name": "Soup of the day",
+          "description": null,
+          "note": "+ £1 for toast on the side",
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 500
+            }
+          ]
+        },
+        {
+          "id": "caesar-salad",
+          "name": "Caesar salad",
+          "description": null,
+          "note": "+ £1 chicken",
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 600
+            }
+          ]
+        },
+        {
+          "id": "tuna-salad",
+          "name": "Tuna salad",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 600
+            }
+          ]
+        },
+        {
+          "id": "croissant",
+          "name": "Croissant",
+          "description": null,
+          "note": "Ham & cheese, salami & cheese, or rocket & salmon",
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 400
+            }
+          ]
+        },
+        {
+          "id": "panini",
+          "name": "Panini",
+          "description": null,
+          "note": "Selection in the fridge",
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 380
+            }
+          ]
+        },
+        {
+          "id": "fresh-ciabatta",
+          "name": "Fresh ciabatta",
+          "description": null,
+          "note": "Selection on the counter",
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 450
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "waffles",
+      "name": "Brunch waffles",
+      "blurb": "Savoury with salad, sweet with fruit and ice cream.",
+      "items": [
+        {
+          "id": "cheesy-waffles",
+          "name": "Cheesy waffles",
+          "description": null,
+          "note": "With salad on the side",
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 800
+            }
+          ]
+        },
+        {
+          "id": "cheesy-potato-waffles",
+          "name": "Cheesy potato waffles",
+          "description": null,
+          "note": "With salad on the side",
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 800
+            }
+          ]
+        },
+        {
+          "id": "chocolate-waffles",
+          "name": "Chocolate waffles",
+          "description": null,
+          "note": "Fresh fruit, ice cream and sauce",
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 900
+            }
+          ]
+        },
+        {
+          "id": "maple-fruity-waffles",
+          "name": "Maple fruity waffles",
+          "description": null,
+          "note": "Fresh fruit, ice cream and sauce",
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 900
+            }
+          ]
+        },
+        {
+          "id": "pistachio-waffles",
+          "name": "Pistachio waffles",
+          "description": "Pistachio spread, fresh fruit, ice cream and sauce.",
+          "note": "Pistachio spread, fresh fruit, ice cream and sauce",
+          "signature": true,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 900
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "cakes",
+      "name": "Cakes & bakes",
+      "blurb": "What's on the counter changes daily.",
+      "items": [
+        {
+          "id": "kyiv-cake-slice",
+          "name": "Kyiv cake (slice)",
+          "description": "Hazelnut meringue, buttercream and cocoa — Kyiv's own celebration cake.",
+          "note": null,
+          "signature": true,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 400
+            }
+          ]
+        },
+        {
+          "id": "kyiv-cake-whole",
+          "name": "Kyiv cake (whole)",
+          "description": null,
+          "note": "Order ahead",
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 2500
+            }
+          ]
+        },
+        {
+          "id": "tiramisu-blondie",
+          "name": "Tiramisu blondie",
+          "description": "The ideal partner for your coffee.",
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 360
+            }
+          ]
+        },
+        {
+          "id": "raspberry-and-matcha-cheesecake",
+          "name": "Raspberry & matcha cheesecake",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 340
+            }
+          ]
+        },
+        {
+          "id": "raspberry-brownie-cheesecake",
+          "name": "Raspberry brownie cheesecake",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 360
+            }
+          ]
+        },
+        {
+          "id": "lemon-and-pistachio",
+          "name": "Lemon & pistachio",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 340
+            }
+          ]
+        },
+        {
+          "id": "billionaire-s-shortbread",
+          "name": "Billionaire's shortbread",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 360
+            }
+          ]
+        },
+        {
+          "id": "salted-caramel-brownie",
+          "name": "Salted caramel brownie",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 310
+            }
+          ]
+        },
+        {
+          "id": "sticky-toffee-biscoff",
+          "name": "Sticky toffee Biscoff",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 310
+            }
+          ]
+        },
+        {
+          "id": "blueberry-muffin",
+          "name": "Blueberry muffin",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 320
+            }
+          ]
+        },
+        {
+          "id": "banana-and-pecan-muffin",
+          "name": "Banana & pecan muffin",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 320
+            }
+          ]
+        },
+        {
+          "id": "raspberry-and-almond-muffin",
+          "name": "Raspberry & almond muffin",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 320
+            }
+          ]
+        },
+        {
+          "id": "cinnamon-classic",
+          "name": "Cinnamon classic",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 300
+            }
+          ]
+        },
+        {
+          "id": "strawberry-pancake",
+          "name": "Strawberry pancake",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 300
+            }
+          ]
+        },
+        {
+          "id": "croissant-with-jam",
+          "name": "Croissant with jam",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "One",
+              "label": "One size",
+              "price_pence": 250
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "extras": {
+    "title": "Extras",
+    "items": [
+      {
+        "name": "Caramel, vanilla or hazelnut syrup (sugar-free available)",
+        "price_text": "+40p"
+      },
+      {
+        "name": "Oat, almond or coconut milk",
+        "price_text": "+50p"
+      },
+      {
+        "name": "Soya milk",
+        "price_text": "free"
+      },
+      {
+        "name": "Extra shot",
+        "price_text": "+50p"
+      }
+    ]
+  }
+}

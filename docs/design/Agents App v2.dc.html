@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet"><style>body{font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;margin:0;font-family:'Nunito',system-ui,sans-serif;color:#1f2633}a{color:#1f2633}a:hover{color:#4a6fd1}</style></helmet>
+<div style="width:100%;height:100%;display:flex;flex-direction:column;background:#fff;font-family:'Nunito',sans-serif;color:#1f2633;overflow:hidden">
+<div style="display:flex;align-items:center;gap:18px;padding:12px 20px;border-bottom:1px solid #e8ebf0;flex:none">
+<div style="font:800 21px 'Nunito',sans-serif;letter-spacing:-.01em">Agents</div><div style="color:#5b6475;font-size:14px">they read, work things out and propose; a person confirms</div>
+</div>
+<div style="flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr)">
+<div style="border-right:1px solid #e8ebf0;overflow-y:auto;padding:16px 20px">
+<div style="font:800 17px 'Nunito',sans-serif;letter-spacing:-.01em;margin-bottom:8px">Waiting for you · {{ waitingCount }}</div>
+<sc-for list="{{ waiting }}" as="p" hint-placeholder-count="2">
+<div style="border:1px solid #e8ebf0;border-radius:14px;padding:12px 14px;margin-bottom:10px">
+<div style="display:flex;justify-content:space-between;gap:10px;color:#5b6475;font-size:13px"><span>{{ p.agent }}</span><span>{{ p.when }}</span></div>
+<div style="font-size:16px;margin:2px 0 4px">{{ p.title }}</div>
+<div style="font-size:14px;color:#5b6475">{{ p.body }}</div>
+<div style="display:flex;gap:8px;margin-top:10px"><div onClick="{{ p.accept }}" style="cursor:pointer;background:#4a6fd1;color:#fff;border-radius:16px;padding:9px 16px;font-size:14px;font-weight:700;transition:background .15s,border-color .15s">{{ p.acceptLabel }}</div><div onClick="{{ p.decline }}" style="cursor:pointer;border:1px solid #e8ebf0;border-radius:16px;padding:6px 14px;font-size:14px;transition:background .15s,border-color .15s">{{ p.declineLabel }}</div></div>
+</div>
+</sc-for>
+<sc-if value="{{ noneWaiting }}" hint-placeholder-val="{{ false }}"><div style="border:1px solid #e8ebf0;border-radius:14px;padding:14px;color:#5b6475;font-size:14px">Nothing waiting. Orders sent from Orders show up here and in Telegram.</div></sc-if>
+<div style="font:800 15px 'Nunito',sans-serif;letter-spacing:-.01em;margin:18px 0 6px">Decided recently</div>
+<sc-for list="{{ decided }}" as="p" hint-placeholder-count="2"><div style="display:flex;gap:10px;font-size:14px;padding:4px 0;border-bottom:1px solid #e8ebf0"><span style="color:{{ p.c }};width:76px;flex:none">{{ p.status }}</span><span style="flex:1">{{ p.title }}</span><span style="color:#8a93a3">{{ p.when }}</span></div></sc-for>
+<div style="border:1px solid #e8ebf0;border-radius:14px;padding:12px 14px;margin-top:20px;font-size:14px">
+<div style="font:800 15px 'Nunito',sans-serif;letter-spacing:-.01em;margin-bottom:4px">What agents may do</div>
+<div>Read stock, sales, prices and uploads. Pull reports from sites with no API (Deliveroo, Just Eat). Explain numbers in plain words. Propose changes.</div>
+<div style="font:800 15px 'Nunito',sans-serif;letter-spacing:-.01em;margin:8px 0 4px">What they never do</div>
+<div>Order, pay, or change stock, orders or recipes themselves. Anything that spends money stops at a person. Every run is logged on the right with what it read and what it produced.</div>
+</div>
+</div>
+<div style="overflow-y:auto;padding:16px 20px">
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap"><div style="font:800 17px 'Nunito',sans-serif;letter-spacing:-.01em;margin-right:8px">Run log</div><sc-for list="{{ agentFilters }}" as="a" hint-placeholder-count="4"><div onClick="{{ a.select }}" style="cursor:pointer;border:1px solid #e8ebf0;border-radius:14px;padding:6px 14px;font-size:14px;background:{{ a.bg }};color:{{ a.fg }};transition:background .15s,border-color .15s">{{ a.label }}</div></sc-for></div>
+<div style="display:grid;grid-template-columns:96px minmax(0,1fr) minmax(0,1.4fr) 110px;gap:10px;padding:5px 0;border-bottom:1px solid #e8ebf0;color:#5b6475;font-size:13px"><span>When</span><span>Agent · tool</span><span>Produced</span><span>Result</span></div>
+<sc-for list="{{ runs }}" as="r" hint-placeholder-count="6">
+<div onClick="{{ r.toggle }}" style="cursor:pointer;border-bottom:1px solid #e8ebf0;padding:7px 0">
+<div style="display:grid;grid-template-columns:96px minmax(0,1fr) minmax(0,1.4fr) 110px;gap:10px;font-size:14px;align-items:start"><span style="color:#5b6475">{{ r.when }}</span><span>{{ r.agent }}<br></br><span style="color:#8a93a3;font-size:12px;font-family:'Nunito',sans-serif">{{ r.tool }}</span></span><span>{{ r.output }}</span><span style="color:{{ r.c }}">{{ r.result }}</span></div>
+<sc-if value="{{ r.open }}" hint-placeholder-val="{{ false }}"><div style="margin:6px 0 0 106px;border-left:1px solid #e8ebf0;padding:2px 10px;font-size:13px;color:#5b6475">Read: {{ r.input }}<br></br>Wrote to: nothing directly{{ r.via }}</div></sc-if>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1240,&quot;height&quot;:820}}">
+const AKEY = 'sc-agents-v1', SKEY = 'sc-menu-stock-v1';
+const iso = (dh) => new Date(Date.now() + dh * 3600e3).toISOString().slice(0, 16);
+const ago = t => { const m = Math.round((Date.now() - new Date(t).getTime()) / 60000); return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' d ago'; };
+const on = a => ({ bg: a ? '#4a6fd1' : 'transparent', fg: a ? '#fff' : '#1f2633' });
+const SEED_RUNS = [
+  { id: 'r1', h: -2, agent: 'Deliveroo reporter', tool: 'browser: partner portal → reports', input: 'Deliveroo partner portal, last 7 days', output: 'Could not find the export button: the portal layout changed.', result: 'Fell back to CSV', status: 'failed' },
+  { id: 'r2', h: -5, agent: 'Drift explainer', tool: 'read: drift report', input: 'Oat milk counts, write-offs since last count', output: '“Oat milk is 22% off and most of it went out of date: you are ordering too much, not measuring wrong.”', result: 'In morning digest', status: 'ok' },
+  { id: 'r3', h: -5, agent: 'Drift explainer', tool: 'read: drift report', input: 'Napkin counts, write-offs since last count', output: 'Napkins 14% short, none of it expired. Proposed a bigger waste allowance.', result: 'Proposal waiting', status: 'ok' },
+  { id: 'r4', h: -26, agent: 'Import assistant', tool: 'read: legacy workbook', input: 'Recipes sheet, 318 rows', output: '12 recipe patterns covering 78 items; 23 flavours with no flavour ingredient; 1 likely typo.', result: 'Proposal waiting', status: 'ok' },
+  { id: 'r5', h: -50, agent: 'Deliveroo reporter', tool: 'browser: partner portal → reports', input: 'Deliveroo partner portal, last 7 days', output: 'Downloaded 7-day export: 34 orders, £143.20.', result: 'Staged for review', status: 'ok' }];
+const SEED_PROPS = [
+  { id: 'p1', h: -5, agent: 'Drift explainer', kind: 'waste', title: 'Napkins: allow a little more waste', body: 'Napkins came in 14% short at the last count and none of it was out-of-date stock. Raising the waste allowance from 1% to 3% would bring the estimate in line. Nothing changes until you accept.' },
+  { id: 'p2', h: -26, agent: 'Import assistant', kind: 'data', title: '“Strawberry bliss” looks like a typo', body: 'It has no ingredients and sits next to “Strawberry Matcha” in the drinks list. Merge it, or keep it as its own item?', acceptLabel: 'Merge', declineLabel: 'Keep separate' }];
+function load() {
+  let A = null; try { A = JSON.parse(localStorage.getItem(AKEY)); } catch (e) {}
+  A = A || { seeded: false, runs: [], proposals: [] };
+  if (!A.seeded) { A.seeded = true; A.runs = [...A.runs, ...SEED_RUNS.map(r => ({ ...r, at: iso(r.h) }))]; A.proposals = [...A.proposals, ...SEED_PROPS.map(p => ({ ...p, at: iso(p.h), status: 'waiting' }))]; try { localStorage.setItem(AKEY, JSON.stringify(A)); } catch (e) {} }
+  return A;
+}
+class Component extends DCLogic {
+  state = { A: null, filter: 'All', open: null };
+  componentDidMount() { this.setState({ A: load() }); this.onSync = () => this.setState({ A: load() }); window.addEventListener('sc-agents-sync', this.onSync); }
+  componentWillUnmount() { window.removeEventListener('sc-agents-sync', this.onSync); }
+  decide(p, ok) {
+    const A = JSON.parse(JSON.stringify(this.state.A)); const x = A.proposals.find(y => y.id === p.id); x.status = ok ? 'accepted' : 'declined'; x.decidedAt = iso(0);
+    A.runs.unshift({ id: 'r' + Date.now(), at: iso(0), agent: 'Owner (web)', tool: ok ? 'confirm' : 'decline', input: p.title, output: ok ? (p.kind === 'order' ? 'Order confirmed; the order service marks it Confirmed.' : 'Accepted; applied through the service, not by the agent.') : 'Declined; nothing changed.', result: ok ? 'Accepted' : 'Declined', status: 'ok' });
+    if (p.kind === 'order') { try { const S = JSON.parse(localStorage.getItem(SKEY)); const o = S && (S.orders || []).find(y => y.id === p.ref); if (o) { o.status = ok ? 'Confirmed' : 'Cancelled'; o.confirmedBy = ok ? 'Owner (web)' : null; localStorage.setItem(SKEY, JSON.stringify(S)); window.dispatchEvent(new CustomEvent('sc-sync', { detail: null })); } } catch (e) {} }
+    try { localStorage.setItem(AKEY, JSON.stringify(A)); } catch (e) {}
+    this.setState({ A }); window.dispatchEvent(new CustomEvent('sc-agents-sync'));
+  }
+  renderVals() {
+    const A = this.state.A || { runs: [], proposals: [] };
+    const w = A.proposals.filter(p => p.status === 'waiting').sort((a, b) => b.at.localeCompare(a.at));
+    const agents = ['All', ...new Set(A.runs.map(r => r.agent))];
+    const runs = A.runs.filter(r => this.state.filter === 'All' || r.agent === this.state.filter).sort((a, b) => b.at.localeCompare(a.at));
+    return {
+      waitingCount: w.length, noneWaiting: w.length === 0,
+      waiting: w.map(p => ({ agent: p.agent, when: ago(p.at), title: p.title, body: p.body, acceptLabel: p.acceptLabel || (p.kind === 'order' ? 'Confirm order' : 'Accept'), declineLabel: p.declineLabel || (p.kind === 'order' ? 'Cancel' : 'Decline'), accept: () => this.decide(p, true), decline: () => this.decide(p, false) })),
+      decided: A.proposals.filter(p => p.status !== 'waiting').sort((a, b) => (b.decidedAt || '').localeCompare(a.decidedAt || '')).slice(0, 6).map(p => ({ status: p.status, c: p.status === 'accepted' ? '#1f2633' : '#8a93a3', title: p.title, when: ago(p.decidedAt || p.at) })),
+      agentFilters: agents.map(a => ({ label: a, ...on(this.state.filter === a), select: () => this.setState({ filter: a }) })),
+      runs: runs.map(r => ({ when: ago(r.at), agent: r.agent, tool: r.tool, output: r.output, result: r.result, c: r.status === 'failed' ? '#d4554a' : '#5b6475', input: r.input, via: r.result === 'Proposal waiting' ? ' (proposal only)' : '', open: this.state.open === r.id, toggle: () => this.setState(s => ({ open: s.open === r.id ? null : r.id })) })),
+    };
+  }
+}
+</script>
+</body>
+</html>

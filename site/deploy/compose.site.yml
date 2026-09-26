@@ -1,0 +1,71 @@
+# Compose OVERRIDE for the public website. Layer it on top of the ops file; it never
+# replaces anything there:
+#
+#   docker compose -f docker-compose.yml -f site/deploy/compose.site.yml <command>
+#
+# (Relative paths below resolve from the project directory, i.e. the repo root where
+# docker-compose.yml lives, not from this file's directory.)
+#
+# Adds:
+#   site-api     sashasite on :8100, NO published port -- reachable only via caddy
+#   site-static  one-shot: copies the built HTML + Caddyfile.site into `site_static`
+# and extends the ops `caddy` service with a read-only mount of that volume.
+#
+# The root Caddyfile needs ONE line so Caddy loads the site's block -- see
+# site/deploy/README.md, "Wiring".
+
+services:
+  site-api:
+    build:
+      context: ./site
+      dockerfile: Dockerfile
+      target: api
+    image: sashasite-api:latest
+    restart: unless-stopped
+    # Shared with ops for the Telegram vars (CAFEOPS_TELEGRAM_*) and SITE_* settings.
+    env_file: .env
+    environment:
+      # Same file as ops, on the same volume. The site writes only site_booking and
+      # site_contact_message; it has its own Alembic history (site_alembic_version).
+      SITE_DATABASE_URL: sqlite+pysqlite:////data/cafeops.db
+      # Caddy overwrites X-Forwarded-For with the real client IP, so the contact /
+      # booking rate limit can key on it. Without this every visitor shares Caddy's IP
+      # and one busy afternoon locks the form for everyone.
+      SITE_TRUST_PROXY: "1"
+      # Let uvicorn accept Caddy's forwarded headers (it only trusts 127.0.0.1 by
+      # default). Safe: this container publishes no port, so only Caddy can reach it.
+      FORWARDED_ALLOW_IPS: "*"
+    volumes:
+      - cafeops_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8100/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  site-static:
+    build:
+      context: ./site
+      dockerfile: Dockerfile
+      target: static
+      args:
+        # Leave empty to use https://sashascorner.co.uk (astro.config.mjs default).
+        SITE_PUBLIC_URL: ${SITE_PUBLIC_URL:-}
+    image: sashasite-static:latest
+    restart: "no"
+    volumes:
+      - site_static:/srv/site
+
+  caddy:
+    volumes:
+      # Merged with the ops caddy volumes (caddy_data, caddy_config), not replacing them.
+      - site_static:/srv/site:ro
+    depends_on:
+      site-static:
+        condition: service_completed_successfully
+      site-api:
+        condition: service_healthy
+
+volumes:
+  site_static:

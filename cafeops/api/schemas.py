@@ -182,15 +182,25 @@ class OnHand(Out):
 
 
 class Health(Out):
-    """Open, unauthenticated. Says whether the door is locked, never what the key is."""
+    """Open, unauthenticated. Says whether the door is locked, never what the key is.
+
+    The row counts are **null to an unauthenticated caller.** Health has to answer
+    before anyone has the password -- otherwise "is it up?" and "is my password
+    right?" become the same question -- but answering that needs `status`, not the
+    size of the inventory. Serving "113 ingredients, 16,734 movements" to anyone who
+    can reach the host is a business fact nobody needs to make a liveness probe work,
+    and this is built to run on a real domain (see the Caddyfile).
+
+    Null here means "not disclosed", not "zero" -- the same rule as everywhere else.
+    """
 
     status: str
     database_dialect: str
     auth_configured: bool
-    ingredients: int
-    menu_items: int
-    templates: int
-    movements: int
+    ingredients: int | None = None
+    menu_items: int | None = None
+    templates: int | None = None
+    movements: int | None = None
 
 
 class Meta(Out):
@@ -643,6 +653,220 @@ class SupplierOut(Out):
     )
 
 
+class ProposalComponentOut(Out):
+    role: str
+    ingredient_name: str | None = Field(
+        description="Null when the slot is filled by a variant axis rather than a fixed ingredient."
+    )
+    qty_by_size: dict[str, str] = Field(
+        description="Size code -> quantity as an exact decimal STRING. Never a float."
+    )
+
+
+class ProposalAxisOut(Out):
+    name: str
+    role: str
+    options: dict[str, str] = Field(description="Option name -> ingredient name.")
+    option_count: int
+
+
+class ProposalConflictOut(Out):
+    """Legacy rows that disagree about one quantity. A human decides which is right."""
+
+    role: str
+    ingredient_name: str
+    size_code: str | None
+    quantities: dict[str, str] = Field(description="Menu item name -> the quantity it uses.")
+    describe: str = Field(description="The conflict as one sentence, written by the backend.")
+
+
+class ProposalOut(Out):
+    proposal_id: str = Field(
+        description=(
+            "The stable, unambiguous handle. NAMES ARE NOT UNIQUE -- detection names a "
+            "group after its defining ingredient, so two different recipes can share "
+            "one. Always confirm by this."
+        )
+    )
+    name: str
+    category: str | None
+    menu_item_count: int
+    base_item_names: tuple[str, ...]
+    sizes: tuple[str, ...]
+    components: tuple[ProposalComponentOut, ...]
+    axes: tuple[ProposalAxisOut, ...]
+    conflicts: tuple[ProposalConflictOut, ...]
+    is_hollow: bool = Field(
+        description=(
+            "No components and no axes: there is no recipe here. Confirming is refused, "
+            "because it would create an empty template and strip its items of the manual "
+            "recipes they resolve through today."
+        )
+    )
+    name_is_ambiguous: bool = Field(
+        description="Another proposal shares this name. They are different recipes."
+    )
+    already_materialised: bool = Field(
+        description="A real template of this name already exists; confirming again is refused."
+    )
+    blocked_reason: str | None = Field(
+        description=(
+            "Why this cannot be confirmed as it stands, or null. Unresolved conflicts "
+            "block by default -- the legacy rows disagree and a human must choose."
+        )
+    )
+
+
+class ProposalsResponse(Out):
+    proposals: tuple[ProposalOut, ...]
+    total: int
+    with_conflicts: int
+    singletons_excluded: int = Field(
+        description=(
+            "One-off groups are not patterns and stay manual recipes (spec 6). "
+            "They are counted, not listed."
+        )
+    )
+    writes_nothing: bool = Field(
+        default=True, description="Reading proposals never writes. Confirming does."
+    )
+
+
+class MaterialiseIn(In):
+    actor: str = Field(min_length=1, max_length=120, description="Who is confirming this.")
+    allow_conflicts: bool = Field(
+        default=False,
+        description=(
+            "Accept the LOWEST quantity at each size where the legacy rows disagree, "
+            "and record that the choice was made. Arbitrary by construction -- the "
+            "resulting quantities need verifying against the real recipes."
+        ),
+    )
+
+
+class MaterialiseResponse(Out):
+    proposal_name: str
+    template_id: int | None
+    sizes: tuple[str, ...]
+    components: int
+    axis_filled_slots: int
+    axes: int
+    options: int
+    items_repointed: int
+    manual_lines_closed: int
+    accepted_conflicts: int
+    items_unresolved_option: tuple[str, ...]
+    items_skipped_other_template: tuple[str, ...]
+    items_not_found: tuple[str, ...]
+    missing_ingredients: tuple[str, ...]
+    warnings: tuple[str, ...]
+    summary: str = Field(description="The whole result as one sentence, written by the backend.")
+
+
+class TakingsResponse(Out):
+    """What the cafe took over a window, and how much of it is knowable.
+
+    Every nullable total means "some day in the window did not report it", never
+    zero. `net_pence` is null unless EVERY deduction was reported on EVERY day:
+    subtracting only the days that reported fees produces a net that is too high
+    and entirely plausible, which is the worst kind of wrong (invariant 8).
+    """
+
+    since: date
+    until: date
+    window_days: int
+    days_reported: int = Field(
+        description="Days that reported at all. The rest are absent, not zero."
+    )
+    gross_pence: int | None = Field(
+        description=(
+            "Null when nothing reported at all. A window with no export is not a "
+            "window in which the cafe took nothing."
+        )
+    )
+    refunds_pence: int | None
+    fees_pence: int | None
+    discounts_pence: int | None
+    net_pence: int | None
+    transactions: int | None
+    by_method_pence: dict[str, int]
+    caveats: tuple[str, ...] = Field(
+        description="What could not be summed, and why. Print these; do not summarise."
+    )
+    source_note: str = Field(
+        description=(
+            "Where takings come from today. The Lightspeed payments endpoint has "
+            "never been probed, so this is a back-office export."
+        )
+    )
+
+
+class SupplierTermsIn(In):
+    """Terms confirmed WITH the supplier. All of them together, on purpose.
+
+    `terms_are_placeholders` covers lead time, delivery days, cutoff, minimum,
+    fee and free-delivery threshold as one fact, because the cover window is
+    computed from several at once. Accepting a partial confirmation would clear
+    the warning on an order that is still partly fiction.
+    """
+
+    lead_time_days: int = Field(ge=0, le=60, description="Days from order to delivery.")
+    delivery_weekdays: tuple[int, ...] = Field(
+        min_length=1,
+        description=(
+            "ISO 1..7. At least one: a supplier with no delivery day can never "
+            "satisfy a cover window. A walk-in supplier delivers every day."
+        ),
+    )
+    min_order_pence: int = Field(ge=0)
+    delivery_fee_pence: int = Field(ge=0)
+    cutoff_time: str | None = Field(default=None, description="HH:MM, or null for none.")
+    free_delivery_threshold_pence: int | None = Field(default=None, ge=0)
+
+
+class SupplierTermsResponse(Out):
+    supplier_id: int
+    name: str
+    was_placeholder: bool = Field(
+        description="True if this call is what cleared the invented-terms warning."
+    )
+    changed: tuple[str, ...] = Field(
+        description="Which terms actually moved, as 'label: before -> after'."
+    )
+    supplier: SupplierOut
+
+
+class ShelfLifeIn(In):
+    """A shelf life somebody checked. Never an estimate -- that is the default it leaves."""
+
+    shelf_life_days: int = Field(ge=1, le=3650)
+    open_life_days: int | None = Field(default=None, ge=1, le=3650)
+    source: str = Field(
+        default="supplier",
+        description="'supplier' (they told you) or 'packaging' (you read it off the pack).",
+    )
+
+
+class ShelfLifeResponse(Out):
+    ingredient_id: int
+    name: str
+    shelf_life_days_before: int | None
+    shelf_life_days_after: int
+    open_life_days_after: int | None
+    transit_buffer_days: int
+    source_before: str | None
+    source_after: str
+    usable_days_after: int = Field(
+        description="What actually caps an order: shelf life less the transit buffer."
+    )
+    usable_days_changed_by: int | None = Field(
+        description=(
+            "How far the ORDER CAP moved, which is the consequence worth reading. "
+            "Null when there was no previous shelf life to compare against."
+        )
+    )
+
+
 class OrderLineOut(Out):
     ingredient_id: int
     ingredient_name: str
@@ -963,6 +1187,20 @@ class FieldCoverageOut(Out):
     complete: bool
 
 
+class ChannelDayOut(Out):
+    """One reported day. The series the aggregates above are computed from.
+
+    Exposed because an aggregate answers "how much" and hides "was it steady".
+    A null field means that day did not report it -- it is NOT a zero, and a
+    sparkline must break rather than dip to the floor.
+    """
+
+    metric_date: date
+    gross_pence: int | None
+    orders: int | None
+    ad_spend_pence: int | None
+
+
 class ChannelPerformanceOut(Out):
     channel: str
     since: date
@@ -992,6 +1230,13 @@ class ChannelPerformanceOut(Out):
     commission_rate_bp: int | None
     net_margin_bp: int | None
     conversion_bp: int | None
+    daily: tuple[ChannelDayOut, ...] = Field(
+        default=(),
+        description=(
+            "The reported days in order, so a trend is visible rather than only a "
+            "total. Covers only the days that reported -- 9 of a 28-day window today."
+        ),
+    )
     coverage: tuple[FieldCoverageOut, ...]
     caveats: tuple[str, ...] = ()
 

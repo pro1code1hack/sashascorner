@@ -36,15 +36,26 @@ def _count(session: Session, model: type) -> int:
     return int(session.scalar(select(func.count()).select_from(model)) or 0)
 
 
-def health_view(session: Session) -> Health:
-    return Health(
+def health_view(session: Session, *, authenticated: bool = False) -> Health:
+    """Liveness, plus row counts only for a caller who proved they belong here.
+
+    `authenticated=False` is the safe default: a new caller of this view gets the
+    non-disclosing answer unless it deliberately asks otherwise.
+    """
+    base = Health(
         status="ok",
         database_dialect=engine.dialect.name,
         auth_configured=api_password() is not None,
-        ingredients=_count(session, Ingredient),
-        menu_items=_count(session, MenuItem),
-        templates=_count(session, DrinkTemplate),
-        movements=_count(session, StockMovement),
+    )
+    if not authenticated:
+        return base
+    return base.model_copy(
+        update={
+            "ingredients": _count(session, Ingredient),
+            "menu_items": _count(session, MenuItem),
+            "templates": _count(session, DrinkTemplate),
+            "movements": _count(session, StockMovement),
+        }
     )
 
 

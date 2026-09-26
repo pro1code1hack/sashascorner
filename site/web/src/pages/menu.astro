@@ -1,0 +1,429 @@
+---
+import Base from '../layouts/Base.astro';
+import { menu } from '../lib/data';
+import { gbp } from '../lib/format';
+import Slot from '../components/Slot.astro';
+import { slotDef } from '../components/slotData';
+
+// Size columns per category, in board order: S M XL / S M / One.
+const ORDER = ['S', 'M', 'XL', 'One'];
+const HEAD: Record<string, string> = { S: 'Small', M: 'Medium', XL: 'Large', One: '' };
+const cats = menu.categories.map((c) => {
+  const codes = ORDER.filter((code) => c.items.some((i) => i.sizes.some((z) => z.code === code)));
+  return { ...c, codes };
+});
+const DRINKS = new Set(['breakfast', 'lunch', 'waffles', 'cakes']);
+const groups = [
+  { title: 'Drinks', cats: cats.filter((c) => !DRINKS.has(c.slug)) },
+  { title: 'Food', cats: cats.filter((c) => DRINKS.has(c.slug)) },
+];
+const site = Astro.site!;
+
+// schema.org Menu -- lets search engines show dishes and prices.
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Menu',
+  name: "Sasha's Corner menu",
+  url: new URL('/menu', site).href,
+  inLanguage: 'en-GB',
+  hasMenuSection: cats.map((c) => ({
+    '@type': 'MenuSection',
+    name: c.name,
+    description: c.blurb,
+    hasMenuItem: c.items.map((i) => ({
+      '@type': 'MenuItem',
+      name: i.name,
+      ...(i.description || i.note ? { description: i.description ?? i.note } : {}),
+      offers: i.sizes.map((z) => ({
+        '@type': 'Offer',
+        price: (z.price_pence / 100).toFixed(2),
+        priceCurrency: 'GBP',
+        ...(z.code !== 'One' ? { name: z.label } : {}),
+      })),
+    })),
+  })),
+};
+---
+
+<Base
+  title="Menu & prices: matcha, coffee, bubble tea · Sasha's Corner"
+  description="Every drink and dish with prices: coffee, green and blue matcha, hojicha, bubble tea, milkshakes, breakfast, lunch, brunch waffles and Kyiv cake. Dundee."
+  extraJsonLd={jsonLd}
+>
+  <header class="mhead wrap">
+    <p class="label">Menu</p>
+    <h1>Everything on the board.</h1>
+    <p class="mhead__lede">
+      Order at the counter. Milks and syrups at the bottom; ask about allergens — we're happy to help.
+    </p>
+  </header>
+
+  <nav class="mnav" aria-label="Menu sections">
+    <ul class="mnav__list wrap">
+      {
+        cats.map((c) => (
+          <li>
+            <a href={`#${c.slug}`} data-nav={c.slug}>
+              {c.name}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </nav>
+
+  <div class="wrap mbody">
+    {
+      groups.map((g) => (
+        <section class="mgroup" aria-labelledby={`g-${g.title}`}>
+          <h2 id={`g-${g.title}`} class="mgroup__title">
+            {g.title}
+          </h2>
+          {g.cats.map((c) => (
+            <section id={c.slug} class="mcat" aria-labelledby={`h-${c.slug}`} data-cat>
+              <header class="mcat__head">
+                {slotDef(`menu.${c.slug}`) && (
+                  <Slot key={`menu.${c.slug}`} class="mcat__ph" sizes="(max-width: 600px) 64px, 96px" />
+                )}
+                <div class="mcat__title">
+                  <h3 id={`h-${c.slug}`}>
+                    {c.name}
+                    {c.items[0]?.seasonal && <span class="tag">{c.items[0].seasonal.name}</span>}
+                  </h3>
+                  <p class="mcat__blurb">{c.blurb}</p>
+                </div>
+                {c.codes.length > 1 && (
+                  <div class="cols" aria-hidden="true" style={`--n:${c.codes.length}`}>
+                    {c.codes.map((code) => (
+                      <span>{HEAD[code]}</span>
+                    ))}
+                  </div>
+                )}
+              </header>
+              <ul class="mlist">
+                {c.items.map((i) => (
+                  <li class:list={['mitem', { 'is-sig': i.signature }]} id={i.id}>
+                    <div class="mitem__name">
+                      <span class="mitem__title">
+                        {i.name}
+                        {i.signature && (
+                          <span class="sig" title="Signature">
+                            <span class="sr-only">(signature)</span>
+                          </span>
+                        )}
+                      </span>
+                      {(i.description || i.note) && <span class="mitem__desc">{i.description ?? i.note}</span>}
+                    </div>
+                    <div class="prices num" style={`--n:${c.codes.length}`}>
+                      {c.codes.map((code) => {
+                        const z = i.sizes.find((s) => s.code === code);
+                        return z ? (
+                          <span data-price={`${i.id}:${code}`}>
+                            <span class="sr-only">{z.code === 'One' ? '' : `${z.label} `}</span>
+                            {gbp(z.price_pence)}
+                          </span>
+                        ) : (
+                          <span aria-hidden="true" class="na">
+                            —
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+        </section>
+      ))
+    }
+
+    {
+      menu.extras && (
+        <section class="mcat extras" aria-labelledby="h-extras">
+          <header class="mcat__head">
+            <h3 id="h-extras">{menu.extras.title}</h3>
+          </header>
+          <ul class="mlist">
+            {menu.extras.items.map((x) => (
+              <li class="mitem">
+                <div class="mitem__name">
+                  <span class="mitem__title">{x.name}</span>
+                </div>
+                <div class="prices num" style="--n:1">
+                  <span>{x.price_text}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    {
+      !cats.length && (
+        <p class="empty">The menu is being updated — it's on the TV screens at the counter in the meantime.</p>
+      )
+    }
+  </div>
+</Base>
+
+<script>
+  // Highlight the section being read in the sticky nav, and keep it scrolled into view.
+  const links = new Map<string, HTMLAnchorElement>();
+  document.querySelectorAll<HTMLAnchorElement>('[data-nav]').forEach((a) => links.set(a.dataset.nav!, a));
+  const io = new IntersectionObserver(
+    (entries) => {
+      for (const e of entries) {
+        if (!e.isIntersecting) continue;
+        links.forEach((a) => a.removeAttribute('aria-current'));
+        const a = links.get(e.target.id);
+        if (a) {
+          a.setAttribute('aria-current', 'true');
+          a.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+        }
+      }
+    },
+    { rootMargin: '-30% 0px -65% 0px' },
+  );
+  document.querySelectorAll('[data-cat]').forEach((s) => io.observe(s));
+
+  // Prices are baked in at build time; refresh them from the live API in case the
+  // board changed since the last deploy.
+  fetch('/api/menu')
+    .then((r) => (r.ok ? r.json() : null))
+    .then((m) => {
+      if (!m) return;
+      for (const c of m.categories)
+        for (const i of c.items)
+          for (const z of i.sizes) {
+            const el = document.querySelector(`[data-price="${i.id}:${z.code}"]`);
+            if (!el) continue;
+            const txt = `£${Math.floor(z.price_pence / 100)}.${String(z.price_pence % 100).padStart(2, '0')}`;
+            const node = [...el.childNodes].find((n) => n.nodeType === 3 && n.textContent!.trim());
+            if (node && node.textContent!.trim() !== txt) node.textContent = txt;
+          }
+    })
+    .catch(() => undefined);
+</script>
+
+<style>
+  .mhead {
+    padding-block: clamp(48px, 7vw, 96px) clamp(24px, 3vw, 40px);
+  }
+  .mhead .label {
+    color: var(--coffee);
+  }
+  .mhead h1 {
+    font-size: var(--step-5);
+    margin-top: 14px;
+  }
+  .mhead__lede {
+    margin-top: 18px;
+    max-width: 52ch;
+    color: var(--olive-900);
+    font-weight: 300;
+    font-size: var(--step-1);
+  }
+
+  .mnav {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: color-mix(in oklab, var(--paper) 92%, transparent);
+    backdrop-filter: blur(8px);
+    border-block: 1px solid var(--rule);
+  }
+  .mnav__list {
+    display: flex;
+    gap: 6px;
+    list-style: none;
+    margin: 0 auto;
+    padding-block: 10px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .mnav__list::-webkit-scrollbar {
+    display: none;
+  }
+  .mnav a {
+    display: block;
+    white-space: nowrap;
+    padding: 8px 14px;
+    border-radius: 999px;
+    text-decoration: none;
+    font-size: var(--step--1);
+    color: var(--olive-900);
+    transition: background-color 0.2s, color 0.2s;
+  }
+  .mnav a:hover {
+    background: var(--oat);
+  }
+  .mnav a[aria-current] {
+    background: var(--olive-900);
+    color: var(--paper);
+  }
+
+  .mbody {
+    padding-block: clamp(32px, 5vw, 64px) clamp(64px, 9vw, 120px);
+    display: grid;
+    gap: clamp(48px, 6vw, 80px);
+  }
+  .mgroup {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: clamp(32px, 6vw, 88px);
+    row-gap: clamp(48px, 6vw, 72px);
+    align-items: start;
+  }
+  .mgroup__title {
+    grid-column: 1 / -1;
+    font-size: var(--step-4);
+    color: var(--olive-700);
+    border-bottom: 2px solid var(--olive-900);
+    padding-bottom: 12px;
+  }
+  @media (max-width: 900px) {
+    .mgroup {
+      grid-template-columns: 1fr;
+    }
+  }
+  .mcat {
+    scroll-margin-top: 80px;
+  }
+  .mcat__head {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--rule-strong);
+  }
+  .mcat__head :global(.mcat__ph) {
+    flex: none;
+    width: 88px;
+    align-self: center;
+  }
+  .mcat__title {
+    flex: 1;
+    min-width: 0;
+  }
+  @media (max-width: 600px) {
+    /* thumb + title share the line; the size columns drop under them */
+    .mcat__head {
+      flex-wrap: wrap;
+      row-gap: 10px;
+    }
+    .mcat__head :global(.mcat__ph) {
+      width: 56px;
+    }
+    .mcat__title {
+      flex: 1 1 calc(100% - 72px);
+    }
+    .mcat__head .cols {
+      margin-left: auto;
+    }
+  }
+  .mcat__head h3 {
+    font-size: var(--step-2);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .mcat__blurb {
+    margin-top: 6px;
+    color: var(--olive-700);
+    font-size: var(--step--1);
+  }
+  .tag {
+    font-family: var(--font-text);
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 4px 9px;
+    border-radius: 999px;
+    background: var(--caramel);
+    color: var(--ink);
+  }
+  .cols,
+  .prices {
+    display: grid;
+    grid-template-columns: repeat(var(--n), 4.2em);
+    justify-items: end;
+    flex: none;
+  }
+  .cols {
+    font-size: 0.72rem;
+    color: var(--olive-700);
+  }
+  .mlist {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .mitem {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+    padding-block: 12px;
+    border-bottom: 1px dotted var(--rule);
+  }
+  .mitem__name {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+  .mitem__title {
+    font-weight: 400;
+  }
+  .mitem.is-sig .mitem__title {
+    font-weight: 500;
+  }
+  .sig {
+    display: inline-block;
+    width: 12px;
+    height: 10px;
+    margin-left: 8px;
+    background: var(--caramel);
+    border-radius: var(--radius-blob);
+    vertical-align: 1px;
+  }
+  .mitem__desc {
+    font-size: var(--step--1);
+    color: var(--olive-700);
+    font-weight: 300;
+  }
+  .prices {
+    font-size: var(--step-0);
+  }
+  .na {
+    color: var(--paper-dim);
+  }
+  .extras {
+    max-width: 640px;
+  }
+  .empty {
+    color: var(--olive-700);
+  }
+  @media (max-width: 420px) {
+    .cols,
+    .prices {
+      grid-template-columns: repeat(var(--n), 3.6em);
+      font-size: 0.92rem;
+    }
+  }
+
+  /* QA pass: tap targets and minimum text size */
+  .mnav a {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+  .tag,
+  .cols {
+    font-size: 0.875rem;
+  }
+</style>

@@ -1,0 +1,2 @@
+# Uploaded photos (SITE_MEDIA_DIR default). Back them up with the DB, not git.
+media/

@@ -1,0 +1,15 @@
+# Build context is site/. Keep host artefacts out of image layers.
+**/node_modules
+web/dist
+web/.astro
+**/.venv
+**/__pycache__
+**/*.py[cod]
+**/.mypy_cache
+**/.ruff_cache
+**/.env
+**/.env.*
+**/*.db
+**/*.db-wal
+**/*.db-shm
+**/.DS_Store

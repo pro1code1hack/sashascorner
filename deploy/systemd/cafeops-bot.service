@@ -12,11 +12,14 @@ EnvironmentFile=/etc/cafeops/cafeops.env
 ExecStart=/opt/cafeops/.venv/bin/cafeops bot-run
 Restart=on-failure
 RestartSec=5
-# `bot-run` exits 1 (not a crash, a clean refusal) when
-# CAFEOPS_TELEGRAM_BOT_TOKEN/CAFEOPS_TELEGRAM_OWNER_CHAT_ID are unset. Restart=on-failure
-# will keep retrying every 5s until they're set in /etc/cafeops/cafeops.env and the unit
-# is restarted -- that is the correct steady state for "not configured yet", and
-# `systemctl status cafeops-bot` shows exactly that reason each time.
+# `bot-run` exits 78 (sysexits EX_CONFIG) when CAFEOPS_TELEGRAM_BOT_TOKEN or
+# CAFEOPS_TELEGRAM_OWNER_CHAT_ID are unset. That is a stable state, not a crash, so the
+# unit stops on it rather than retrying every 5s forever -- a permanent restart loop is
+# indistinguishable from a real crash and drowns genuine errors in the journal.
+# `systemctl status cafeops-bot` shows "status=78" and the refusal message. Set the token
+# in /etc/cafeops/cafeops.env, then `systemctl start cafeops-bot`. Any OTHER non-zero
+# exit is a genuine fault and is still retried.
+RestartPreventExitStatus=78
 
 NoNewPrivileges=true
 PrivateTmp=true

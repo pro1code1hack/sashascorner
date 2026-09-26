@@ -1,0 +1,613 @@
+{
+  "slots": {
+    "home.signatures": {
+      "label": "Home — signatures photo strip",
+      "page": "/",
+      "aspect": "4/5",
+      "multiple": true,
+      "max": 4,
+      "hint": "One signature per frame — Raff coffee, iced honey blue matcha, honey vanilla latte, Kyiv cake slice — on a white table, from the side at cup height, window light",
+      "items": [
+        {
+          "media_id": 6,
+          "src": "/api/media-files/6-960.webp",
+          "srcset": "/api/media-files/6-480.webp 480w, /api/media-files/6-960.webp 960w, /api/media-files/6-1050.webp 1050w",
+          "width": 1050,
+          "height": 1400,
+          "alt": "An iced green matcha and an iced blue matcha seen from above, each lid with a small 'Thank you' cat sticker, next to a green woven placemat",
+          "focal": {
+            "x": 0.55,
+            "y": 0.55
+          },
+          "blur": "data:image/webp;base64,UklGRpQAAABXRUJQVlA4IIgAAABQBQCdASoYACAAPtFYpUyoJSOiKA1RABoJQBdgB5oZ4waTkERAxRXF5jrASR1XdJdRiAAA/vOCq7//fvvXvTRmoOeO0WpuKZGBhwe1QN+gU461oG63XcVTLDEx5CYm9Fu2rW7EtMTAIT74mwaN9U76izZUgdU3nbXVL/ZZJm7WERnzUP6F6AAA"
+        },
+        {
+          "media_id": 8,
+          "src": "/api/media-files/8-960.webp",
+          "srcset": "/api/media-files/8-480.webp 480w, /api/media-files/8-960.webp 960w, /api/media-files/8-1399.webp 1399w",
+          "width": 1399,
+          "height": 1400,
+          "alt": "Two lattes in glass mugs, one with leaf latte art, a knitted-hat snowman ornament, a chocolate-topped crispy square and a slice of frosted chocolate cake",
+          "focal": {
+            "x": 0.3,
+            "y": 0.5
+          },
+          "blur": "data:image/webp;base64,UklGRq4AAABXRUJQVlA4IKIAAACQBQCdASoYABgAPtFkqU+oJaOiKAgBABoJQBOmYTg0iP6sIVTIh5r6fIEiPZ7nBrO6T/lFAAD+7uYy2hUtwGYAuMszF2iShgbzbWvhAYVGGfZbjtt43v14Z4Xc14cexI0laL+ZCx8Vd2ZZXAMRsjeg1Omo0CQst4Fd/F+vMZzzAD3Ni2NMfx/Ptphvejt2oltgeFY7GcUnBSHTT5yhn/JgAAA="
+        }
+      ]
+    },
+    "home.mood": {
+      "label": "Home — the corner, four upright photos",
+      "page": "/",
+      "aspect": "2/3",
+      "multiple": true,
+      "max": 4,
+      "hint": "Four upright moments: a drink, a cake, the room, the window. Phone held upright, daylight, no flash",
+      "items": [
+        {
+          "media_id": 5,
+          "src": "/api/media-files/5-960.webp",
+          "srcset": "/api/media-files/5-480.webp 480w, /api/media-files/5-960.webp 960w, /api/media-files/5-1050.webp 1050w",
+          "width": 1050,
+          "height": 1400,
+          "alt": "An iced matcha latte and an iced blue matcha in Sasha's Corner cups, on a white table by the front window",
+          "focal": {
+            "x": 0.4,
+            "y": 0.6
+          },
+          "blur": "data:image/webp;base64,UklGRqIAAABXRUJQVlA4IJYAAACwBQCdASoYACAAPsFKoEunpCMht/qoAPAYCWMAnTOhwiBzXB4MdLq62hrHa2T68c2U/I07UAAAxz69T8HN4GQLJwPZV5nHGF5OvvtxEeE8ehKBdnInGw2zaYxZ0iMsbkctXlY4PCLcQoENOJLU2NZVDpSJXwTYG5T0t0MqeS6/VYQvOSVGsge2InXD66Q6qgh1aFAoAAA="
+        },
+        {
+          "media_id": 7,
+          "src": "/api/media-files/7-960.webp",
+          "srcset": "/api/media-files/7-480.webp 480w, /api/media-files/7-960.webp 960w, /api/media-files/7-1050.webp 1050w",
+          "width": 1050,
+          "height": 1400,
+          "alt": "A muffin on a white plate with a fork, beside a latte in a glass topped with dried rosebuds, on a white table near the window",
+          "focal": {
+            "x": 0.5,
+            "y": 0.6
+          },
+          "blur": "data:image/webp;base64,UklGRqYAAABXRUJQVlA4IJoAAABQBQCdASoYACAAPtFepkwoJaOiMAgBABoJZQCo9BQcAtWDfUMpj5/pQIErd5cIRXMW3gAA/q0z9slbT9drz8ECxixBG7n6PPl+kgXlA5ej/uuD+vTdTApNF4FDYURhlCLyPW9avSl8GudP6/DkpxsV4s7xjiXi4hTG0KyePhGgDVfKAjYMQIue812dV/ZG0tqgbZvBjC8/YAAA"
+        },
+        {
+          "media_id": 2,
+          "src": "/api/media-files/2-960.webp",
+          "srcset": "/api/media-files/2-480.webp 480w, /api/media-files/2-960.webp 960w, /api/media-files/2-1050.webp 1050w",
+          "width": 1050,
+          "height": 1400,
+          "alt": "Inside the café: sage-green walls over dark wood panelling, white tables and chairs on a grey marble-look floor, and a shelf of board games with a chess board",
+          "focal": {
+            "x": 0.5,
+            "y": 0.55
+          },
+          "blur": "data:image/webp;base64,UklGRogAAABXRUJQVlA4IHwAAAAQBQCdASoYACAAPtFeqU6oJSQiKAqpABoJYwDH5GlYd6Bus6/KrxByeMMeruOZkwfgAP7Jw3yEG4EA/nJuFPz2gXxAD8Lw/Z95JkHfN+9UavW31oa2gBi0oWnTGvGmaC6b52c+pFLNT5JNxjAwqAmZkVZHJ+TRZ5yTYAAA"
+        },
+        {
+          "media_id": 1,
+          "src": "/api/media-files/1-933.webp",
+          "srcset": "/api/media-files/1-480.webp 480w, /api/media-files/1-933.webp 933w",
+          "width": 933,
+          "height": 1400,
+          "alt": "The front window from the street, with the Sasha's Corner logo and its line-drawn cup on the glass, pink balloons above, and two customers with takeaway cups at a white table inside",
+          "focal": {
+            "x": 0.45,
+            "y": 0.45
+          },
+          "blur": "data:image/webp;base64,UklGRp4AAABXRUJQVlA4IJIAAABQBgCdASoYACQAPtFgpU+oJSMiJWzJABoJZQDFC75BEvxHleGGaJbUGv20N2kA+Hxqh8z1MBbV8qQeAAD+0DAwUt18KX46hrE/QNJVjoWIEJyfIIQ0ygNiZCRWcrXr0tFL0/z7dZ6g+9LfbcrbTJXEj9v1c3ZOAyRyTlgkz0s5xbYlbv+vY3pnbSO2oKkMBdKAAA=="
+        }
+      ]
+    },
+    "home.room": {
+      "label": "Home — the room, one wide photo",
+      "page": "/",
+      "aspect": "16/9",
+      "multiple": false,
+      "max": 1,
+      "hint": "The whole room in one landscape frame: sage walls, dark panelling, white tables, strip lights on. From the counter end, late afternoon",
+      "items": []
+    },
+    "menu.autumn": {
+      "label": "Menu — Autumn specials",
+      "page": "/menu",
+      "aspect": "1/1",
+      "multiple": false,
+      "max": 1,
+      "hint": "An autumn special, e.g. the iced banana bread hojicha, close up from the side on a white table",
+      "items": []
+    },
+    "menu.hot-drinks": {
+      "label": "Menu — Hot drinks",
+      "page": "/menu",
+      "aspect": "1/1",
+      "multiple": false,
+      "max": 1,
+      "hint": "A Raff coffee or latte with latte art, from 45° above, window light",
+      "items": []
+    },
+    "menu.espresso": {
+      "label": "Menu — Espresso bar",
+      "page": "/menu",
+      "aspect": "1/1",
+      "multiple": false,
+      "max": 1,
+      "hint": "An espresso or cortado on the counter, close up, the machine soft behind",
+      "items": []
+    },
+    "menu.seasonal-hot": {
+      "label": "Menu — Signature hot drinks",
+      "page": "/menu",
+      "aspect": "1/1",
+      "multiple": false,
+      "max": 1,
+      "hint": "A rose or lavender latte with its topping, close up from the side",
+      "items": [
+        {
+          "media_id": 7,
+          "src": "/api/media-files/7-960.webp",
+          "srcset": "/api/media-files/7-480.webp 480w, /api/media-files/7-960.webp 960w, /api/media-files/7-1050.webp 1050w",
+          "width": 1050,
+          "height": 1400,
+          "alt": "A frothy drink in a double-walled glass topped with dried rosebuds",
+          "focal": {
+            "x": 0.73,
+            "y": 0.72
+          },
+          "blur": "data:image/webp;base64,UklGRqYAAABXRUJQVlA4IJoAAABQBQCdASoYACAAPtFepkwoJaOiMAgBABoJZQCo9BQcAtWDfUMpj5/pQIErd5cIRXMW3gAA/q0z9slbT9drz8ECxixBG7n6PPl+kgXlA5ej/uuD+vTdTApNF4FDYURhlCLyPW9avSl8GudP6/DkpxsV4s7xjiXi4hTG0KyePhGgDVfKAjYMQIue812dV/ZG0tqgbZvBjC8/YAAA"
+        }
+      ]
+    },
+    "menu.hot-matcha": {
+      "label": "Menu — Hot matcha",
+      "page": "/menu",
+      "aspect": "1/1",
+      "multiple": false,
+      "max": 1,
+      "hint": "Matcha being whisked in the bowl, hands in frame, close up",
+      "items": []
+    },
+    "menu.tea": {
+      "label": "Menu — Tea",
+      "page": "/menu",
+      "aspect": "1/1",
+      "multiple": false,
+      "max": 1,
+      "hint": "A pot of loose-leaf tea with a cup poured, on a green placemat, from above",
+      "items": []
+    },
+    "menu.iced-coffee": {
+      "label": "Menu — Iced coffee",
+      "page": "/menu",
+      "aspect": "1/1",
+      "multiple": false,
+      "max": 1,
+      "hint": "An iced latte with the milk still swirling, from the side against the sage wall",
+      "items": []
+    },
+    "menu.seasonal-iced": {
+      "label": "Menu — Signature iced drinks",
+      "page": "/menu",
+      "aspect": "1/1",
+      "multiple": false,
+      "max": 1,
+      "hint": "An iced blue matcha, layered, from the side in window light",
+      "items": [
+        {
+          "media_id": 6,
+          "src": "/api/media-files/6-960.webp",
+          "srcset": "/api/media-files/6-480.webp 480w, /api/media-files/6-960.webp 960w, /api/media-files/6-1050.webp 1050w",
+          "width": 1050,
+          "height": 1400,
+          "alt": "An iced blue matcha from above, with a 'Thank you' cat sticker on the lid",
+          "focal": {
+            "x": 0.55,
+            "y": 0.78
+          },
+          "blur": "data:image/webp;base64,UklGRpQAAABXRUJQVlA4IIgAAABQBQCdASoYACAAPtFYpUyoJSOiKA1RABoJQBdgB5oZ4waTkERAxRXF5jrASR1XdJdRiAAA/vOCq7//fvvXvTRmoOeO0WpuKZGBhwe1QN+gU461oG63XcVTLDEx5CYm9Fu2rW7EtMTAIT74mwaN9U76izZUgdU3nbXVL/ZZJm7WERnzUP6F6AAA"
+        }
+      ]
+    },
+    "menu.iced-matcha": {
+      "label": "Menu — Iced green matcha",
+      "page": "/menu",
+      "aspect": "1/1",
+      "multiple": false,
+      "max": 1,
+      "hint": "An iced green matcha over milk, the layers visible, from the side",
+      "items": [
+        {
+          "media_id": 5,
+          "src": "/api/media-files/5-960.webp",
+          "srcset": "/api/media-files/5-480.webp 480w, /api/media-files/5-960.webp 960w, /api/media-files/5-1050.webp 1050w",
+          "width": 1050,
+          "height": 1400,
+          "alt": "An iced green matcha layered over milk in a Sasha's Corner cup",
+          "focal": {
+            "x": 0.28,
+            "y": 0.62
+          },
+          "blur": "data:image/webp;base64,UklGRqIAAABXRUJQVlA4IJYAAACwBQCdASoYACAAPsFKoEunpCMht/qoAPAYCWMAnTOhwiBzXB4MdLq62hrHa2T68c2U/I07UAAAxz69T8HN4GQLJwPZV5nHGF5OvvtxEeE8ehKBdnInGw2zaYxZ0iMsbkctXlY4PCLcQoENOJLU2NZVDpSJXwTYG5T0t0MqeS6/VYQvOSVGsge2InXD66Q6qgh1aFAoAAA="
+        }
+      ]
+    },
+    "menu.bubble-tea": {
+      "label": "Menu — Creamy bubble tea",
+      "page": "/menu",
+      "aspect": "1/1",
+      "multiple": false,
+      "max": 1,
+      "hint": "A creamy bubble tea with the tapioca pearls showing, from the side",
+      "items": []
+    },
+    "menu.milkshakes": {
+      "label": "Menu — Milkshakes",
+      "page": "/menu",
+      "aspect": "1/1",
+      "multiple": false,
+      "max": 1,
+      "hint": "A milkshake with its topping, from the side on the counter",
+      "items": []
+    },
+    "menu.cold": {
+      "label": "Menu — Iced teas, refreshers & smoothies",
+      "page": "/menu",
+      "aspect": "1/1",
+      "multiple": false,
+      "max": 1,
+      "hint": "A refresher or smoothie over ice, bright, from the side by the window",
+      "items": []
+    },
+    "menu.breakfast": {
+      "label": "Menu — Breakfast",
+      "page": "/menu",
+      "aspect": "1/1",
+      "multiple": false,
+      "max": 1,
+      "hint": "A breakfast plate on a green placemat, from directly above",
+      "items": []
+    },
+    "menu.lunch": {
+      "label": "Menu — Lunch",
+      "page": "/menu",
+      "aspect": "1/1",
+      "multiple": false,
+      "max": 1,
+      "hint": "Soup or a toasted sandwich with salad, from 45° above",
+      "items": []
+    },
+    "menu.waffles": {
+      "label": "Menu — Brunch waffles",
+      "page": "/menu",
+      "aspect": "1/1",
+      "multiple": false,
+      "max": 1,
+      "hint": "A pistachio or fruit waffle with ice cream, from 45° above",
+      "items": []
+    },
+    "menu.cakes": {
+      "label": "Menu — Cakes & bakes",
+      "page": "/menu",
+      "aspect": "1/1",
+      "multiple": false,
+      "max": 1,
+      "hint": "A slice of Kyiv cake on a white plate, or the cake counter, close up",
+      "items": [
+        {
+          "media_id": 8,
+          "src": "/api/media-files/8-960.webp",
+          "srcset": "/api/media-files/8-480.webp 480w, /api/media-files/8-960.webp 960w, /api/media-files/8-1399.webp 1399w",
+          "width": 1399,
+          "height": 1400,
+          "alt": "A chocolate-topped crispy square and a slice of frosted chocolate cake beside two coffees",
+          "focal": {
+            "x": 0.8,
+            "y": 0.6
+          },
+          "blur": "data:image/webp;base64,UklGRq4AAABXRUJQVlA4IKIAAACQBQCdASoYABgAPtFkqU+oJaOiKAgBABoJQBOmYTg0iP6sIVTIh5r6fIEiPZ7nBrO6T/lFAAD+7uYy2hUtwGYAuMszF2iShgbzbWvhAYVGGfZbjtt43v14Z4Xc14cexI0laL+ZCx8Vd2ZZXAMRsjeg1Omo0CQst4Fd/F+vMZzzAD3Ni2NMfx/Ptphvejt2oltgeFY7GcUnBSHTT5yhn/JgAAA="
+        }
+      ]
+    },
+    "about.room.hero": {
+      "label": "About — the room, large upright photo",
+      "page": "/about",
+      "aspect": "4/5",
+      "multiple": false,
+      "max": 1,
+      "hint": "The room from the door, upright: sage walls, dark panelling, white tables, the games shelf. Daylight",
+      "items": [
+        {
+          "media_id": 2,
+          "src": "/api/media-files/2-960.webp",
+          "srcset": "/api/media-files/2-480.webp 480w, /api/media-files/2-960.webp 960w, /api/media-files/2-1050.webp 1050w",
+          "width": 1050,
+          "height": 1400,
+          "alt": "Inside the café: sage-green walls over dark wood panelling, white tables and chairs on a grey marble-look floor, and a shelf of board games with a chess board",
+          "focal": {
+            "x": 0.5,
+            "y": 0.5
+          },
+          "blur": "data:image/webp;base64,UklGRogAAABXRUJQVlA4IHwAAAAQBQCdASoYACAAPtFeqU6oJSQiKAqpABoJYwDH5GlYd6Bus6/KrxByeMMeruOZkwfgAP7Jw3yEG4EA/nJuFPz2gXxAD8Lw/Z95JkHfN+9UavW31oa2gBi0oWnTGvGmaC6b52c+pFLNT5JNxjAwqAmZkVZHJ+TRZ5yTYAAA"
+        }
+      ]
+    },
+    "about.room.window": {
+      "label": "About — a window table",
+      "page": "/about",
+      "aspect": "3/4",
+      "multiple": false,
+      "max": 1,
+      "hint": "A window table with the green placemat, looking out through the window drawings",
+      "items": [
+        {
+          "media_id": 3,
+          "src": "/api/media-files/3-960.webp",
+          "srcset": "/api/media-files/3-480.webp 480w, /api/media-files/3-960.webp 960w, /api/media-files/3-1050.webp 1050w",
+          "width": 1050,
+          "height": 1400,
+          "alt": "A white table by the front window in sunlight, with a green woven placemat, a cup of sugar sachets and stirrers, and the café's illustrated window drawings behind",
+          "focal": {
+            "x": 0.5,
+            "y": 0.6
+          },
+          "blur": "data:image/webp;base64,UklGRo4AAABXRUJQVlA4IIIAAACwBQCdASoYACAAPtFQpkuoJCOhsBgMAQAaCWcAxNgxWvEOcX/uumzzEBor9LvQbTQhsX10jjAA/vQyySt1ADeOQSDeA7Dj7ho/wytebaoBkd/FLo+fO15IRXA3kJjutIK1tS1y1RDMq6diieGsHB/Fk1ALYeWD3CQp32ElkcQOAAAA"
+        }
+      ]
+    },
+    "about.room.cat": {
+      "label": "About — a cat print",
+      "page": "/about",
+      "aspect": "3/4",
+      "multiple": false,
+      "max": 1,
+      "hint": "One of the framed cat prints on the sage wall, straight on, no reflections",
+      "items": [
+        {
+          "media_id": 4,
+          "src": "/api/media-files/4-960.webp",
+          "srcset": "/api/media-files/4-480.webp 480w, /api/media-files/4-960.webp 960w, /api/media-files/4-1050.webp 1050w",
+          "width": 1050,
+          "height": 1400,
+          "alt": "A framed print of a scruffy black cat beside a cup of coffee, hung on the textured sage-green wall under round white lights",
+          "focal": {
+            "x": 0.5,
+            "y": 0.4
+          },
+          "blur": "data:image/webp;base64,UklGRoQAAABXRUJQVlA4IHgAAABwBACdASoYACAAPtFkqlAoJaOiqAgBABoJQBSQAkeM3ju24g6Aawe/PvVuAAD940P4b9HbNitmGuf291ZR+jB9GVEJ0acltmiVGEiJwMy2sKly5S1slFjQmxlNOVvc80edNMsP7p2dUdHU+hPVc8bsRpNYXe8AAAA="
+        }
+      ]
+    },
+    "about.room.front": {
+      "label": "About — the front window",
+      "page": "/about",
+      "aspect": "4/3",
+      "multiple": false,
+      "max": 1,
+      "hint": "The front window with the logo line drawn on the glass, from the pavement, landscape",
+      "items": [
+        {
+          "media_id": 1,
+          "src": "/api/media-files/1-933.webp",
+          "srcset": "/api/media-files/1-480.webp 480w, /api/media-files/1-933.webp 933w",
+          "width": 933,
+          "height": 1400,
+          "alt": "The front window from the street, with the Sasha's Corner logo and its line-drawn cup on the glass, pink balloons above, and two customers with takeaway cups at a white table inside",
+          "focal": {
+            "x": 0.5,
+            "y": 0.38
+          },
+          "blur": "data:image/webp;base64,UklGRp4AAABXRUJQVlA4IJIAAABQBgCdASoYACQAPtFgpU+oJSMiJWzJABoJZQDFC75BEvxHleGGaJbUGv20N2kA+Hxqh8z1MBbV8qQeAAD+0DAwUt18KX46hrE/QNJVjoWIEJyfIIQ0ygNiZCRWcrXr0tFL0/z7dZ6g+9LfbcrbTJXEj9v1c3ZOAyRyTlgkz0s5xbYlbv+vY3pnbSO2oKkMBdKAAA=="
+        }
+      ]
+    },
+    "about.team": {
+      "label": "About — the team",
+      "page": "/about",
+      "aspect": "3/2",
+      "multiple": false,
+      "max": 1,
+      "hint": "The people behind the counter, at work or together at the bar. Landscape, and only with everyone's agreement",
+      "items": []
+    },
+    "about.gallery": {
+      "label": "About — photo gallery",
+      "page": "/about",
+      "aspect": "3/4",
+      "multiple": true,
+      "max": 12,
+      "hint": "Anything worth a look before someone comes in: drinks, cakes, corners of the room, the window. Upright works best",
+      "items": [
+        {
+          "media_id": 1,
+          "src": "/api/media-files/1-933.webp",
+          "srcset": "/api/media-files/1-480.webp 480w, /api/media-files/1-933.webp 933w",
+          "width": 933,
+          "height": 1400,
+          "alt": "The front window from the street, with the Sasha's Corner logo and its line-drawn cup on the glass, pink balloons above, and two customers with takeaway cups at a white table inside",
+          "focal": {
+            "x": 0.5,
+            "y": 0.5
+          },
+          "blur": "data:image/webp;base64,UklGRp4AAABXRUJQVlA4IJIAAABQBgCdASoYACQAPtFgpU+oJSMiJWzJABoJZQDFC75BEvxHleGGaJbUGv20N2kA+Hxqh8z1MBbV8qQeAAD+0DAwUt18KX46hrE/QNJVjoWIEJyfIIQ0ygNiZCRWcrXr0tFL0/z7dZ6g+9LfbcrbTJXEj9v1c3ZOAyRyTlgkz0s5xbYlbv+vY3pnbSO2oKkMBdKAAA=="
+        },
+        {
+          "media_id": 2,
+          "src": "/api/media-files/2-960.webp",
+          "srcset": "/api/media-files/2-480.webp 480w, /api/media-files/2-960.webp 960w, /api/media-files/2-1050.webp 1050w",
+          "width": 1050,
+          "height": 1400,
+          "alt": "Inside the café: sage-green walls over dark wood panelling, white tables and chairs on a grey marble-look floor, and a shelf of board games with a chess board",
+          "focal": {
+            "x": 0.5,
+            "y": 0.5
+          },
+          "blur": "data:image/webp;base64,UklGRogAAABXRUJQVlA4IHwAAAAQBQCdASoYACAAPtFeqU6oJSQiKAqpABoJYwDH5GlYd6Bus6/KrxByeMMeruOZkwfgAP7Jw3yEG4EA/nJuFPz2gXxAD8Lw/Z95JkHfN+9UavW31oa2gBi0oWnTGvGmaC6b52c+pFLNT5JNxjAwqAmZkVZHJ+TRZ5yTYAAA"
+        },
+        {
+          "media_id": 3,
+          "src": "/api/media-files/3-960.webp",
+          "srcset": "/api/media-files/3-480.webp 480w, /api/media-files/3-960.webp 960w, /api/media-files/3-1050.webp 1050w",
+          "width": 1050,
+          "height": 1400,
+          "alt": "A white table by the front window in sunlight, with a green woven placemat, a cup of sugar sachets and stirrers, and the café's illustrated window drawings behind",
+          "focal": {
+            "x": 0.5,
+            "y": 0.5
+          },
+          "blur": "data:image/webp;base64,UklGRo4AAABXRUJQVlA4IIIAAACwBQCdASoYACAAPtFQpkuoJCOhsBgMAQAaCWcAxNgxWvEOcX/uumzzEBor9LvQbTQhsX10jjAA/vQyySt1ADeOQSDeA7Dj7ho/wytebaoBkd/FLo+fO15IRXA3kJjutIK1tS1y1RDMq6diieGsHB/Fk1ALYeWD3CQp32ElkcQOAAAA"
+        },
+        {
+          "media_id": 4,
+          "src": "/api/media-files/4-960.webp",
+          "srcset": "/api/media-files/4-480.webp 480w, /api/media-files/4-960.webp 960w, /api/media-files/4-1050.webp 1050w",
+          "width": 1050,
+          "height": 1400,
+          "alt": "A framed print of a scruffy black cat beside a cup of coffee, hung on the textured sage-green wall under round white lights",
+          "focal": {
+            "x": 0.5,
+            "y": 0.5
+          },
+          "blur": "data:image/webp;base64,UklGRoQAAABXRUJQVlA4IHgAAABwBACdASoYACAAPtFkqlAoJaOiqAgBABoJQBSQAkeM3ju24g6Aawe/PvVuAAD940P4b9HbNitmGuf291ZR+jB9GVEJ0acltmiVGEiJwMy2sKly5S1slFjQmxlNOVvc80edNMsP7p2dUdHU+hPVc8bsRpNYXe8AAAA="
+        },
+        {
+          "media_id": 5,
+          "src": "/api/media-files/5-960.webp",
+          "srcset": "/api/media-files/5-480.webp 480w, /api/media-files/5-960.webp 960w, /api/media-files/5-1050.webp 1050w",
+          "width": 1050,
+          "height": 1400,
+          "alt": "An iced matcha latte and an iced blue matcha in Sasha's Corner cups, on a white table by the front window",
+          "focal": {
+            "x": 0.5,
+            "y": 0.5
+          },
+          "blur": "data:image/webp;base64,UklGRqIAAABXRUJQVlA4IJYAAACwBQCdASoYACAAPsFKoEunpCMht/qoAPAYCWMAnTOhwiBzXB4MdLq62hrHa2T68c2U/I07UAAAxz69T8HN4GQLJwPZV5nHGF5OvvtxEeE8ehKBdnInGw2zaYxZ0iMsbkctXlY4PCLcQoENOJLU2NZVDpSJXwTYG5T0t0MqeS6/VYQvOSVGsge2InXD66Q6qgh1aFAoAAA="
+        },
+        {
+          "media_id": 6,
+          "src": "/api/media-files/6-960.webp",
+          "srcset": "/api/media-files/6-480.webp 480w, /api/media-files/6-960.webp 960w, /api/media-files/6-1050.webp 1050w",
+          "width": 1050,
+          "height": 1400,
+          "alt": "An iced green matcha and an iced blue matcha seen from above, each lid with a small 'Thank you' cat sticker, next to a green woven placemat",
+          "focal": {
+            "x": 0.5,
+            "y": 0.5
+          },
+          "blur": "data:image/webp;base64,UklGRpQAAABXRUJQVlA4IIgAAABQBQCdASoYACAAPtFYpUyoJSOiKA1RABoJQBdgB5oZ4waTkERAxRXF5jrASR1XdJdRiAAA/vOCq7//fvvXvTRmoOeO0WpuKZGBhwe1QN+gU461oG63XcVTLDEx5CYm9Fu2rW7EtMTAIT74mwaN9U76izZUgdU3nbXVL/ZZJm7WERnzUP6F6AAA"
+        },
+        {
+          "media_id": 7,
+          "src": "/api/media-files/7-960.webp",
+          "srcset": "/api/media-files/7-480.webp 480w, /api/media-files/7-960.webp 960w, /api/media-files/7-1050.webp 1050w",
+          "width": 1050,
+          "height": 1400,
+          "alt": "A muffin on a white plate with a fork, beside a latte in a glass topped with dried rosebuds, on a white table near the window",
+          "focal": {
+            "x": 0.5,
+            "y": 0.5
+          },
+          "blur": "data:image/webp;base64,UklGRqYAAABXRUJQVlA4IJoAAABQBQCdASoYACAAPtFepkwoJaOiMAgBABoJZQCo9BQcAtWDfUMpj5/pQIErd5cIRXMW3gAA/q0z9slbT9drz8ECxixBG7n6PPl+kgXlA5ej/uuD+vTdTApNF4FDYURhlCLyPW9avSl8GudP6/DkpxsV4s7xjiXi4hTG0KyePhGgDVfKAjYMQIue812dV/ZG0tqgbZvBjC8/YAAA"
+        },
+        {
+          "media_id": 8,
+          "src": "/api/media-files/8-960.webp",
+          "srcset": "/api/media-files/8-480.webp 480w, /api/media-files/8-960.webp 960w, /api/media-files/8-1399.webp 1399w",
+          "width": 1399,
+          "height": 1400,
+          "alt": "Two lattes in glass mugs, one with leaf latte art, a knitted-hat snowman ornament, a chocolate-topped crispy square and a slice of frosted chocolate cake",
+          "focal": {
+            "x": 0.5,
+            "y": 0.5
+          },
+          "blur": "data:image/webp;base64,UklGRq4AAABXRUJQVlA4IKIAAACQBQCdASoYABgAPtFkqU+oJaOiKAgBABoJQBOmYTg0iP6sIVTIh5r6fIEiPZ7nBrO6T/lFAAD+7uYy2hUtwGYAuMszF2iShgbzbWvhAYVGGfZbjtt43v14Z4Xc14cexI0laL+ZCx8Vd2ZZXAMRsjeg1Omo0CQst4Fd/F+vMZzzAD3Ni2NMfx/Ptphvejt2oltgeFY7GcUnBSHTT5yhn/JgAAA="
+        }
+      ]
+    },
+    "order.kyiv": {
+      "label": "Order — Kyiv cake, whole",
+      "page": "/order",
+      "aspect": "4/5",
+      "multiple": false,
+      "max": 1,
+      "hint": "Kyiv cake, whole, on the counter, from 45° above, natural light",
+      "items": []
+    },
+    "order.takeaway": {
+      "label": "Order — takeaway",
+      "page": "/order",
+      "aspect": "3/4",
+      "multiple": false,
+      "max": 1,
+      "hint": "Takeaway cups with the logo sticker, held up or on the counter by the till, upright",
+      "items": [
+        {
+          "media_id": 5,
+          "src": "/api/media-files/5-960.webp",
+          "srcset": "/api/media-files/5-480.webp 480w, /api/media-files/5-960.webp 960w, /api/media-files/5-1050.webp 1050w",
+          "width": 1050,
+          "height": 1400,
+          "alt": "An iced matcha latte and an iced blue matcha in Sasha's Corner cups, on a white table by the front window",
+          "focal": {
+            "x": 0.4,
+            "y": 0.62
+          },
+          "blur": "data:image/webp;base64,UklGRqIAAABXRUJQVlA4IJYAAACwBQCdASoYACAAPsFKoEunpCMht/qoAPAYCWMAnTOhwiBzXB4MdLq62hrHa2T68c2U/I07UAAAxz69T8HN4GQLJwPZV5nHGF5OvvtxEeE8ehKBdnInGw2zaYxZ0iMsbkctXlY4PCLcQoENOJLU2NZVDpSJXwTYG5T0t0MqeS6/VYQvOSVGsge2InXD66Q6qgh1aFAoAAA="
+        }
+      ]
+    },
+    "order.waffles": {
+      "label": "Order — waffles, made to order",
+      "page": "/order",
+      "aspect": "4/3",
+      "multiple": false,
+      "max": 1,
+      "hint": "A brunch waffle fresh off the iron, sweet with fruit and ice cream, from 45° above",
+      "items": []
+    },
+    "visit.storefront": {
+      "label": "Visit — the shop front",
+      "page": "/visit",
+      "aspect": "4/5",
+      "multiple": false,
+      "max": 1,
+      "hint": "The shop front from across Commercial Street, the whole window and sign in frame, daylight",
+      "items": [
+        {
+          "media_id": 1,
+          "src": "/api/media-files/1-933.webp",
+          "srcset": "/api/media-files/1-480.webp 480w, /api/media-files/1-933.webp 933w",
+          "width": 933,
+          "height": 1400,
+          "alt": "The front window from the street, with the Sasha's Corner logo and its line-drawn cup on the glass, pink balloons above, and two customers with takeaway cups at a white table inside",
+          "focal": {
+            "x": 0.45,
+            "y": 0.42
+          },
+          "blur": "data:image/webp;base64,UklGRp4AAABXRUJQVlA4IJIAAABQBgCdASoYACQAPtFgpU+oJSMiJWzJABoJZQDFC75BEvxHleGGaJbUGv20N2kA+Hxqh8z1MBbV8qQeAAD+0DAwUt18KX46hrE/QNJVjoWIEJyfIIQ0ygNiZCRWcrXr0tFL0/z7dZ6g+9LfbcrbTJXEj9v1c3ZOAyRyTlgkz0s5xbYlbv+vY3pnbSO2oKkMBdKAAA=="
+        }
+      ]
+    },
+    "visit.door": {
+      "label": "Visit — inside, from the door",
+      "page": "/visit",
+      "aspect": "4/3",
+      "multiple": false,
+      "max": 1,
+      "hint": "What you see as you walk in: from the doorway, landscape, lights on",
+      "items": [
+        {
+          "media_id": 2,
+          "src": "/api/media-files/2-960.webp",
+          "srcset": "/api/media-files/2-480.webp 480w, /api/media-files/2-960.webp 960w, /api/media-files/2-1050.webp 1050w",
+          "width": 1050,
+          "height": 1400,
+          "alt": "Inside the café: sage-green walls over dark wood panelling, white tables and chairs on a grey marble-look floor, and a shelf of board games with a chess board",
+          "focal": {
+            "x": 0.5,
+            "y": 0.58
+          },
+          "blur": "data:image/webp;base64,UklGRogAAABXRUJQVlA4IHwAAAAQBQCdASoYACAAPtFeqU6oJSQiKAqpABoJYwDH5GlYd6Bus6/KrxByeMMeruOZkwfgAP7Jw3yEG4EA/nJuFPz2gXxAD8Lw/Z95JkHfN+9UavW31oa2gBi0oWnTGvGmaC6b52c+pFLNT5JNxjAwqAmZkVZHJ+TRZ5yTYAAA"
+        }
+      ]
+    }
+  }
+}

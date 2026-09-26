@@ -18,11 +18,13 @@ agent, and those are not equally trustworthy.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from datetime import date, datetime, timedelta
 
 from sqlalchemy.orm import Session
 
 from cafeops.api.schemas import (
+    ChannelDayOut,
     ChannelFinding,
     ChannelPerformanceOut,
     ChannelsResponse,
@@ -37,6 +39,7 @@ from cafeops.integrations.channels.analytics import (
     channel_performance,
     rank_well_convert_badly,
 )
+from cafeops.integrations.channels.base import ChannelDayRow
 
 __all__ = ["channels_view"]
 
@@ -44,7 +47,9 @@ DEFAULT_WINDOW_DAYS = 28
 DEFAULT_MIN_VIEWS = 100
 
 
-def _performance(perf: ChannelPerformance) -> ChannelPerformanceOut:
+def _performance(
+    perf: ChannelPerformance, day_rows: Sequence[ChannelDayRow]
+) -> ChannelPerformanceOut:
     return ChannelPerformanceOut(
         channel=perf.channel.value,
         since=perf.since,
@@ -73,6 +78,15 @@ def _performance(perf: ChannelPerformance) -> ChannelPerformanceOut:
                 complete=item.complete,
             )
             for item in perf.coverage
+        ),
+        daily=tuple(
+            ChannelDayOut(
+                metric_date=row.metric_date,
+                gross_pence=row.gross_pence,
+                orders=row.orders,
+                ad_spend_pence=row.ad_spend_pence,
+            )
+            for row in sorted(day_rows, key=lambda r: r.metric_date)
         ),
         caveats=perf.caveats(),
     )
@@ -139,7 +153,10 @@ def channels_view(
     for channel in channels:
         day_rows = repo.day_figures(since=since, until=until, channel=channel)
         performance.append(
-            _performance(channel_performance(day_rows, channel=channel, since=since, until=until))
+            _performance(
+                channel_performance(day_rows, channel=channel, since=since, until=until),
+                day_rows,
+            )
         )
         item_rows = repo.item_figures(since=since, until=until, channel=channel)
         if item_rows:

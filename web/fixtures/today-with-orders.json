@@ -1,18 +1,20 @@
 {
-  "as_of": "2026-09-23T18:34:25.765605Z",
-  "local_date": "2026-09-23",
+  "as_of": "2026-09-24T20:02:37.286505Z",
+  "local_date": "2026-09-24",
   "stock": {
     "ingredients": 54,
     "unanchored": 0,
     "negative": 0,
-    "short_dated": 0,
+    "short_dated": 1,
     "unbatched": 0,
-    "auto_order_enabled": 6,
+    "auto_order_enabled": 5,
     "forced_manual": 1,
-    "expiring_value_pence": "0",
+    "expiring_value_pence": "3354.456159",
     "notes": []
   },
-  "short_dated": [],
+  "short_dated": [
+    "Whole milk (3d)"
+  ],
   "expiry_write_offs_due": 0,
   "expiry_write_offs_value_pence": "0",
   "drift_forced_manual": [
@@ -22,8 +24,8 @@
     "Napkin",
     "Whole milk"
   ],
-  "auto_order_enabled_count": 6,
-  "draft_order_total_pence": 24572,
+  "auto_order_enabled_count": 5,
+  "draft_order_total_pence": 17673,
   "draft_order_supplier_count": 2,
   "capped_line_count": 0,
   "emergency_line_count": 0,
@@ -54,6 +56,12 @@
       "message": "2 ingredient(s) are in the 10-15% tuning band: a waste_factor change is proposed and they stay manual until two consecutive counts come in under 10% (invariant 2)."
     },
     {
+      "kind": "expiry",
+      "severity": "act",
+      "subject": "Whole milk (3d)",
+      "message": "1 ingredient(s) hold stock expiring within 3 days. Still sellable -- this is the window in which it can still be sold through rather than binned."
+    },
+    {
       "kind": "menu",
       "severity": "info",
       "subject": "Pistachio Latte M, Pistachio Latte S, Pistachio Latte XL",
@@ -63,13 +71,9 @@
   "notes": [
     "Every stock figure on this response is THEORETICAL (invariant 6). Physical counts are the source of truth.",
     "6 of 8 suppliers' terms are INVENTED PLACEHOLDERS: Booker, Brakes, Cakesmiths, Cups Direct, Monolith, Nataly (custom). Lead time, delivery days, cutoff, minimum order and free-delivery threshold were never confirmed with any of them (ARCHITECTURE.md 8F.4), and every cover window below is built on them. Only Tesco and Amazon have terms anybody has checked.",
-    "SOURCING: 1 line(s) moved away from the preferred supplier: Oat milk (barista): SWITCHED to Tesco (1 L) at 190.00p/L, against Booker (1 L) at 250.00p/L -- 24.00% cheaper per L, £1.20 on this line. Materially cheaper and no other supplier's minimum is broken by moving it.",
-    "12oz cup lid: runs out in 2.08 day(s), before the next delivery in 5, and Tesco does not stock it either. Nothing can bridge this gap -- it is a stockout unless the proper supplier can be hurried.",
-    "12oz paper cup: runs out in 4.698 day(s), before the next delivery in 5, and Tesco does not stock it either. Nothing can bridge this gap -- it is a stockout unless the proper supplier can be hurried.",
-    "8oz paper cup: runs out in 1.824 day(s), before the next delivery in 5, and Tesco does not stock it either. Nothing can bridge this gap -- it is a stockout unless the proper supplier can be hurried.",
-    "Almond milk (barista): runs out in 2.978 day(s), before the next delivery in 6, and Tesco does not stock it either. Nothing can bridge this gap -- it is a stockout unless the proper supplier can be hurried.",
-    "Caramel syrup (Monin): runs out in 4.932 day(s), before the next delivery in 6, and Tesco does not stock it either. Nothing can bridge this gap -- it is a stockout unless the proper supplier can be hurried.",
-    "Coffee beans (house blend): runs out in 1.998 day(s), before the next delivery in 6, and Tesco does not stock it either. Nothing can bridge this gap -- it is a stockout unless the proper supplier can be hurried.",
-    "Soy milk (barista): runs out in 4.582 day(s), before the next delivery in 6, and Tesco does not stock it either. Nothing can bridge this gap -- it is a stockout unless the proper supplier can be hurried."
+    "12oz cup lid: runs out in 3.007 day(s), before the next delivery in 4, and Tesco does not stock it either. Nothing can bridge this gap -- it is a stockout unless the proper supplier can be hurried.",
+    "8oz paper cup: runs out in 2.642 day(s), before the next delivery in 4, and Tesco does not stock it either. Nothing can bridge this gap -- it is a stockout unless the proper supplier can be hurried.",
+    "Almond milk (barista): runs out in 4.383 day(s), before the next delivery in 5, and Tesco does not stock it either. Nothing can bridge this gap -- it is a stockout unless the proper supplier can be hurried.",
+    "Coffee beans (house blend): runs out in 2.891 day(s), before the next delivery in 5, and Tesco does not stock it either. Nothing can bridge this gap -- it is a stockout unless the proper supplier can be hurried."
   ]
 }

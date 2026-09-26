@@ -1,0 +1,19 @@
+---
+// Password gate for /admin. HTTP Basic: any username, the server's SITE_ADMIN_PASSWORD.
+// The credential is kept in sessionStorage only (scripts/admin/api.ts).
+---
+
+<section class="adm-signin" data-signin aria-labelledby="adm-signin-t">
+  <h2 id="adm-signin-t">Sign in</h2>
+  <p class="adm-muted" data-signin-intro>Type the admin password to manage the photos on the website.</p>
+  <form data-signin-form novalidate>
+    <label class="field">
+      <span>Password</span>
+      <input class="input" type="password" name="password" autocomplete="current-password" required data-signin-pw aria-describedby="adm-signin-err" />
+    </label>
+    <p class="adm-error" id="adm-signin-err" role="alert" data-signin-err hidden></p>
+    <button class="btn btn--caramel" type="submit">Sign in</button>
+  </form>
+  <p class="adm-muted adm-signin__note">You stay signed in until you close this tab.</p>
+  <p class="adm-mock" data-mock-note hidden>Practice mode: nothing is saved to the website. Password <code>mock</code>, or <code>down</code> to see the “not configured” message.</p>
+</section>

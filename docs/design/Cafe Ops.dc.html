@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet"><script src="sc-fin.js"></script><style>html,body{margin:0;height:100%}body{font-family:'Patrick Hand',system-ui,sans-serif;color:#1d1b19;background:#fff}a{color:#1d1b19}a:hover{color:#c2562b}input,select{font-family:'Patrick Hand',sans-serif;color:#1d1b19;background:#fff}</style></helmet>
+<div style="width:100%;height:100%;min-height:600px;display:flex;background:#fff;font-family:'Patrick Hand',sans-serif;color:#1d1b19;overflow:hidden">
+
+<sc-if value="{{ showLogin }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;display:flex;align-items:center;justify-content:center;background:#f6f3ee">
+<div style="width:360px;border:2px solid #1d1b19;border-radius:14px;padding:28px 28px 24px;background:#fff">
+<div style="font:700 30px 'Kalam',cursive">Sasha's Corner</div>
+<div style="color:#666;font-size:17px;margin-bottom:18px">Back office · 23 Commercial Street</div>
+<div style="font-size:16px;margin-bottom:6px">Password</div>
+<input type="password" value="{{ pw }}" onChange="{{ setPw }}" onKeyDown="{{ pwKey }}" placeholder="shared password" style="width:100%;box-sizing:border-box;border:2px solid #1d1b19;border-radius:8px;padding:10px;font-size:20px"></input>
+<div style="min-height:24px;color:#c2562b;font-size:15px;margin:6px 0">{{ pwErr }}</div>
+<div onClick="{{ login }}" style="cursor:pointer;background:#c2562b;color:#fff;border-radius:22px;padding:10px;text-align:center;font-size:19px">Open</div>
+<div style="color:#999;font-size:14px;margin-top:14px">One password for everyone on the team. Change it in Settings. (Demo: corner)</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ showApp }}" hint-placeholder-val="{{ true }}">
+<div style="width:{{ navW }};flex:none;border-right:2px solid #1d1b19;display:flex;flex-direction:column;padding:14px 0 12px;overflow-y:auto">
+<div style="padding:0 16px 10px"><div style="font:700 22px 'Kalam',cursive;line-height:1.1">Sasha's Corner</div><div style="color:#888;font-size:14px">{{ syncShort }}</div></div>
+<sc-for list="{{ nav }}" as="n" hint-placeholder-count="14">
+<sc-if value="{{ n.isHead }}" hint-placeholder-val="{{ false }}"><div style="padding:12px 16px 3px;font:12px ui-monospace,monospace;color:#999;text-transform:uppercase;letter-spacing:.06em">{{ n.label }}</div></sc-if>
+<sc-if value="{{ n.isItem }}" hint-placeholder-val="{{ true }}"><div onClick="{{ n.go }}" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:5px 16px;font-size:18px;background:{{ n.bg }};color:{{ n.fg }}"><span>{{ n.label }}</span><span style="font-size:14px;color:{{ n.badgeC }}">{{ n.badge }}</span></div></sc-if>
+</sc-for>
+<div style="flex:1"></div>
+<div onClick="{{ goSettings }}" style="cursor:pointer;padding:6px 16px;font-size:17px;background:{{ setBg }};color:{{ setFg }}">Settings</div>
+<div onClick="{{ logout }}" style="cursor:pointer;padding:4px 16px;font-size:15px;color:#888">Sign out</div>
+</div>
+
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">
+<sc-for list="{{ banners }}" as="b" hint-placeholder-count="1">
+<div style="display:flex;gap:12px;align-items:center;padding:8px 20px;border-bottom:2px solid #1d1b19;background:{{ b.bg }};font-size:16px;flex:none">
+<span style="font:12px ui-monospace,monospace;border:1.5px solid {{ b.c }};color:{{ b.c }};border-radius:4px;padding:0 5px;flex:none">{{ b.tag }}</span>
+<span style="flex:1">{{ b.text }}</span>
+<span onClick="{{ b.act }}" style="cursor:pointer;border:1.5px solid #1d1b19;border-radius:12px;padding:0 10px;white-space:nowrap">{{ b.actLabel }}</span>
+<span onClick="{{ b.close }}" style="cursor:pointer;color:#999">×</span>
+</div>
+</sc-for>
+<div style="flex:1;min-height:0;display:flex;flex-direction:column">
+
+<sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;overflow-y:auto;padding:36px 44px">
+<div style="font:700 34px 'Kalam',cursive">Nothing here yet.</div>
+<div style="color:#555;font-size:18px;max-width:640px;margin:6px 0 24px">Five things before the numbers mean anything. Do them in order; each one makes the next more accurate.</div>
+<div style="display:flex;flex-direction:column;gap:10px;max-width:720px">
+<sc-for list="{{ steps }}" as="s" hint-placeholder-count="5">
+<div style="display:flex;gap:14px;align-items:center;border:2px solid #1d1b19;border-radius:10px;padding:12px 16px">
+<div style="width:30px;height:30px;flex:none;border:2px solid #1d1b19;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px">{{ s.n }}</div>
+<div style="flex:1"><div style="font-size:19px">{{ s.title }}</div><div style="color:#666;font-size:15px">{{ s.body }}</div></div>
+<div onClick="{{ s.go }}" style="cursor:pointer;border:2px solid #1d1b19;border-radius:16px;padding:2px 14px;font-size:16px;white-space:nowrap;background:{{ s.bg }};color:{{ s.fg }}">{{ s.cta }}</div>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isMS }}" hint-placeholder-val="{{ true }}"><dc-import name="Menu Stock App" embedded="{{ true }}" tab="{{ msTab }}" on-nav="{{ onNav }}" compact="{{ compact }}" hint-size="100%,100%" style="flex:1;min-height:0;width:100%"></dc-import></sc-if>
+<sc-if value="{{ isFin }}" hint-placeholder-val="{{ false }}"><dc-import name="Finance App" embedded="{{ true }}" tab="{{ finTab }}" on-nav="{{ onFinNav }}" hint-size="100%,100%" style="flex:1;min-height:0;width:100%"></dc-import></sc-if>
+<sc-if value="{{ isAgents }}" hint-placeholder-val="{{ false }}"><dc-import name="Agents App" hint-size="100%,100%" style="flex:1;min-height:0;width:100%"></dc-import></sc-if>
+
+<sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;overflow-y:auto;padding:20px 28px">
+<div style="font:700 26px 'Kalam',cursive;margin-bottom:14px">Settings</div>
+<div style="display:grid;grid-template-columns:220px minmax(0,1fr);gap:16px 20px;max-width:820px;font-size:17px;align-items:center">
+<span style="color:#777">Shared password</span><span style="display:flex;gap:8px;align-items:center"><input value="{{ newPw }}" onChange="{{ setNewPw }}" placeholder="new password" style="border:2px solid #1d1b19;border-radius:6px;padding:4px 8px;font-size:17px"></input><span onClick="{{ savePw }}" style="cursor:pointer;border:1.5px solid #1d1b19;border-radius:12px;padding:0 10px">Change</span><span style="color:#888;font-size:15px">{{ pwMsg }}</span></span>
+<span style="color:#777">Lightspeed</span><span style="display:flex;gap:8px;align-items:center">Connected (demo) · sales last came in {{ syncAgo }}<span onClick="{{ syncNow }}" style="cursor:pointer;border:1.5px solid #1d1b19;border-radius:12px;padding:0 10px">Sync now</span><span onClick="{{ makeStale }}" style="cursor:pointer;color:#888;font-size:15px;text-decoration:underline">pretend it's stale</span></span>
+<span style="color:#777">Telegram bot language</span><select value="{{ lang }}" onChange="{{ setLang }}" style="width:200px;border:2px solid #1d1b19;border-radius:6px;padding:3px;font-size:17px"><option value="ru">Russian</option><option value="en">English</option><option value="both">Both</option></select>
+<span style="color:#777">Fresh start</span><span style="display:flex;gap:8px;align-items:center"><span onClick="{{ showEmpty }}" style="cursor:pointer;border:1.5px solid #1d1b19;border-radius:12px;padding:0 10px">Show the empty-install screen</span></span>
+<span style="color:#777">Demo data</span><span style="display:flex;gap:8px;align-items:center"><span onClick="{{ reset }}" style="cursor:pointer;border:1.5px solid #c2562b;color:#c2562b;border-radius:12px;padding:0 10px">{{ resetLabel }}</span><span style="color:#888;font-size:15px">puts every screen back to the workbook data</span></span>
+</div>
+</div>
+</sc-if>
+
+</div>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;startPage&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;stock&quot;,&quot;orders&quot;,&quot;agents&quot;,&quot;rec&quot;,&quot;menu&quot;,&quot;ing&quot;,&quot;sup&quot;,&quot;m-overview&quot;,&quot;m-sales&quot;,&quot;m-exp&quot;,&quot;m-rec&quot;,&quot;m-pl&quot;,&quot;m-dir&quot;,&quot;settings&quot;],&quot;default&quot;:&quot;stock&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;skipLogin&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;compact&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;forceState&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;none&quot;,&quot;login&quot;,&quot;empty&quot;],&quot;default&quot;:&quot;none&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const SH = 'sc-shell-v1';
+const MS = { stock: 'Stock', orders: 'Orders', rec: 'Recipes', menu: 'Menu items', ing: 'Ingredients & prices', sup: 'Suppliers' };
+const FIN = { 'm-overview': 'Overview', 'm-sales': 'Sales', 'm-exp': 'Expenses', 'm-rec': 'Reconcile', 'm-pl': 'Profit & loss', 'm-dir': "Director's account" };
+const ago = t => { const m = Math.round((Date.now() - t) / 60000); return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : m < 2880 ? Math.round(m / 60) + ' hours ago' : Math.round(m / 1440) + ' days ago'; };
+const on = a => ({ bg: a ? '#1d1b19' : 'transparent', fg: a ? '#fff' : '#1d1b19' });
+const gbp = p => (p < 0 ? '−£' : '£') + (Math.abs(p) / 100).toFixed(2);
+function readJSON(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
+class Component extends DCLogic {
+  state = { authed: false, pw: '', pwErr: '', page: this.props.startPage || 'stock', empty: this.props.forceState === 'empty', cfg: null, closed: {}, newPw: '', pwMsg: '', resetArm: false, tick: 0 };
+  componentDidMount() {
+    let cfg = readJSON(SH); if (!cfg) { cfg = { password: 'corner', syncAt: Date.now() - 26 * 3600e3, lang: 'ru' }; this.saveCfg(cfg); }
+    let authed = !!this.props.skipLogin; try { if (sessionStorage.getItem('sc-auth') === '1') authed = true; } catch (e) {}
+    if (this.props.forceState === 'login') authed = false;
+    this.setState({ cfg, authed });
+    this.refresh = () => this.setState(s => ({ tick: s.tick + 1 }));
+    ['sc-agents-sync', 'sc-fin-sync', 'sc-sync'].forEach(e => window.addEventListener(e, this.refresh));
+  }
+  componentWillUnmount() { ['sc-agents-sync', 'sc-fin-sync', 'sc-sync'].forEach(e => window.removeEventListener(e, this.refresh)); }
+  saveCfg(cfg) { try { localStorage.setItem(SH, JSON.stringify(cfg)); } catch (e) {} this.setState({ cfg }); }
+  cashIssue() {
+    const F = readJSON('sc-fin-v1'); let sales, decl;
+    if (F && F.cashDecl) { sales = F.sales; decl = F.cashDecl; }
+    else if (window.SC_FIN) { sales = window.SC_FIN.sales; decl = {}; sales.filter(x => x.sqCash + x.ownCash > 0).forEach((x, i) => { const e = x.sqCash + x.ownCash; decl[x.date] = i % 7 === 3 ? e - 420 : i % 11 === 5 ? e + 1200 : e; }); }
+    if (!sales) return null;
+    const bad = sales.filter(x => decl[x.date] != null && Math.abs(decl[x.date] - (x.sqCash + x.ownCash)) > 500).sort((a, b) => b.date.localeCompare(a.date))[0];
+    return bad ? { date: bad.date, diff: decl[bad.date] - (bad.sqCash + bad.ownCash) } : null;
+  }
+  renderVals() {
+    const s = this.state, cfg = s.cfg || { syncAt: Date.now(), password: 'corner', lang: 'ru' };
+    const compact = !!this.props.compact;
+    const go = page => () => this.setState({ page, empty: false });
+    const A = readJSON('sc-agents-v1'); const waiting = A ? A.proposals.filter(p => p.status === 'waiting').length : 2;
+    const Sd = readJSON('sc-menu-stock-v1'); const ordWait = Sd && Sd.orders ? Sd.orders.filter(o => o.status === 'Waiting').length : 0;
+    const item = (id, label, badge, badgeC) => ({ isItem: true, label, badge: badge || '', badgeC: badgeC || '#c2562b', ...on(s.page === id && !s.empty), go: go(id) });
+    const nav = [{ isHead: true, label: 'Every day' }, item('stock', 'Stock'), item('orders', 'Orders', ordWait ? ordWait + ' waiting' : ''), item('agents', 'Agents', waiting ? String(waiting) : ''),
+      { isHead: true, label: 'Menu' }, item('rec', 'Recipes'), item('menu', 'Menu items'), item('ing', 'Ingredients'), item('sup', 'Suppliers'),
+      { isHead: true, label: 'Money' }, ...Object.entries(FIN).map(([k, l]) => item(k, l))];
+    const banners = [];
+    const stale = Date.now() - cfg.syncAt > 12 * 3600e3;
+    if (stale && !s.closed.stale) banners.push({ tag: 'STALE', c: '#1d1b19', bg: '#f6f3ee', text: 'Lightspeed sales last came in ' + ago(cfg.syncAt) + '. Stock estimates and takings are behind until the next sync.', actLabel: 'Sync now', act: () => this.saveCfg({ ...cfg, syncAt: Date.now() }), close: () => this.setState({ closed: { ...s.closed, stale: 1 } }) });
+    const ci = this.cashIssue();
+    if (ci && !s.closed.cash) banners.push({ tag: 'CASH', c: '#c2562b', bg: '#fbf1ec', text: 'Cash was ' + gbp(Math.abs(ci.diff)) + (ci.diff < 0 ? ' short' : ' over') + ' on ' + new Date(ci.date + 'T12:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) + ' and nobody has explained it yet.', actLabel: 'Look at it', act: go('m-rec'), close: () => this.setState({ closed: { ...s.closed, cash: 1 } }) });
+    const msTab = MS[s.page] ? s.page : 'stock';
+    const finTab = FIN[s.page] ? s.page.slice(2) : 'overview';
+    const login = () => { if (s.pw === cfg.password) { try { sessionStorage.setItem('sc-auth', '1'); } catch (e) {} this.setState({ authed: true, pw: '', pwErr: '' }); } else this.setState({ pwErr: 'That’s not it. Ask whoever runs the café.' }); };
+    const Ssup = Sd && Sd.suppliers ? Sd.suppliers.filter(x => !x.termsConfirmed).length : 8;
+    const shelfMissing = Sd && Sd.ingredients ? Sd.ingredients.filter(i => ['Dairy', 'Dairy alt', 'Food', 'Cake', 'Cake (CakeSmiths)'].includes(i.cat) && !(i.stk && i.stk.shelf)).length : 0;
+    const steps = [
+      ['Bring in the spreadsheet', 'Ingredients, prices, recipes and menu from the finance workbook. It proposes recipes; you confirm them.', 'Import workbook', () => this.setState({ empty: false, page: 'rec' })],
+      ['Add shelf lives for fresh stock', 'Not in the workbook. Without them, orders can’t be capped to what will keep. ' + (shelfMissing ? shelfMissing + ' still missing.' : ''), 'Open Stock', () => this.setState({ empty: false, page: 'stock' })],
+      ['Confirm supplier terms', 'Delivery days, cut-offs, minimums and fees. ' + Ssup + ' are still guesses.', 'Open Suppliers', () => this.setState({ empty: false, page: 'sup' })],
+      ['Connect Lightspeed', 'So sales come in by themselves and stock is worked out from them.', 'Settings', () => this.setState({ empty: false, page: 'settings' })],
+      ['Do a first count', 'Tier A first. Every estimate starts from a real count.', 'Start counting', () => this.setState({ empty: false, page: 'stock' })]];
+    return {
+      showLogin: !s.authed, showApp: s.authed, pw: s.pw, pwErr: s.pwErr, setPw: e => this.setState({ pw: e.target.value, pwErr: '' }), pwKey: e => { if (e.key === 'Enter') login(); }, login,
+      logout: () => { try { sessionStorage.removeItem('sc-auth'); } catch (e) {} this.setState({ authed: false }); },
+      navW: compact ? '170px' : '200px', compact, nav, banners, syncShort: 'sales synced ' + ago(cfg.syncAt),
+      goSettings: go('settings'), ...(() => { const o = on(s.page === 'settings' && !s.empty); return { setBg: o.bg, setFg: o.fg }; })(),
+      isEmpty: s.empty, isMS: !s.empty && !!MS[s.page], isFin: !s.empty && !!FIN[s.page], isAgents: !s.empty && s.page === 'agents', isSettings: !s.empty && s.page === 'settings',
+      msTab, finTab,
+      onNav: tab => this.setState({ page: tab }), onFinNav: tab => this.setState({ page: 'm-' + tab }),
+      steps: steps.map(([title, body, cta, fn], i) => ({ n: i + 1, title, body, cta, go: fn, ...on(i === 0) })),
+      newPw: s.newPw, setNewPw: e => this.setState({ newPw: e.target.value, pwMsg: '' }), pwMsg: s.pwMsg,
+      savePw: () => { if (s.newPw.trim().length < 4) return this.setState({ pwMsg: 'At least 4 characters.' }); this.saveCfg({ ...cfg, password: s.newPw.trim() }); this.setState({ newPw: '', pwMsg: 'Changed. Tell the team.' }); },
+      syncAgo: ago(cfg.syncAt), syncNow: () => this.saveCfg({ ...cfg, syncAt: Date.now() }), makeStale: () => { this.saveCfg({ ...cfg, syncAt: Date.now() - 26 * 3600e3 }); this.setState({ closed: {} }); },
+      lang: cfg.lang, setLang: e => this.saveCfg({ ...cfg, lang: e.target.value }),
+      showEmpty: () => this.setState({ empty: true }),
+      resetLabel: s.resetArm ? 'Tap again to reset' : 'Reset demo data',
+      reset: () => { if (!s.resetArm) return this.setState({ resetArm: true }); ['sc-menu-stock-v1', 'sc-fin-v1', 'sc-agents-v1'].forEach(k => { try { localStorage.removeItem(k); } catch (e) {} }); location.reload(); },
+    };
+  }
+}
+</script>
+</body>
+</html>

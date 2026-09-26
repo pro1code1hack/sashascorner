@@ -19,15 +19,67 @@ const ONE_POUND: Dec = fromInt(100)
  * `£0.7771` is four leading noise characters. £1 and over reads in pounds.
  */
 export function money(v: string | number): string {
-  const d = fromMoney(v)
-  if (cmp(abs(d), ONE_POUND) < 0) return `${toFixed(d, 2)}p`
-  return `£${toFixed(shiftDown(d, 2), 2)}`
+  return moneyDec(fromMoney(v))
 }
 
-/** Money straight from an exact Dec, with no string round-trip. */
+/**
+ * Money straight from an exact Dec, with no string round-trip.
+ *
+ * The sign is emitted BEFORE the currency symbol. Formatting the signed value
+ * inside the template gave `£-5.00`, which is not a form anybody writes, and
+ * `margin.json` and `stock-tier-a.json` both carry negative money.
+ */
 export function moneyDec(d: Dec): string {
-  if (cmp(abs(d), ONE_POUND) < 0) return `${toFixed(d, 2)}p`
-  return `£${toFixed(shiftDown(d, 2), 2)}`
+  const sign = d.u < 0n ? '\u2212' : ''
+  const m = abs(d)
+  if (cmp(m, ONE_POUND) < 0) return `${sign}${toFixed(m, 2)}p`
+  return `${sign}£${groupThousands(toFixed(shiftDown(m, 2), 2))}`
+}
+
+/**
+ * Always pounds, never switching to pence. `money()` deliberately drops to pence
+ * below £1 because a cafe thinks that way in prose -- but that makes it wrong for
+ * a *column* of totals, where half the suppliers total zero and the column reads
+ * `£125.50 ... 0.00p`. A column that changes unit half-way down cannot be scanned,
+ * which is the same rule `pence()` already states in the other direction.
+ *
+ * Two screens wrote this by hand before it lived here. Use it for any figure that
+ * sits in a column with other money.
+ */
+/**
+ * Group the integer part in threes. `1430.05` -> `1,430.05`.
+ *
+ * Done on the STRING `toFixed` already produced, never by reformatting a number:
+ * `Intl.NumberFormat` takes a `number`, and routing exact pence through a float
+ * to add commas is the one thing this module exists to avoid. A leading minus (or
+ * the U+2212 this module emits) is preserved and not grouped.
+ */
+function groupThousands(fixed: string): string {
+  const sign = /^[-\u2212]/.test(fixed) ? fixed[0] : ''
+  const body = sign ? fixed.slice(1) : fixed
+  const dot = body.indexOf('.')
+  const whole = dot === -1 ? body : body.slice(0, dot)
+  const rest = dot === -1 ? '' : body.slice(dot)
+  return sign + whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + rest
+}
+
+export function poundsOnly(v: string | number): string {
+  return poundsOnlyDec(fromMoney(v))
+}
+
+/** `poundsOnly` from an exact Dec, with no string round-trip. Sign precedes the
+ *  currency symbol, as in `moneyDec`. */
+export function poundsOnlyDec(d: Dec): string {
+  const sign = d.u < 0n ? '\u2212' : ''
+  return `${sign}\u00a3${groupThousands(toFixed(shiftDown(abs(d), 2), 2))}`
+}
+
+/** Signed, for a delta in a column. Zero prints as zero, not +0. */
+export function poundsOnlySigned(v: string | number): string {
+  const d = fromMoney(v)
+  const body = poundsOnly(v)
+  if (d.u === 0n) return body
+  return d.u > 0n ? `+${body}` : body
 }
 
 /** Signed, for a delta. A delta of zero is printed as zero, not as +0. */

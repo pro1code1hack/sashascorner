@@ -1,0 +1,23 @@
+---
+// Photo library: drop zone, upload progress and the grid (filled by scripts/admin/library.ts).
+---
+
+<section class="adm-sec" id="library" aria-labelledby="adm-lib-t">
+  <header class="adm-sec__head">
+    <h2 id="adm-lib-t">Photo library</h2>
+    <p class="adm-muted num" data-library-count></p>
+  </header>
+  <p class="adm-sec__lead">Every photo you upload lands here first. Give each one a short description: it is read aloud to people who can’t see it, and helps Google.</p>
+
+  <div class="adm-drop" data-drop>
+    <input class="sr-only" type="file" accept="image/jpeg,image/png,image/webp" multiple tabindex="-1" aria-hidden="true" data-drop-input />
+    <p class="adm-drop__big"><span class="adm-drop__mouse">Drag photos here</span><span class="adm-drop__touch">Add photos</span></p>
+    <p class="adm-muted adm-drop__mouse">or</p>
+    <button type="button" class="btn btn--caramel adm-drop__btn" data-drop-pick>Choose photos…</button>
+    <p class="adm-muted adm-drop__rule">JPEG, PNG or WebP, up to 15 MB each. Phone photos are fine as they are.</p>
+  </div>
+  <ul class="adm-uploads" data-uploads hidden aria-label="Uploads"></ul>
+
+  <p class="adm-muted" data-library-empty hidden>No photos yet. Add a few above, then place them on the site.</p>
+  <ul class="adm-lib" data-library tabindex="-1" aria-label="Photos in the library"></ul>
+</section>

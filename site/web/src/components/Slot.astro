@@ -1,0 +1,195 @@
+---
+// One image position on the site, filled from the admin (backend/config/slots.toml
+// declares every key). A filled slot is a <picture> cropped to the slot's aspect
+// ratio around the owner's focal point, over the blurred placeholder. An empty slot
+// is a deliberate placeholder in the brand's grounds: the logo line drawn faintly,
+// "Photo to come", and the hint saying which photo belongs here.
+//
+// scripts/slots.ts swaps in newer photos from /api/slots at runtime, matched on
+// data-slot + data-index, so a change in the admin shows without a rebuild.
+import { shortLabel, signature, slotDef, slotItem, srcsetString } from './slotData';
+
+interface Props {
+  key: string;
+  index?: number;
+  sizes?: string;
+  class?: string;
+  eager?: boolean;
+  /** Placeholder ground: oat on paper sections, paper on oat sections, olive on dark. */
+  tone?: 'oat' | 'paper' | 'olive';
+}
+const { key, index = 0, sizes = '100vw', class: cls, eager = false, tone = 'oat' } = Astro.props;
+
+const def = slotDef(key);
+if (!def) console.warn(`[Slot] "${key}" is not in slots.json -- add it to backend/config/slots.toml and re-export.`);
+const item = slotItem(key, index);
+const aspect = (def?.aspect ?? '4/3').replace(/\s/g, '');
+const pos = item ? `${Math.round(item.focal.x * 1000) / 10}% ${Math.round(item.focal.y * 1000) / 10}%` : '';
+const label = def ? shortLabel(def.label) : '';
+const hint = def?.hint ?? '';
+const style = [`--slot-ar:${aspect}`, item?.blur ? `background-image:url("${item.blur}")` : ''].filter(Boolean).join(';');
+---
+
+<div
+  class:list={['slot', item ? 'slot--filled' : 'slot--empty', `slot--${tone}`, cls]}
+  data-slot={key}
+  data-index={index}
+  data-sig={signature(item)}
+  data-sizes={sizes}
+  data-eager={eager ? '' : undefined}
+  style={style}
+>
+  {
+    item ? (
+      <picture>
+        <img
+          src={item.src}
+          srcset={srcsetString(item.srcset)}
+          sizes={sizes}
+          width={item.width}
+          height={item.height}
+          alt={item.alt}
+          loading={eager ? 'eager' : 'lazy'}
+          fetchpriority={eager ? 'high' : undefined}
+          decoding="async"
+          style={`object-position:${pos}`}
+        />
+      </picture>
+    ) : (
+      <div class="slot__ph" aria-hidden="true" title={hint}>
+        <span class="slot__line" />
+        <span class="slot__mark">Photo to come</span>
+        <span class="slot__text">
+          <span class="slot__label">{label}</span>
+          <span class="slot__hint">{hint}</span>
+        </span>
+      </div>
+    )
+  }
+</div>
+
+<script>
+  import '../scripts/slots.ts';
+</script>
+
+<style is:global>
+  /* Global, not scoped: scripts/slots.ts builds the same markup at runtime. */
+  .slot {
+    position: relative;
+    display: block;
+    aspect-ratio: var(--slot-ar, 4 / 3);
+    overflow: hidden;
+    border-radius: var(--radius-s);
+    background-color: var(--slot-ground);
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    container-type: inline-size;
+    --slot-ground: var(--oat);
+    --slot-ink: var(--olive-900);
+    --slot-rule: color-mix(in oklab, var(--olive-900) 16%, transparent);
+  }
+  .slot--paper {
+    --slot-ground: var(--paper);
+  }
+  .slot--olive {
+    --slot-ground: color-mix(in oklab, var(--olive-700) 55%, var(--olive-900));
+    --slot-ink: var(--paper);
+    --slot-rule: color-mix(in oklab, var(--paper) 18%, transparent);
+  }
+  .slot picture {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .slot img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  /* an image that failed to load: keep the blurred preview, never a broken icon */
+  .slot.is-broken img {
+    visibility: hidden;
+  }
+
+  /* ---- empty: a passe-partout with the logo line, not a broken image ---- */
+  .slot__ph {
+    position: absolute;
+    inset: clamp(5px, 3.2cqi, 14px);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 8px;
+    padding: clamp(8px, 4cqi, 18px);
+    border: 1px solid var(--slot-rule);
+    border-radius: 3px;
+    color: var(--slot-ink);
+    font-family: var(--font-text);
+    font-size: clamp(0.7rem, 0.55rem + 1.1cqi, 0.9rem);
+    line-height: 1.35;
+    cursor: default;
+  }
+  .slot__line {
+    position: absolute;
+    inset: 16% 18% 24%;
+    background: currentColor;
+    opacity: 0.13;
+    -webkit-mask: url('/slot-line.svg') center / contain no-repeat;
+    mask: url('/slot-line.svg') center / contain no-repeat;
+  }
+  .slot__mark {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    opacity: 0.8;
+  }
+  .slot__mark::before {
+    content: '';
+    width: 0.55em;
+    height: 0.55em;
+    border-radius: 50%;
+    background: var(--caramel);
+    flex: none;
+  }
+  .slot__text {
+    position: relative;
+    display: grid;
+    gap: 3px;
+    max-width: 44ch;
+  }
+  .slot__label {
+    font-weight: 500;
+  }
+  .slot__hint {
+    font-weight: 300;
+    opacity: 0.85;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4;
+    line-clamp: 4;
+    overflow: hidden;
+  }
+  /* small slots say less: first the hint goes, then everything but the line */
+  @container (max-width: 190px) {
+    .slot__text {
+      display: none;
+    }
+  }
+  @container (max-width: 120px) {
+    .slot__mark {
+      font-size: 0;
+      gap: 0;
+    }
+    .slot__mark::before {
+      width: 6px;
+      height: 6px;
+    }
+    .slot__line {
+      inset: 18%;
+    }
+  }
+</style>

@@ -87,6 +87,23 @@ def rebuild_batches(
     With `purge=True` existing batches are removed first -- this is a rebuild, not an
     incremental update, and mixing the two would double-count received stock.
 
+    ## This is the one exception to invariant 12, and it is narrow
+
+    Invariant 12 says the stock ledger is append-only and corrections are `ADJUSTMENT`
+    movements. `purge=True` deletes rows: every `StockBatch`, and every `EXPIRED`
+    movement. That is allowed *only* because those rows are **derived** -- the expiry
+    sweep computes them from batch state, so replaying the ledger reproduces them
+    exactly and nothing observed is lost.
+
+    It must never delete a `SALE`, `RECEIPT`, `COUNT` or `ADJUSTMENT`. Those are
+    records of things that happened, and no replay can reconstruct them.
+
+    `purge` defaults to True because the only caller today is `cafeops seed --demo`,
+    where a full rebuild is the point. **Adding a caller is a decision, not a
+    refactor**: on a live database this discards real expiry write-offs and rebuilds
+    them from whatever the batch state currently says. Pass `purge=False` unless a
+    total rebuild is genuinely what you mean.
+
     `as_of` is the instant of the final expiry sweep, defaulting to now. Sweeping only
     up to the last movement would leave stock that expired since then sitting open,
     which is how a demo ends up showing milk 54 days overdue.

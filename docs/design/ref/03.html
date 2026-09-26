@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<title>Stock — one ingredient</title>
+<script src="3b705f7f-a1ba-4e98-85c7-eca42d45d6a7"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>/* vietnamese */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("6be7e0e0-2d19-4936-a033-481ea237075f") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("eee552d2-ba83-4831-a252-6a73a8546919") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("a28a3086-c127-4bd9-a5b9-375ed86dc300") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("6be7e0e0-2d19-4936-a033-481ea237075f") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("eee552d2-ba83-4831-a252-6a73a8546919") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("a28a3086-c127-4bd9-a5b9-375ed86dc300") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("0cc0e99b-246a-4cc3-be88-67c18c26f28d") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("06b2fd4e-0ae1-4713-bff4-73522719f0b8") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("5f88b50b-725c-4b3a-bc7b-b59e52d58711") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("1013879f-8741-456c-996e-8b830b9b3fd1") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("c6b3e66e-2fb3-405b-b1e4-a1ba3973bf91") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("73092fa4-67f4-42a5-a9fa-8cf7eff8479c") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("114aa555-5902-4bed-9bc8-c2f668f6efe4") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("1971056b-a211-4a5e-8fc9-6b31e1fdfe9a") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("6ddf1a39-7a28-4ad6-9848-8efd677c476a") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("2fc0081d-c575-4e1d-9ea0-4540c082e733") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("26582612-f99b-4ae3-99ae-e63478827e93") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("fd3c3242-79f3-465c-a242-548aff4747f5") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("0203ac9c-839d-41b2-9e65-01193f71bb35") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("26582612-f99b-4ae3-99ae-e63478827e93") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("fd3c3242-79f3-465c-a242-548aff4747f5") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("0203ac9c-839d-41b2-9e65-01193f71bb35") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("26582612-f99b-4ae3-99ae-e63478827e93") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("fd3c3242-79f3-465c-a242-548aff4747f5") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("0203ac9c-839d-41b2-9e65-01193f71bb35") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("26582612-f99b-4ae3-99ae-e63478827e93") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("fd3c3242-79f3-465c-a242-548aff4747f5") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Public Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("0203ac9c-839d-41b2-9e65-01193f71bb35") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+</style>
+<style>
+body{margin:0;background:#e9e9ec;font-family:'Public Sans',system-ui,sans-serif;color:#18181b;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+h1,h2,h3,h4,p{margin:0}
+.fg{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.disp{font-family:'Fraunces',Georgia,serif}
+.railh{font:600 11px/1.4 'IBM Plex Mono',monospace;letter-spacing:.05em;color:#71717a;padding-bottom:9px;border-bottom:1px solid #d4d4d8}
+.ar{display:flex;gap:9px;padding:9px 0;border-bottom:1px solid #ececef}
+.num{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:9px;background:#4f35c9;color:#fff;font:500 10px/1 'IBM Plex Mono',monospace;flex:0 0 17px;margin-top:2px}
+.fld{font:500 11.5px/1.5 'IBM Plex Mono',monospace;color:#4f35c9;word-break:break-word}
+.txt{font:400 11.5px/1.6 'Public Sans',sans-serif;color:#52525b;margin-top:2px}
+.ex{font:400 10.5px/1.5 'IBM Plex Mono',monospace;color:#18181b;background:#f4f4f5;border:1px solid #e4e4e7;border-radius:4px;padding:1px 5px;display:inline-block;margin-top:4px}
+.src{font:400 10.5px/1.5 'IBM Plex Mono',monospace;color:#a1a1aa;margin-top:3px}
+.mk{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:8px;background:#ece8fb;color:#4f35c9;font:500 9.5px/1 'IBM Plex Mono',monospace;border:1px solid #cfc4f5;flex:0 0 16px}
+.nav{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:8px;font-size:12.5px;color:#52525b}
+.navon{background:#ece8fb;color:#2e1f7d;font-weight:600}
+.navgrp{font:500 10.5px/1 'Public Sans',sans-serif;letter-spacing:.02em;color:#a1a1aa;padding:0 10px;margin:18px 0 7px}
+.card{background:#fff;border:1px solid #e7e7ea;border-radius:12px}
+.pill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:3px 9px;font:600 11px/1.5 'Public Sans',sans-serif;white-space:nowrap}
+.p-ok{background:#e6f4ed;color:#0f6b46}
+.p-warn{background:#fdf1dc;color:#8a5300}
+.p-bad{background:#fdeceb;color:#b42318}
+.p-mut{background:#f4f4f5;color:#52525b}
+.dot{width:6px;height:6px;border-radius:4px;flex:0 0 6px}
+.th{font:500 11px/1.4 'Public Sans',sans-serif;color:#8b8b93}
+.est{text-decoration:underline dotted #a1a1aa;text-underline-offset:3px}
+.btn{display:inline-flex;align-items:center;gap:7px;border-radius:9px;padding:8px 14px;font:600 12.5px/1 'Public Sans',sans-serif;border:1px solid #e0e0e4;background:#fff;color:#27272a}
+.btn-pri{background:#4f35c9;border-color:#4f35c9;color:#fff}
+.tab{border-radius:8px;padding:6px 11px;font:500 12px/1.4 'Public Sans',sans-serif;color:#71717a;border:1px solid transparent}
+.tabon{background:#18181b;color:#fff;border-color:#18181b}
+.frame{background:#fff;border:1px solid #d9d9de;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(24,24,27,.06)}
+.blab{font:500 11px/1 'IBM Plex Mono',monospace;color:#8b8b93;margin-bottom:9px;letter-spacing:.03em}
+.gh{font:500 11px/1 'Public Sans',sans-serif;color:#8b8b93;padding:0 8px;display:flex;align-items:center;height:30px;border-right:1px solid #ececef;box-sizing:border-box;background:#fafafa}
+.gc{font:400 12px/1 'Public Sans',sans-serif;color:#27272a;padding:0 8px;display:flex;align-items:center;height:34px;border-right:1px solid #f2f2f4;border-bottom:1px solid #f2f2f4;box-sizing:border-box;overflow:hidden;white-space:nowrap}
+.gn{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums;justify-content:flex-end}
+.grow{display:flex}
+.gsel{background:#efecfb;box-shadow:inset 0 0 0 1px #b9abf0}
+</style>
+</helmet>
+<div style="width: 1800px; height: 1260px; box-sizing: border-box; padding: 36px; display: flex; flex-direction: row; gap: 44px; background: #e9e9ec">
+<div style="flex: 0 0 1248px; display: flex; flex-direction: column">
+<div class="blab">Stock → one ingredient · everything the list hides, opened by tapping a row</div>
+<div class="frame" style="flex-grow: 1; display: flex; flex-direction: row">
+<div style="flex: 0 0 216px; background: #fafafa; border-right: 1px solid #e7e7ea; padding: 20px 12px; display: flex; flex-direction: column">
+<a href="Main.dc.html" style="display: block; padding: 0 10px 4px"><div class="disp" style="font-size: 17px; font-weight: 600; letter-spacing: -.01em">Sasha’s Corner</div><div style="font-size: 11px; color: #a1a1aa; margin-top: 1px">Dundee</div></a>
+<div class="navgrp">Daily</div>
+<a class="nav" href="Today.dc.html"><svg width="16" height="16" sc-camel-view-box="0 0 16 16" fill="none" stroke="#a1a1aa" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="3.5" width="11" height="10" rx="2"></rect><path d="M2.5 6.5h11M5.5 2v3M10.5 2v3"></path></svg><span>Today</span></a>
+<a class="nav navon" href="Stock.dc.html"><svg width="16" height="16" sc-camel-view-box="0 0 16 16" fill="none" stroke="#4f35c9" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 1.8 14 5v6l-6 3.2L2 11V5z"></path><path d="M2 5l6 3.2L14 5M8 8.2v6"></path></svg><span>Stock</span></a>
+<a class="nav" href="Orders.dc.html"><svg width="16" height="16" sc-camel-view-box="0 0 16 16" fill="none" stroke="#a1a1aa" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="2.5" width="10" height="11.5" rx="2"></rect><path d="M6 2v1.5h4V2M5.5 7h5M5.5 10h3"></path></svg><span>Orders</span></a>
+<div class="navgrp">Decide</div>
+<a class="nav" href="Composition.dc.html"><svg width="16" height="16" sc-camel-view-box="0 0 16 16" fill="none" stroke="#a1a1aa" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 1.8 14.5 5 8 8.2 1.5 5z"></path><path d="M1.5 8.6 8 11.8l6.5-3.2M1.5 11.6 8 14.8l6.5-3.2"></path></svg><span>Composition</span></a>
+<a class="nav" href="Ingredients.dc.html"><svg width="16" height="16" sc-camel-view-box="0 0 16 16" fill="none" stroke="#a1a1aa" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.2" y="3.2" width="11.6" height="9.6" rx="1.8"></rect><path d="M2.2 6.4h11.6M6.4 6.4v6.4M2.2 9.6h11.6"></path></svg><span>Ingredients &amp; prices</span></a>
+<a class="nav" href="Margin.dc.html"><svg width="16" height="16" sc-camel-view-box="0 0 16 16" fill="none" stroke="#a1a1aa" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 13.5h11M4.5 13.5V9M8 13.5V4.5M11.5 13.5V7"></path></svg><span>Menu margin</span></a>
+<a class="nav" href="Channels.dc.html"><svg width="16" height="16" sc-camel-view-box="0 0 16 16" fill="none" stroke="#a1a1aa" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="1.6"></circle><path d="M4.6 4.6a4.8 4.8 0 0 0 0 6.8M11.4 11.4a4.8 4.8 0 0 0 0-6.8M2.4 2.4a8 8 0 0 0 0 11.2M13.6 13.6a8 8 0 0 0 0-11.2"></path></svg><span>Channels</span></a>
+<a class="nav" href="Money.dc.html"><svg width="16" height="16" sc-camel-view-box="0 0 16 16" fill="none" stroke="#a1a1aa" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="6.2"></circle><path d="M9.8 5.2a2 2 0 0 0-3.4 1.4V10H5.6M5.6 8h3.2M5.6 10.8h4.8"></path></svg><span>Money &amp; P&amp;L</span></a>
+<div class="navgrp">Set up</div>
+<a class="nav" href="ImportReview.dc.html"><svg width="16" height="16" sc-camel-view-box="0 0 16 16" fill="none" stroke="#a1a1aa" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="2.5" width="11" height="11" rx="2.5"></rect><path d="m5.6 8.2 1.8 1.8 3.2-3.6"></path></svg><span>Import review</span></a>
+<div style="flex-grow: 1"></div>
+<div style="padding: 10px; border-top: 1px solid #ececef; font-size: 10.5px; line-height: 1.6; color: #a1a1aa">Wireframe. Every figure below is a real value from <span class="fg">cafeops api-fixtures</span>.</div>
+</div>
+<div style="flex-grow: 1; padding: 22px 26px; display: flex; flex-direction: column; gap: 14px; min-width: 0">
+
+  <a href="Stock.dc.html" style="font-size: 12px; color: #71717a; display: inline-flex; align-items: center; gap: 6px">‹ All stock</a>
+
+  <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 20px">
+    <div>
+      <div style="display: flex; align-items: center; gap: 10px">
+        <h1 class="disp" style="font-size: 26px; font-weight: 600; letter-spacing: -.015em">Whole milk</h1>
+        <span class="pill p-warn">Use by Mon · 3 days</span>
+        <span class="pill p-warn"><span class="dot" style="background: #b8770b"></span>Count again</span>
+      </div>
+      <p style="font-size: 12.5px; color: #71717a; margin-top: 4px">Litres · fridge · from Brakes · 69.7p a litre</p>
+    </div>
+    <a class="btn btn-pri" href="StockDetail.dc.html">Count this now</a>
+  </div>
+
+  <div style="display: flex; gap: 20px; min-width: 0">
+
+    <div style="flex: 0 0 636px; display: flex; flex-direction: column; gap: 14px">
+
+      <div class="card" style="padding: 16px 18px">
+        <div style="display: flex; align-items: flex-start; gap: 28px">
+          <div style="flex-grow: 1">
+            <div style="display: flex; align-items: center; gap: 6px"><span class="th">We think you have</span><span class="mk">1</span></div>
+            <div style="margin-top: 5px"><span class="fg" style="font-size: 34px; font-weight: 500; letter-spacing: -.02em">48.123</span><span style="font-size: 14px; color: #8b8b93"> litres</span></div>
+            <div style="font-size: 11.5px; color: #a1a1aa; margin-top: 3px">an estimate, not a count</div>
+          </div>
+          <div style="width: 1px; background: #d4d4d8; align-self: stretch"></div>
+          <div style="flex: 0 0 300px">
+            <div style="display: flex; align-items: center; gap: 6px"><span class="th">How we got there</span><span class="mk">2</span></div>
+            <div style="margin-top: 7px; font-size: 12.5px; line-height: 1.75; color: #3f3f46">
+              You counted <span class="fg" style="font-weight: 500; color: #18181b">12.037 L</span> on Fri 19 Sept.<br>
+              Since then the till recorded <span class="fg" style="font-weight: 500; color: #18181b">105</span> movements, adding up to <span class="fg" style="font-weight: 500; color: #18181b">+36.086 L</span>.<br>
+              <span style="color: #71717a">12.037 − sales + 2 deliveries = 48.123</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="padding: 16px 18px">
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px">
+          <h2 style="font-size: 14.5px; font-weight: 600">Last time you counted, the numbers did not match</h2>
+          <span class="mk">3</span>
+        </div>
+        <p style="font-size: 12.5px; line-height: 1.7; color: #3f3f46">
+          The app expected <span class="fg">10.372 L</span>, you found <span class="fg">12.037 L</span> — out by
+          <span class="fg" style="font-weight: 600; color: #8a5300">13.8%</span>. That is inside the 10–15% band, so milk stays on manual ordering until two counts in a row come in under 10%.
+        </p>
+
+        <div style="margin-top: 14px; display: flex; align-items: center; gap: 6px">
+          <span class="th">What the gap is made of</span><span class="mk">4</span>
+        </div>
+        <div style="margin-top: 8px; display: flex; flex-direction: column; gap: 7px">
+          <div style="display: flex; align-items: center; gap: 12px">
+            <span style="flex: 0 0 150px; font-size: 12px; color: #3f3f46">Went out of date</span>
+            <span class="fg" style="flex: 0 0 62px; text-align: right; font-size: 12.5px; font-weight: 600">1.665 L</span>
+            <span style="flex-grow: 1; height: 9px; border-radius: 6px; background: #f0f0f2; overflow: hidden; display: block"><span style="display: block; width: 100%; height: 9px; background: repeating-linear-gradient(115deg, #b8770b 0 3px, transparent 3px 6px); border-right: 1px solid #b8770b"></span></span>
+            <span class="fg" style="flex: 0 0 34px; text-align: right; font-size: 12px; color: #3f3f46">100%</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px">
+            <span style="flex: 0 0 150px; font-size: 12px; color: #3f3f46">Recipe or spillage</span>
+            <span class="fg" style="flex: 0 0 62px; text-align: right; font-size: 12.5px; color: #a1a1aa">0 L</span>
+            <span style="flex-grow: 1; height: 9px; border-radius: 6px; background: #f0f0f2; overflow: hidden; display: block"><span style="display: block; width: 2px; height: 9px; background: #d4d4d8"></span></span>
+            <span class="fg" style="flex: 0 0 34px; text-align: right; font-size: 12px; color: #a1a1aa">0%</span>
+          </div>
+        </div>
+
+        <div style="margin-top: 13px; background: #fdf1dc; border: 1px solid #f6e0b8; border-left: 3px solid #b8770b; border-radius: 9px; padding: 11px 13px; display: flex; gap: 9px">
+          <span class="mk" style="margin-top: 1px">5</span>
+          <div>
+            <p style="font-size: 12.5px; font-weight: 600; color: #6b4200">Order less milk — do not change the recipe.</p>
+            <p style="font-size: 12px; line-height: 1.65; color: #6b4200; margin-top: 3px">All of the loss was milk that went out of date, not milk the recipe missed. Shorten the cover window or cut the pack count. Changing the recipe here would hide a buying problem and make every drink’s cost wrong as well.</p>
+          </div>
+        </div>
+
+        <div style="margin-top: 11px; display: flex; gap: 9px; align-items: flex-start">
+          <span class="mk" style="margin-top: 1px">6</span>
+          <p style="font-size: 12px; line-height: 1.65; color: #71717a"><span style="font-weight: 600; color: #3f3f46">Separately:</span> the count also found 1.665 L <em>more</em> than expected. That is not a loss — it points at a delivery nobody entered, or a miscount. Worth chasing on its own; it says nothing about the recipe.</p>
+        </div>
+      </div>
+
+      <div class="card" style="padding: 16px 18px">
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 10px"><h2 style="font-size: 14.5px; font-weight: 600">What is open in the fridge</h2><span class="mk">7</span></div>
+        <div style="display: flex; padding-bottom: 7px; border-bottom: 1px solid #e7e7ea">
+          <span class="th" style="flex: 0 0 90px">Batch</span>
+          <span class="th" style="flex: 0 0 110px; text-align: right">Left</span>
+          <span class="th" style="flex: 0 0 130px; padding-left: 18px">Came in</span>
+          <span class="th" style="flex-grow: 1">Use by</span>
+          <span class="th" style="flex: 0 0 90px; text-align: right">Worth</span>
+        </div>
+        <div style="display: flex; align-items: center; padding: 11px 0 3px">
+          <span class="fg" style="flex: 0 0 90px; font-size: 12px; color: #71717a">#25</span>
+          <span class="fg" style="flex: 0 0 110px; text-align: right; font-size: 14px; font-weight: 500">48.123 L</span>
+          <span class="fg" style="flex: 0 0 130px; padding-left: 18px; font-size: 12px; color: #3f3f46">Mon 21 Sept</span>
+          <span style="flex-grow: 1; display: flex; align-items: center; gap: 8px"><span class="fg" style="font-size: 12.5px; font-weight: 600; color: #8a5300">Mon 28 Sept</span><span class="pill p-warn" style="font-size: 10.5px; padding: 1px 7px">3 days</span></span>
+          <span class="fg" style="flex: 0 0 90px; text-align: right; font-size: 13px">£33.54</span>
+        </div>
+        <p style="font-size: 11.5px; color: #a1a1aa; margin-top: 9px">Milk is used oldest-first, by use-by date rather than delivery date. Anything still here on its date is written off and shows up as waste.</p>
+      </div>
+
+    </div>
+
+    <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 14px; min-width: 0">
+
+      <div class="card" style="padding: 15px 16px">
+        <div style="display: flex; align-items: center; gap: 6px"><span class="th">Runs out</span><span class="mk">8</span></div>
+        <div class="fg" style="font-size: 20px; font-weight: 500; margin-top: 6px">Fri 2 Oct</div>
+        <p style="font-size: 12px; color: #71717a; margin-top: 4px; line-height: 1.6">In 8 days, at about <span class="fg">5.8 L a day</span>. Busier days are allowed for — Saturdays count for more than Tuesdays.</p>
+      </div>
+
+      <div class="card" style="padding: 15px 16px">
+        <div style="display: flex; align-items: center; gap: 6px"><span class="th">How long it keeps</span><span class="mk">9</span></div>
+        <div style="margin-top: 7px; font-size: 12.5px; line-height: 1.9; color: #3f3f46">
+          <span class="est">7 days from delivery</span><br>
+          <span class="est">3 days once opened</span><br>
+          <span style="color: #71717a">less 2 days to get here</span>
+          <span style="display: block; height: 1px; background: #e7e7ea; margin: 7px 0"></span>
+          <span style="font-weight: 600; color: #18181b">5 usable days</span> — that is the cap on how much can be ordered at once.
+        </div>
+        <div style="margin-top: 11px; background: #fafafa; border: 1px solid #ececef; border-radius: 9px; padding: 11px">
+          <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 7px"><span style="font-size: 11.5px; font-weight: 600">Nobody has checked this</span><span class="mk">10</span></div>
+          <p style="font-size: 11.5px; line-height: 1.6; color: #71717a">A script guessed it. Read the carton and put the real number in — it decides how much milk gets ordered.</p>
+          <div style="display: flex; gap: 7px; margin-top: 9px">
+            <label style="flex-grow: 1"><span style="display: block; font-size: 10.5px; color: #8b8b93; margin-bottom: 3px">Days from delivery</span><input type="text" value="7" style="width: 100%; box-sizing: border-box; border: 1px solid #e0e0e4; border-radius: 7px; padding: 6px 8px; font: 400 12px/1 'IBM Plex Mono', monospace; background: #fff"></label>
+            <label style="flex-grow: 1"><span style="display: block; font-size: 10.5px; color: #8b8b93; margin-bottom: 3px">Once opened</span><input type="text" value="3" style="width: 100%; box-sizing: border-box; border: 1px solid #e0e0e4; border-radius: 7px; padding: 6px 8px; font: 400 12px/1 'IBM Plex Mono', monospace; background: #fff"></label>
+          </div>
+          <div style="display: flex; gap: 7px; margin-top: 8px; align-items: center">
+            <span class="tab tabon" style="font-size: 11px; padding: 5px 9px">On the carton</span>
+            <span class="tab" style="font-size: 11px; padding: 5px 9px; border-color: #e0e0e4">Supplier told us</span>
+          </div>
+          <a class="btn btn-pri" href="StockDetail.dc.html" style="margin-top: 10px; width: 100%; justify-content: center; font-size: 12px; padding: 8px">Save</a>
+        </div>
+      </div>
+
+      <div class="card" style="padding: 15px 16px">
+        <div style="display: flex; align-items: center; gap: 6px"><span class="th">Every count so far</span><span class="mk">11</span></div>
+        <div style="display: flex; align-items: flex-end; gap: 7px; height: 66px; margin-top: 11px; border-bottom: 1px solid #e7e7ea; padding-bottom: 1px">
+          <span style="flex-grow: 1; height: 24px; background: #e4e4e7; border-radius: 3px 3px 0 0; display: block"></span>
+          <span style="flex-grow: 1; height: 38px; background: #e4e4e7; border-radius: 3px 3px 0 0; display: block"></span>
+          <span style="flex-grow: 1; height: 17px; background: #e4e4e7; border-radius: 3px 3px 0 0; display: block"></span>
+          <span style="flex-grow: 1; height: 44px; background: #e4e4e7; border-radius: 3px 3px 0 0; display: block"></span>
+          <span style="flex-grow: 1; height: 29px; background: #e4e4e7; border-radius: 3px 3px 0 0; display: block"></span>
+          <span style="flex-grow: 1; height: 52px; background: #b8770b; border-radius: 3px 3px 0 0; display: block"></span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-top: 5px"><span style="font-size: 10.5px; color: #a1a1aa">6 counts</span><span class="fg" style="font-size: 10.5px; color: #8a5300">latest −13.8%</span></div>
+        <p style="font-size: 11.5px; color: #71717a; margin-top: 8px; line-height: 1.6">Two counts in a row under 10% and milk can be ordered automatically. Right now that streak is <span class="fg">0 of 2</span>.</p>
+      </div>
+
+      <div class="card" style="padding: 15px 16px">
+        <div style="display: flex; align-items: center; gap: 6px"><span class="th">Used in</span><span class="mk">12</span></div>
+        <p style="font-size: 12.5px; color: #3f3f46; margin-top: 6px; line-height: 1.7">Flavoured Latte — 9 drinks across 3 sizes.<br><a href="Composition.dc.html" style="color: #4f35c9; font-weight: 500">Open the recipe ›</a></p>
+      </div>
+
+    </div>
+  </div>
+</div>
+</div>
+</div>
+
+<div style="flex: 0 0 432px; display: flex; flex-direction: column">
+<div class="railh">What each thing is · api field · where it comes from · real example</div>
+<div style="margin-top: 2px">
+<div class="ar"><span class="num">1</span><div style="min-width: 0"><div class="fld">GET /api/stock/{id} → row.on_hand.qty</div><div class="txt">The estimate at full precision here, rounded on the list. Quantities travel as decimal <b>strings</b> and are never parsed to a float — 0.1 + 0.2 in a recipe editor is not acceptable.</div><div class="ex">"48.123"</div><div class="src">db/types.py Qty (scaled int) · ARCHITECTURE 8E</div></div></div>
+<div class="ar"><span class="num">2</span><div style="min-width: 0"><div class="fld">on_hand.basis_count_qty, basis_counted_at, movement_sum, movement_count</div><div class="txt">The sum written out so the estimate is visibly a projection, not a reading. This is the arithmetic of spec 5.1 shown rather than asserted.</div><div class="ex">12.037 on 19 Sept · +36.086 over 105 movements</div><div class="src">stock_count + stock_movement</div></div></div>
+<div class="ar"><span class="num">3</span><div style="min-width: 0"><div class="fld">drift.drift_pct, theoretical_qty, counted_qty, auto_order_reason</div><div class="txt">(theoretical − counted) / counted. Under 10% earns auto-ordering, 10–15% stays manual, over 15% is forced off — eligibility is earned, never set by hand (invariant 2).</div><div class="ex">−13.832% · 10.372 vs 12.037</div><div class="src">drift_observation · spec 5.2</div></div></div>
+<div class="ar"><span class="num">4</span><div style="min-width: 0"><div class="fld">drift.attribution.expiry_qty, measurement_qty, expiry_share</div><div class="txt">The split that matters: stock that went out of date versus stock the recipe mis-measured. Same colour, different texture — these are causes, not states, and the split survives greyscale.</div><div class="ex">expiry 1.665 L (100%) · measurement 0 L</div><div class="src">stock_movement type EXPIRED</div></div></div>
+<div class="ar"><span class="num">5</span><div style="min-width: 0"><div class="fld">attribution.cause, .headline, .action</div><div class="txt">The backend writes the sentence; the screen never composes it. The two causes have <b>opposite</b> fixes, so one undifferentiated drift number would send her the wrong way half the time.</div><div class="ex">cause "EXPIRY" · headline "OVER-ORDERING"</div><div class="src">services/drift.py</div></div></div>
+<div class="ar"><span class="num">6</span><div style="min-width: 0"><div class="fld">attribution.surplus_qty, .surplus_note</div><div class="txt">A surplus is not a loss. Kept visually apart from the gap so it cannot be read as evidence about the recipe.</div><div class="ex">"1.665" · points at an unentered delivery</div></div></div>
+<div class="ar"><span class="num">7</span><div style="min-width: 0"><div class="fld">row.batches[]</div><div class="txt">One line per delivery still in the fridge. Depletion is oldest-<b>use-by</b> first, not oldest-delivery first.</div><div class="ex">#25 · 48.123 L · in 21 Sept · out 28 Sept · 3354.456159p</div><div class="src">stock_batch</div></div></div>
+<div class="ar"><span class="num">8</span><div style="min-width: 0"><div class="fld">run_out.on, .days, .daily_rate_qty</div><div class="txt">Rate is EWMA over 28 days, deseasonalised first then re-weighted by weekday — taken literally the spec counted the weekday twice and swung the base by 32.6%.</div><div class="ex">"2026-10-02" · 8.28 d · 5.809513 L/day</div><div class="src">domain/forecast.py · ARCHITECTURE 8C</div></div></div>
+<div class="ar"><span class="num">9</span><div style="min-width: 0"><div class="fld">shelf_life.shelf_life_days, open_life_days, transit_buffer_days, usable_days</div><div class="txt">7 − 2 transit = 5 usable. This is the number that caps an order: milk on a 9-day cover window would be buying waste (invariant 4).</div><div class="ex">7 / 3 / 2 → usable_days 5</div><div class="src">ingredient.shelf_life_days</div></div></div>
+<div class="ar"><span class="num">10</span><div style="min-width: 0"><div class="fld">shelf_life.source = ESTIMATE → POST /api/ingredients/{id}/shelf-life</div><div class="txt">All 113 shelf lives are seeded guesses. Dotted underline marks an estimate typographically, never in colour — it is the ambient condition, not an alarm. source "estimate" is refused: confirming a guess as a guess adds nothing.</div><div class="ex">{shelf_life_days, open_life_days, source: "packaging"} → usable_days_changed_by</div><div class="src">api/views/confirm.py</div></div></div>
+<div class="ar"><span class="num">11</span><div style="min-width: 0"><div class="fld">GET /api/stock/{id} → drift_history[], suggested_waste_factor</div><div class="txt">Six counts, the newest highlighted. The streak toward auto-ordering is stated as a fraction, because that is the thing she can move.</div><div class="ex">clean_streak 0 of 2 · suggested waste_factor 0.083 (from 0.1)</div><div class="src">drift_observation</div></div></div>
+<div class="ar"><span class="num">12</span><div style="min-width: 0"><div class="fld">templates_using[]</div><div class="txt">Which recipes lean on this ingredient — the link between a price change here and every drink’s cost.</div><div class="ex">["1"] → Flavoured Latte, 9 items</div><div class="src">template_component</div></div></div>
+</div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script="" data-props="{&quot;$preview&quot;:{&quot;width&quot;:1800,&quot;height&quot;:1260}}">
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+
+
+</body></html>

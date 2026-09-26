@@ -13,7 +13,7 @@
     "S": "0.14",
     "XL": "0.30"
   },
-  "at": "2026-09-23T18:34:24.218517Z",
+  "at": "2026-09-24T20:02:34.525420Z",
   "window_days": 30,
   "preview": {
     "affected_item_count": 9,
@@ -249,7 +249,7 @@
       "1.394118",
       "3.485294"
     ],
-    "monthly_cogs_delta_pence": "2694.829398",
+    "monthly_cogs_delta_pence": "2631.397046",
     "worst_margin_after": {
       "menu_item_id": 317,
       "name": "Vanilla Latte",
@@ -409,7 +409,7 @@
       "-3.485294",
       "-1.394118"
     ],
-    "labour_cost_window_pence": "49358.402778",
+    "labour_cost_window_pence": "48069.513889",
     "untimed_count": 0,
     "rank_moves": [],
     "warnings": []

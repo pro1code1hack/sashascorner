@@ -1184,6 +1184,7 @@ def proposals(
         title=f"{len(found)} proposed template(s) -- nothing is written until confirmed",
         title_style="bold",
     )
+    table.add_column("id", no_wrap=True, style="dim")
     table.add_column("Proposal", no_wrap=True)
     table.add_column("Items", justify="right")
     table.add_column("Sizes")
@@ -1193,8 +1194,13 @@ def proposals(
     for proposal in found[:limit]:
         axes = ", ".join(f"{a.name}x{a.option_count}" for a in proposal.axes) or "-"
         conflict_text = f"[yellow]{len(proposal.conflicts)}[/yellow]" if proposal.conflicts else "-"
+        shared = sum(1 for other in found if other.name == proposal.name) > 1
+        name_cell = f"{proposal.name} [yellow](name shared)[/yellow]" if shared else proposal.name
+        if proposal.is_hollow:
+            name_cell += " [red](no recipe)[/red]"
         table.add_row(
-            proposal.name,
+            proposal.proposal_id,
+            name_cell,
             str(proposal.menu_item_count),
             "/".join(proposal.sizes),
             str(sum(1 for c in proposal.components if not c.is_axis_filled)),
@@ -1206,11 +1212,30 @@ def proposals(
         "[dim]A proposal with conflicts is REFUSED by default: the legacy rows disagree "
         "about a quantity and a human decides which is right.[/dim]"
     )
+    shared_names = {p.name for p in found if sum(1 for q in found if q.name == p.name) > 1}
+    if shared_names:
+        console.print(
+            f"[yellow]{len(shared_names)} name(s) are shared by more than one proposal[/yellow] "
+            "-- detection names a group after its defining ingredient, so two different "
+            "recipes can collide. Pass the id, not the name: confirming by an ambiguous "
+            "name is refused rather than resolved to whichever came first."
+        )
+    hollow = [p for p in found if p.is_hollow]
+    if hollow:
+        console.print(
+            f"[red]{len(hollow)} proposal(s) contain no recipe at all[/red] "
+            f"({', '.join(p.name for p in hollow)}): the legacy rows carry no ingredient "
+            "lines. Confirming is refused -- it would create an empty template and strip "
+            "those items of the manual recipes they use today."
+        )
 
 
 @app.command(name="materialise-template")
 def materialise_template_cmd(
-    name: Annotated[str, typer.Argument(help="Proposal name, as printed by `cafeops proposals`.")],
+    name: Annotated[
+        str,
+        typer.Argument(help="Proposal id (preferred) or name, as printed by `cafeops proposals`."),
+    ],
     commit: Annotated[
         bool, typer.Option("--commit/--dry-run", help="Write it, or just say what it would write.")
     ] = False,
@@ -2758,10 +2783,19 @@ def open_batch_cmd(
 from cafeops.agent.commands import app as _agent_app  # noqa: E402
 from cafeops.integrations.channels.commands import app as _channels_app  # noqa: E402
 from cafeops.integrations.lightspeed.commands import app as _pos_app  # noqa: E402
+from cafeops.integrations.payments.commands import app as _payments_app  # noqa: E402
+from cafeops.services.confirm_commands import shelf_life_app as _shelf_life_app  # noqa: E402
+from cafeops.services.confirm_commands import supplier_app as _supplier_app  # noqa: E402
 
 app.add_typer(_channels_app, name="channels")
+# The operator path for the doctor's two standing warnings. Without these the
+# only way to confirm a supplier term or a shelf life was to edit a seed file.
+app.add_typer(_supplier_app, name="supplier")
+app.add_typer(_shelf_life_app, name="shelf-life")
 app.add_typer(_agent_app, name="agent")
 app.add_typer(_pos_app, name="pos")
+# The missing half of Money & P&L: what the cafe actually took (ARCHITECTURE 8T).
+app.add_typer(_payments_app, name="payments")
 
 
 # --------------------------------------------------------------------------
@@ -3142,12 +3176,30 @@ def bot_preview_cmd(
     buttons: Annotated[
         bool, typer.Option("--buttons/--no-buttons", help="Show the inline keyboards.")
     ] = True,
+    commit: Annotated[
+        bool,
+        typer.Option(
+            "--commit/--dry-run",
+            help="Keep what the flows write. Default rolls it back.",
+        ),
+    ] = False,
 ) -> None:
     """Drive the REAL bot handlers locally and print the Russian they produce.
 
-    No Telegram, no token, nothing sent: the dispatcher, routers, filters, FSM and
-    keyboards are the real ones, and only the HTTP session is replaced by one that records
-    outgoing calls. See `cafeops/bot/preview.py`.
+    No Telegram and no token: the dispatcher, routers, filters, FSM and keyboards are
+    the real ones, and only the HTTP session is replaced by one that records outgoing
+    calls. Nothing can reach a real cafe. See `cafeops/bot/preview.py`.
+
+    **It is the database that needs the care, not the wire.** These are the real
+    handlers, so `delivery` really receives a delivery, `orders` really confirms a
+    purchase order and `count` really writes a count. "Nothing is sent" was only ever
+    about Telegram, and reading it as "nothing happens" left a preview run's batches
+    and movements sitting in a live ledger.
+
+    So this now defaults to **--dry-run**, like every other writing command here
+    (`import-legacy`, `channels import`, `materialise-template`): the flows run
+    against a real session inside a transaction that is rolled back at the end, so
+    what you read is exactly what would have been written. Pass `--commit` to keep it.
     """
     import asyncio
 
@@ -3161,8 +3213,8 @@ def bot_preview_cmd(
 
     kwargs: dict[str, object] = {}
 
-    async def drive(name: str) -> str:
-        preview = Preview()
+    async def drive(name: str, factory: object | None) -> str:
+        preview = Preview(factory=factory)  # type: ignore[arg-type]
         try:
             if name == "orders":
                 sent = await FLOWS[name](preview, supplier=supplier, adjust=adjust, confirm=confirm)
@@ -3183,14 +3235,45 @@ def bot_preview_cmd(
         finally:
             await preview.close()
 
-    for name in names:
-        console.rule(f"[bold]cafeops bot-preview {name}[/bold]  (nothing is sent)")
-        text = asyncio.run(drive(name))
-        if not text.strip():
-            console.print("[yellow](the bot answered nothing)[/yellow]")
-        else:
-            print(text)
-        console.print()
+    from contextlib import ExitStack
+
+    from sqlalchemy.orm import sessionmaker
+
+    from cafeops.db.base import engine as _engine
+
+    with ExitStack() as stack:
+        factory: object | None = None
+        if not commit:
+            # A real session on a real connection, inside a transaction nobody
+            # commits: the handlers' own `session.commit()` calls flush without
+            # committing the outer transaction, and the rollback at the end undoes
+            # all of it.
+            #
+            # `rollback_only`, NOT `create_savepoint`. Measured on this stack:
+            # create_savepoint LEAKS -- pysqlite's legacy implicit-transaction
+            # handling turns the RELEASE of a savepoint into a real commit, so the
+            # outer rollback has nothing left to undo and the "dry run" writes for
+            # real. rollback_only needs no savepoints and was verified to roll back.
+            connection = stack.enter_context(_engine.connect())
+            transaction = connection.begin()
+            stack.callback(transaction.rollback)
+            factory = sessionmaker(
+                bind=connection, join_transaction_mode="rollback_only", expire_on_commit=False
+            )
+
+        mode = (
+            "[yellow]--commit: what these flows write is KEPT[/yellow]"
+            if commit
+            else "dry run: nothing is sent, and what the flows write is rolled back"
+        )
+        for name in names:
+            console.rule(f"[bold]cafeops bot-preview {name}[/bold]  ({mode})")
+            text = asyncio.run(drive(name, factory))
+            if not text.strip():
+                console.print("[yellow](the bot answered nothing)[/yellow]")
+            else:
+                print(text)
+            console.print()
 
 
 @app.command(name="jobs")
@@ -3270,7 +3353,11 @@ def bot_run_cmd() -> None:
     try:
         bot_main()
     except BotNotConfigured as exc:
-        # A clean sentence and a non-zero exit, not a traceback: an unconfigured token is
-        # the NORMAL state today, not a crash, and systemd reads the exit code.
+        # A clean sentence and a distinct exit code, not a traceback. 78 is sysexits
+        # EX_CONFIG: "not configured" is a stable state, not a crash, and it must be
+        # distinguishable from one. Exiting 1 here made both supervisors restart the bot
+        # every few seconds forever, which looks exactly like a crash loop and buries any
+        # real error under two log lines a second. systemd stops on 78 via
+        # RestartPreventExitStatus; compose bounds it with `restart: on-failure:3`.
         console.print(f"[yellow]{exc}[/yellow]")
-        raise typer.Exit(code=1) from None
+        raise typer.Exit(code=78) from None

@@ -208,7 +208,34 @@ says exactly that.
 6. Re-verifies the **restored** file with the same `PRAGMA integrity_check`.
 
 This was run for real against a copy of the seeded database while building this
-deployment, not just written and assumed to work:
+deployment, not just written and assumed to work. It was then **re-run on 2026-09-23
+inside the running `backup` container**, against the live `cafeops_data` volume rather
+than a host copy — the stronger claim, because it exercises the paths the deployment
+actually uses:
+
+```
+$ docker compose exec backup /app/deploy/backup.sh
+[...] ok: integrity_check=ok, 29 tables present
+[...] backup written: /backups/cafeops-20260923T224209Z.db.gz (796K)
+[...] WARNING: CAFEOPS_BACKUP_REMOTE is not set. This backup is LOCAL ONLY, ...
+
+$ docker compose exec -e CAFEOPS_RESTORE_YES=1 backup \
+      /app/deploy/restore.sh /backups/cafeops-20260923T224209Z.db.gz /tmp/restored.db
+candidate verified: integrity_check=ok, 29 tables
+restored /tmp/restored.db ... verifying the RESTORED file ... ok
+```
+
+The restored copy was then queried, not merely opened — 113 ingredients, 320 menu
+items, 16,732 stock movements, 127 batches, 18 channel metrics, 72 drift observations,
+matching the live database. An `integrity_check` proves the file is not torn; counting
+rows proves it is the *right* file.
+
+Note for whoever runs the next drill: `restore.sh` blocks on an interactive `YES`
+unless `CAFEOPS_RESTORE_YES=1`. A non-interactive run without it gets no stdin, reads
+an empty string and **aborts having done nothing** — which looks identical to a silent
+failure until you check. That prompt is correct and should stay; just set the variable.
+
+The original host-side drill:
 
 ```
 $ deploy/backup.sh

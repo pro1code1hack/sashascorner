@@ -78,6 +78,27 @@ EXAMPLES: tuple[Example, ...] = (
     Example("stock-detail", "GET", "/api/stock/1", note="One ingredient with drift history."),
     Example("suppliers", "GET", "/api/suppliers"),
     Example(
+        "takings",
+        "GET",
+        "/api/takings",
+        params={"days": "14"},
+        note=(
+            "The missing half of Money & P&L: what the cafe actually took, by day and "
+            "method. Note `net_pence: null` -- one export omitted discounts, so the net "
+            "is withheld rather than computed from the rows that did report."
+        ),
+    ),
+    Example(
+        "proposals",
+        "GET",
+        "/api/proposals",
+        note=(
+            "Import review (spec 6): 27 detected patterns waiting for a human, 11 of "
+            "them with quantity conflicts the legacy rows disagree about. Reading "
+            "writes nothing; confirming is what creates a template."
+        ),
+    ),
+    Example(
         "orders-draft",
         "GET",
         "/api/orders/draft",
