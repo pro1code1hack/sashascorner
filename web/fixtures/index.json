@@ -316,6 +316,16 @@
       "note": "Order history, every supplier."
     },
     {
+      "name": "order",
+      "file": "order.json",
+      "method": "GET",
+      "path": "/api/orders/1",
+      "params": null,
+      "body": null,
+      "status": 200,
+      "note": "The order page for the newest order."
+    },
+    {
       "name": "shop-runs",
       "file": "shop-runs.json",
       "method": "GET",

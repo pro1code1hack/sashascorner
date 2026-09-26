@@ -80,6 +80,12 @@ def _supplier_products(seen: Mapping[str, Any]) -> tuple[str, dict[str, Any] | N
     return None if sid is None else (f"/api/suppliers/{sid}/products", None)
 
 
+def _order(seen: Mapping[str, Any]) -> tuple[str, dict[str, Any] | None] | None:
+    # The order page for the newest stored order.
+    po_id = _first(seen.get("orders"), "orders", "po_id")
+    return None if po_id is None else (f"/api/orders/{po_id}", None)
+
+
 def _finance(path: str) -> Callable[[Mapping[str, Any]], tuple[str, dict[str, Any] | None] | None]:
     # The four month-scoped Money tabs open on the server's default month.
     def derive(seen: Mapping[str, Any]) -> tuple[str, dict[str, Any] | None] | None:
@@ -224,6 +230,7 @@ EXAMPLES: tuple[Example, ...] = (
     ),
     Example("stock-row", "GET", "", note="The Stock drawer for the first row.", derive=_stock_row),
     Example("orders", "GET", "/api/orders", note="Order history, every supplier."),
+    Example("order", "GET", "", note="The order page for the newest order.", derive=_order),
     Example("shop-runs", "GET", "/api/orders/shop-runs", params={"months": "8"}),
     Example("supplier-products", "GET", "", derive=_supplier_products),
     Example("recipes", "GET", "/api/recipes", note="The Recipes rail."),

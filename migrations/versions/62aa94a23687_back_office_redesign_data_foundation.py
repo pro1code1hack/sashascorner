@@ -463,6 +463,9 @@ def upgrade() -> None:
         batch_op.add_column(sa.Column('cancelled_at', cafeops.db.types.UTCDateTime(timezone=True), nullable=True))
         batch_op.add_column(sa.Column('cancelled_by', sa.String(length=120), nullable=True))
         batch_op.add_column(sa.Column('cancel_reason', sa.String(length=400), nullable=True))
+        batch_op.add_column(sa.Column('receipt_asset_id', sa.Integer(), nullable=True))
+        batch_op.add_column(sa.Column('receipt_uploaded_by', sa.String(length=120), nullable=True))
+        batch_op.create_foreign_key(batch_op.f('fk_purchase_order_receipt_asset_id_media_asset'), 'media_asset', ['receipt_asset_id'], ['id'], ondelete='SET NULL')
 
     with op.batch_alter_table('stock_batch', schema=None) as batch_op:
         batch_op.add_column(sa.Column('expiry_source', sa.Enum('ENTERED', 'ASSUMED', name='expirysource', native_enum=False), nullable=True))
@@ -694,6 +697,9 @@ def downgrade() -> None:
         batch_op.drop_column('expiry_source')
 
     with op.batch_alter_table('purchase_order', schema=None) as batch_op:
+        batch_op.drop_constraint(batch_op.f('fk_purchase_order_receipt_asset_id_media_asset'), type_='foreignkey')
+        batch_op.drop_column('receipt_uploaded_by')
+        batch_op.drop_column('receipt_asset_id')
         batch_op.drop_column('cancel_reason')
         batch_op.drop_column('cancelled_by')
         batch_op.drop_column('cancelled_at')

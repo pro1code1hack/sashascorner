@@ -39,3 +39,54 @@ using the resolutions recommended in each spec's "Conflicts" section.
    accept/decline is human, recorded, and goes through services.
 8. **No tests** (ARCHITECTURE.md §1). Verify by running: ruff, mypy strict on
    domain/ + services/, `tsc`, `vite build`, and exercising endpoints against the real DB.
+
+## Menu item page (owner feedback, 2026-09-26)
+9. **No impact preview on a one-off item's ingredient edit.** The "What this change does"
+   panel is gone from the item page's recipe editor: edit the ingredients, then
+   "Save recipe" (still applied from today, so past sales keep their recipe;
+   invariant 3 stands). This relaxes CLAUDE.md §5.6's "mandatory impact preview"
+   for that editor only; price changes and shared recipes (Menu › Recipes) keep theirs.
+10. The item page fills the screen (no 1080px cap): main column plus a side column
+    with the photo and actions. Ingredients are picked from a searchable list with
+    category filters, and a size can copy another size's ingredients.
+
+## Money and orders (owner feedback, 2026-09-26)
+11. **Reconcile, Profit & loss and Director's account screens are removed.** P&L is
+    consolidated into Sales as charts ("Profit by month"). Decision 4's finance rules
+    (capital injections, till/card renames, Just Eat, VAT) still hold for the data.
+12. **Orders are expenses** (superseded by 19 for placement). Orders leave the "Every day"
+    nav; they briefly lived in Money › Expenses as tabs. The waiting badge
+    moves to Expenses. Order totals are not merged into the expenses log (the workbook's
+    expenses already include supplier spend; merging would double-count).
+13. **Orders and draft orders are rows, not cards,** in the Menu list layout. The Orders
+    list is filterable: search, supplier, status, date range, "no receipt yet", sort.
+14. **Each order has its own page** (`#/money/expenses/orders/<id>`) with the receipt
+    photo. Receiving there puts stock on the shelf (a batch + DELIVERY movement per
+    line), so Stock updates immediately. Decision 1 stands: never a confirm on the web.
+15. **Receipt photos** reuse the menu photo store (`media_asset`, content-addressed,
+    served at `/media/…` without auth like menu photos). A photo is evidence only.
+16. **Stock and Ingredients share one list layout and filter set** (the Menu items list).
+    They are the same entities viewed two ways: Stock = what is on the shelf, updated
+    as orders are received; Ingredients = what things cost.
+17. **Migrations:** nothing is live, so schema additions go into the existing
+    unreleased migration (`62aa94a23687`) rather than new revisions, until first deploy.
+
+## Orders without Telegram (owner, 2026-09-26, later the same day)
+18. **The Telegram bot is not in use for now; orders are placed on the web.** This reverses
+    decision 1. A draft basket becomes a DRAFT order with "Create order" (recomputed by the
+    server from today's run, one open order per supplier and delivery date); on the order
+    page a named person sets the packs and confirms. Invariant 1 is unchanged: confirmation
+    needs a name (repository + CHECK constraint). The app still never sends anything to a
+    supplier. Telegram wording is gone from the web ("Waiting to confirm", not "in Telegram").
+19. **Orders is its own Money page** (after Expenses) with three sub-pages: Orders, Draft
+    orders, Shop runs. The order page follows Money › Overview's statement layout.
+20. **Stock:** "Needs attention" is its own tab between On the shelf and What to buy — one
+    card per job (Use soon, Running out, Drifting, Count these, Marked low), each with its
+    action; the ingredient opens as a page (`#/stock/<id>`), not a drawer.
+21. **Sales is a dashboard** above the day-by-day table: figures with "vs previous period",
+    takings over time (stacked by card / till cash / own cash, day/week/month, legend keys
+    toggle series, hover for the breakdown), where it came from (till methods + delivery
+    apps from monthly statements, with commission and ads; a month not uploaded is
+    "missing", never £0), by weekday, best days, then Profit by month. Colours validated
+    with the dataviz checker: card #4a6fd1, till cash #1baf7a, own cash #eb6834, delivery
+    apps #8a4fc8. Per-order channels need Lightspeed; the `sale` rows today are demo seed.

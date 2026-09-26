@@ -21,6 +21,8 @@
     "contact": "https://amazon.co.uk",
     "order_url": null,
     "notes": null,
+    "email": null,
+    "phone": null,
     "product_count": 2,
     "archived": false
   },

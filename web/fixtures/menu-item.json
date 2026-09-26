@@ -3,7 +3,7 @@
     "menu_item_id": 276,
     "size_code": "M",
     "price_pence": 300,
-    "active": true,
+    "active": false,
     "on_till": false,
     "cost": {
       "pence": null,
@@ -16,26 +16,55 @@
     "margin_pct": null,
     "labour_cost_pence": null,
     "manual_recipe": true,
-    "data_quality_flag": "Not a menu item -- a gift card sold at face value. Zero cost is correct."
+    "data_quality_flag": "Not a menu item -- a gift card sold at face value. Zero cost is correct.",
+    "has_recipe": false,
+    "prep_seconds": null,
+    "prep_is_estimate": null,
+    "prep_is_override": false,
+    "margin_per_minute_pence": null
   },
   "group": {
     "key": "276",
     "anchor_id": 276,
     "name": "'card' (£3.00)",
-    "category": null,
+    "category": "Spring saesonal drinks",
     "kind": "OTHER",
     "note": null,
     "template_id": null,
     "template_name": null,
     "photo_url": null,
-    "is_active": true,
+    "is_active": false,
     "on_till": false,
     "sizes": [
+      {
+        "menu_item_id": 321,
+        "size_code": "S",
+        "price_pence": 300,
+        "active": false,
+        "on_till": false,
+        "cost": {
+          "pence": "55.574",
+          "source": "ESTIMATE",
+          "is_estimate": true,
+          "is_missing": false,
+          "excluded_from_aggregates": false,
+          "note": null
+        },
+        "margin_pct": 81.475,
+        "labour_cost_pence": null,
+        "manual_recipe": true,
+        "data_quality_flag": null,
+        "has_recipe": true,
+        "prep_seconds": null,
+        "prep_is_estimate": null,
+        "prep_is_override": false,
+        "margin_per_minute_pence": null
+      },
       {
         "menu_item_id": 276,
         "size_code": "M",
         "price_pence": 300,
-        "active": true,
+        "active": false,
         "on_till": false,
         "cost": {
           "pence": null,
@@ -48,15 +77,71 @@
         "margin_pct": null,
         "labour_cost_pence": null,
         "manual_recipe": true,
-        "data_quality_flag": "Not a menu item -- a gift card sold at face value. Zero cost is correct."
+        "data_quality_flag": "Not a menu item -- a gift card sold at face value. Zero cost is correct.",
+        "has_recipe": false,
+        "prep_seconds": null,
+        "prep_is_estimate": null,
+        "prep_is_override": false,
+        "margin_per_minute_pence": null
+      },
+      {
+        "menu_item_id": 323,
+        "size_code": "XL",
+        "price_pence": 300,
+        "active": false,
+        "on_till": false,
+        "cost": {
+          "pence": null,
+          "source": null,
+          "is_estimate": false,
+          "is_missing": true,
+          "excluded_from_aggregates": true,
+          "note": "no recipe lines, so what this costs is unknown -- not zero"
+        },
+        "margin_pct": null,
+        "labour_cost_pence": null,
+        "manual_recipe": true,
+        "data_quality_flag": null,
+        "has_recipe": false,
+        "prep_seconds": null,
+        "prep_is_estimate": null,
+        "prep_is_override": false,
+        "margin_per_minute_pence": null
+      },
+      {
+        "menu_item_id": 322,
+        "size_code": "ONE",
+        "price_pence": 300,
+        "active": false,
+        "on_till": false,
+        "cost": {
+          "pence": null,
+          "source": null,
+          "is_estimate": false,
+          "is_missing": true,
+          "excluded_from_aggregates": true,
+          "note": "no recipe lines, so what this costs is unknown -- not zero"
+        },
+        "margin_pct": null,
+        "labour_cost_pence": null,
+        "manual_recipe": true,
+        "data_quality_flag": null,
+        "has_recipe": false,
+        "prep_seconds": null,
+        "prep_is_estimate": null,
+        "prep_is_override": false,
+        "margin_per_minute_pence": null
       }
     ],
     "lowest_margin": {
-      "pct": null,
-      "is_estimate": false,
-      "is_missing": true,
+      "pct": 81.475,
+      "is_estimate": true,
+      "is_missing": false,
       "no_price": false
-    }
+    },
+    "season_id": null,
+    "season_name": null,
+    "sold_30d": "0"
   },
   "lines": [],
   "editable_lines": true,

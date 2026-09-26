@@ -1,0 +1,45 @@
+{
+  "po_id": 1,
+  "status": "CONFIRMED",
+  "created_at": "2026-09-23T22:24:12.124696Z",
+  "target_delivery_date": "2026-09-29",
+  "confirmed_by": "telegram:sasha",
+  "confirmed_at": "2026-09-23T22:24:33.344597Z",
+  "sent_at": null,
+  "sent_by": null,
+  "total_pence": 219,
+  "delivery_fee_pence": 0,
+  "lines": [
+    {
+      "po_line_id": 1,
+      "ingredient_id": 92,
+      "ingredient_name": "Apple juice carton",
+      "unit": "EACH",
+      "suggested_packs": 2,
+      "final_packs": 3,
+      "unit_price_pence": 73,
+      "pack_size": "1",
+      "pack_unit": "EACH",
+      "received_qty": "2",
+      "received_expires_at": "2026-09-30T22:59:00Z",
+      "cap_reason": null,
+      "is_top_up": false,
+      "checklist_requested_by": "telegram:sasha"
+    }
+  ],
+  "supplier_id": 3,
+  "supplier_name": "Booker",
+  "supplier_archived": false,
+  "terms_are_placeholders": true,
+  "cancelled_at": null,
+  "cancelled_by": null,
+  "cancel_reason": null,
+  "routing_reason": null,
+  "receipt_url": null,
+  "receipt_uploaded_by": null,
+  "actions": [
+    "mark_sent",
+    "receive",
+    "cancel"
+  ]
+}

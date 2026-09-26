@@ -4,7 +4,7 @@
   "until": "2026-09-26",
   "loaded_hourly_rate_pence": 1450,
   "rate_is_set": true,
-  "items_costed": 318,
+  "items_costed": 319,
   "rankable_count": 298,
   "orderings_agree": false,
   "by_margin_pct": [
@@ -19209,6 +19209,10 @@
   ],
   "excluded": [
     [
+      "'card' (£3.00) S",
+      "prep time not set"
+    ],
+    [
       "Afternoon Deal M",
       "prep time not set"
     ],
@@ -19295,7 +19299,7 @@
       "name": "'card' (£3.00)",
       "size_code": "M",
       "price_pence": 300,
-      "active": true,
+      "active": false,
       "cost": {
         "pence": null,
         "source": null,
@@ -19305,6 +19309,38 @@
         "note": "no row in menu_item_cost: this item's recipe does not resolve, so its cost is UNKNOWN, not zero (invariant 8). It is listed here rather than omitted, and it is excluded from every total and both rankings on this response. Both items in the seeded workbook -- 'card' (GBP 3.00) and Syrup Gift Set -- are known data-quality defects (ARCHITECTURE 8.1) and need fixing in the spreadsheet, not in code."
       },
       "reason": "Not a menu item -- a gift card sold at face value. Zero cost is correct."
+    },
+    {
+      "menu_item_id": 322,
+      "name": "'card' (£3.00)",
+      "size_code": "ONE",
+      "price_pence": 300,
+      "active": false,
+      "cost": {
+        "pence": null,
+        "source": null,
+        "is_estimate": false,
+        "is_missing": true,
+        "excluded_from_aggregates": true,
+        "note": "no row in menu_item_cost: this item's recipe does not resolve, so its cost is UNKNOWN, not zero (invariant 8). It is listed here rather than omitted, and it is excluded from every total and both rankings on this response. Both items in the seeded workbook -- 'card' (GBP 3.00) and Syrup Gift Set -- are known data-quality defects (ARCHITECTURE 8.1) and need fixing in the spreadsheet, not in code."
+      },
+      "reason": "no row in menu_item_cost: this item's recipe does not resolve, so its cost is UNKNOWN, not zero (invariant 8). It is listed here rather than omitted, and it is excluded from every total and both rankings on this response. Both items in the seeded workbook -- 'card' (GBP 3.00) and Syrup Gift Set -- are known data-quality defects (ARCHITECTURE 8.1) and need fixing in the spreadsheet, not in code."
+    },
+    {
+      "menu_item_id": 323,
+      "name": "'card' (£3.00)",
+      "size_code": "XL",
+      "price_pence": 300,
+      "active": false,
+      "cost": {
+        "pence": null,
+        "source": null,
+        "is_estimate": false,
+        "is_missing": true,
+        "excluded_from_aggregates": true,
+        "note": "no row in menu_item_cost: this item's recipe does not resolve, so its cost is UNKNOWN, not zero (invariant 8). It is listed here rather than omitted, and it is excluded from every total and both rankings on this response. Both items in the seeded workbook -- 'card' (GBP 3.00) and Syrup Gift Set -- are known data-quality defects (ARCHITECTURE 8.1) and need fixing in the spreadsheet, not in code."
+      },
+      "reason": "no row in menu_item_cost: this item's recipe does not resolve, so its cost is UNKNOWN, not zero (invariant 8). It is listed here rather than omitted, and it is excluded from every total and both rankings on this response. Both items in the seeded workbook -- 'card' (GBP 3.00) and Syrup Gift Set -- are known data-quality defects (ARCHITECTURE 8.1) and need fixing in the spreadsheet, not in code."
     },
     {
       "menu_item_id": 311,
@@ -19326,7 +19362,7 @@
   "menu": {
     "label": "whole menu",
     "template_id": null,
-    "items_total": 318,
+    "items_total": 319,
     "items_included": 298,
     "units_total": "1248",
     "staff_hours": "31.102778",
@@ -19340,6 +19376,10 @@
     "labour_share_of_revenue_pct": 9.564,
     "is_complete": false,
     "excluded": [
+      [
+        "'card' (£3.00) S",
+        "prep time not set"
+      ],
       [
         "Afternoon Deal M",
         "prep time not set"
@@ -19421,7 +19461,7 @@
         "prep time not set"
       ]
     ],
-    "summary": "whole menu: 298 of 318 item(s); 1248 unit(s) sold; 31.10 staff hours; labour GBP 450.99; 197.4p contribution per staff minute; 20 item(s) EXCLUDED (see below)"
+    "summary": "whole menu: 298 of 319 item(s); 1248 unit(s) sold; 31.10 staff hours; labour GBP 450.99; 197.4p contribution per staff minute; 21 item(s) EXCLUDED (see below)"
   },
   "by_template": [
     {
@@ -19447,11 +19487,11 @@
   "estimated_cost_item_count": 280,
   "invoice_cost_item_count": 18,
   "warnings": [
-    "20 of 318 item(s) cannot be ranked and are listed separately rather than sorted to the bottom as zeroes (invariant 8)",
+    "21 of 319 item(s) cannot be ranked and are listed separately rather than sorted to the bottom as zeroes (invariant 8)",
     "298 of 298 ranked item(s) use an ESTIMATED prep time, so the margin-per-minute ordering is only as good as those estimates",
-    "20 of 318 item(s) are EXCLUDED from every total below -- they are not counted as zero, so these figures cover only the 298 item(s) that have both a cost and a prep time",
+    "21 of 319 item(s) are EXCLUDED from every total below -- they are not counted as zero, so these figures cover only the 298 item(s) that have both a cost and a prep time",
     "298 of 298 included item(s) use an ESTIMATED prep time",
-    "2 menu item(s) have NO cost at all and are listed in `uncosted_items` rather than ranked: 'card' (£3.00), Syrup Gift Set. Their cost is null, not zero, and they are in no total here (invariant 8).",
+    "4 menu item(s) have NO cost at all and are listed in `uncosted_items` rather than ranked: 'card' (£3.00), 'card' (£3.00), 'card' (£3.00), Syrup Gift Set. Their cost is null, not zero, and they are in no total here (invariant 8).",
     "280 of 298 ranked item(s) are costed from ESTIMATE prices (42 of 113 ingredient prices are estimates). Spec 8: the 46% COGS figure is untrustworthy while that stands, and every margin below inherits it."
   ]
 }

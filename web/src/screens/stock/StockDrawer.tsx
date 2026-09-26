@@ -1,5 +1,7 @@
 /**
- * The ingredient drawer (§1.2): 400px, canvas-toned, beside the list.
+ * The sections of an ingredient's stock page (StockItemPage, `#/stock/<id>`).
+ * Until 2026-09-26 they sat in a 400px drawer beside the list (§1.2); the
+ * owner asked for a page instead.
  *
  * Reads: the row already in hand, plus `GET /api/stock/{id}` for the count
  * history. Writes, each signed with the operator's name (DECISIONS 6):
@@ -9,7 +11,7 @@
  */
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Button, Drawer, Input, Meter, Select, cx } from '../../components/ui'
+import { Button, Input, Meter, Select, cx } from '../../components/ui'
 import { confirmShelfLife } from '../../lib/api'
 import { parseDec } from '../../lib/dec'
 import { gbp } from '../../lib/format'
@@ -22,47 +24,9 @@ import { OutcomeLine, useWrite } from './writes'
 
 const AFTER_STOCK_WRITE = (id: number) => [KEYS.stock, KEYS.stockDetail(id), KEYS.draft]
 
-export function StockDrawer({
-  row,
-  onClose,
-  onCountNow,
-}: {
-  row: StockRow
-  onClose: () => void
-  onCountNow: () => void
-}) {
-  return (
-    <Drawer
-      open
-      onClose={onClose}
-      title={row.name}
-      context={row.category ?? undefined}
-      width={400}
-      compactWidth={400}
-      tone="canvas"
-      titleSize="lg"
-    >
-      <TierRow row={row} />
-      {row.tier === 'C' ? (
-        <ChecklistCard row={row} />
-      ) : (
-        <>
-          <EstimateCard row={row} />
-          <LastCountCard row={row} />
-          <Batches row={row} />
-          <DeliveryRow row={row} />
-          <WriteOffRow row={row} />
-        </>
-      )}
-      <Keeps row={row} />
-      {row.tier !== 'C' && <CountHistory row={row} onCountNow={onCountNow} />}
-    </Drawer>
-  )
-}
-
 /* --------------------------------------------------------------- tier (C1) -- */
 
-function TierRow({ row }: { row: StockRow }) {
+export function TierRow({ row }: { row: StockRow }) {
   const [operator] = useOperator()
   const [target, setTarget] = useState<Tier | null>(null)
   const [reason, setReason] = useState('')
@@ -120,7 +84,7 @@ function TierRow({ row }: { row: StockRow }) {
               {row.tier === 'C'
                 ? 'A checklist item has no counts to earn tier A with: move it to B and count it first.'
                 : earned
-                  ? `Earned: ${row.drift.clean_streak} counts in a row under 10% (needs ${row.drift.required_streak}). Auto-ordering still waits for the next count, and every order is confirmed in Telegram.`
+                  ? `Earned: ${row.drift.clean_streak} counts in a row under 10% (needs ${row.drift.required_streak}). Auto-ordering still waits for the next count, and every order is confirmed by a person.`
                   : `Not earned yet: ${row.drift.clean_streak} of ${row.drift.required_streak} counts in a row under 10%. Tier A is earned through counts, never assigned.`}
             </p>
           ) : (
@@ -164,7 +128,7 @@ function TierRow({ row }: { row: StockRow }) {
 
 /* ------------------------------------------------------------- tier C card -- */
 
-function ChecklistCard({ row }: { row: StockRow }) {
+export function ChecklistCard({ row }: { row: StockRow }) {
   const [operator] = useOperator()
   const w = useWrite()
   const answer = async (status: 'OK' | 'LOW') => {
@@ -218,7 +182,7 @@ function neg(q: string): string {
   return q.startsWith('-') ? q.slice(1) : q
 }
 
-function EstimateCard({ row }: { row: StockRow }) {
+export function EstimateCard({ row }: { row: StockRow }) {
   const oh = row.on_hand
   const sc = row.since_count
   let how: string
@@ -265,7 +229,7 @@ const TRUST_WORD: Record<string, string> = {
   not_yet_judged: 'Not yet judged',
 }
 
-function LastCountCard({ row }: { row: StockRow }) {
+export function LastCountCard({ row }: { row: StockRow }) {
   const d = row.drift
   const t = trustOf(row)
   const oh = row.on_hand
@@ -283,7 +247,7 @@ function LastCountCard({ row }: { row: StockRow }) {
   let autoLine: string
   if (row.tier !== 'A') autoLine = 'Not tier A, so never auto-ordered.'
   else if (t === 'trusted')
-    autoLine = 'Two counts in a row under 10%: can be auto-ordered (still confirmed in Telegram).'
+    autoLine = 'Two counts in a row under 10%: can be auto-ordered (still confirmed by a person).'
   else autoLine = 'Needs two counts in a row under 10% before it can be auto-ordered.'
 
   return (
@@ -353,7 +317,7 @@ function LastCountCard({ row }: { row: StockRow }) {
 
 /* ---------------------------------------------------------------- batches -- */
 
-function Batches({ row }: { row: StockRow }) {
+export function Batches({ row }: { row: StockRow }) {
   const gap = parseDec(row.batch_coverage_gap)
   const open = row.batches.filter((b) => {
     const q = parseDec(b.qty_remaining)
@@ -406,7 +370,7 @@ function Batches({ row }: { row: StockRow }) {
 
 /* --------------------------------------------------------- delivery (walk-in) -- */
 
-function DeliveryRow({ row }: { row: StockRow }) {
+export function DeliveryRow({ row }: { row: StockRow }) {
   const [operator] = useOperator()
   const [qty, setQty] = useState('')
   const shelf = row.shelf_life.shelf_life_days
@@ -488,7 +452,7 @@ const REASONS: ReadonlyArray<{ value: WriteOffReason; label: string }> = [
   { value: 'OTHER', label: 'Other' },
 ]
 
-function WriteOffRow({ row }: { row: StockRow }) {
+export function WriteOffRow({ row }: { row: StockRow }) {
   const [operator] = useOperator()
   const [qty, setQty] = useState('')
   const [reason, setReason] = useState<WriteOffReason>('WENT_OFF')
@@ -573,7 +537,7 @@ function WriteOffRow({ row }: { row: StockRow }) {
 
 /* -------------------------------------------------- how long it keeps (C4) -- */
 
-function Keeps({ row }: { row: StockRow }) {
+export function Keeps({ row }: { row: StockRow }) {
   const [operator] = useOperator()
   const sl = row.shelf_life
   const est = sl.source === 'ESTIMATE'
@@ -735,7 +699,7 @@ function Keeps({ row }: { row: StockRow }) {
 
 /* ---------------------------------------------------------- count history -- */
 
-function CountHistory({ row, onCountNow }: { row: StockRow; onCountNow: () => void }) {
+export function CountHistory({ row, onCountNow }: { row: StockRow; onCountNow: () => void }) {
   const q = useQuery({
     queryKey: KEYS.stockDetail(row.ingredient_id),
     queryFn: () => stockApi.stockDetail(row.ingredient_id),

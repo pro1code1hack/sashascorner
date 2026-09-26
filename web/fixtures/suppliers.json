@@ -21,6 +21,8 @@
     "contact": "https://amazon.co.uk",
     "order_url": null,
     "notes": null,
+    "email": null,
+    "phone": null,
     "product_count": 2,
     "archived": false
   },
@@ -42,6 +44,8 @@
     "contact": "https://booker.example/account",
     "order_url": null,
     "notes": null,
+    "email": null,
+    "phone": null,
     "product_count": 55,
     "archived": false
   },
@@ -64,6 +68,8 @@
     "contact": "https://brakes.example/account",
     "order_url": null,
     "notes": null,
+    "email": null,
+    "phone": null,
     "product_count": 20,
     "archived": false
   },
@@ -85,6 +91,8 @@
     "contact": "https://cakesmiths.example/account",
     "order_url": "https://cakesmiths.example/order",
     "notes": null,
+    "email": null,
+    "phone": null,
     "product_count": 20,
     "archived": false
   },
@@ -109,6 +117,8 @@
     "contact": "https://cupsdirect.example",
     "order_url": "https://cupsdirect.example/basket",
     "notes": null,
+    "email": null,
+    "phone": null,
     "product_count": 13,
     "archived": false
   },
@@ -129,6 +139,8 @@
     "contact": "orders@monolith.example",
     "order_url": null,
     "notes": null,
+    "email": null,
+    "phone": null,
     "product_count": 6,
     "archived": false
   },
@@ -147,6 +159,8 @@
     "contact": "message",
     "order_url": null,
     "notes": null,
+    "email": null,
+    "phone": null,
     "product_count": 0,
     "archived": false
   },
@@ -165,6 +179,8 @@
     "contact": "Walk-in, Dundee",
     "order_url": null,
     "notes": null,
+    "email": null,
+    "phone": null,
     "product_count": 3,
     "archived": false
   }

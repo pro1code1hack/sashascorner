@@ -12,6 +12,7 @@ import { useMemo, useState } from 'react'
 import {
   ActiveFilters,
   Button,
+  Empty,
   ErrorBox,
   FilterBar,
   FilterSelect,
@@ -24,11 +25,12 @@ import {
 import type { ActiveFilterChip, FilterOption } from '../../components/ui'
 import { cmp, fromMoney } from '../../lib/dec'
 import { useIngredients } from '../../lib/menu-api'
-import { useIsDocked } from '../../lib/media'
 import { navigate, useLocation } from '../../lib/router'
 import type { IngredientRow, Unit } from '../../lib/types/menu'
-import { MONEY_INPUT, poundsToPence, qtyText, unitPrice, unitWord } from '../menu/common/figures'
+import { MONEY_INPUT, gbp, poundsToPence, qtyText, unitPrice, unitWord } from '../menu/common/figures'
 import { CreateIngredient, IngredientDetailPane } from './Detail'
+
+const ROW_GRID = 'compact:grid-cols-[44px_minmax(0,1fr)_150px_170px_70px_90px]'
 
 type SortKey = 'az' | 'za' | 'unit-desc' | 'unit-asc' | 'pack-desc' | 'pack-asc' | 'most' | 'least' | 'sups' | 'life'
 
@@ -75,20 +77,17 @@ const EMPTY: Filters = { q: '', cat: 'all', sup: 'all', unit: 'all', storage: 'a
 export function IngredientsScreen() {
   const loc = useLocation()
   const data = useIngredients()
-  const docked = useIsDocked()
   const [f, setF] = useState<Filters>(() => {
     const c = loc.query.get('cat')
     return c === 'est' ? { ...EMPTY, est: true } : c ? { ...EMPTY, cat: c } : EMPTY
   })
   const [sort, setSort] = useState<SortKey>('az')
-  const [open, setOpen] = useState(false)
   const set = <K extends keyof Filters>(k: K, v: Filters[K]) => setF((p) => ({ ...p, [k]: v }))
 
   const idParam = loc.query.get('id')
   const creating = loc.query.get('new') === '1'
   const rows = useMemo(() => data.data?.rows ?? [], [data.data])
-  const firstId = rows[0]?.ingredient_id ?? null
-  const id = idParam && /^\d+$/.test(idParam) ? Number(idParam) : docked ? firstId : null
+  const id = idParam && /^\d+$/.test(idParam) ? Number(idParam) : null
 
   const go = (next: { id?: number | null; create?: boolean }) => {
     const query: Record<string, string> = {}
@@ -181,13 +180,9 @@ export function IngredientsScreen() {
     })
   if (f.est) chips.push({ key: 'est', label: 'Estimated prices', onRemove: () => set('est', false) })
 
-  const showList = docked || (id === null && !creating)
-  const showDetail = docked || id !== null || creating
+  const showList = id === null && !creating
   const rangeCls =
     'fig h-[34px] w-[64px] rounded-full border border-line-control bg-surface px-2.5 text-right text-base outline-none focus-visible:border-brand focus-visible:ring-3 focus-visible:ring-brand-wash'
-  const search = (
-    <SearchInput label="Search ingredients" placeholder="Search name or note" value={f.q} onChange={(e) => set('q', e.target.value)} />
-  )
 
   return (
     <>
@@ -202,151 +197,106 @@ export function IngredientsScreen() {
         }
       />
       {showList && (
-        <div className="flex flex-none flex-col gap-2 border-b border-line px-4 py-2.5 sm:px-[22px]">
-          {!docked && (
-            <div className="flex items-center gap-2">
-              <div className="min-w-0 flex-1">{search}</div>
-              <Button variant="secondary" size="sm" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-                Filters{chips.length > 0 ? ` (${chips.length})` : ''}
-              </Button>
-            </div>
-          )}
-          {(docked || open) && (
-            <FilterBar
-              label="Filter ingredients"
-              search={docked ? search : undefined}
-              trailing={<FilterSelect label="Sort" value={sort} allValue={sort} onChange={(v) => setSort(v as SortKey)} options={SORTS} />}
-            >
-              <FilterSelect
-                label="Category"
-                value={f.cat}
-                onChange={(v) => set('cat', v)}
-                options={[{ value: 'all', label: 'All categories' }, ...categories.map((c) => ({ value: c, label: c }))]}
-              />
-              <FilterSelect
-                label="Supplier"
-                value={f.sup}
-                onChange={(v) => set('sup', v)}
-                options={[
-                  { value: 'all', label: 'All suppliers' },
-                  { value: 'none', label: 'No supplier yet' },
-                  ...suppliers.map((s) => ({ value: String(s.supplier_id), label: s.name })),
-                ]}
-              />
-              <FilterSelect
-                label="Storage"
-                value={f.storage}
-                onChange={(v) => set('storage', v)}
-                options={[{ value: 'all', label: 'Any storage' }, ...Object.entries(STORAGE_LABEL).map(([value, label]) => ({ value, label }))]}
-              />
-              <FilterSelect
-                label="Costed per"
-                value={f.unit}
-                onChange={(v) => set('unit', v)}
-                options={[{ value: 'all', label: 'Any unit' }, ...UNITS.map((u) => ({ value: u, label: `Per ${unitWord(u)}` }))]}
-              />
-              <FilterSelect
-                label="Pack size"
-                value={f.pack}
-                onChange={(v) => set('pack', v)}
-                options={[{ value: 'all', label: 'Any pack size' }, ...packs.map(([k, n]) => ({ value: k, label: `${k} (${n})` }))]}
-              />
-              <FilterSelect
-                label="Used in"
-                value={f.use}
-                onChange={(v) => set('use', v)}
-                options={[{ value: 'all', label: 'Used or not' }, ...Object.entries(USE_LABEL).map(([value, label]) => ({ value, label }))]}
-              />
-              <span className="flex items-center gap-1 text-sm text-ink-2" role="group" aria-label="Pack cost range in pounds">
-                Pack £
-                <input
-                  aria-label="Pack cost from, pounds"
-                  inputMode="decimal"
-                  placeholder="min"
-                  value={f.min}
-                  onChange={(e) => MONEY_INPUT.test(e.target.value) && set('min', e.target.value)}
-                  className={rangeCls}
-                />
-                –
-                <input
-                  aria-label="Pack cost to, pounds"
-                  inputMode="decimal"
-                  placeholder="max"
-                  value={f.max}
-                  onChange={(e) => MONEY_INPUT.test(e.target.value) && set('max', e.target.value)}
-                  className={rangeCls}
-                />
-              </span>
-              <FilterToggle active={f.est} onToggle={() => set('est', !f.est)} count={data.data?.estimated_count}>
-                Estimated prices only
-              </FilterToggle>
-            </FilterBar>
-          )}
-          <ActiveFilters
-            summary={
-              <>
-                <span className="fig">{shown.length}</span> of <span className="fig">{rows.length}</span> · <em>italic</em> = estimated price
-              </>
+        <div className="flex-none border-b border-line bg-surface px-4 pb-2.5 pt-3 sm:px-5">
+          <FilterBar
+            label="Filter ingredients"
+            search={
+              <SearchInput label="Search ingredients" placeholder="Search name or note" value={f.q} onChange={(e) => set('q', e.target.value)} />
             }
+            trailing={<FilterSelect label="Sort" value={sort} allValue={sort} onChange={(v) => setSort(v as SortKey)} options={SORTS} />}
+          >
+            <FilterSelect
+              label="Category"
+              value={f.cat}
+              onChange={(v) => set('cat', v)}
+              options={[{ value: 'all', label: 'All categories' }, ...categories.map((c) => ({ value: c, label: c }))]}
+            />
+            <FilterSelect
+              label="Supplier"
+              value={f.sup}
+              onChange={(v) => set('sup', v)}
+              options={[
+                { value: 'all', label: 'All suppliers' },
+                { value: 'none', label: 'No supplier yet' },
+                ...suppliers.map((s) => ({ value: String(s.supplier_id), label: s.name })),
+              ]}
+            />
+            <FilterSelect
+              label="Storage"
+              value={f.storage}
+              onChange={(v) => set('storage', v)}
+              options={[{ value: 'all', label: 'Any storage' }, ...Object.entries(STORAGE_LABEL).map(([value, label]) => ({ value, label }))]}
+            />
+            <FilterSelect
+              label="Costed per"
+              value={f.unit}
+              onChange={(v) => set('unit', v)}
+              options={[{ value: 'all', label: 'Any unit' }, ...UNITS.map((u) => ({ value: u, label: `Per ${unitWord(u)}` }))]}
+            />
+            <FilterSelect
+              label="Pack size"
+              value={f.pack}
+              onChange={(v) => set('pack', v)}
+              options={[{ value: 'all', label: 'Any pack size' }, ...packs.map(([k, n]) => ({ value: k, label: `${k} (${n})` }))]}
+            />
+            <FilterSelect
+              label="Used in"
+              value={f.use}
+              onChange={(v) => set('use', v)}
+              options={[{ value: 'all', label: 'Used or not' }, ...Object.entries(USE_LABEL).map(([value, label]) => ({ value, label }))]}
+            />
+            <span className="flex items-center gap-1 text-sm text-ink-2" role="group" aria-label="Pack cost range in pounds">
+              Pack £
+              <input
+                aria-label="Pack cost from, pounds"
+                inputMode="decimal"
+                placeholder="min"
+                value={f.min}
+                onChange={(e) => MONEY_INPUT.test(e.target.value) && set('min', e.target.value)}
+                className={rangeCls}
+              />
+              –
+              <input
+                aria-label="Pack cost to, pounds"
+                inputMode="decimal"
+                placeholder="max"
+                value={f.max}
+                onChange={(e) => MONEY_INPUT.test(e.target.value) && set('max', e.target.value)}
+                className={rangeCls}
+              />
+            </span>
+            <FilterToggle active={f.est} onToggle={() => set('est', !f.est)} count={data.data?.estimated_count}>
+              Estimated prices only
+            </FilterToggle>
+          </FilterBar>
+          <ActiveFilters
+            className="mt-2"
+            summary={data.data ? `${shown.length} of ${rows.length} ingredients` : undefined}
             chips={chips}
             onClearAll={() => setF(EMPTY)}
           />
         </div>
       )}
-      <div className="flex min-h-0 flex-1">
-        {showList && (
-          <div className="flex min-h-0 w-full min-w-0 flex-col border-r border-line compact:w-[320px] compact:flex-none wide:w-[360px]">
-            <div className="min-h-0 flex-1 overflow-y-auto">
-              {data.isLoading && <Loading what="Loading ingredients" />}
-              {data.error && <ErrorBox error={data.error} what="ingredients" />}
-              {data.data && shown.length === 0 && (
-                <p className="px-4 py-6 text-base text-ink-2">
-                  Nothing matches.{' '}
-                  <button type="button" className="text-brand-ink underline" onClick={() => setF(EMPTY)}>
-                    Clear all filters
-                  </button>
-                </p>
-              )}
-              {shown.map((r) => (
-                <button
-                  key={r.ingredient_id}
-                  type="button"
-                  onClick={() => go({ id: r.ingredient_id })}
-                  aria-current={r.ingredient_id === id ? 'true' : undefined}
-                  className={cx(
-                    'block w-full border-b border-line px-4 py-2.5 text-left',
-                    r.ingredient_id === id ? 'bg-brand-wash' : 'hover:bg-canvas-2',
-                  )}
-                >
-                  <span className="flex items-baseline justify-between gap-2">
-                    <span className="min-w-0 truncate text-lg">{r.name}</span>
-                    <span className={cx('fig whitespace-nowrap text-base', r.unit_cost.is_estimate && 'italic')}>
-                      {r.unit_cost.pence === null ? <span className="text-ink-2">no price</span> : `${unitPrice(r.unit_cost.pence)}/${unitWord(r.unit)}`}
-                    </span>
-                  </span>
-                  <span className="mt-0.5 flex items-baseline justify-between gap-2 text-sm text-ink-2">
-                    <span className="min-w-0 truncate">
-                      {r.category ?? 'Other'}
-                      {r.suppliers.length > 0 ? ` · ${r.suppliers.map((s) => s.name).join(', ')}` : ' · no supplier'}
-                    </span>
-                    <span className="flex-none whitespace-nowrap">
-                      {r.storage !== 'AMBIENT' && `${(STORAGE_LABEL[r.storage] ?? r.storage).toLowerCase()} · `}
-                      {r.shelf_life_days !== null && `${r.shelf_life_days}d · `}
-                      <span className="fig">{r.used_in_count}</span> use{r.used_in_count === 1 ? '' : 's'}
-                    </span>
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-        {showDetail && (
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-            {!docked && (
-              <button type="button" className="flex-none px-4 pt-3 text-left text-base text-brand-ink" onClick={() => go({ id: null })}>
-                ← All ingredients
+      {showList ? (
+        <div className="min-h-0 flex-1 overflow-y-auto bg-canvas px-4 pb-6 pt-3.5 sm:px-5">
+          {data.isLoading && <Loading what="Loading ingredients" />}
+          {data.error && <ErrorBox error={data.error} what="ingredients" />}
+          {data.data && shown.length === 0 && (
+            <Empty roomy>
+              Nothing matches these filters.{' '}
+              <button type="button" className="font-bold text-brand-ink underline" onClick={() => setF(EMPTY)}>
+                Clear them
               </button>
-            )}
+            </Empty>
+          )}
+          {shown.length > 0 && <ListView rows={shown} onOpen={(i) => go({ id: i })} />}
+        </div>
+      ) : (
+        <div className="flex min-h-0 flex-1">
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+            <button type="button" className="flex-none px-4 pt-3 text-left text-base font-bold text-brand-ink sm:px-5" onClick={() => go({ id: null })}>
+              ‹ All ingredients
+            </button>
             {creating ? (
               <CreateIngredient
                 categories={categories}
@@ -359,8 +309,77 @@ export function IngredientsScreen() {
               <IngredientDetailPane key={id} id={id} categories={categories} onRetired={() => go({ id: null })} />
             ) : null}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </>
+  )
+}
+
+function ListView({ rows, onOpen }: { rows: IngredientRow[]; onOpen: (id: number) => void }) {
+  return (
+    <div className="overflow-hidden rounded-card-lg bg-surface shadow-raised">
+      <div className={cx('hidden gap-3 border-b border-line px-3.5 py-2 text-label font-bold uppercase tracking-[.06em] text-ink-3 compact:grid', ROW_GRID)}>
+        <span />
+        <span>Ingredient</span>
+        <span className="text-right">Cost / unit</span>
+        <span className="text-right">Pack</span>
+        <span className="text-right">Keeps</span>
+        <span className="text-right">Used in</span>
+      </div>
+      <ul>
+        {rows.map((r) => {
+          const preferred = r.suppliers.find((s) => s.is_preferred) ?? r.suppliers[0]
+          const more = r.suppliers.length > 1 ? ` +${r.suppliers.length - 1}` : ''
+          return (
+            <li key={r.ingredient_id} className="border-b border-line-row last:border-b-0">
+              <button
+                type="button"
+                onClick={() => onOpen(r.ingredient_id)}
+                className={cx(
+                  'grid w-full grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-x-3 px-3.5 py-2.5 text-left text-ink hover:bg-canvas-2',
+                  ROW_GRID,
+                  r.retired && 'opacity-60',
+                )}
+              >
+                <span
+                  aria-hidden="true"
+                  className="grid size-11 place-items-center rounded-control bg-line-soft text-lg font-extrabold text-ink-3"
+                >
+                  {r.name.trim().charAt(0).toUpperCase()}
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate text-md font-bold">{r.name}</span>
+                  <span className="block truncate text-sm text-ink-2">
+                    {r.category ?? 'Other'}
+                    {preferred ? ` · ${preferred.name}${more}` : ' · no supplier'}
+                    {r.storage !== 'AMBIENT' ? ` · ${(STORAGE_LABEL[r.storage] ?? r.storage).toLowerCase()}` : ''}
+                    {r.retired ? ' · retired' : ''}
+                  </span>
+                </span>
+                <span className={cx('fig whitespace-nowrap text-right text-base', r.unit_cost.is_estimate && 'italic')}>
+                  {r.unit_cost.pence === null ? (
+                    <span className="text-ink-2">no price</span>
+                  ) : (
+                    `${unitPrice(r.unit_cost.pence)} / ${unitWord(r.unit)}`
+                  )}
+                </span>
+                <span className={cx('fig hidden truncate text-right text-base compact:block', r.unit_cost.is_estimate && 'italic')}>
+                  {r.pack ? `${packKey(r)} · ${gbp(r.pack.pack_cost_pence)}` : <span className="text-ink-2">—</span>}
+                </span>
+                <span className="fig hidden text-right text-base compact:block">
+                  {r.shelf_life_days === null ? <span className="text-ink-2">—</span> : `${r.shelf_life_days}d`}
+                </span>
+                <span className="fig hidden text-right text-base compact:block">
+                  {r.used_in_count} {r.used_in_count === 1 ? 'item' : 'items'}
+                </span>
+              </button>
+            </li>
+          )
+        })}
+      </ul>
+      <p className="border-t border-line px-3.5 py-2 text-xs text-ink-2">
+        <em>Italic</em> costs are estimates. Keeps is the unopened shelf life.
+      </p>
+    </div>
   )
 }

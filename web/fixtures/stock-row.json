@@ -121,6 +121,16 @@
       "safety_days": "2",
       "min_qty_set_by": null,
       "min_qty_set_at": null
+    },
+    "pack": {
+      "supplier_product_id": 49,
+      "supplier_id": 4,
+      "supplier_name": "Cups Direct",
+      "pack_size": "1000",
+      "pack_unit": "EACH",
+      "size_in_unit": "1000",
+      "price_pence": 2574,
+      "is_preferred": true
     }
   },
   "drift_history": [

@@ -8,7 +8,8 @@
  * Fixture mode is handled by `request` itself (lib/fixtures): each read below is
  * answered from `web/fixtures/` when it was recorded, and says so when not.
  */
-import { apiWrite, request } from './api'
+import { ApiError, LIVE, apiWrite, request } from './api'
+import type { WriteResult } from './api'
 import type {
   ChecklistIn,
   ChecklistOut,
@@ -47,6 +48,7 @@ export const KEYS = {
   stockDetail: (id: number) => ['stock-v2-detail', id] as const,
   draft: ['orders-draft-v2'] as const,
   orders: ['orders-v2'] as const,
+  order: (id: number) => ['orders-v2', id] as const,
   shopRuns: ['shop-runs'] as const,
   suppliers: ['suppliers-v2'] as const,
   supplierProducts: (id: number) => ['supplier-products', id] as const,
@@ -61,6 +63,8 @@ export const stockApi = {
 
   orders: (supplierId?: number): Promise<OrdersListResponse> =>
     request(`/api/orders${supplierId === undefined ? '' : `?supplier_id=${supplierId}`}`),
+
+  order: (id: number): Promise<PurchaseOrder> => request(`/api/orders/${id}`),
 
   shopRuns: (): Promise<ShopRunsResponse> => request('/api/orders/shop-runs?months=8'),
 
@@ -91,6 +95,32 @@ export const orderWrites = {
   receive: (poId: number, body: ReceiveIn) =>
     apiWrite<ReceiveOut>(`/api/orders/${poId}/receive`, body),
   shopRun: (body: ShopRunIn) => apiWrite<ShopRunOut>('/api/orders/shop-run', body),
+  fromDraft: (supplier_id: number, created_by: string) =>
+    apiWrite<PurchaseOrder>('/api/orders/from-draft', { supplier_id, created_by }),
+  /** A named person's decision, with the packs they settled on (invariant 1). */
+  confirm: (poId: number, confirmed_by: string, final_packs: Record<number, number>) =>
+    apiWrite<PurchaseOrder>(`/api/orders/${poId}/confirm`, { confirmed_by, final_packs }),
+  clearReceipt: (poId: number) => apiWrite<PurchaseOrder>(`/api/orders/${poId}/receipt/clear`, undefined),
+  /** Raw image body, like the menu photo upload. Evidence only: no quantity changes. */
+  uploadReceipt: async (poId: number, blob: Blob, actor: string | null): Promise<WriteResult<PurchaseOrder>> => {
+    if (!LIVE) return { kind: 'offline', message: 'Reading recorded fixtures: there is nothing to upload to.' }
+    try {
+      const data = await request<PurchaseOrder>(`/api/orders/${poId}/receipt`, {
+        method: 'POST',
+        body: blob,
+        headers: { 'Content-Type': blob.type || 'application/octet-stream', ...(actor ? { 'X-Operator': actor } : {}) },
+      })
+      return { kind: 'ok', data }
+    } catch (e) {
+      const detail = e instanceof ApiError && typeof (e.payload as { detail?: unknown })?.detail === 'string'
+        ? (e.payload as { detail: string }).detail
+        : null
+      if (e instanceof ApiError && detail !== null && (e.status === 422 || e.status === 404 || e.status === 413)) {
+        return { kind: 'refused', message: detail }
+      }
+      return { kind: 'failed', status: e instanceof ApiError ? e.status : null, message: detail ?? String(e) }
+    }
+  },
 }
 
 export const supplierWrites = {

@@ -4537,3 +4537,74 @@
 {"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
 {"message":"[200] /menu 31ms","label":null,"level":"info"}
 {"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] / 20ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 3ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] / 21ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /menu 22ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /order 11ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /about 9ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] / 16ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] / 7ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] / 19ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /book 3ms","label":null,"level":"info"}
+{"message":"[200] / 5ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /menu 7ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /book 3ms","label":null,"level":"info"}
+{"message":"[200] / 6ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 7ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /menu 9ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /about 9ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] / 15ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /book 13ms","label":null,"level":"info"}
+{"message":"[200] /menu 18ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] / 15ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] / 11ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] / 9ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] / 20ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /order 16ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /about 10ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] / 9ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /order 6ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /about 10ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /visit 14ms","label":null,"level":"info"}
+{"message":"[200] / 8ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 0ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /menu 8ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /book 4ms","label":null,"level":"info"}

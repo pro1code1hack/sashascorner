@@ -3356,6 +3356,165 @@
         }
       }
     },
+    "/api/orders/from-draft": {
+      "post": {
+        "tags": [
+          "orders"
+        ],
+        "summary": "Write one supplier's basket from today's run as a DRAFT order. Orders nothing.",
+        "operationId": "order_from_draft_api_orders_from_draft_post",
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FromDraftIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOrderOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders/{po_id}/confirm": {
+      "post": {
+        "tags": [
+          "orders"
+        ],
+        "summary": "Confirm a draft order with the packs a named person settled on (invariant 1).",
+        "operationId": "confirm_order_api_orders__po_id__confirm_post",
+        "parameters": [
+          {
+            "name": "po_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Po Id"
+            }
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOrderOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/orders/{po_id}/cancel": {
       "post": {
         "tags": [
@@ -3445,7 +3604,7 @@
         "tags": [
           "orders"
         ],
-        "summary": "Record that an order confirmed in Telegram went to the supplier.",
+        "summary": "Record that a confirmed order went to the supplier.",
         "operationId": "mark_sent_api_orders__po_id__mark_sent_post",
         "parameters": [
           {
@@ -3591,6 +3750,260 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ReceiveOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders/{po_id}": {
+      "get": {
+        "tags": [
+          "orders"
+        ],
+        "summary": "One stored purchase order, with its lines and receipt photo.",
+        "operationId": "get_order_api_orders__po_id__get",
+        "parameters": [
+          {
+            "name": "po_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Po Id"
+            }
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOrderOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders/{po_id}/receipt": {
+      "post": {
+        "tags": [
+          "orders"
+        ],
+        "summary": "Attach a receipt / delivery-note photo (raw body, <= 2 MB, PNG/JPEG/WebP).",
+        "operationId": "upload_receipt_api_orders__po_id__receipt_post",
+        "parameters": [
+          {
+            "name": "po_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Po Id"
+            }
+          },
+          {
+            "name": "x-operator",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Operator"
+            }
+          },
+          {
+            "name": "content-length",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Content-Length"
+            }
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOrderOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders/{po_id}/receipt/clear": {
+      "post": {
+        "tags": [
+          "orders"
+        ],
+        "summary": "Remove the receipt photo from the order (the file is kept).",
+        "operationId": "clear_receipt_api_orders__po_id__receipt_clear_post",
+        "parameters": [
+          {
+            "name": "po_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Po Id"
+            }
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOrderOut"
                 }
               }
             }
@@ -5459,6 +5872,198 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/MenuItemDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/menu-items/{menu_item_id}/sales": {
+      "get": {
+        "tags": [
+          "menu"
+        ],
+        "summary": "Till lines matched to this product (every size) or this size. Read-only.",
+        "operationId": "menu_item_sales_api_menu_items__menu_item_id__sales_get",
+        "parameters": [
+          {
+            "name": "menu_item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Menu Item Id"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 10000,
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 5,
+              "default": 25,
+              "title": "Page Size"
+            }
+          },
+          {
+            "name": "all_sizes",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true,
+              "title": "All Sizes"
+            }
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemSalesOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/menu-items/{menu_item_id}/prep": {
+      "post": {
+        "tags": [
+          "menu"
+        ],
+        "summary": "Set or clear time to make per size (labour), recosting those sizes.",
+        "operationId": "menu_prep_api_menu_items__menu_item_id__prep_post",
+        "parameters": [
+          {
+            "name": "menu_item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Menu Item Id"
+            }
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrepIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrepOut"
                 }
               }
             }
@@ -8782,6 +9387,425 @@
           }
         }
       }
+    },
+    "/api/finance/transactions/receipts": {
+      "get": {
+        "tags": [
+          "money"
+        ],
+        "summary": "Lightspeed receipts, newest first. Read-only.",
+        "operationId": "receipts_api_finance_transactions_receipts_get",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "YYYY-MM-DD, inclusive.",
+              "title": "From"
+            },
+            "description": "YYYY-MM-DD, inclusive."
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "YYYY-MM-DD, inclusive.",
+              "title": "To"
+            },
+            "description": "YYYY-MM-DD, inclusive."
+          },
+          {
+            "name": "channel",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "EPOS | DELIVEROO | JUST_EAT | OTHER",
+              "title": "Channel"
+            },
+            "description": "EPOS | DELIVEROO | JUST_EAT | OTHER"
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "name": "min_pence",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Pence.",
+              "title": "Min Pence"
+            },
+            "description": "Pence."
+          },
+          {
+            "name": "max_pence",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Pence.",
+              "title": "Max Pence"
+            },
+            "description": "Pence."
+          },
+          {
+            "name": "include_voided",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true,
+              "title": "Include Voided"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Page Size"
+            }
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/finance/transactions/takings": {
+      "get": {
+        "tags": [
+          "money"
+        ],
+        "summary": "Takings rows by day, method and source (every source shown). Read-only.",
+        "operationId": "takings_ledger_api_finance_transactions_takings_get",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "YYYY-MM-DD, inclusive.",
+              "title": "From"
+            },
+            "description": "YYYY-MM-DD, inclusive."
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "YYYY-MM-DD, inclusive.",
+              "title": "To"
+            },
+            "description": "YYYY-MM-DD, inclusive."
+          },
+          {
+            "name": "method",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "CARD | CASH | CASH_OFF_TILL | ...",
+              "title": "Method"
+            },
+            "description": "CARD | CASH | CASH_OFF_TILL | ..."
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "POS_API | CSV_UPLOAD | MANUAL | ...",
+              "title": "Source"
+            },
+            "description": "POS_API | CSV_UPLOAD | MANUAL | ..."
+          },
+          {
+            "name": "used_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Used Only"
+            }
+          },
+          {
+            "name": "min_pence",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Pence.",
+              "title": "Min Pence"
+            },
+            "description": "Pence."
+          },
+          {
+            "name": "max_pence",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Pence.",
+              "title": "Max Pence"
+            },
+            "description": "Pence."
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Page Size"
+            }
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TakingsLedgerResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -11497,6 +12521,30 @@
         "title": "ComponentQtyChange",
         "description": "The body of both `/preview` and `/apply`.\n\nQuantities are **strings**. A float here is refused by the service layer\n(`edit_composition._validated`) and by this schema's type, in that order."
       },
+      "ConfirmIn": {
+        "properties": {
+          "confirmed_by": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Confirmed By"
+          },
+          "final_packs": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Final Packs",
+            "description": "po_line_id -> packs chosen. A line left out keeps its suggestion."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "confirmed_by"
+        ],
+        "title": "ConfirmIn"
+      },
       "ConversionGapOut": {
         "properties": {
           "menu_item_id": {
@@ -14207,6 +15255,27 @@
         "title": "Forecast",
         "description": "A forecast, or the reason there is no number to show. Invariant 9.\n\nWhen `is_low_confidence` is true, `qty` is `null` and `reasons` carries the\nsentence to render **in its place**. The figure is withheld from the payload\ndeliberately; see the module docstring."
       },
+      "FromDraftIn": {
+        "properties": {
+          "supplier_id": {
+            "type": "integer",
+            "title": "Supplier Id"
+          },
+          "created_by": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Created By"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "supplier_id",
+          "created_by"
+        ],
+        "title": "FromDraftIn"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -14545,6 +15614,35 @@
             ],
             "title": "Shelf Life Days"
           },
+          "open_life_days": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 3650.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Open Life Days",
+            "description": "Life once opened; not above shelf life."
+          },
+          "transit_buffer_days": {
+            "type": "integer",
+            "maximum": 60.0,
+            "minimum": 0.0,
+            "title": "Transit Buffer Days",
+            "default": 0
+          },
+          "waste_factor": {
+            "type": "string",
+            "maxLength": 24,
+            "pattern": "^\\d+(\\.\\d+)?$",
+            "title": "Waste Factor",
+            "description": "Fraction lost in use, 0 to 0.5. Stock depletion only.",
+            "default": "0"
+          },
           "note": {
             "anyOf": [
               {
@@ -14566,6 +15664,19 @@
                 "type": "null"
               }
             ]
+          },
+          "sku": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sku",
+            "description": "Supplier code. When price.supplier_id is set the ingredient is also linked at that supplier (the preferred link, since it is the first)."
           },
           "actor": {
             "type": "string",
@@ -15243,6 +16354,32 @@
               }
             ],
             "title": "Shelf Life Source"
+          },
+          "open_life_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Open Life Days"
+          },
+          "transit_buffer_days": {
+            "type": "integer",
+            "title": "Transit Buffer Days",
+            "default": 0
+          },
+          "tier": {
+            "type": "string",
+            "title": "Tier",
+            "default": "C"
+          },
+          "waste_factor": {
+            "type": "string",
+            "title": "Waste Factor",
+            "default": "0"
           }
         },
         "type": "object",
@@ -15355,6 +16492,171 @@
           "suppliers"
         ],
         "title": "IngredientsResponse"
+      },
+      "ItemSaleOut": {
+        "properties": {
+          "sale_id": {
+            "type": "integer",
+            "title": "Sale Id"
+          },
+          "sold_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Sold At"
+          },
+          "receipt_id": {
+            "type": "string",
+            "title": "Receipt Id"
+          },
+          "menu_item_id": {
+            "type": "integer",
+            "title": "Menu Item Id"
+          },
+          "size_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size Code"
+          },
+          "qty": {
+            "type": "string",
+            "title": "Qty"
+          },
+          "gross_pence": {
+            "type": "integer",
+            "title": "Gross Pence"
+          },
+          "channel": {
+            "type": "string",
+            "title": "Channel"
+          },
+          "voided": {
+            "type": "boolean",
+            "title": "Voided"
+          },
+          "is_refund": {
+            "type": "boolean",
+            "title": "Is Refund"
+          },
+          "modifier_names": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Modifier Names"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sale_id",
+          "sold_at",
+          "receipt_id",
+          "menu_item_id",
+          "size_code",
+          "qty",
+          "gross_pence",
+          "channel",
+          "voided",
+          "is_refund",
+          "modifier_names"
+        ],
+        "title": "ItemSaleOut"
+      },
+      "ItemSalesOut": {
+        "properties": {
+          "menu_item_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Menu Item Ids"
+          },
+          "total_rows": {
+            "type": "integer",
+            "title": "Total Rows"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "units": {
+            "type": "string",
+            "title": "Units",
+            "description": "Net units over every matched, non-voided line."
+          },
+          "gross_pence": {
+            "type": "integer",
+            "title": "Gross Pence",
+            "description": "Net takings over every matched, non-voided line."
+          },
+          "first_sold_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Sold At"
+          },
+          "last_sold_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Sold At"
+          },
+          "by_channel": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "By Channel",
+            "description": "Channel -> non-voided line count."
+          },
+          "payment_note": {
+            "type": "string",
+            "title": "Payment Note"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/ItemSaleOut"
+            },
+            "type": "array",
+            "title": "Rows"
+          }
+        },
+        "type": "object",
+        "required": [
+          "menu_item_ids",
+          "total_rows",
+          "page",
+          "page_size",
+          "units",
+          "gross_pence",
+          "first_sold_at",
+          "last_sold_at",
+          "by_channel",
+          "payment_note",
+          "rows"
+        ],
+        "title": "ItemSalesOut"
       },
       "LabourImpactOut": {
         "properties": {
@@ -16530,6 +17832,34 @@
           },
           "lowest_margin": {
             "$ref": "#/components/schemas/LowestMarginOut"
+          },
+          "season_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Season Id"
+          },
+          "season_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Season Name"
+          },
+          "sold_30d": {
+            "type": "string",
+            "title": "Sold 30D",
+            "description": "Units sold, every size, last 30 days (net).",
+            "default": "0"
           }
         },
         "type": "object",
@@ -16933,6 +18263,53 @@
               }
             ],
             "title": "Data Quality Flag"
+          },
+          "has_recipe": {
+            "type": "boolean",
+            "title": "Has Recipe",
+            "description": "The cost cache resolved at least one ingredient line.",
+            "default": false
+          },
+          "prep_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prep Seconds",
+            "description": "Null = not timed."
+          },
+          "prep_is_estimate": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prep Is Estimate"
+          },
+          "prep_is_override": {
+            "type": "boolean",
+            "title": "Prep Is Override",
+            "description": "menu_item.prep_seconds overrides the recipe's time.",
+            "default": false
+          },
+          "margin_per_minute_pence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Margin Per Minute Pence",
+            "description": "(price - ingredient cost) per minute of prep. Null when cost or prep unknown."
           }
         },
         "type": "object",
@@ -19170,6 +20547,70 @@
         ],
         "title": "PhotoOut"
       },
+      "PrepIn": {
+        "properties": {
+          "seconds": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object",
+            "maxProperties": 8,
+            "title": "Seconds"
+          },
+          "is_estimate": {
+            "type": "boolean",
+            "title": "Is Estimate",
+            "default": false
+          },
+          "actor": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Actor",
+            "description": "Who is doing this (operator name)."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "seconds",
+          "actor"
+        ],
+        "title": "PrepIn"
+      },
+      "PrepOut": {
+        "properties": {
+          "menu_item_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Menu Item Ids"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          },
+          "rollup_items_recosted": {
+            "type": "integer",
+            "title": "Rollup Items Recosted"
+          }
+        },
+        "type": "object",
+        "required": [
+          "menu_item_ids",
+          "summary",
+          "rollup_items_recosted"
+        ],
+        "title": "PrepOut"
+      },
       "PreviewResponse": {
         "properties": {
           "template_id": {
@@ -20203,10 +21644,34 @@
             ],
             "title": "Routing Reason"
           },
+          "receipt_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Receipt Url",
+            "description": "Photo of the delivery note or receipt, when one was added."
+          },
+          "receipt_uploaded_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Receipt Uploaded By"
+          },
           "actions": {
             "items": {
               "type": "string",
               "enum": [
+                "confirm",
                 "cancel",
                 "mark_sent",
                 "receive"
@@ -20214,7 +21679,7 @@
             },
             "type": "array",
             "title": "Actions",
-            "description": "What the web may do next. Never confirm: that happens in Telegram."
+            "description": "What the web may do next. `confirm` is a named human's decision (invariant 1)."
           }
         },
         "type": "object",
@@ -20306,6 +21771,149 @@
         ],
         "title": "RankedItemOut",
         "description": "One item's position in BOTH orderings. The disagreement is the finding (spec 5.6)."
+      },
+      "ReceiptOut": {
+        "properties": {
+          "receipt_id": {
+            "type": "string",
+            "title": "Receipt Id"
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "title": "Date"
+          },
+          "weekday": {
+            "type": "string",
+            "title": "Weekday"
+          },
+          "time": {
+            "type": "string",
+            "title": "Time",
+            "description": "HH:MM, Europe/London."
+          },
+          "channel": {
+            "type": "string",
+            "title": "Channel"
+          },
+          "lines": {
+            "type": "integer",
+            "title": "Lines"
+          },
+          "items": {
+            "type": "string",
+            "title": "Items",
+            "description": "Item count as a decimal string."
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          },
+          "gross_pence": {
+            "type": "integer",
+            "title": "Gross Pence",
+            "description": "Non-voided lines only."
+          },
+          "voided": {
+            "type": "boolean",
+            "title": "Voided"
+          },
+          "refund": {
+            "type": "boolean",
+            "title": "Refund"
+          }
+        },
+        "type": "object",
+        "required": [
+          "receipt_id",
+          "date",
+          "weekday",
+          "time",
+          "channel",
+          "lines",
+          "items",
+          "summary",
+          "gross_pence",
+          "voided",
+          "refund"
+        ],
+        "title": "ReceiptOut"
+      },
+      "ReceiptsResponse": {
+        "properties": {
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/ReceiptOut"
+            },
+            "type": "array",
+            "title": "Rows"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total_rows": {
+            "type": "integer",
+            "title": "Total Rows"
+          },
+          "gross_pence": {
+            "type": "integer",
+            "title": "Gross Pence",
+            "description": "Every receipt matching the filters, all pages."
+          },
+          "voided_count": {
+            "type": "integer",
+            "title": "Voided Count"
+          },
+          "first_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Date"
+          },
+          "last_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Date"
+          },
+          "caveats": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Caveats"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rows",
+          "page",
+          "page_size",
+          "total_rows",
+          "gross_pence",
+          "voided_count",
+          "first_date",
+          "last_date",
+          "caveats"
+        ],
+        "title": "ReceiptsResponse"
       },
       "ReceiveIn": {
         "properties": {
@@ -22970,6 +24578,62 @@
         ],
         "title": "StockDetail"
       },
+      "StockPackOut": {
+        "properties": {
+          "supplier_product_id": {
+            "type": "integer",
+            "title": "Supplier Product Id"
+          },
+          "supplier_id": {
+            "type": "integer",
+            "title": "Supplier Id"
+          },
+          "supplier_name": {
+            "type": "string",
+            "title": "Supplier Name"
+          },
+          "pack_size": {
+            "type": "string",
+            "title": "Pack Size"
+          },
+          "pack_unit": {
+            "type": "string",
+            "title": "Pack Unit"
+          },
+          "size_in_unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size In Unit"
+          },
+          "price_pence": {
+            "type": "integer",
+            "title": "Price Pence"
+          },
+          "is_preferred": {
+            "type": "boolean",
+            "title": "Is Preferred"
+          }
+        },
+        "type": "object",
+        "required": [
+          "supplier_product_id",
+          "supplier_id",
+          "supplier_name",
+          "pack_size",
+          "pack_unit",
+          "size_in_unit",
+          "price_pence",
+          "is_preferred"
+        ],
+        "title": "StockPackOut",
+        "description": "The preferred supplier pack, so a quantity can be read as \"about 3 bottles\".\n\n`size_in_unit` is the pack converted into the INGREDIENT's unit (exact), or null\nwhen the pack's unit is of another dimension. Display help only: ordering maths\nnever reads this field."
+      },
       "StockResponse": {
         "properties": {
           "as_of": {
@@ -23120,6 +24784,17 @@
                 "type": "null"
               }
             ]
+          },
+          "pack": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StockPackOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Preferred (else cheapest linked) supplier pack, for pack-equivalents."
           }
         },
         "type": "object",
@@ -23311,6 +24986,110 @@
               }
             ],
             "title": "Notes"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 60
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "lead_time_days": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 60.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lead Time Days"
+          },
+          "delivery_weekdays": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivery Weekdays"
+          },
+          "min_order_pence": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Order Pence"
+          },
+          "delivery_fee_pence": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivery Fee Pence"
+          },
+          "cutoff_time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cutoff Time",
+            "description": "HH:MM, or null for none."
+          },
+          "free_delivery_threshold_pence": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Free Delivery Threshold Pence"
+          },
+          "terms_confirmed": {
+            "type": "boolean",
+            "title": "Terms Confirmed",
+            "default": false
           }
         },
         "additionalProperties": false,
@@ -23619,6 +25398,28 @@
             ],
             "title": "Notes"
           },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
           "product_count": {
             "anyOf": [
               {
@@ -23736,6 +25537,30 @@
               }
             ],
             "title": "Notes"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 60
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
           }
         },
         "additionalProperties": false,
@@ -24732,6 +26557,63 @@
         ],
         "title": "SyncStartedOut"
       },
+      "TakingsLedgerResponse": {
+        "properties": {
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/TakingsRowOut"
+            },
+            "type": "array",
+            "title": "Rows"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total_rows": {
+            "type": "integer",
+            "title": "Total Rows"
+          },
+          "used_gross_pence": {
+            "type": "integer",
+            "title": "Used Gross Pence"
+          },
+          "by_method_pence": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "By Method Pence"
+          },
+          "shadowed_count": {
+            "type": "integer",
+            "title": "Shadowed Count"
+          },
+          "caveats": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Caveats"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rows",
+          "page",
+          "page_size",
+          "total_rows",
+          "used_gross_pence",
+          "by_method_pence",
+          "shadowed_count",
+          "caveats"
+        ],
+        "title": "TakingsLedgerResponse"
+      },
       "TakingsResponse": {
         "properties": {
           "since": {
@@ -24859,6 +26741,145 @@
         ],
         "title": "TakingsResponse",
         "description": "What the cafe took over a window, and how much of it is knowable.\n\nEvery nullable total means \"some day in the window did not report it\", never\nzero. `net_pence` is null unless EVERY deduction was reported on EVERY day:\nsubtracting only the days that reported fees produces a net that is too high\nand entirely plausible, which is the worst kind of wrong (invariant 8)."
+      },
+      "TakingsRowOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "title": "Date"
+          },
+          "weekday": {
+            "type": "string",
+            "title": "Weekday"
+          },
+          "method": {
+            "type": "string",
+            "title": "Method"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "basis": {
+            "type": "string",
+            "enum": [
+              "TILL",
+              "BANK_DEPOSIT"
+            ],
+            "title": "Basis"
+          },
+          "gross_pence": {
+            "type": "integer",
+            "title": "Gross Pence"
+          },
+          "refunds_pence": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Refunds Pence"
+          },
+          "fees_pence": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fees Pence"
+          },
+          "discounts_pence": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discounts Pence"
+          },
+          "net_pence": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Net Pence",
+            "description": "Null when any deduction was not reported."
+          },
+          "transactions": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transactions"
+          },
+          "used": {
+            "type": "boolean",
+            "title": "Used",
+            "description": "False = shadowed by a higher-precedence source; not added."
+          },
+          "source_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Ref"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "date",
+          "weekday",
+          "method",
+          "source",
+          "basis",
+          "gross_pence",
+          "refunds_pence",
+          "fees_pence",
+          "discounts_pence",
+          "net_pence",
+          "transactions",
+          "used",
+          "source_ref",
+          "notes"
+        ],
+        "title": "TakingsRowOut"
       },
       "TelegramNotice": {
         "properties": {

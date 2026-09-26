@@ -37,6 +37,8 @@
       "cancelled_by": null,
       "cancel_reason": null,
       "routing_reason": null,
+      "receipt_url": null,
+      "receipt_uploaded_by": null,
       "actions": [
         "mark_sent",
         "receive",

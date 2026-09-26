@@ -27,17 +27,19 @@ import {
   cx,
 } from '../../components/ui'
 import { gbp, plural } from '../../lib/format'
-import { navigate, useLocation } from '../../lib/router'
+import { useIngredients } from '../../lib/menu-api'
+import { useIsDocked } from '../../lib/media'
+import { href, navigate, useLocation } from '../../lib/router'
 import { KEYS, stockApi } from '../../lib/stock-api'
-import type { StockRow, StockSummary, WrittenOff } from '../../lib/types/stock'
-import { Attention } from './Attention'
+import type { StockRow, StockSummary, TrustLabel, WrittenOff } from '../../lib/types/stock'
 import { BuyList } from './BuyList'
 import { CountFlow } from './CountFlow'
-import { StockDrawer } from './StockDrawer'
+import { NeedsAttention } from './NeedsAttention'
+import { StockItemPage } from './StockItemPage'
 import { StockList } from './StockList'
 import { fmtD } from './fmt'
-import { compareRows, matches } from './model'
-import type { StockFilter, TierFilter } from './model'
+import { STOCK_SORTS, TRUST_WORD, compareRows, matches, stockSorter, trustOf } from './model'
+import type { StockFilter, StockSort, TierFilter } from './model'
 
 const FILTERS: ReadonlyArray<{ id: StockFilter; label: string }> = [
   { id: 'all', label: 'All' },
@@ -48,13 +50,33 @@ const FILTERS: ReadonlyArray<{ id: StockFilter; label: string }> = [
   { id: 'check', label: 'Checklist' },
 ]
 
-type Tab = 'shelf' | 'buy'
+type Tab = 'shelf' | 'attention' | 'buy'
 const catOf = (r: StockRow) => r.category ?? 'Uncategorised'
+
+const STORAGE_LABEL: Record<string, string> = { AMBIENT: 'Ambient', CHILLED: 'Chilled', FROZEN: 'Frozen' }
+const UNIT_LABEL: Record<string, string> = { L: 'litres', ML: 'ml', KG: 'kg', G: 'grams', EACH: 'units' }
+const USE_LABEL: Record<string, string> = { used: 'Used in recipes', unused: 'Not used', '10': 'Used in 10+ items' }
+const TRUST_KEYS: TrustLabel[] = ['trusted', 'drifting', 'excluded', 'not_yet_judged', 'never_counted']
+
+/** The same filters as Ingredients (owner, 2026-09-26: "they are sort of identical entities"). */
+interface MoreFilters {
+  sup: string
+  storage: string
+  trust: string
+  unit: string
+  use: string
+  est: boolean
+}
+const NO_MORE: MoreFilters = { sup: 'all', storage: 'all', trust: 'all', unit: 'all', use: 'all', est: false }
 
 export function StockScreen() {
   const loc = useLocation()
-  const tab: Tab = loc.query.get('tab') === 'buy' ? 'buy' : 'shelf'
-  const setTab = (t: Tab) => navigate('/stock', { replace: true, query: { tab: t === 'buy' ? 'buy' : undefined } })
+  const qt = loc.query.get('tab')
+  const tab: Tab = qt === 'buy' ? 'buy' : qt === 'attention' ? 'attention' : 'shelf'
+  const setTab = (t: Tab) => navigate('/stock', { replace: true, query: { tab: t === 'shelf' ? undefined : t } })
+  // `#/stock/<id>`: the ingredient's own page. This component stays mounted, so
+  // the list's filters survive the round trip.
+  const itemId = loc.segments[1] !== undefined && /^\d+$/.test(loc.segments[1]) ? Number(loc.segments[1]) : null
 
   const q = useQuery({ queryKey: KEYS.stock, queryFn: stockApi.stock, staleTime: 60_000 })
   const [cat, setCat] = useState('all')
@@ -62,7 +84,16 @@ export function StockScreen() {
   const [stF, setStF] = useState<StockFilter>('all')
   const [search, setSearch] = useState('')
   const [grouped, setGrouped] = useState(false)
-  const [sel, setSel] = useState<number | null>(null)
+  const [more, setMore] = useState<MoreFilters>(NO_MORE)
+  const [sort, setSort] = useState<StockSort>('attention')
+  const [open, setOpen] = useState(false)
+  const docked = useIsDocked()
+  const setM = <K extends keyof MoreFilters>(k: K, v: MoreFilters[K]) => setMore((p) => ({ ...p, [k]: v }))
+  // Suppliers and recipe use come from the ingredient list (same ids): /api/stock
+  // carries only the preferred pack's supplier.
+  const ingredients = useIngredients()
+  const ingById = useMemo(() => new Map((ingredients.data?.rows ?? []).map((r) => [r.ingredient_id, r])), [ingredients.data])
+  const suppliers = ingredients.data?.suppliers ?? []
   const [queue, setQueue] = useState<number[] | null>(null)
 
   const rows = useMemo(() => q.data?.rows ?? [], [q.data])
@@ -81,10 +112,27 @@ export function StockScreen() {
     const out = inCat
       .filter((r) => matches(r, stF))
       .filter((r) => tierF === 'all' || r.tier === tierF)
-      .filter((r) => needle === '' || r.name.toLowerCase().includes(needle))
-      .sort(compareRows)
-    return grouped ? out.sort((a, b) => catOf(a).localeCompare(catOf(b)) || compareRows(a, b)) : out
-  }, [inCat, stF, tierF, search, grouped])
+      .filter((r) => needle === '' || r.name.toLowerCase().includes(needle) || (ingById.get(r.ingredient_id)?.note ?? '').toLowerCase().includes(needle))
+      .filter((r) => {
+        const ing = ingById.get(r.ingredient_id)
+        const sups = ing ? ing.suppliers.map((x) => x.supplier_id) : r.pack ? [r.pack.supplier_id] : []
+        if (more.sup === 'none' && sups.length > 0) return false
+        if (more.sup !== 'all' && more.sup !== 'none' && !sups.includes(Number(more.sup))) return false
+        if (more.storage !== 'all' && r.shelf_life.storage !== more.storage) return false
+        if (more.trust !== 'all' && trustOf(r) !== more.trust) return false
+        if (more.unit !== 'all' && r.unit !== more.unit) return false
+        const used = ing?.used_in_count ?? null
+        if (more.use === 'used' && (used === null || used === 0)) return false
+        if (more.use === 'unused' && used !== 0) return false
+        if (more.use === '10' && (used === null || used < 10)) return false
+        if (more.est && !r.unit_cost.is_estimate) return false
+        return true
+      })
+    const by = stockSorter(sort)
+    out.sort(by)
+    return grouped ? out.sort((a, b) => catOf(a).localeCompare(catOf(b)) || by(a, b)) : out
+  }, [inCat, stF, tierF, search, grouped, more, sort, ingById])
+  const units = useMemo(() => [...new Set(rows.map((r) => r.unit))].sort(), [rows])
 
   const pickFilter = (f: StockFilter) => {
     setStF(f)
@@ -92,12 +140,7 @@ export function StockScreen() {
   }
 
   // §1.3: every non-C ingredient with a sales rate or a count, least trusted first.
-  const startCount = (only?: number) => {
-    setSel(null)
-    if (only !== undefined) {
-      setQueue([only])
-      return
-    }
+  const startCount = () => {
     const base = stF === 'all' && cat === 'all' ? rows : shown
     setQueue(
       base
@@ -107,7 +150,6 @@ export function StockScreen() {
     )
   }
 
-  const selected = sel === null ? null : (byId.get(sel) ?? null)
   const summary = q.data?.summary
 
   const activeChips = [
@@ -123,7 +165,48 @@ export function StockScreen() {
         ]
       : []),
     ...(search.trim() !== '' ? [{ key: 'q', label: `“${search.trim()}”`, onRemove: () => setSearch('') }] : []),
+    ...(more.sup !== 'all'
+      ? [
+          {
+            key: 'sup',
+            label:
+              more.sup === 'none'
+                ? 'No supplier'
+                : `Supplier: ${suppliers.find((x) => String(x.supplier_id) === more.sup)?.name ?? '?'}`,
+            onRemove: () => setM('sup', 'all'),
+          },
+        ]
+      : []),
+    ...(more.storage !== 'all'
+      ? [{ key: 'storage', label: STORAGE_LABEL[more.storage] ?? more.storage, onRemove: () => setM('storage', 'all') }]
+      : []),
+    ...(more.trust !== 'all'
+      ? [{ key: 'trust', label: TRUST_WORD[more.trust as TrustLabel], onRemove: () => setM('trust', 'all') }]
+      : []),
+    ...(more.unit !== 'all'
+      ? [{ key: 'unit', label: `Counted in ${UNIT_LABEL[more.unit] ?? more.unit}`, onRemove: () => setM('unit', 'all') }]
+      : []),
+    ...(more.use !== 'all' ? [{ key: 'use', label: USE_LABEL[more.use] ?? more.use, onRemove: () => setM('use', 'all') }] : []),
+    ...(more.est ? [{ key: 'est', label: 'Estimated prices', onRemove: () => setM('est', false) }] : []),
   ]
+  const searchBox = (
+    <SearchInput
+      label="Search ingredients"
+      placeholder="Search name or note"
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+    />
+  )
+  const countButton = (
+    <Button variant="primary" onClick={() => startCount()} disabled={!q.data}>
+      {queue !== null ? 'Counting…' : shown.length < rows.length && stF !== 'all' ? 'Count these' : 'Start a count'}
+    </Button>
+  )
+
+  if (itemId !== null) return <StockItemPage id={itemId} back={href('/stock', { tab: tab === 'shelf' ? undefined : tab })} />
+  const attentionCount = new Set(
+    (['soon', 'out', 'drift', 'count', 'low'] as const).flatMap((f) => rows.filter((r) => matches(r, f)).map((r) => r.ingredient_id)),
+  ).size
 
   return (
     <>
@@ -132,6 +215,7 @@ export function StockScreen() {
         {(
           [
             ['shelf', 'On the shelf'],
+            ['attention', 'Needs attention'],
             ['buy', 'What to buy'],
           ] as const
         ).map(([id, label]) => (
@@ -147,68 +231,126 @@ export function StockScreen() {
             )}
           >
             {label}
+            {id === 'attention' && q.data && attentionCount > 0 && (
+              <span className="fig ml-1.5 rounded-full bg-alert-wash px-1.5 text-xs font-bold text-bad-ink">{attentionCount}</span>
+            )}
           </button>
         ))}
       </div>
 
-      {tab === 'buy' ? (
+      {queue !== null ? (
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <CountFlow queue={queue} byId={byId} onDone={() => setQueue(null)} />
+        </div>
+      ) : tab === 'attention' ? (
+        <div role="tabpanel" aria-label="Needs attention" className="flex min-h-0 min-w-0 flex-1 flex-col">
+          {q.isPending ? (
+            <Loading what="Working out stock" />
+          ) : q.isError ? (
+            <ErrorBox error={q.error} what="stock" />
+          ) : (
+            <NeedsAttention
+              rows={rows}
+              summary={summary}
+              onCount={(ids) => setQueue(ids)}
+              onBuy={() => setTab('buy')}
+              onShowInList={(f) => {
+                pickFilter(f)
+                setTab('shelf')
+              }}
+            />
+          )}
+        </div>
+      ) : tab === 'buy' ? (
         <div role="tabpanel" aria-label="What to buy" className="flex min-h-0 min-w-0 flex-1 flex-col">
           <BuyList stockRows={rows} />
         </div>
       ) : (
         <div role="tabpanel" aria-label="On the shelf" className="flex min-h-0 min-w-0 flex-1 flex-col">
-          {q.data && queue === null && (
-            <Attention
-              rows={inCat}
-              summary={summary}
-              active={stF}
-              onPick={pickFilter}
-              onBuy={() => setTab('buy')}
-            />
-          )}
-
-          <div className="flex flex-none flex-col gap-2.5 border-b border-line-soft px-4 py-3 sm:px-5">
-            <FilterBar
-              label="Filter stock"
-              search={
-                <SearchInput
-                  label="Search ingredients"
-                  placeholder="Search ingredients"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              }
-              trailing={
-                <Button variant="primary" onClick={() => startCount()} disabled={!q.data}>
-                  {queue !== null ? 'Counting…' : shown.length < rows.length && stF !== 'all' ? 'Count these' : 'Start a count'}
+          <div className="flex flex-none flex-col gap-2 border-b border-line bg-surface px-4 pb-2.5 pt-3 sm:px-5">
+            {!docked && (
+              <div className="flex items-center gap-2">
+                <div className="min-w-0 flex-1">{searchBox}</div>
+                <Button variant="secondary" size="sm" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+                  Filters{activeChips.length > 0 ? ` (${activeChips.length})` : ''}
                 </Button>
-              }
-            >
-              <FilterSelect
-                label="Category"
-                value={cat}
-                onChange={setCat}
-                options={[
-                  { value: 'all', label: `All categories (${rows.length})` },
-                  ...categories.map(([c, n]) => ({ value: c, label: `${c} (${n})` })),
-                ]}
-              />
-              <Segmented<TierFilter>
-                label="Tier"
-                showLabel
-                value={tierF}
-                onChange={setTierF}
-                options={[
-                  { value: 'all', label: 'All' },
-                  { value: 'A', label: 'A', ariaLabel: 'Tier A' },
-                  { value: 'B', label: 'B', ariaLabel: 'Tier B' },
-                  { value: 'C', label: 'C', ariaLabel: 'Tier C' },
-                ]}
-              />
-              <FilterToggle active={grouped} onToggle={() => setGrouped((v) => !v)}>
-                Group by category
-              </FilterToggle>
-            </FilterBar>
+              </div>
+            )}
+            {(docked || open) && (
+              <FilterBar
+                label="Filter stock"
+                search={docked ? searchBox : undefined}
+                trailing={
+                  <>
+                    <FilterSelect label="Sort" value={sort} allValue={sort} onChange={(v) => setSort(v as StockSort)} options={STOCK_SORTS} />
+                    {docked && countButton}
+                  </>
+                }
+              >
+                <FilterSelect
+                  label="Category"
+                  value={cat}
+                  onChange={setCat}
+                  options={[
+                    { value: 'all', label: `All categories (${rows.length})` },
+                    ...categories.map(([c, n]) => ({ value: c, label: `${c} (${n})` })),
+                  ]}
+                />
+                <FilterSelect
+                  label="Supplier"
+                  value={more.sup}
+                  onChange={(v) => setM('sup', v)}
+                  options={[
+                    { value: 'all', label: 'All suppliers' },
+                    { value: 'none', label: 'No supplier yet' },
+                    ...suppliers.map((x) => ({ value: String(x.supplier_id), label: x.name })),
+                  ]}
+                />
+                <FilterSelect
+                  label="Storage"
+                  value={more.storage}
+                  onChange={(v) => setM('storage', v)}
+                  options={[{ value: 'all', label: 'Any storage' }, ...Object.entries(STORAGE_LABEL).map(([value, label]) => ({ value, label }))]}
+                />
+                <FilterSelect
+                  label="Trust"
+                  value={more.trust}
+                  onChange={(v) => setM('trust', v)}
+                  options={[{ value: 'all', label: 'Any trust' }, ...TRUST_KEYS.map((t) => ({ value: t, label: TRUST_WORD[t] }))]}
+                />
+                <FilterSelect
+                  label="Counted in"
+                  value={more.unit}
+                  onChange={(v) => setM('unit', v)}
+                  options={[{ value: 'all', label: 'Any unit' }, ...units.map((u) => ({ value: u, label: `In ${UNIT_LABEL[u] ?? u}` }))]}
+                />
+                <FilterSelect
+                  label="Used in"
+                  value={more.use}
+                  onChange={(v) => setM('use', v)}
+                  options={[{ value: 'all', label: 'Used or not' }, ...Object.entries(USE_LABEL).map(([value, label]) => ({ value, label }))]}
+                />
+                <Segmented<TierFilter>
+                  label="Tier"
+                  showLabel
+                  value={tierF}
+                  onChange={setTierF}
+                  options={[
+                    { value: 'all', label: 'All' },
+                    { value: 'A', label: 'A', ariaLabel: 'Tier A' },
+                    { value: 'B', label: 'B', ariaLabel: 'Tier B' },
+                    { value: 'C', label: 'C', ariaLabel: 'Tier C' },
+                  ]}
+                />
+                <FilterToggle active={more.est} onToggle={() => setM('est', !more.est)}>
+                  Estimated prices only
+                </FilterToggle>
+                <FilterToggle active={grouped} onToggle={() => setGrouped((v) => !v)}>
+                  Group by category
+                </FilterToggle>
+              </FilterBar>
+            )}
+            {!docked && <div className="flex">{countButton}</div>}
             <FilterChipRow label="Show">
               {FILTERS.map((f) => (
                 <FilterChip
@@ -228,8 +370,9 @@ export function StockScreen() {
                 setTierF('all')
                 pickFilter('all')
                 setSearch('')
+                setMore(NO_MORE)
               }}
-              summary={q.data && activeChips.length > 0 ? `${shown.length} of ${rows.length}` : undefined}
+              summary={q.data ? `${shown.length} of ${rows.length} ingredients` : undefined}
             />
           </div>
 
@@ -246,23 +389,12 @@ export function StockScreen() {
             <Loading what="Working out stock" />
           ) : q.isError ? (
             <ErrorBox error={q.error} what="stock" />
-          ) : queue !== null ? (
-            <CountFlow queue={queue} byId={byId} onDone={() => setQueue(null)} />
           ) : (
-            <div className="flex min-h-0 min-w-0 flex-1">
-              <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-                {shown.length === 0 ? (
-                  <Empty>Nothing in this view.</Empty>
-                ) : (
-                  <StockList rows={shown} selected={sel} onSelect={setSel} groupBy={grouped ? catOf : undefined} />
-                )}
-              </div>
-              {selected && (
-                <StockDrawer
-                  row={selected}
-                  onClose={() => setSel(null)}
-                  onCountNow={() => startCount(selected.ingredient_id)}
-                />
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+              {shown.length === 0 ? (
+                <Empty>Nothing in this view.</Empty>
+              ) : (
+                <StockList rows={shown} selected={null} onSelect={(id) => navigate(`/stock/${id}`)} groupBy={grouped ? catOf : undefined} />
               )}
             </div>
           )}

@@ -160,3 +160,63 @@ export const TIER_NOTE: Record<string, string> = {
   B: 'worked out, always reviewed',
   C: 'yes/no checklist',
 }
+
+/* ------------------------------------------------------------------ sort --- */
+
+export type StockSort = 'attention' | 'az' | 'za' | 'runout' | 'drift' | 'useby' | 'life' | 'trust'
+
+export const STOCK_SORTS: ReadonlyArray<{ value: StockSort; label: string }> = [
+  { value: 'attention', label: 'Sort: needs attention first' },
+  { value: 'az', label: 'Sort: A–Z' },
+  { value: 'za', label: 'Sort: Z–A' },
+  { value: 'runout', label: 'Sort: runs out soonest' },
+  { value: 'drift', label: 'Sort: biggest drift' },
+  { value: 'useby', label: 'Sort: use by soonest' },
+  { value: 'life', label: 'Sort: shortest shelf life' },
+  { value: 'trust', label: 'Sort: least trusted' },
+]
+
+const byName = (a: StockRow, b: StockRow) => a.name.localeCompare(b.name)
+
+/** Ascending on a nullable key; a missing value sorts last either way. */
+function nullsLast<T>(key: (r: StockRow) => T | null, order: (x: T, y: T) => number) {
+  return (a: StockRow, b: StockRow): number => {
+    const ka = key(a)
+    const kb = key(b)
+    if (ka === null) return kb === null ? byName(a, b) : 1
+    if (kb === null) return -1
+    return order(ka, kb) || byName(a, b)
+  }
+}
+
+const num = (x: number, y: number) => x - y
+
+export function stockSorter(key: StockSort): (a: StockRow, b: StockRow) => number {
+  switch (key) {
+    case 'attention':
+      return compareRows
+    case 'az':
+      return byName
+    case 'za':
+      return (a, b) => byName(b, a)
+    case 'runout':
+      return nullsLast(coverDays, cmp)
+    case 'drift':
+      // Largest absolute drift first.
+      return nullsLast((r) => (r.drift.drift_pct === null ? null : -Math.abs(r.drift.drift_pct)), num)
+    case 'useby':
+      return nullsLast((r) => soonestLiveBatch(r)?.days_left ?? null, num)
+    case 'life':
+      return nullsLast((r) => r.shelf_life.usable_days ?? r.shelf_life.shelf_life_days, num)
+    case 'trust':
+      return (a, b) => trustRank(a) - trustRank(b) || byName(a, b)
+  }
+}
+
+export const TRUST_WORD: Record<TrustLabel, string> = {
+  trusted: 'Trusted',
+  drifting: 'Drifting',
+  excluded: 'Excluded',
+  not_yet_judged: 'Not yet judged',
+  never_counted: 'Never counted',
+}

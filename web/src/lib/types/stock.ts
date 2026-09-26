@@ -476,7 +476,7 @@ export interface DraftOrdersResponse {
   supplier_count?: number
 }
 
-export type OrderAction = 'cancel' | 'mark_sent' | 'receive'
+export type OrderAction = 'confirm' | 'cancel' | 'mark_sent' | 'receive'
 
 export interface PurchaseOrder extends PersistedOrder {
   supplier_id: number
@@ -487,6 +487,9 @@ export interface PurchaseOrder extends PersistedOrder {
   cancelled_by: string | null
   cancel_reason: string | null
   routing_reason: string | null
+  /** Photo of the delivery note / receipt, when one was added. */
+  receipt_url?: string | null
+  receipt_uploaded_by?: string | null
   actions: OrderAction[]
 }
 

@@ -188,8 +188,14 @@ accumulated log is the argument for fixing the ordering cadence.
 ### 4.5 Sales and orders
 
 `sale` (+ `applied_modifiers` JSON, voided, is_refund, expanded_at), `purchase_order`
-(+ **routing_reason**, **delivery_fee_pence**), `po_line` (+ **received_expires_at**,
-**cap_reason**), `checklist_response`.
+(+ **routing_reason**, **delivery_fee_pence**, **receipt_asset_id** / **receipt_uploaded_by**
+— a photo of the delivery note or till receipt, evidence only), `po_line`
+(+ **received_expires_at**, **cap_reason**), `checklist_response`.
+
+**Receiving is what moves stock.** Receiving an order line (web order page or bot) writes
+a stock batch and a `DELIVERY` movement (`services/receive_delivery.py`), so Stock
+updates the moment an order is received — whoever or whatever records the receipt.
+The agent may *propose* a receipt; a human records it (invariant 10).
 
 ### 4.6 Channel marketing metrics
 
@@ -389,7 +395,7 @@ live consequences, mandatory impact preview, apply-from-today only) → **stock*
 tooltip; open batches, short-dated list, expiry write-offs; drift split into
 measurement vs expiry) → orders and suppliers (grouped, with cap reasons and the
 panic-buy report) → menu margin (velocity × margin scatter, y-axis toggle to
-margin-per-minute; the disagreement is the finding) → channels → today/money/P&L →
+margin-per-minute; the disagreement is the finding) → channels → today/money (P&L inside Sales) →
 import review.
 
 Design: numbers carry it (tabular figures, deliberately set). Resist the traffic
@@ -402,6 +408,33 @@ excluded from aggregates, never zero.
 `docs/design/` (light theme, Nunito, uppercase group/table labels — the owner lifted the
 earlier uppercase ban). Specs and owner decisions: `docs/design/specs/` (read
 `DECISIONS.md` first). This supersedes `docs/phase4/DESIGN-LAW.md` where they differ.
+
+**Current web navigation (owner feedback, 2026-09-26 — DECISIONS.md §9–19):**
+
+- *Every day:* Stock (On the shelf | Needs attention | What to buy; one page per
+  ingredient at `#/stock/<id>`), Agents. *Menu:* Menu items (Items | Recipes),
+  Ingredients, Suppliers. *Money:* Overview, Sales, Transactions, Expenses, Orders.
+- **Removed:** Reconcile, Profit & loss, Director's account. P&L lives on **Sales** as
+  "Profit by month" charts; Sales is now a dashboard (DECISIONS 21). The backend finance
+  endpoints stay; only the screens went.
+- **Orders** is its own page with three sub-pages: Orders (`#/orders`, rows, filterable by
+  text, supplier, status, dates, "no receipt yet"), Draft orders (`#/orders/drafts`),
+  Shop runs (`#/orders/shop-runs`). Old `#/money/expenses/orders…` links redirect.
+- **The Telegram bot is not in use for now (DECISIONS 18).** Orders are created and
+  confirmed on the web: "Create order" on a draft basket writes a DRAFT from today's run
+  (`POST /api/orders/from-draft`, recomputed server-side); the order page sets packs and a
+  named person confirms (`POST /api/orders/{id}/confirm`, invariant 1 unchanged). Nothing is
+  ever *sent* to a supplier by the app; "Mark sent" records that a person did.
+- **One page per order** (`#/orders/<id>`), laid out like Money › Overview: the order as a
+  statement (lines, subtotal, delivery, total), then confirm / mark sent / receive into
+  stock / cancel, and a side column with the receipt photo (`POST /api/orders/{id}/receipt`)
+  and what happened when.
+- **Stock and Ingredients** use the Menu items list layout and the same filter set
+  (search, category, supplier, storage, unit, used-in, estimates, sort); Stock keeps its
+  status chips, tier and trust, and invariant 6.
+- **Menu item page** fills the screen; ingredients are picked from a searchable,
+  category-filtered list; a size can copy another size's ingredients; a one-off item's
+  ingredient edit saves directly (no impact panel — relaxes §5.6 for that editor only).
 
 ### 10.9 API shapes (from the spec — restored)
 

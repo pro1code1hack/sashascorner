@@ -175,7 +175,7 @@ class TierOut(Out):
 # Orders
 # ==========================================================================
 
-OrderAction = Literal["cancel", "mark_sent", "receive"]
+OrderAction = Literal["confirm", "cancel", "mark_sent", "receive"]
 
 
 class PurchaseOrderOut(PersistedOrderOut):
@@ -189,8 +189,12 @@ class PurchaseOrderOut(PersistedOrderOut):
     cancelled_by: str | None = None
     cancel_reason: str | None = None
     routing_reason: str | None = None
+    receipt_url: str | None = Field(
+        default=None, description="Photo of the delivery note or receipt, when one was added."
+    )
+    receipt_uploaded_by: str | None = None
     actions: tuple[OrderAction, ...] = Field(
-        description="What the web may do next. Never confirm: that happens in Telegram."
+        description="What the web may do next. `confirm` is a named human's decision (invariant 1)."
     )
 
 
@@ -207,6 +211,19 @@ class OrdersListResponse(Out):
 class CancelIn(In):
     cancelled_by: Name
     reason: str | None = Field(default=None, max_length=400)
+
+
+class FromDraftIn(In):
+    supplier_id: int
+    created_by: Name
+
+
+class ConfirmIn(In):
+    confirmed_by: Name
+    final_packs: dict[int, int] = Field(
+        default_factory=dict,
+        description="po_line_id -> packs chosen. A line left out keeps its suggestion.",
+    )
 
 
 class MarkSentIn(In):

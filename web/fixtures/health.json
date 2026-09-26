@@ -3,7 +3,7 @@
   "database_dialect": "sqlite",
   "auth_configured": true,
   "ingredients": 113,
-  "menu_items": 320,
+  "menu_items": 323,
   "templates": 1,
   "movements": 16733
 }

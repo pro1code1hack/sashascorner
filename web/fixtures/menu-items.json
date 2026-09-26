@@ -1,24 +1,48 @@
 {
-  "as_of": "2026-09-26T10:26:38.970465Z",
+  "as_of": "2026-09-26T14:46:45.909806Z",
   "groups": [
     {
       "key": "276",
       "anchor_id": 276,
       "name": "'card' (£3.00)",
-      "category": null,
+      "category": "Spring saesonal drinks",
       "kind": "OTHER",
       "note": null,
       "template_id": null,
       "template_name": null,
       "photo_url": null,
-      "is_active": true,
+      "is_active": false,
       "on_till": false,
       "sizes": [
+        {
+          "menu_item_id": 321,
+          "size_code": "S",
+          "price_pence": 300,
+          "active": false,
+          "on_till": false,
+          "cost": {
+            "pence": "55.574",
+            "source": "ESTIMATE",
+            "is_estimate": true,
+            "is_missing": false,
+            "excluded_from_aggregates": false,
+            "note": null
+          },
+          "margin_pct": 81.475,
+          "labour_cost_pence": null,
+          "manual_recipe": true,
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": null,
+          "prep_is_estimate": null,
+          "prep_is_override": false,
+          "margin_per_minute_pence": null
+        },
         {
           "menu_item_id": 276,
           "size_code": "M",
           "price_pence": 300,
-          "active": true,
+          "active": false,
           "on_till": false,
           "cost": {
             "pence": null,
@@ -31,15 +55,71 @@
           "margin_pct": null,
           "labour_cost_pence": null,
           "manual_recipe": true,
-          "data_quality_flag": "Not a menu item -- a gift card sold at face value. Zero cost is correct."
+          "data_quality_flag": "Not a menu item -- a gift card sold at face value. Zero cost is correct.",
+          "has_recipe": false,
+          "prep_seconds": null,
+          "prep_is_estimate": null,
+          "prep_is_override": false,
+          "margin_per_minute_pence": null
+        },
+        {
+          "menu_item_id": 323,
+          "size_code": "XL",
+          "price_pence": 300,
+          "active": false,
+          "on_till": false,
+          "cost": {
+            "pence": null,
+            "source": null,
+            "is_estimate": false,
+            "is_missing": true,
+            "excluded_from_aggregates": true,
+            "note": "no recipe lines, so what this costs is unknown -- not zero"
+          },
+          "margin_pct": null,
+          "labour_cost_pence": null,
+          "manual_recipe": true,
+          "data_quality_flag": null,
+          "has_recipe": false,
+          "prep_seconds": null,
+          "prep_is_estimate": null,
+          "prep_is_override": false,
+          "margin_per_minute_pence": null
+        },
+        {
+          "menu_item_id": 322,
+          "size_code": "ONE",
+          "price_pence": 300,
+          "active": false,
+          "on_till": false,
+          "cost": {
+            "pence": null,
+            "source": null,
+            "is_estimate": false,
+            "is_missing": true,
+            "excluded_from_aggregates": true,
+            "note": "no recipe lines, so what this costs is unknown -- not zero"
+          },
+          "margin_pct": null,
+          "labour_cost_pence": null,
+          "manual_recipe": true,
+          "data_quality_flag": null,
+          "has_recipe": false,
+          "prep_seconds": null,
+          "prep_is_estimate": null,
+          "prep_is_override": false,
+          "margin_per_minute_pence": null
         }
       ],
       "lowest_margin": {
-        "pct": null,
-        "is_estimate": false,
-        "is_missing": true,
+        "pct": 81.475,
+        "is_estimate": true,
+        "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "267",
@@ -61,25 +141,33 @@
           "active": true,
           "on_till": false,
           "cost": {
-            "pence": "65",
+            "pence": "107.588",
             "source": "ESTIMATE",
             "is_estimate": true,
             "is_missing": false,
             "excluded_from_aggregates": false,
             "note": null
           },
-          "margin_pct": 87.0,
+          "margin_pct": 78.482,
           "labour_cost_pence": null,
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": null,
+          "prep_is_estimate": null,
+          "prep_is_override": false,
+          "margin_per_minute_pence": null
         }
       ],
       "lowest_margin": {
-        "pct": 87.0,
+        "pct": 78.482,
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "268",
@@ -111,7 +199,12 @@
           "margin_pct": 54.375,
           "labour_cost_pence": "6.041667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 15,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "348"
         }
       ],
       "lowest_margin": {
@@ -119,7 +212,10 @@
         "is_estimate": false,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "269",
@@ -151,7 +247,12 @@
           "margin_pct": 59.635,
           "labour_cost_pence": "32.222222",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 80,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "22.363235"
         }
       ],
       "lowest_margin": {
@@ -159,7 +260,10 @@
         "is_estimate": false,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "3",
@@ -191,7 +295,12 @@
           "margin_pct": 59.375,
           "labour_cost_pence": "12.083333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 30,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "380"
         }
       ],
       "lowest_margin": {
@@ -199,7 +308,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "1",
@@ -231,7 +343,12 @@
           "margin_pct": 85.994,
           "labour_cost_pence": "60.416667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 150,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "144.469318"
         },
         {
           "menu_item_id": 1,
@@ -250,7 +367,12 @@
           "margin_pct": 81.618,
           "labour_cost_pence": "66.458333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 165,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "136.525069"
         }
       ],
       "lowest_margin": {
@@ -258,7 +380,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "4",
@@ -290,7 +415,12 @@
           "margin_pct": 91.12,
           "labour_cost_pence": "32.222222",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 80,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "307.528500"
         },
         {
           "menu_item_id": 4,
@@ -309,7 +439,12 @@
           "margin_pct": 89.794,
           "labour_cost_pence": "36.25",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 90,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "293.327333"
         }
       ],
       "lowest_margin": {
@@ -317,7 +452,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "6",
@@ -349,7 +487,12 @@
           "margin_pct": 90.595,
           "labour_cost_pence": "18.125",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 45,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "229.507333"
         }
       ],
       "lowest_margin": {
@@ -357,7 +500,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "270",
@@ -389,7 +535,12 @@
           "margin_pct": 66.389,
           "labour_cost_pence": "12.083333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 30,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "478"
         }
       ],
       "lowest_margin": {
@@ -397,7 +548,10 @@
         "is_estimate": false,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "271",
@@ -429,7 +583,12 @@
           "margin_pct": 50.0,
           "labour_cost_pence": "12.083333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 30,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "2000"
         }
       ],
       "lowest_margin": {
@@ -437,7 +596,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "7",
@@ -469,7 +631,12 @@
           "margin_pct": 83.542,
           "labour_cost_pence": "18.125",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 45,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "311.890667"
         },
         {
           "menu_item_id": 7,
@@ -488,7 +655,12 @@
           "margin_pct": 73.754,
           "labour_cost_pence": "20.138889",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 50,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "274.365600"
         },
         {
           "menu_item_id": 9,
@@ -507,7 +679,12 @@
           "margin_pct": 75.762,
           "labour_cost_pence": "24.166667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 60,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "257.591"
         }
       ],
       "lowest_margin": {
@@ -515,7 +692,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "10",
@@ -547,7 +727,12 @@
           "margin_pct": 91.461,
           "labour_cost_pence": "16.111111",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 40,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "521.325750"
         },
         {
           "menu_item_id": 10,
@@ -566,7 +751,12 @@
           "margin_pct": 90.501,
           "labour_cost_pence": "18.125",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 45,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "482.671333"
         }
       ],
       "lowest_margin": {
@@ -574,7 +764,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "12",
@@ -606,7 +799,12 @@
           "margin_pct": 89.041,
           "labour_cost_pence": "38.263889",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 95,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "224.946353"
         },
         {
           "menu_item_id": 12,
@@ -625,7 +823,12 @@
           "margin_pct": 86.645,
           "labour_cost_pence": "42.291667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 105,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "207.947765"
         },
         {
           "menu_item_id": 14,
@@ -644,7 +847,12 @@
           "margin_pct": 85.149,
           "labour_cost_pence": "48.333333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 120,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "195.842559"
         }
       ],
       "lowest_margin": {
@@ -652,7 +860,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "15",
@@ -684,7 +895,12 @@
           "margin_pct": 89.866,
           "labour_cost_pence": "38.263889",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 95,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "227.030564"
         },
         {
           "menu_item_id": 15,
@@ -703,7 +919,12 @@
           "margin_pct": 87.693,
           "labour_cost_pence": "42.291667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 105,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "210.462050"
         },
         {
           "menu_item_id": 17,
@@ -722,7 +943,12 @@
           "margin_pct": 86.345,
           "labour_cost_pence": "48.333333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 120,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "198.592559"
         }
       ],
       "lowest_margin": {
@@ -730,7 +956,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "18",
@@ -762,7 +991,12 @@
           "margin_pct": 89.866,
           "labour_cost_pence": "38.263889",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 95,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "227.030564"
         },
         {
           "menu_item_id": 18,
@@ -781,7 +1015,12 @@
           "margin_pct": 87.693,
           "labour_cost_pence": "42.291667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 105,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "210.462050"
         },
         {
           "menu_item_id": 20,
@@ -800,7 +1039,12 @@
           "margin_pct": 86.345,
           "labour_cost_pence": "48.333333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 120,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "198.592559"
         }
       ],
       "lowest_margin": {
@@ -808,7 +1052,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "272",
@@ -840,7 +1087,12 @@
           "margin_pct": 45.0,
           "labour_cost_pence": "12.083333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 30,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "288"
         }
       ],
       "lowest_margin": {
@@ -848,7 +1100,10 @@
         "is_estimate": false,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "273",
@@ -880,7 +1135,12 @@
           "margin_pct": 46.829,
           "labour_cost_pence": "12.083333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 30,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "192"
         }
       ],
       "lowest_margin": {
@@ -888,7 +1148,10 @@
         "is_estimate": false,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "21",
@@ -920,7 +1183,12 @@
           "margin_pct": 81.863,
           "labour_cost_pence": "30.208333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 75,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "255.412047"
         },
         {
           "menu_item_id": 21,
@@ -939,7 +1207,12 @@
           "margin_pct": 71.685,
           "labour_cost_pence": "34.236111",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 85,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "207.464886"
         },
         {
           "menu_item_id": 23,
@@ -958,7 +1231,12 @@
           "margin_pct": 70.415,
           "labour_cost_pence": "40.277778",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 100,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "181.671071"
         }
       ],
       "lowest_margin": {
@@ -966,7 +1244,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "24",
@@ -998,7 +1279,12 @@
           "margin_pct": 88.768,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "304.346521"
         },
         {
           "menu_item_id": 24,
@@ -1017,7 +1303,12 @@
           "margin_pct": 85.813,
           "labour_cost_pence": "32.222222",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 80,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "270.310853"
         },
         {
           "menu_item_id": 26,
@@ -1036,7 +1327,12 @@
           "margin_pct": 83.134,
           "labour_cost_pence": "36.25",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 90,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "243.860667"
         }
       ],
       "lowest_margin": {
@@ -1044,7 +1340,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "27",
@@ -1076,7 +1375,12 @@
           "margin_pct": 82.55,
           "labour_cost_pence": "30.208333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 75,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "211.327342"
         },
         {
           "menu_item_id": 27,
@@ -1095,7 +1399,12 @@
           "margin_pct": 72.771,
           "labour_cost_pence": "34.236111",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 85,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "179.785993"
         },
         {
           "menu_item_id": 29,
@@ -1114,7 +1423,12 @@
           "margin_pct": 73.177,
           "labour_cost_pence": "40.277778",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 100,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "166.844012"
         }
       ],
       "lowest_margin": {
@@ -1122,7 +1436,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "274",
@@ -1154,7 +1471,12 @@
           "margin_pct": 79.375,
           "labour_cost_pence": "6.041667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 15,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "508"
         }
       ],
       "lowest_margin": {
@@ -1162,7 +1484,10 @@
         "is_estimate": false,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "318",
@@ -1194,7 +1519,12 @@
           "margin_pct": 78.767,
           "labour_cost_pence": "30.208333",
           "manual_recipe": false,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 75,
+          "prep_is_estimate": true,
+          "prep_is_override": false,
+          "margin_per_minute_pence": "201.642635"
         },
         {
           "menu_item_id": 319,
@@ -1213,7 +1543,12 @@
           "margin_pct": 78.414,
           "labour_cost_pence": "34.236111",
           "manual_recipe": false,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 85,
+          "prep_is_estimate": true,
+          "prep_is_override": false,
+          "margin_per_minute_pence": "199.264194"
         },
         {
           "menu_item_id": 320,
@@ -1232,7 +1567,12 @@
           "margin_pct": 74.333,
           "labour_cost_pence": "40.277778",
           "manual_recipe": false,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 100,
+          "prep_is_estimate": true,
+          "prep_is_override": false,
+          "margin_per_minute_pence": "182.858717"
         }
       ],
       "lowest_margin": {
@@ -1240,7 +1580,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "423"
     },
     {
       "key": "275",
@@ -1272,7 +1615,12 @@
           "margin_pct": 77.5,
           "labour_cost_pence": null,
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": null,
+          "prep_is_estimate": null,
+          "prep_is_override": false,
+          "margin_per_minute_pence": null
         }
       ],
       "lowest_margin": {
@@ -1280,7 +1628,10 @@
         "is_estimate": false,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "30",
@@ -1312,7 +1663,12 @@
           "margin_pct": 84.401,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "245.970051"
         },
         {
           "menu_item_id": 30,
@@ -1331,7 +1687,12 @@
           "margin_pct": 81.164,
           "labour_cost_pence": "32.222222",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 80,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "225.231441"
         },
         {
           "menu_item_id": 32,
@@ -1350,7 +1711,12 @@
           "margin_pct": 78.421,
           "labour_cost_pence": "36.25",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 90,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "209.123412"
         }
       ],
       "lowest_margin": {
@@ -1358,7 +1724,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "33",
@@ -1390,7 +1759,12 @@
           "margin_pct": 74.153,
           "labour_cost_pence": "60.416667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 150,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "130.509318"
         },
         {
           "menu_item_id": 33,
@@ -1409,7 +1783,12 @@
           "margin_pct": 71.884,
           "labour_cost_pence": "66.458333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 165,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "125.470524"
         }
       ],
       "lowest_margin": {
@@ -1417,7 +1796,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "35",
@@ -1449,7 +1831,12 @@
           "margin_pct": 89.208,
           "labour_cost_pence": "60.416667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 150,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "149.869318"
         },
         {
           "menu_item_id": 35,
@@ -1468,7 +1855,12 @@
           "margin_pct": 85.531,
           "labour_cost_pence": "66.458333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 165,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "143.070524"
         }
       ],
       "lowest_margin": {
@@ -1476,7 +1868,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "38",
@@ -1508,7 +1903,12 @@
           "margin_pct": 88.768,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "304.346521"
         },
         {
           "menu_item_id": 38,
@@ -1527,7 +1927,12 @@
           "margin_pct": 85.813,
           "labour_cost_pence": "32.222222",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 80,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "270.310853"
         },
         {
           "menu_item_id": 40,
@@ -1546,7 +1951,12 @@
           "margin_pct": 83.868,
           "labour_cost_pence": "36.25",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 90,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "257.194"
         }
       ],
       "lowest_margin": {
@@ -1554,7 +1964,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "41",
@@ -1586,7 +1999,12 @@
           "margin_pct": 81.863,
           "labour_cost_pence": "30.208333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 75,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "255.412047"
         },
         {
           "menu_item_id": 41,
@@ -1605,7 +2023,12 @@
           "margin_pct": 71.685,
           "labour_cost_pence": "34.236111",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 85,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "207.464886"
         },
         {
           "menu_item_id": 43,
@@ -1624,7 +2047,12 @@
           "margin_pct": 71.73,
           "labour_cost_pence": "40.277778",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 100,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "193.671071"
         }
       ],
       "lowest_margin": {
@@ -1632,7 +2060,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "37",
@@ -1664,7 +2095,12 @@
           "margin_pct": 42.0,
           "labour_cost_pence": null,
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": null,
+          "prep_is_estimate": null,
+          "prep_is_override": false,
+          "margin_per_minute_pence": null
         }
       ],
       "lowest_margin": {
@@ -1672,7 +2108,10 @@
         "is_estimate": false,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "277",
@@ -1704,7 +2143,12 @@
           "margin_pct": 67.895,
           "labour_cost_pence": "6.041667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 15,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "516"
         }
       ],
       "lowest_margin": {
@@ -1712,7 +2156,10 @@
         "is_estimate": false,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "278",
@@ -1744,7 +2191,12 @@
           "margin_pct": 27.882,
           "labour_cost_pence": null,
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": null,
+          "prep_is_estimate": null,
+          "prep_is_override": false,
+          "margin_per_minute_pence": null
         }
       ],
       "lowest_margin": {
@@ -1752,7 +2204,10 @@
         "is_estimate": false,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "44",
@@ -1784,7 +2239,12 @@
           "margin_pct": 72.262,
           "labour_cost_pence": "60.416667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 150,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "118.509318"
         },
         {
           "menu_item_id": 44,
@@ -1803,7 +2263,12 @@
           "margin_pct": 70.01,
           "labour_cost_pence": "66.458333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 165,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "114.561433"
         }
       ],
       "lowest_margin": {
@@ -1811,7 +2276,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "46",
@@ -1843,7 +2311,12 @@
           "margin_pct": 72.753,
           "labour_cost_pence": "20.138889",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 50,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "270.642776"
         }
       ],
       "lowest_margin": {
@@ -1851,7 +2324,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "279",
@@ -1883,7 +2359,12 @@
           "margin_pct": 68.0,
           "labour_cost_pence": "40.277778",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 100,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "102.000000"
         }
       ],
       "lowest_margin": {
@@ -1891,7 +2372,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "280",
@@ -1923,7 +2407,12 @@
           "margin_pct": 76.316,
           "labour_cost_pence": "12.083333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 30,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "290"
         }
       ],
       "lowest_margin": {
@@ -1931,7 +2420,10 @@
         "is_estimate": false,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "47",
@@ -1963,7 +2455,12 @@
           "margin_pct": 90.595,
           "labour_cost_pence": "18.125",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 45,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "229.507333"
         }
       ],
       "lowest_margin": {
@@ -1971,7 +2468,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "48",
@@ -2003,7 +2503,12 @@
           "margin_pct": 59.859,
           "labour_cost_pence": "20.138889",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 50,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "143.661600"
         }
       ],
       "lowest_margin": {
@@ -2011,7 +2516,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "49",
@@ -2043,7 +2551,12 @@
           "margin_pct": 63.633,
           "labour_cost_pence": "20.138889",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 50,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "183.261600"
         }
       ],
       "lowest_margin": {
@@ -2051,7 +2564,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "50",
@@ -2083,7 +2599,12 @@
           "margin_pct": 60.775,
           "labour_cost_pence": "20.138889",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 50,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "153.152189"
         }
       ],
       "lowest_margin": {
@@ -2091,7 +2612,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "51",
@@ -2123,7 +2647,12 @@
           "margin_pct": 90.595,
           "labour_cost_pence": "18.125",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 45,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "229.507333"
         }
       ],
       "lowest_margin": {
@@ -2131,7 +2660,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "52",
@@ -2163,7 +2695,12 @@
           "margin_pct": 92.789,
           "labour_cost_pence": null,
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": null,
+          "prep_is_estimate": null,
+          "prep_is_override": false,
+          "margin_per_minute_pence": null
         },
         {
           "menu_item_id": 52,
@@ -2182,7 +2719,12 @@
           "margin_pct": 92.246,
           "labour_cost_pence": null,
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": null,
+          "prep_is_estimate": null,
+          "prep_is_override": false,
+          "margin_per_minute_pence": null
         }
       ],
       "lowest_margin": {
@@ -2190,7 +2732,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "54",
@@ -2222,7 +2767,12 @@
           "margin_pct": 90.595,
           "labour_cost_pence": "18.125",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 45,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "229.507333"
         }
       ],
       "lowest_margin": {
@@ -2230,7 +2780,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "55",
@@ -2262,7 +2815,12 @@
           "margin_pct": 53.897,
           "labour_cost_pence": "18.125",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 45,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "251.517333"
         },
         {
           "menu_item_id": 55,
@@ -2281,7 +2839,12 @@
           "margin_pct": 56.106,
           "labour_cost_pence": "20.138889",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 50,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "249.109200"
         }
       ],
       "lowest_margin": {
@@ -2289,7 +2852,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "281",
@@ -2321,7 +2887,12 @@
           "margin_pct": 31.6,
           "labour_cost_pence": null,
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": null,
+          "prep_is_estimate": null,
+          "prep_is_override": false,
+          "margin_per_minute_pence": null
         }
       ],
       "lowest_margin": {
@@ -2329,7 +2900,10 @@
         "is_estimate": false,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "282",
@@ -2361,7 +2935,12 @@
           "margin_pct": 76.842,
           "labour_cost_pence": "6.041667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 15,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "584"
         }
       ],
       "lowest_margin": {
@@ -2369,7 +2948,10 @@
         "is_estimate": false,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "57",
@@ -2401,7 +2983,12 @@
           "margin_pct": 72.724,
           "labour_cost_pence": "34.236111",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 85,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "166.837619"
         }
       ],
       "lowest_margin": {
@@ -2409,7 +2996,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "58",
@@ -2441,7 +3031,12 @@
           "margin_pct": 91.065,
           "labour_cost_pence": "18.125",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 45,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "242.840667"
         }
       ],
       "lowest_margin": {
@@ -2449,7 +3044,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "59",
@@ -2481,7 +3079,12 @@
           "margin_pct": 91.065,
           "labour_cost_pence": "18.125",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 45,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "242.840667"
         }
       ],
       "lowest_margin": {
@@ -2489,7 +3092,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "60",
@@ -2521,7 +3127,12 @@
           "margin_pct": 90.595,
           "labour_cost_pence": "18.125",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 45,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "229.507333"
         }
       ],
       "lowest_margin": {
@@ -2529,7 +3140,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "61",
@@ -2561,7 +3175,12 @@
           "margin_pct": 83.562,
           "labour_cost_pence": "54.375",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 135,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "163.410353"
         },
         {
           "menu_item_id": 61,
@@ -2580,7 +3199,12 @@
           "margin_pct": 79.572,
           "labour_cost_pence": "60.416667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 150,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "152.777576"
         }
       ],
       "lowest_margin": {
@@ -2588,7 +3212,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "283",
@@ -2620,7 +3247,12 @@
           "margin_pct": 72.0,
           "labour_cost_pence": "88.611111",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 220,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "78.545455"
         }
       ],
       "lowest_margin": {
@@ -2628,7 +3260,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "284",
@@ -2660,7 +3295,12 @@
           "margin_pct": 75.238,
           "labour_cost_pence": "88.611111",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 220,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "86.181805"
         }
       ],
       "lowest_margin": {
@@ -2668,7 +3308,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "285",
@@ -2700,7 +3343,12 @@
           "margin_pct": 66.111,
           "labour_cost_pence": "40.277778",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 100,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "142.800000"
         }
       ],
       "lowest_margin": {
@@ -2708,7 +3356,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "286",
@@ -2740,7 +3391,12 @@
           "margin_pct": 81.053,
           "labour_cost_pence": "88.611111",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 220,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "84.000000"
         }
       ],
       "lowest_margin": {
@@ -2748,7 +3404,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "287",
@@ -2780,7 +3439,12 @@
           "margin_pct": 88.333,
           "labour_cost_pence": "40.277778",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 100,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "159.000000"
         }
       ],
       "lowest_margin": {
@@ -2788,7 +3452,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "63",
@@ -2820,7 +3487,12 @@
           "margin_pct": 82.812,
           "labour_cost_pence": "54.375",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 135,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "161.943686"
         },
         {
           "menu_item_id": 63,
@@ -2839,7 +3511,12 @@
           "margin_pct": 78.655,
           "labour_cost_pence": "60.416667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 150,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "151.017576"
         }
       ],
       "lowest_margin": {
@@ -2847,7 +3524,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "65",
@@ -2879,7 +3559,12 @@
           "margin_pct": 81.863,
           "labour_cost_pence": "30.208333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 75,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "255.412047"
         },
         {
           "menu_item_id": 65,
@@ -2898,7 +3583,12 @@
           "margin_pct": 71.685,
           "labour_cost_pence": "34.236111",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 85,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "207.464886"
         },
         {
           "menu_item_id": 67,
@@ -2917,7 +3607,12 @@
           "margin_pct": 70.415,
           "labour_cost_pence": "40.277778",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 100,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "181.671071"
         }
       ],
       "lowest_margin": {
@@ -2925,7 +3620,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "288",
@@ -2957,7 +3655,12 @@
           "margin_pct": 78.077,
           "labour_cost_pence": "42.291667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 105,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "178.462050"
         }
       ],
       "lowest_margin": {
@@ -2965,7 +3668,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "289",
@@ -2997,7 +3703,12 @@
           "margin_pct": 91.577,
           "labour_cost_pence": "42.291667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 105,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "209.319193"
         }
       ],
       "lowest_margin": {
@@ -3005,7 +3716,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "68",
@@ -3037,7 +3751,12 @@
           "margin_pct": 90.756,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "264.489378"
         },
         {
           "menu_item_id": 68,
@@ -3056,7 +3775,12 @@
           "margin_pct": 88.761,
           "labour_cost_pence": "32.222222",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 80,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "246.310853"
         },
         {
           "menu_item_id": 70,
@@ -3075,7 +3799,12 @@
           "margin_pct": 87.073,
           "labour_cost_pence": "36.25",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 90,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "232.194"
         }
       ],
       "lowest_margin": {
@@ -3083,7 +3812,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "71",
@@ -3115,7 +3847,12 @@
           "margin_pct": 81.518,
           "labour_cost_pence": "38.263889",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 95,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "185.346353"
         },
         {
           "menu_item_id": 71,
@@ -3134,7 +3871,12 @@
           "margin_pct": 77.515,
           "labour_cost_pence": "42.291667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 105,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "172.747765"
         },
         {
           "menu_item_id": 73,
@@ -3153,7 +3895,12 @@
           "margin_pct": 74.092,
           "labour_cost_pence": "48.333333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 120,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "155.592559"
         }
       ],
       "lowest_margin": {
@@ -3161,7 +3908,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "74",
@@ -3193,7 +3943,12 @@
           "margin_pct": 84.401,
           "labour_cost_pence": "38.263889",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 95,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "181.241090"
         },
         {
           "menu_item_id": 74,
@@ -3212,7 +3967,12 @@
           "margin_pct": 81.164,
           "labour_cost_pence": "42.291667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 105,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "171.604907"
         },
         {
           "menu_item_id": 76,
@@ -3231,7 +3991,12 @@
           "margin_pct": 77.868,
           "labour_cost_pence": "48.333333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 120,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "151.842559"
         }
       ],
       "lowest_margin": {
@@ -3239,7 +4004,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "77",
@@ -3271,7 +4039,12 @@
           "margin_pct": 81.518,
           "labour_cost_pence": "38.263889",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 95,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "185.346353"
         },
         {
           "menu_item_id": 77,
@@ -3290,7 +4063,12 @@
           "margin_pct": 77.515,
           "labour_cost_pence": "42.291667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 105,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "172.747765"
         },
         {
           "menu_item_id": 79,
@@ -3309,7 +4087,12 @@
           "margin_pct": 74.092,
           "labour_cost_pence": "48.333333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 120,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "155.592559"
         }
       ],
       "lowest_margin": {
@@ -3317,7 +4100,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "80",
@@ -3349,7 +4135,12 @@
           "margin_pct": 81.518,
           "labour_cost_pence": "38.263889",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 95,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "185.346353"
         },
         {
           "menu_item_id": 80,
@@ -3368,7 +4159,12 @@
           "margin_pct": 77.515,
           "labour_cost_pence": "42.291667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 105,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "172.747765"
         },
         {
           "menu_item_id": 82,
@@ -3387,7 +4183,12 @@
           "margin_pct": 74.092,
           "labour_cost_pence": "48.333333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 120,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "155.592559"
         }
       ],
       "lowest_margin": {
@@ -3395,7 +4196,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "83",
@@ -3427,7 +4231,12 @@
           "margin_pct": 81.518,
           "labour_cost_pence": "38.263889",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 95,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "185.346353"
         },
         {
           "menu_item_id": 83,
@@ -3446,7 +4255,12 @@
           "margin_pct": 77.515,
           "labour_cost_pence": "42.291667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 105,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "172.747765"
         },
         {
           "menu_item_id": 85,
@@ -3465,7 +4279,12 @@
           "margin_pct": 74.092,
           "labour_cost_pence": "48.333333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 120,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "155.592559"
         }
       ],
       "lowest_margin": {
@@ -3473,7 +4292,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "86",
@@ -3505,7 +4327,12 @@
           "margin_pct": 85.268,
           "labour_cost_pence": "38.263889",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 95,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "193.872669"
         },
         {
           "menu_item_id": 86,
@@ -3524,7 +4351,12 @@
           "margin_pct": 82.13,
           "labour_cost_pence": "42.291667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 105,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "183.033479"
         },
         {
           "menu_item_id": 88,
@@ -3543,7 +4375,12 @@
           "margin_pct": 79.449,
           "labour_cost_pence": "48.333333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 120,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "166.842559"
         }
       ],
       "lowest_margin": {
@@ -3551,7 +4388,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "137",
@@ -3583,7 +4423,12 @@
           "margin_pct": 83.793,
           "labour_cost_pence": "38.263889",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 95,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "211.688396"
         },
         {
           "menu_item_id": 137,
@@ -3602,7 +4447,12 @@
           "margin_pct": 80.783,
           "labour_cost_pence": "42.291667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 105,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "203.110823"
         }
       ],
       "lowest_margin": {
@@ -3610,7 +4460,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "139",
@@ -3642,7 +4495,12 @@
           "margin_pct": 83.156,
           "labour_cost_pence": "26.180556",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 65,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "214.927385"
         },
         {
           "menu_item_id": 139,
@@ -3661,7 +4519,12 @@
           "margin_pct": 72.53,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "186.506571"
         }
       ],
       "lowest_margin": {
@@ -3669,7 +4532,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "89",
@@ -3701,7 +4567,12 @@
           "margin_pct": 82.301,
           "labour_cost_pence": "26.180556",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 65,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "296.283041"
         },
         {
           "menu_item_id": 89,
@@ -3720,7 +4591,12 @@
           "margin_pct": 72.45,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "254.609092"
         }
       ],
       "lowest_margin": {
@@ -3728,7 +4604,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "141",
@@ -3760,7 +4639,12 @@
           "margin_pct": 83.669,
           "labour_cost_pence": "26.180556",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 65,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "262.590733"
         },
         {
           "menu_item_id": 141,
@@ -3779,7 +4663,12 @@
           "margin_pct": 73.623,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "227.180521"
         }
       ],
       "lowest_margin": {
@@ -3787,7 +4676,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "143",
@@ -3819,7 +4711,12 @@
           "margin_pct": 85.123,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "251.719966"
         },
         {
           "menu_item_id": 143,
@@ -3838,7 +4735,12 @@
           "margin_pct": 82.485,
           "labour_cost_pence": "32.222222",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 80,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "235.082956"
         }
       ],
       "lowest_margin": {
@@ -3846,7 +4748,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "91",
@@ -3878,7 +4783,12 @@
           "margin_pct": 82.301,
           "labour_cost_pence": "26.180556",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 65,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "296.283041"
         },
         {
           "menu_item_id": 91,
@@ -3897,7 +4807,12 @@
           "margin_pct": 72.45,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "254.609092"
         }
       ],
       "lowest_margin": {
@@ -3905,7 +4820,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "93",
@@ -3937,7 +4855,12 @@
           "margin_pct": 91.559,
           "labour_cost_pence": "38.263889",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 95,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "266.004186"
         },
         {
           "menu_item_id": 93,
@@ -3956,7 +4879,12 @@
           "margin_pct": 89.884,
           "labour_cost_pence": "42.291667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 105,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "246.539395"
         }
       ],
       "lowest_margin": {
@@ -3964,7 +4892,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "145",
@@ -3996,7 +4927,12 @@
           "margin_pct": 83.793,
           "labour_cost_pence": "38.263889",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 95,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "211.688396"
         },
         {
           "menu_item_id": 145,
@@ -4015,7 +4951,12 @@
           "margin_pct": 80.783,
           "labour_cost_pence": "42.291667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 105,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "203.110823"
         }
       ],
       "lowest_margin": {
@@ -4023,7 +4964,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "95",
@@ -4055,7 +4999,12 @@
           "margin_pct": 91.559,
           "labour_cost_pence": "38.263889",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 95,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "266.004186"
         },
         {
           "menu_item_id": 95,
@@ -4074,7 +5023,12 @@
           "margin_pct": 89.884,
           "labour_cost_pence": "42.291667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 105,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "246.539395"
         }
       ],
       "lowest_margin": {
@@ -4082,7 +5036,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "97",
@@ -4114,7 +5071,12 @@
           "margin_pct": 83.565,
           "labour_cost_pence": "26.180556",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 65,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "323.975348"
         },
         {
           "menu_item_id": 97,
@@ -4133,7 +5095,12 @@
           "margin_pct": 74.899,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "288.894807"
         }
       ],
       "lowest_margin": {
@@ -4141,7 +5108,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "147",
@@ -4173,7 +5143,12 @@
           "margin_pct": 71.96,
           "labour_cost_pence": "26.180556",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 65,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "212.559964"
         },
         {
           "menu_item_id": 147,
@@ -4192,7 +5167,12 @@
           "margin_pct": 74.065,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "222.193966"
         }
       ],
       "lowest_margin": {
@@ -4200,7 +5180,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "99",
@@ -4232,7 +5215,12 @@
           "margin_pct": 90.842,
           "labour_cost_pence": "38.263889",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 95,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "263.919975"
         },
         {
           "menu_item_id": 99,
@@ -4251,7 +5239,12 @@
           "margin_pct": 88.967,
           "labour_cost_pence": "42.291667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 105,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "244.025109"
         }
       ],
       "lowest_margin": {
@@ -4259,7 +5252,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "101",
@@ -4291,7 +5287,12 @@
           "margin_pct": 83.947,
           "labour_cost_pence": "26.180556",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 65,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "333.206118"
         },
         {
           "menu_item_id": 101,
@@ -4310,7 +5311,12 @@
           "margin_pct": 75.444,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "297.466235"
         }
       ],
       "lowest_margin": {
@@ -4318,7 +5324,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "149",
@@ -4350,7 +5359,12 @@
           "margin_pct": 83.669,
           "labour_cost_pence": "26.180556",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 65,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "262.590733"
         },
         {
           "menu_item_id": 149,
@@ -4369,7 +5383,12 @@
           "margin_pct": 73.623,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "227.180521"
         }
       ],
       "lowest_margin": {
@@ -4377,7 +5396,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "103",
@@ -4409,7 +5431,12 @@
           "margin_pct": 90.756,
           "labour_cost_pence": "38.263889",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 95,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "240.741028"
         },
         {
           "menu_item_id": 103,
@@ -4428,7 +5455,12 @@
           "margin_pct": 89.444,
           "labour_cost_pence": "42.291667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 105,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "235.110823"
         }
       ],
       "lowest_margin": {
@@ -4436,7 +5468,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "105",
@@ -4468,7 +5503,12 @@
           "margin_pct": 82.301,
           "labour_cost_pence": "26.180556",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 65,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "296.283041"
         },
         {
           "menu_item_id": 105,
@@ -4487,7 +5527,12 @@
           "margin_pct": 72.45,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "254.609092"
         }
       ],
       "lowest_margin": {
@@ -4495,7 +5540,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "151",
@@ -4527,7 +5575,12 @@
           "margin_pct": 90.338,
           "labour_cost_pence": "26.180556",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 65,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "308.538923"
         },
         {
           "menu_item_id": 151,
@@ -4546,7 +5599,12 @@
           "margin_pct": 89.401,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "306.517286"
         }
       ],
       "lowest_margin": {
@@ -4554,7 +5612,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "107",
@@ -4586,7 +5647,12 @@
           "margin_pct": 83.793,
           "labour_cost_pence": "38.263889",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 95,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "211.688396"
         },
         {
           "menu_item_id": 107,
@@ -4605,7 +5671,12 @@
           "margin_pct": 80.783,
           "labour_cost_pence": "42.291667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 105,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "203.110823"
         }
       ],
       "lowest_margin": {
@@ -4613,7 +5684,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "290",
@@ -4645,7 +5719,12 @@
           "margin_pct": 83.361,
           "labour_cost_pence": "42.291667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 105,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "190.539395"
         }
       ],
       "lowest_margin": {
@@ -4653,7 +5732,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "109",
@@ -4685,7 +5767,12 @@
           "margin_pct": 82.301,
           "labour_cost_pence": "26.180556",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 65,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "296.283041"
         },
         {
           "menu_item_id": 109,
@@ -4704,7 +5791,12 @@
           "margin_pct": 72.45,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "254.609092"
         }
       ],
       "lowest_margin": {
@@ -4712,7 +5804,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "153",
@@ -4744,7 +5839,12 @@
           "margin_pct": 82.135,
           "labour_cost_pence": "26.180556",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 65,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "265.359964"
         },
         {
           "menu_item_id": 153,
@@ -4763,7 +5863,12 @@
           "margin_pct": 73.636,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "252.466235"
         }
       ],
       "lowest_margin": {
@@ -4771,7 +5876,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "111",
@@ -4803,7 +5911,12 @@
           "margin_pct": 82.301,
           "labour_cost_pence": "26.180556",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 65,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "296.283041"
         },
         {
           "menu_item_id": 111,
@@ -4822,7 +5935,12 @@
           "margin_pct": 72.45,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "254.609092"
         }
       ],
       "lowest_margin": {
@@ -4830,7 +5948,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "155",
@@ -4862,7 +5983,12 @@
           "margin_pct": 83.793,
           "labour_cost_pence": "38.263889",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 95,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "211.688396"
         },
         {
           "menu_item_id": 155,
@@ -4881,7 +6007,12 @@
           "margin_pct": 80.783,
           "labour_cost_pence": "42.291667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 105,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "203.110823"
         }
       ],
       "lowest_margin": {
@@ -4889,7 +6020,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "113",
@@ -4921,7 +6055,12 @@
           "margin_pct": 83.565,
           "labour_cost_pence": "26.180556",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 65,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "323.975348"
         },
         {
           "menu_item_id": 113,
@@ -4940,7 +6079,12 @@
           "margin_pct": 74.328,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "280.323378"
         }
       ],
       "lowest_margin": {
@@ -4948,7 +6092,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "115",
@@ -4980,7 +6127,12 @@
           "margin_pct": 82.301,
           "labour_cost_pence": "26.180556",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 65,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "296.283041"
         },
         {
           "menu_item_id": 115,
@@ -4999,7 +6151,12 @@
           "margin_pct": 72.45,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "254.609092"
         }
       ],
       "lowest_margin": {
@@ -5007,7 +6164,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "117",
@@ -5039,7 +6199,12 @@
           "margin_pct": 81.898,
           "labour_cost_pence": "26.180556",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 65,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "317.513810"
         },
         {
           "menu_item_id": 117,
@@ -5058,7 +6223,12 @@
           "margin_pct": 72.565,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "279.894807"
         }
       ],
       "lowest_margin": {
@@ -5066,7 +6236,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "119",
@@ -5098,7 +6271,12 @@
           "margin_pct": 82.301,
           "labour_cost_pence": "26.180556",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 65,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "296.283041"
         },
         {
           "menu_item_id": 119,
@@ -5117,7 +6295,12 @@
           "margin_pct": 72.45,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "254.609092"
         }
       ],
       "lowest_margin": {
@@ -5125,7 +6308,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "121",
@@ -5157,7 +6343,12 @@
           "margin_pct": 81.898,
           "labour_cost_pence": "26.180556",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 65,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "317.513810"
         },
         {
           "menu_item_id": 121,
@@ -5176,7 +6367,12 @@
           "margin_pct": 72.565,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "279.894807"
         }
       ],
       "lowest_margin": {
@@ -5184,7 +6380,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "123",
@@ -5216,7 +6415,12 @@
           "margin_pct": 90.986,
           "labour_cost_pence": "26.180556",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 65,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "302.354308"
         },
         {
           "menu_item_id": 123,
@@ -5235,7 +6439,12 @@
           "margin_pct": 90.257,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "301.717286"
         }
       ],
       "lowest_margin": {
@@ -5243,7 +6452,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "125",
@@ -5275,7 +6487,12 @@
           "margin_pct": 81.157,
           "labour_cost_pence": "26.180556",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 65,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "322.129194"
         },
         {
           "menu_item_id": 125,
@@ -5294,7 +6511,12 @@
           "margin_pct": 71.531,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "282.037664"
         }
       ],
       "lowest_margin": {
@@ -5302,7 +6524,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "127",
@@ -5334,7 +6559,12 @@
           "margin_pct": 82.301,
           "labour_cost_pence": "26.180556",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 65,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "296.283041"
         },
         {
           "menu_item_id": 127,
@@ -5353,7 +6583,12 @@
           "margin_pct": 72.45,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "254.609092"
         }
       ],
       "lowest_margin": {
@@ -5361,7 +6596,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "129",
@@ -5393,7 +6631,12 @@
           "margin_pct": 83.793,
           "labour_cost_pence": "38.263889",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 95,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "211.688396"
         },
         {
           "menu_item_id": 129,
@@ -5412,7 +6655,12 @@
           "margin_pct": 80.783,
           "labour_cost_pence": "42.291667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 105,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "203.110823"
         }
       ],
       "lowest_margin": {
@@ -5420,7 +6668,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "131",
@@ -5452,7 +6703,12 @@
           "margin_pct": 82.301,
           "labour_cost_pence": "26.180556",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 65,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "296.283041"
         },
         {
           "menu_item_id": 131,
@@ -5471,7 +6727,12 @@
           "margin_pct": 72.45,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "254.609092"
         }
       ],
       "lowest_margin": {
@@ -5479,7 +6740,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "133",
@@ -5511,7 +6775,12 @@
           "margin_pct": 90.756,
           "labour_cost_pence": "38.263889",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 95,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "240.741028"
         },
         {
           "menu_item_id": 133,
@@ -5530,7 +6799,12 @@
           "margin_pct": 89.444,
           "labour_cost_pence": "42.291667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 105,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "235.110823"
         }
       ],
       "lowest_margin": {
@@ -5538,7 +6812,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "157",
@@ -5570,7 +6847,12 @@
           "margin_pct": 81.663,
           "labour_cost_pence": "26.180556",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 65,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "211.066751"
         },
         {
           "menu_item_id": 157,
@@ -5589,7 +6871,12 @@
           "margin_pct": 71.136,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "182.921697"
         }
       ],
       "lowest_margin": {
@@ -5597,7 +6884,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "159",
@@ -5629,7 +6919,12 @@
           "margin_pct": 80.707,
           "labour_cost_pence": "26.180556",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 65,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "260.744579"
         },
         {
           "menu_item_id": 159,
@@ -5648,7 +6943,12 @@
           "margin_pct": 72.45,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "254.609092"
         }
       ],
       "lowest_margin": {
@@ -5656,7 +6956,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "135",
@@ -5688,7 +6991,12 @@
           "margin_pct": 81.157,
           "labour_cost_pence": "26.180556",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 65,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "322.129194"
         },
         {
           "menu_item_id": 135,
@@ -5707,7 +7015,12 @@
           "margin_pct": 71.531,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "282.037664"
         }
       ],
       "lowest_margin": {
@@ -5715,7 +7028,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "161",
@@ -5747,7 +7063,12 @@
           "margin_pct": 91.065,
           "labour_cost_pence": "18.125",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 45,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "242.840667"
         }
       ],
       "lowest_margin": {
@@ -5755,7 +7076,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "162",
@@ -5787,7 +7111,12 @@
           "margin_pct": 61.579,
           "labour_cost_pence": "6.041667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 15,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "468"
         }
       ],
       "lowest_margin": {
@@ -5795,7 +7124,10 @@
         "is_estimate": false,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "163",
@@ -5827,7 +7159,12 @@
           "margin_pct": 83.562,
           "labour_cost_pence": "54.375",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 135,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "163.410353"
         },
         {
           "menu_item_id": 163,
@@ -5846,7 +7183,12 @@
           "margin_pct": 79.572,
           "labour_cost_pence": "60.416667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 150,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "152.777576"
         }
       ],
       "lowest_margin": {
@@ -5854,7 +7196,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "291",
@@ -5886,7 +7231,12 @@
           "margin_pct": 60.0,
           "labour_cost_pence": "12.083333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 30,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "480"
         }
       ],
       "lowest_margin": {
@@ -5894,7 +7244,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "165",
@@ -5926,7 +7279,12 @@
           "margin_pct": 60.0,
           "labour_cost_pence": "12.083333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 30,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "3000"
         }
       ],
       "lowest_margin": {
@@ -5934,7 +7292,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "166",
@@ -5966,7 +7327,12 @@
           "margin_pct": 82.114,
           "labour_cost_pence": "30.208333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 75,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "210.212047"
         },
         {
           "menu_item_id": 166,
@@ -5985,7 +7351,12 @@
           "margin_pct": 71.974,
           "labour_cost_pence": "34.236111",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 85,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "177.817827"
         },
         {
           "menu_item_id": 168,
@@ -6004,7 +7375,12 @@
           "margin_pct": 72.443,
           "labour_cost_pence": "40.277778",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 100,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "165.171071"
         }
       ],
       "lowest_margin": {
@@ -6012,7 +7388,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "169",
@@ -6044,7 +7423,12 @@
           "margin_pct": 88.768,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "304.346521"
         },
         {
           "menu_item_id": 169,
@@ -6063,7 +7447,12 @@
           "margin_pct": 85.813,
           "labour_cost_pence": "32.222222",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 80,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "270.310853"
         },
         {
           "menu_item_id": 171,
@@ -6082,7 +7471,12 @@
           "margin_pct": 83.134,
           "labour_cost_pence": "36.25",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 90,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "243.860667"
         }
       ],
       "lowest_margin": {
@@ -6090,7 +7484,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "172",
@@ -6122,7 +7519,12 @@
           "margin_pct": 61.176,
           "labour_cost_pence": null,
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": null,
+          "prep_is_estimate": null,
+          "prep_is_override": false,
+          "margin_per_minute_pence": null
         }
       ],
       "lowest_margin": {
@@ -6130,7 +7532,10 @@
         "is_estimate": false,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "292",
@@ -6162,7 +7567,12 @@
           "margin_pct": 55.61,
           "labour_cost_pence": "12.083333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 30,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "228"
         }
       ],
       "lowest_margin": {
@@ -6170,7 +7580,10 @@
         "is_estimate": false,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "293",
@@ -6202,7 +7615,12 @@
           "margin_pct": 83.597,
           "labour_cost_pence": null,
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": null,
+          "prep_is_estimate": null,
+          "prep_is_override": false,
+          "margin_per_minute_pence": null
         }
       ],
       "lowest_margin": {
@@ -6210,7 +7628,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "294",
@@ -6242,7 +7663,12 @@
           "margin_pct": 68.0,
           "labour_cost_pence": "4.027778",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 10,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "204.000000"
         }
       ],
       "lowest_margin": {
@@ -6250,7 +7676,10 @@
         "is_estimate": false,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "295",
@@ -6282,7 +7711,12 @@
           "margin_pct": 60.563,
           "labour_cost_pence": "12.083333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 30,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "430"
         }
       ],
       "lowest_margin": {
@@ -6290,7 +7724,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "173",
@@ -6322,7 +7759,12 @@
           "margin_pct": 90.595,
           "labour_cost_pence": "18.125",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 45,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "229.507333"
         }
       ],
       "lowest_margin": {
@@ -6330,7 +7772,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "174",
@@ -6362,7 +7807,12 @@
           "margin_pct": 88.768,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "304.346521"
         },
         {
           "menu_item_id": 174,
@@ -6381,7 +7831,12 @@
           "margin_pct": 85.813,
           "labour_cost_pence": "32.222222",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 80,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "270.310853"
         },
         {
           "menu_item_id": 176,
@@ -6400,7 +7855,12 @@
           "margin_pct": 83.868,
           "labour_cost_pence": "36.25",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 90,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "257.194"
         }
       ],
       "lowest_margin": {
@@ -6408,7 +7868,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "177",
@@ -6440,7 +7903,12 @@
           "margin_pct": 81.863,
           "labour_cost_pence": "30.208333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 75,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "255.412047"
         },
         {
           "menu_item_id": 177,
@@ -6459,7 +7927,12 @@
           "margin_pct": 71.685,
           "labour_cost_pence": "34.236111",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 85,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "207.464886"
         },
         {
           "menu_item_id": 179,
@@ -6478,7 +7951,12 @@
           "margin_pct": 71.088,
           "labour_cost_pence": "40.277778",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 100,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "187.671071"
         }
       ],
       "lowest_margin": {
@@ -6486,7 +7964,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "180",
@@ -6518,7 +7999,12 @@
           "margin_pct": 81.107,
           "labour_cost_pence": "30.208333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 75,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "220.612047"
         },
         {
           "menu_item_id": 180,
@@ -6537,7 +8023,12 @@
           "margin_pct": 70.651,
           "labour_cost_pence": "34.236111",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 85,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "184.523709"
         },
         {
           "menu_item_id": 182,
@@ -6556,7 +8047,12 @@
           "margin_pct": 70.321,
           "labour_cost_pence": "40.277778",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 100,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "168.771071"
         }
       ],
       "lowest_margin": {
@@ -6564,7 +8060,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "183",
@@ -6596,7 +8095,12 @@
           "margin_pct": 71.408,
           "labour_cost_pence": "20.138889",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 50,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "269.922776"
         }
       ],
       "lowest_margin": {
@@ -6604,7 +8108,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "296",
@@ -6636,7 +8143,12 @@
           "margin_pct": 27.882,
           "labour_cost_pence": null,
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": null,
+          "prep_is_estimate": null,
+          "prep_is_override": false,
+          "margin_per_minute_pence": null
         }
       ],
       "lowest_margin": {
@@ -6644,7 +8156,10 @@
         "is_estimate": false,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "190",
@@ -6676,7 +8191,12 @@
           "margin_pct": 85.216,
           "labour_cost_pence": "18.125",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 45,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "386.314196"
         },
         {
           "menu_item_id": 190,
@@ -6695,7 +8215,12 @@
           "margin_pct": 76.88,
           "labour_cost_pence": "20.138889",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 50,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "341.346776"
         },
         {
           "menu_item_id": 192,
@@ -6714,7 +8239,12 @@
           "margin_pct": 78.352,
           "labour_cost_pence": "24.166667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 60,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "313.408647"
         }
       ],
       "lowest_margin": {
@@ -6722,7 +8252,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "184",
@@ -6754,7 +8287,12 @@
           "margin_pct": 88.768,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "304.346521"
         },
         {
           "menu_item_id": 184,
@@ -6773,7 +8311,12 @@
           "margin_pct": 85.813,
           "labour_cost_pence": "32.222222",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 80,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "270.310853"
         },
         {
           "menu_item_id": 186,
@@ -6792,7 +8335,12 @@
           "margin_pct": 83.868,
           "labour_cost_pence": "36.25",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 90,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "257.194"
         }
       ],
       "lowest_margin": {
@@ -6800,7 +8348,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "297",
@@ -6832,7 +8383,12 @@
           "margin_pct": 54.375,
           "labour_cost_pence": "6.041667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 15,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "348"
         }
       ],
       "lowest_margin": {
@@ -6840,7 +8396,10 @@
         "is_estimate": false,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "187",
@@ -6872,7 +8431,12 @@
           "margin_pct": 81.863,
           "labour_cost_pence": "30.208333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 75,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "255.412047"
         },
         {
           "menu_item_id": 187,
@@ -6891,7 +8455,12 @@
           "margin_pct": 71.685,
           "labour_cost_pence": "34.236111",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 85,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "207.464886"
         },
         {
           "menu_item_id": 189,
@@ -6910,7 +8479,12 @@
           "margin_pct": 71.088,
           "labour_cost_pence": "40.277778",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 100,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "187.671071"
         }
       ],
       "lowest_margin": {
@@ -6918,7 +8492,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "193",
@@ -6950,7 +8527,12 @@
           "margin_pct": 89.753,
           "labour_cost_pence": null,
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": null,
+          "prep_is_estimate": null,
+          "prep_is_override": false,
+          "margin_per_minute_pence": null
         },
         {
           "menu_item_id": 193,
@@ -6969,7 +8551,12 @@
           "margin_pct": 88.093,
           "labour_cost_pence": null,
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": null,
+          "prep_is_estimate": null,
+          "prep_is_override": false,
+          "margin_per_minute_pence": null
         }
       ],
       "lowest_margin": {
@@ -6977,7 +8564,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "195",
@@ -7009,7 +8599,12 @@
           "margin_pct": 83.562,
           "labour_cost_pence": "54.375",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 135,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "163.410353"
         },
         {
           "menu_item_id": 195,
@@ -7028,7 +8623,12 @@
           "margin_pct": 79.572,
           "labour_cost_pence": "60.416667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 150,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "152.777576"
         }
       ],
       "lowest_margin": {
@@ -7036,7 +8636,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "197",
@@ -7068,7 +8671,12 @@
           "margin_pct": 90.986,
           "labour_cost_pence": "26.180556",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 65,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "302.354308"
         },
         {
           "menu_item_id": 197,
@@ -7087,7 +8695,12 @@
           "margin_pct": 90.257,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "301.717286"
         }
       ],
       "lowest_margin": {
@@ -7095,7 +8708,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "199",
@@ -7127,7 +8743,12 @@
           "margin_pct": 89.753,
           "labour_cost_pence": null,
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": null,
+          "prep_is_estimate": null,
+          "prep_is_override": false,
+          "margin_per_minute_pence": null
         },
         {
           "menu_item_id": 199,
@@ -7146,7 +8767,12 @@
           "margin_pct": 88.093,
           "labour_cost_pence": null,
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": null,
+          "prep_is_estimate": null,
+          "prep_is_override": false,
+          "margin_per_minute_pence": null
         }
       ],
       "lowest_margin": {
@@ -7154,7 +8780,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "201",
@@ -7186,7 +8815,12 @@
           "margin_pct": 88.768,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "304.346521"
         },
         {
           "menu_item_id": 201,
@@ -7205,7 +8839,12 @@
           "margin_pct": 85.813,
           "labour_cost_pence": "32.222222",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 80,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "270.310853"
         },
         {
           "menu_item_id": 203,
@@ -7224,7 +8863,12 @@
           "margin_pct": 83.134,
           "labour_cost_pence": "36.25",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 90,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "243.860667"
         }
       ],
       "lowest_margin": {
@@ -7232,7 +8876,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "204",
@@ -7264,7 +8911,12 @@
           "margin_pct": 82.578,
           "labour_cost_pence": "30.208333",
           "manual_recipe": false,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 75,
+          "prep_is_estimate": true,
+          "prep_is_override": false,
+          "margin_per_minute_pence": "257.642635"
         },
         {
           "menu_item_id": 204,
@@ -7283,7 +8935,12 @@
           "margin_pct": 81.047,
           "labour_cost_pence": "34.236111",
           "manual_recipe": false,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 85,
+          "prep_is_estimate": true,
+          "prep_is_override": false,
+          "margin_per_minute_pence": "234.558311"
         },
         {
           "menu_item_id": 206,
@@ -7302,7 +8959,12 @@
           "margin_pct": 75.527,
           "labour_cost_pence": "54.375",
           "manual_recipe": false,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 135,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "144.339791"
         }
       ],
       "lowest_margin": {
@@ -7310,7 +8972,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "407"
     },
     {
       "key": "298",
@@ -7342,7 +9007,12 @@
           "margin_pct": 57.0,
           "labour_cost_pence": "4.027778",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 10,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "342.000000"
         }
       ],
       "lowest_margin": {
@@ -7350,7 +9020,10 @@
         "is_estimate": false,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "299",
@@ -7382,7 +9055,12 @@
           "margin_pct": 67.368,
           "labour_cost_pence": "4.027778",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 10,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "768.000000"
         }
       ],
       "lowest_margin": {
@@ -7390,7 +9068,10 @@
         "is_estimate": false,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "207",
@@ -7422,7 +9103,12 @@
           "margin_pct": 88.768,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "304.346521"
         },
         {
           "menu_item_id": 207,
@@ -7441,7 +9127,12 @@
           "margin_pct": 85.813,
           "labour_cost_pence": "32.222222",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 80,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "270.310853"
         },
         {
           "menu_item_id": 209,
@@ -7460,7 +9151,12 @@
           "margin_pct": 83.134,
           "labour_cost_pence": "36.25",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 90,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "243.860667"
         }
       ],
       "lowest_margin": {
@@ -7468,7 +9164,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "210",
@@ -7500,7 +9199,12 @@
           "margin_pct": 81.863,
           "labour_cost_pence": "30.208333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 75,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "255.412047"
         },
         {
           "menu_item_id": 210,
@@ -7519,7 +9223,12 @@
           "margin_pct": 71.685,
           "labour_cost_pence": "34.236111",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 85,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "207.464886"
         },
         {
           "menu_item_id": 212,
@@ -7538,7 +9247,12 @@
           "margin_pct": 71.088,
           "labour_cost_pence": "40.277778",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 100,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "187.671071"
         }
       ],
       "lowest_margin": {
@@ -7546,7 +9260,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "213",
@@ -7578,7 +9295,12 @@
           "margin_pct": 65.469,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "196.407025"
         },
         {
           "menu_item_id": 213,
@@ -7597,7 +9319,12 @@
           "margin_pct": 67.911,
           "labour_cost_pence": "32.222222",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 80,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "193.546147"
         },
         {
           "menu_item_id": 215,
@@ -7616,7 +9343,12 @@
           "margin_pct": 70.004,
           "labour_cost_pence": "36.25",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 90,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "191.343019"
         }
       ],
       "lowest_margin": {
@@ -7624,7 +9356,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "300",
@@ -7656,7 +9391,12 @@
           "margin_pct": 59.375,
           "labour_cost_pence": "12.083333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 30,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "380"
         }
       ],
       "lowest_margin": {
@@ -7664,7 +9404,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "302",
@@ -7696,7 +9439,12 @@
           "margin_pct": 55.882,
           "labour_cost_pence": "42.291667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 105,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "108.571429"
         }
       ],
       "lowest_margin": {
@@ -7704,7 +9452,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "301",
@@ -7736,7 +9487,12 @@
           "margin_pct": 55.556,
           "labour_cost_pence": "12.083333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 30,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "400"
         }
       ],
       "lowest_margin": {
@@ -7744,7 +9500,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "216",
@@ -7776,7 +9535,12 @@
           "margin_pct": 88.768,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "304.346521"
         },
         {
           "menu_item_id": 216,
@@ -7795,7 +9559,12 @@
           "margin_pct": 85.813,
           "labour_cost_pence": "32.222222",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 80,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "270.310853"
         },
         {
           "menu_item_id": 218,
@@ -7814,7 +9583,12 @@
           "margin_pct": 83.134,
           "labour_cost_pence": "36.25",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 90,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "243.860667"
         }
       ],
       "lowest_margin": {
@@ -7822,7 +9596,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "219",
@@ -7854,7 +9631,12 @@
           "margin_pct": 88.768,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "304.346521"
         },
         {
           "menu_item_id": 219,
@@ -7873,7 +9655,12 @@
           "margin_pct": 85.813,
           "labour_cost_pence": "32.222222",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 80,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "270.310853"
         },
         {
           "menu_item_id": 221,
@@ -7892,7 +9679,12 @@
           "margin_pct": 83.868,
           "labour_cost_pence": "36.25",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 90,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "257.194"
         }
       ],
       "lowest_margin": {
@@ -7900,7 +9692,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "222",
@@ -7932,7 +9727,12 @@
           "margin_pct": 81.863,
           "labour_cost_pence": "30.208333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 75,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "255.412047"
         },
         {
           "menu_item_id": 222,
@@ -7951,7 +9751,12 @@
           "margin_pct": 71.685,
           "labour_cost_pence": "34.236111",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 85,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "207.464886"
         },
         {
           "menu_item_id": 224,
@@ -7970,7 +9775,12 @@
           "margin_pct": 71.088,
           "labour_cost_pence": "40.277778",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 100,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "187.671071"
         }
       ],
       "lowest_margin": {
@@ -7978,7 +9788,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "225",
@@ -8010,7 +9823,12 @@
           "margin_pct": 79.316,
           "labour_cost_pence": "30.208333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 75,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "253.812047"
         },
         {
           "menu_item_id": 225,
@@ -8029,7 +9847,12 @@
           "margin_pct": 68.073,
           "labour_cost_pence": "34.236111",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 85,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "201.817827"
         },
         {
           "menu_item_id": 227,
@@ -8048,7 +9871,12 @@
           "margin_pct": 67.127,
           "labour_cost_pence": "40.277778",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 100,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "185.271071"
         }
       ],
       "lowest_margin": {
@@ -8056,7 +9884,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "303",
@@ -8088,7 +9919,12 @@
           "margin_pct": 57.5,
           "labour_cost_pence": "40.277778",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 100,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "124.200000"
         }
       ],
       "lowest_margin": {
@@ -8096,7 +9932,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "304",
@@ -8128,7 +9967,12 @@
           "margin_pct": 57.5,
           "labour_cost_pence": "40.277778",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 100,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "89.700000"
         }
       ],
       "lowest_margin": {
@@ -8136,7 +9980,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "305",
@@ -8168,7 +10015,12 @@
           "margin_pct": 45.75,
           "labour_cost_pence": "40.277778",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 100,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "109.800000"
         }
       ],
       "lowest_margin": {
@@ -8176,7 +10028,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "306",
@@ -8208,7 +10063,12 @@
           "margin_pct": 60.526,
           "labour_cost_pence": "12.083333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 30,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "230"
         }
       ],
       "lowest_margin": {
@@ -8216,7 +10076,10 @@
         "is_estimate": false,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "228",
@@ -8248,7 +10111,12 @@
           "margin_pct": 58.065,
           "labour_cost_pence": "12.083333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 30,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "360"
         }
       ],
       "lowest_margin": {
@@ -8256,7 +10124,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "229",
@@ -8288,7 +10159,12 @@
           "margin_pct": 71.085,
           "labour_cost_pence": "60.416667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 150,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "125.109318"
         },
         {
           "menu_item_id": 229,
@@ -8307,7 +10183,12 @@
           "margin_pct": 68.134,
           "labour_cost_pence": "66.458333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 165,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "118.925069"
         }
       ],
       "lowest_margin": {
@@ -8315,7 +10196,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "231",
@@ -8347,7 +10231,12 @@
           "margin_pct": 88.768,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "304.346521"
         },
         {
           "menu_item_id": 231,
@@ -8366,7 +10255,12 @@
           "margin_pct": 85.813,
           "labour_cost_pence": "32.222222",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 80,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "270.310853"
         },
         {
           "menu_item_id": 233,
@@ -8385,7 +10279,12 @@
           "margin_pct": 83.134,
           "labour_cost_pence": "36.25",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 90,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "243.860667"
         }
       ],
       "lowest_margin": {
@@ -8393,7 +10292,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "234",
@@ -8425,7 +10327,12 @@
           "margin_pct": 81.863,
           "labour_cost_pence": "30.208333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 75,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "255.412047"
         },
         {
           "menu_item_id": 234,
@@ -8444,7 +10351,12 @@
           "margin_pct": 71.685,
           "labour_cost_pence": "34.236111",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 85,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "207.464886"
         },
         {
           "menu_item_id": 236,
@@ -8463,7 +10375,12 @@
           "margin_pct": 71.088,
           "labour_cost_pence": "40.277778",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 100,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "187.671071"
         }
       ],
       "lowest_margin": {
@@ -8471,7 +10388,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "237",
@@ -8503,7 +10423,12 @@
           "margin_pct": 85.994,
           "labour_cost_pence": "60.416667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 150,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "144.469318"
         },
         {
           "menu_item_id": 237,
@@ -8522,7 +10447,12 @@
           "margin_pct": 81.618,
           "labour_cost_pence": "66.458333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 165,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "136.525069"
         }
       ],
       "lowest_margin": {
@@ -8530,7 +10460,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "239",
@@ -8562,7 +10495,12 @@
           "margin_pct": 75.746,
           "labour_cost_pence": "20.138889",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 50,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "172.701600"
         }
       ],
       "lowest_margin": {
@@ -8570,7 +10508,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "240",
@@ -8602,7 +10543,12 @@
           "margin_pct": 75.872,
           "labour_cost_pence": "20.138889",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 50,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "200.301600"
         }
       ],
       "lowest_margin": {
@@ -8610,7 +10556,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "241",
@@ -8642,7 +10591,12 @@
           "margin_pct": 76.262,
           "labour_cost_pence": "20.138889",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 50,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "183.028658"
         }
       ],
       "lowest_margin": {
@@ -8650,7 +10604,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "242",
@@ -8682,7 +10639,12 @@
           "margin_pct": 74.559,
           "labour_cost_pence": "32.222222",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 80,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "111.838500"
         }
       ],
       "lowest_margin": {
@@ -8690,7 +10652,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "243",
@@ -8722,7 +10687,12 @@
           "margin_pct": 58.065,
           "labour_cost_pence": "12.083333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 30,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "360"
         }
       ],
       "lowest_margin": {
@@ -8730,7 +10700,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "307",
@@ -8762,7 +10735,12 @@
           "margin_pct": 80.0,
           "labour_cost_pence": "6.041667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 15,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "512"
         }
       ],
       "lowest_margin": {
@@ -8770,7 +10748,10 @@
         "is_estimate": false,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "244",
@@ -8802,7 +10783,12 @@
           "margin_pct": 84.916,
           "labour_cost_pence": null,
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": null,
+          "prep_is_estimate": null,
+          "prep_is_override": false,
+          "margin_per_minute_pence": null
         },
         {
           "menu_item_id": 244,
@@ -8821,7 +10807,12 @@
           "margin_pct": 79.868,
           "labour_cost_pence": null,
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": null,
+          "prep_is_estimate": null,
+          "prep_is_override": false,
+          "margin_per_minute_pence": null
         }
       ],
       "lowest_margin": {
@@ -8829,7 +10820,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "246",
@@ -8861,7 +10855,12 @@
           "margin_pct": 83.775,
           "labour_cost_pence": null,
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": null,
+          "prep_is_estimate": null,
+          "prep_is_override": false,
+          "margin_per_minute_pence": null
         }
       ],
       "lowest_margin": {
@@ -8869,7 +10868,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "308",
@@ -8901,7 +10903,12 @@
           "margin_pct": 78.861,
           "labour_cost_pence": null,
           "manual_recipe": true,
-          "data_quality_flag": "Probable typo -- verify the intended item name."
+          "data_quality_flag": "Probable typo -- verify the intended item name.",
+          "has_recipe": true,
+          "prep_seconds": null,
+          "prep_is_estimate": null,
+          "prep_is_override": false,
+          "margin_per_minute_pence": null
         }
       ],
       "lowest_margin": {
@@ -8909,7 +10916,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "247",
@@ -8941,7 +10951,12 @@
           "margin_pct": 83.562,
           "labour_cost_pence": "54.375",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 135,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "163.410353"
         },
         {
           "menu_item_id": 247,
@@ -8960,7 +10975,12 @@
           "margin_pct": 79.572,
           "labour_cost_pence": "60.416667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 150,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "152.777576"
         }
       ],
       "lowest_margin": {
@@ -8968,7 +10988,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "309",
@@ -9000,7 +11023,12 @@
           "margin_pct": 83.0,
           "labour_cost_pence": "72.5",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 180,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "83"
         }
       ],
       "lowest_margin": {
@@ -9008,7 +11036,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "310",
@@ -9040,7 +11071,12 @@
           "margin_pct": 77.5,
           "labour_cost_pence": null,
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": null,
+          "prep_is_estimate": null,
+          "prep_is_override": false,
+          "margin_per_minute_pence": null
         }
       ],
       "lowest_margin": {
@@ -9048,7 +11084,10 @@
         "is_estimate": false,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "311",
@@ -9080,7 +11119,12 @@
           "margin_pct": null,
           "labour_cost_pence": null,
           "manual_recipe": true,
-          "data_quality_flag": "Retail item with no recipe; zero cost needs verifying."
+          "data_quality_flag": "Retail item with no recipe; zero cost needs verifying.",
+          "has_recipe": false,
+          "prep_seconds": null,
+          "prep_is_estimate": null,
+          "prep_is_override": false,
+          "margin_per_minute_pence": null
         }
       ],
       "lowest_margin": {
@@ -9088,7 +11132,10 @@
         "is_estimate": false,
         "is_missing": true,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "249",
@@ -9120,7 +11167,12 @@
           "margin_pct": 88.768,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "304.346521"
         },
         {
           "menu_item_id": 249,
@@ -9139,7 +11191,12 @@
           "margin_pct": 85.813,
           "labour_cost_pence": "32.222222",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 80,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "270.310853"
         },
         {
           "menu_item_id": 251,
@@ -9158,7 +11215,12 @@
           "margin_pct": 83.134,
           "labour_cost_pence": "36.25",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 90,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "243.860667"
         }
       ],
       "lowest_margin": {
@@ -9166,7 +11228,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "252",
@@ -9198,7 +11263,12 @@
           "margin_pct": 81.863,
           "labour_cost_pence": "30.208333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 75,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "255.412047"
         },
         {
           "menu_item_id": 252,
@@ -9217,7 +11287,12 @@
           "margin_pct": 71.685,
           "labour_cost_pence": "34.236111",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 85,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "207.464886"
         },
         {
           "menu_item_id": 254,
@@ -9236,7 +11311,12 @@
           "margin_pct": 71.088,
           "labour_cost_pence": "40.277778",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 100,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "187.671071"
         }
       ],
       "lowest_margin": {
@@ -9244,7 +11324,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "255",
@@ -9276,7 +11359,12 @@
           "margin_pct": 86.927,
           "labour_cost_pence": "16.111111",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 40,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "586.759941"
         },
         {
           "menu_item_id": 255,
@@ -9295,7 +11383,12 @@
           "margin_pct": 82.744,
           "labour_cost_pence": "18.125",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 45,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "540.591921"
         }
       ],
       "lowest_margin": {
@@ -9303,7 +11396,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "312",
@@ -9335,7 +11431,12 @@
           "margin_pct": 60.0,
           "labour_cost_pence": "6.041667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 15,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "480"
         }
       ],
       "lowest_margin": {
@@ -9343,7 +11444,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "313",
@@ -9375,7 +11479,12 @@
           "margin_pct": 73.81,
           "labour_cost_pence": "88.611111",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 220,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "84.545441"
         }
       ],
       "lowest_margin": {
@@ -9383,7 +11492,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "315",
@@ -9415,7 +11527,12 @@
           "margin_pct": 78.767,
           "labour_cost_pence": "30.208333",
           "manual_recipe": false,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 75,
+          "prep_is_estimate": true,
+          "prep_is_override": false,
+          "margin_per_minute_pence": "201.642635"
         },
         {
           "menu_item_id": 316,
@@ -9434,7 +11551,12 @@
           "margin_pct": 78.414,
           "labour_cost_pence": "34.236111",
           "manual_recipe": false,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 85,
+          "prep_is_estimate": true,
+          "prep_is_override": false,
+          "margin_per_minute_pence": "199.264194"
         },
         {
           "menu_item_id": 317,
@@ -9453,7 +11575,12 @@
           "margin_pct": 74.333,
           "labour_cost_pence": "40.277778",
           "manual_recipe": false,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 100,
+          "prep_is_estimate": true,
+          "prep_is_override": false,
+          "margin_per_minute_pence": "182.858717"
         }
       ],
       "lowest_margin": {
@@ -9461,7 +11588,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "425"
     },
     {
       "key": "314",
@@ -9493,7 +11623,12 @@
           "margin_pct": 77.5,
           "labour_cost_pence": null,
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": null,
+          "prep_is_estimate": null,
+          "prep_is_override": false,
+          "margin_per_minute_pence": null
         }
       ],
       "lowest_margin": {
@@ -9501,7 +11636,10 @@
         "is_estimate": false,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "257",
@@ -9533,7 +11671,12 @@
           "margin_pct": 80.0,
           "labour_cost_pence": "6.041667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 15,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "512"
         }
       ],
       "lowest_margin": {
@@ -9541,7 +11684,10 @@
         "is_estimate": false,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "258",
@@ -9573,7 +11719,12 @@
           "margin_pct": 82.048,
           "labour_cost_pence": "18.125",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 45,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "306.314196"
         },
         {
           "menu_item_id": 258,
@@ -9592,7 +11743,12 @@
           "margin_pct": 72.405,
           "labour_cost_pence": "20.138889",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 50,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "269.346776"
         },
         {
           "menu_item_id": 260,
@@ -9611,7 +11767,12 @@
           "margin_pct": 74.532,
           "labour_cost_pence": "24.166667",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 60,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "253.408647"
         }
       ],
       "lowest_margin": {
@@ -9619,7 +11780,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "261",
@@ -9651,7 +11815,12 @@
           "margin_pct": 89.286,
           "labour_cost_pence": "28.194444",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 70,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "260.203664"
         },
         {
           "menu_item_id": 261,
@@ -9670,7 +11839,12 @@
           "margin_pct": 86.734,
           "labour_cost_pence": "32.222222",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 80,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "240.685853"
         },
         {
           "menu_item_id": 263,
@@ -9689,7 +11863,12 @@
           "margin_pct": 84.573,
           "labour_cost_pence": "36.25",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 90,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "225.527333"
         }
       ],
       "lowest_margin": {
@@ -9697,7 +11876,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     },
     {
       "key": "264",
@@ -9729,7 +11911,12 @@
           "margin_pct": 80.219,
           "labour_cost_pence": "30.208333",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 75,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "224.612047"
         },
         {
           "menu_item_id": 264,
@@ -9748,7 +11935,12 @@
           "margin_pct": 69.45,
           "labour_cost_pence": "34.236111",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 85,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "186.288415"
         },
         {
           "menu_item_id": 266,
@@ -9767,7 +11959,12 @@
           "margin_pct": 68.606,
           "labour_cost_pence": "40.277778",
           "manual_recipe": true,
-          "data_quality_flag": null
+          "data_quality_flag": null,
+          "has_recipe": true,
+          "prep_seconds": 100,
+          "prep_is_estimate": true,
+          "prep_is_override": true,
+          "margin_per_minute_pence": "168.771071"
         }
       ],
       "lowest_margin": {
@@ -9775,7 +11972,10 @@
         "is_estimate": true,
         "is_missing": false,
         "no_price": false
-      }
+      },
+      "season_id": null,
+      "season_name": null,
+      "sold_30d": "0"
     }
   ],
   "categories": [
@@ -9788,7 +11988,7 @@
     {
       "name": "Spring saesonal drinks",
       "kind": "OTHER",
-      "count": 23,
+      "count": 24,
       "registered": false
     },
     {
@@ -9800,7 +12000,7 @@
     {
       "name": "",
       "kind": "OTHER",
-      "count": 145,
+      "count": 144,
       "registered": false
     }
   ]

@@ -37,11 +37,15 @@
           "is_preferred": false
         }
       ],
-      "used_in_count": 103,
+      "used_in_count": 104,
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": null,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 0,
+      "tier": "A",
+      "waste_factor": "0.01"
     },
     {
       "ingredient_id": 48,
@@ -80,11 +84,15 @@
           "is_preferred": false
         }
       ],
-      "used_in_count": 103,
+      "used_in_count": 104,
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": null,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 0,
+      "tier": "A",
+      "waste_factor": "0.01"
     },
     {
       "ingredient_id": 51,
@@ -122,7 +130,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": null,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 0,
+      "tier": "A",
+      "waste_factor": "0.01"
     },
     {
       "ingredient_id": 50,
@@ -160,7 +172,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": null,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 0,
+      "tier": "A",
+      "waste_factor": "0.01"
     },
     {
       "ingredient_id": 45,
@@ -198,7 +214,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": null,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 0,
+      "tier": "B",
+      "waste_factor": "0.01"
     },
     {
       "ingredient_id": 47,
@@ -236,7 +256,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": null,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 0,
+      "tier": "A",
+      "waste_factor": "0.01"
     },
     {
       "ingredient_id": 46,
@@ -274,7 +298,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": null,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 0,
+      "tier": "A",
+      "waste_factor": "0.01"
     },
     {
       "ingredient_id": 4,
@@ -312,7 +340,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 270,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 5,
+      "transit_buffer_days": 3,
+      "tier": "B",
+      "waste_factor": "0.1"
     },
     {
       "ingredient_id": 92,
@@ -350,7 +382,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 270,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 14,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 31,
@@ -388,7 +424,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 730,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 90,
+      "transit_buffer_days": 14,
+      "tier": "B",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 65,
@@ -426,7 +466,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 4,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 1,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 27,
@@ -464,7 +508,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 730,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 90,
+      "transit_buffer_days": 14,
+      "tier": "B",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 68,
@@ -502,7 +550,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 4,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 1,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 106,
@@ -536,11 +588,15 @@
           "is_preferred": true
         }
       ],
-      "used_in_count": 0,
+      "used_in_count": 1,
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 270,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 14,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 100,
@@ -578,7 +634,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 4,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 1,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 112,
@@ -616,7 +676,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 270,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 14,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 66,
@@ -654,7 +718,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 4,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 1,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 80,
@@ -692,7 +760,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 4,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 1,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 82,
@@ -730,7 +802,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 4,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 1,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 63,
@@ -768,7 +844,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 4,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 1,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 57,
@@ -806,7 +886,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": null,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 0,
+      "tier": "C",
+      "waste_factor": "0.01"
     },
     {
       "ingredient_id": 84,
@@ -844,7 +928,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 4,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 1,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 36,
@@ -882,7 +970,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 730,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 14,
+      "tier": "B",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 24,
@@ -920,7 +1012,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 730,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 90,
+      "transit_buffer_days": 14,
+      "tier": "B",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 102,
@@ -958,7 +1054,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 4,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 1,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 94,
@@ -992,11 +1092,15 @@
           "is_preferred": true
         }
       ],
-      "used_in_count": 1,
+      "used_in_count": 2,
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 270,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 14,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 11,
@@ -1034,7 +1138,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 730,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 90,
+      "transit_buffer_days": 14,
+      "tier": "B",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 33,
@@ -1072,7 +1180,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 730,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 90,
+      "transit_buffer_days": 14,
+      "tier": "B",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 83,
@@ -1110,7 +1222,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 4,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 1,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 37,
@@ -1148,7 +1264,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 540,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 180,
+      "transit_buffer_days": 14,
+      "tier": "A",
+      "waste_factor": "0.03"
     },
     {
       "ingredient_id": 97,
@@ -1186,7 +1306,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 270,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 14,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 22,
@@ -1224,7 +1348,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 730,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 90,
+      "transit_buffer_days": 14,
+      "tier": "B",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 71,
@@ -1262,7 +1390,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 4,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 1,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 29,
@@ -1300,7 +1432,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 730,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 90,
+      "transit_buffer_days": 14,
+      "tier": "B",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 89,
@@ -1338,7 +1474,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 270,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 14,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 6,
@@ -1376,7 +1516,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 270,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 5,
+      "transit_buffer_days": 3,
+      "tier": "B",
+      "waste_factor": "0.1"
     },
     {
       "ingredient_id": 28,
@@ -1414,7 +1558,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 730,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 90,
+      "transit_buffer_days": 14,
+      "tier": "B",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 44,
@@ -1452,7 +1600,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 540,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 180,
+      "transit_buffer_days": 14,
+      "tier": "B",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 9,
@@ -1490,7 +1642,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 365,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 21,
+      "transit_buffer_days": 7,
+      "tier": "B",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 8,
@@ -1533,7 +1689,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 365,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 21,
+      "transit_buffer_days": 7,
+      "tier": "A",
+      "waste_factor": "0.05"
     },
     {
       "ingredient_id": 78,
@@ -1571,7 +1731,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 4,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 1,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 39,
@@ -1609,7 +1773,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 540,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 180,
+      "transit_buffer_days": 14,
+      "tier": "B",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 113,
@@ -1647,7 +1815,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 365,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 21,
+      "transit_buffer_days": 7,
+      "tier": "B",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 105,
@@ -1685,7 +1857,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 270,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 14,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 90,
@@ -1723,7 +1899,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 270,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 14,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 111,
@@ -1761,7 +1941,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 270,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 14,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 104,
@@ -1799,7 +1983,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 4,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 1,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 76,
@@ -1837,7 +2025,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 4,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 1,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 32,
@@ -1875,7 +2067,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 730,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 90,
+      "transit_buffer_days": 14,
+      "tier": "B",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 108,
@@ -1913,7 +2109,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 270,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 14,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 87,
@@ -1951,7 +2151,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 4,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 1,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 72,
@@ -1989,7 +2193,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 4,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 1,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 73,
@@ -2027,7 +2235,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 4,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 1,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 20,
@@ -2065,7 +2277,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 730,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 90,
+      "transit_buffer_days": 14,
+      "tier": "B",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 69,
@@ -2103,7 +2319,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 4,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 1,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 64,
@@ -2141,7 +2361,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 4,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 1,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 101,
@@ -2179,7 +2403,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 4,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 1,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 30,
@@ -2217,7 +2445,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 730,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 90,
+      "transit_buffer_days": 14,
+      "tier": "B",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 35,
@@ -2255,7 +2487,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 730,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 14,
+      "tier": "B",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 26,
@@ -2293,7 +2529,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 730,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 90,
+      "transit_buffer_days": 14,
+      "tier": "B",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 103,
@@ -2331,7 +2571,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 4,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 1,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 56,
@@ -2369,7 +2613,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": null,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 0,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 40,
@@ -2407,7 +2655,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 540,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 180,
+      "transit_buffer_days": 14,
+      "tier": "A",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 70,
@@ -2445,7 +2697,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 4,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 1,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 18,
@@ -2483,7 +2739,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 730,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 90,
+      "transit_buffer_days": 14,
+      "tier": "B",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 99,
@@ -2521,7 +2781,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 4,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 1,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 54,
@@ -2559,7 +2823,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": null,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 0,
+      "tier": "A",
+      "waste_factor": "0.01"
     },
     {
       "ingredient_id": 3,
@@ -2602,7 +2870,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 270,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 5,
+      "transit_buffer_days": 3,
+      "tier": "B",
+      "waste_factor": "0.1"
     },
     {
       "ingredient_id": 93,
@@ -2640,7 +2912,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 270,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 14,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 19,
@@ -2678,7 +2954,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 730,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 90,
+      "transit_buffer_days": 14,
+      "tier": "B",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 85,
@@ -2716,7 +2996,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 4,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 1,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 81,
@@ -2754,7 +3038,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 4,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 1,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 25,
@@ -2792,7 +3080,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 730,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 90,
+      "transit_buffer_days": 14,
+      "tier": "B",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 21,
@@ -2830,7 +3122,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 730,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 90,
+      "transit_buffer_days": 14,
+      "tier": "B",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 74,
@@ -2868,7 +3164,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 4,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 1,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 95,
@@ -2906,7 +3206,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 270,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 14,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 96,
@@ -2944,7 +3248,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 270,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 14,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 23,
@@ -2982,7 +3290,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 730,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 90,
+      "transit_buffer_days": 14,
+      "tier": "B",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 67,
@@ -3020,7 +3332,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 4,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 1,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 58,
@@ -3058,7 +3374,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 4,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 1,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 59,
@@ -3096,7 +3416,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 4,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 1,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 14,
@@ -3134,7 +3458,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 730,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 90,
+      "transit_buffer_days": 14,
+      "tier": "B",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 13,
@@ -3172,7 +3500,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 730,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 90,
+      "transit_buffer_days": 14,
+      "tier": "B",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 75,
@@ -3210,7 +3542,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 4,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 1,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 62,
@@ -3248,7 +3584,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 4,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 1,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 60,
@@ -3286,7 +3626,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 4,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 1,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 12,
@@ -3324,7 +3668,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 730,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 90,
+      "transit_buffer_days": 14,
+      "tier": "B",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 2,
@@ -3367,7 +3715,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 7,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 3,
+      "transit_buffer_days": 2,
+      "tier": "B",
+      "waste_factor": "0.1"
     },
     {
       "ingredient_id": 77,
@@ -3405,7 +3757,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 4,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 1,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 5,
@@ -3443,7 +3799,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 270,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 5,
+      "transit_buffer_days": 3,
+      "tier": "B",
+      "waste_factor": "0.1"
     },
     {
       "ingredient_id": 110,
@@ -3481,7 +3841,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 270,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 14,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 107,
@@ -3519,7 +3883,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 270,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 14,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 61,
@@ -3557,7 +3925,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 4,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 1,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 88,
@@ -3595,7 +3967,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 270,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 14,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 86,
@@ -3633,7 +4009,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 4,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 1,
+      "tier": "C",
+      "waste_factor": "0.01"
     },
     {
       "ingredient_id": 17,
@@ -3671,7 +4051,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 730,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 90,
+      "transit_buffer_days": 14,
+      "tier": "B",
+      "waste_factor": "0.01"
     },
     {
       "ingredient_id": 53,
@@ -3709,7 +4093,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": null,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 0,
+      "tier": "C",
+      "waste_factor": "0.01"
     },
     {
       "ingredient_id": 109,
@@ -3747,7 +4135,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 270,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 14,
+      "tier": "C",
+      "waste_factor": "0.01"
     },
     {
       "ingredient_id": 52,
@@ -3785,7 +4177,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": null,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 0,
+      "tier": "B",
+      "waste_factor": "0.01"
     },
     {
       "ingredient_id": 41,
@@ -3823,7 +4219,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 540,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 180,
+      "transit_buffer_days": 14,
+      "tier": "B",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 34,
@@ -3861,7 +4261,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 730,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 14,
+      "tier": "B",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 79,
@@ -3899,7 +4303,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 4,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 1,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 98,
@@ -3937,7 +4345,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 4,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 1,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 15,
@@ -3975,7 +4387,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 730,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 90,
+      "transit_buffer_days": 14,
+      "tier": "B",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 16,
@@ -4013,7 +4429,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 730,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 90,
+      "transit_buffer_days": 14,
+      "tier": "B",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 43,
@@ -4051,7 +4471,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 540,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 180,
+      "transit_buffer_days": 14,
+      "tier": "B",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 91,
@@ -4089,7 +4513,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 270,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 14,
+      "tier": "C",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 42,
@@ -4127,7 +4555,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 540,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 180,
+      "transit_buffer_days": 14,
+      "tier": "B",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 10,
@@ -4165,7 +4597,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 730,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 90,
+      "transit_buffer_days": 14,
+      "tier": "B",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 7,
@@ -4203,7 +4639,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 14,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 3,
+      "transit_buffer_days": 2,
+      "tier": "B",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 38,
@@ -4241,7 +4681,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": 540,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 180,
+      "transit_buffer_days": 14,
+      "tier": "B",
+      "waste_factor": "0"
     },
     {
       "ingredient_id": 1,
@@ -4284,7 +4728,11 @@
       "retired": false,
       "storage": "CHILLED",
       "shelf_life_days": 7,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": 3,
+      "transit_buffer_days": 2,
+      "tier": "A",
+      "waste_factor": "0.1"
     },
     {
       "ingredient_id": 55,
@@ -4322,7 +4770,11 @@
       "retired": false,
       "storage": "AMBIENT",
       "shelf_life_days": null,
-      "shelf_life_source": "ESTIMATE"
+      "shelf_life_source": "ESTIMATE",
+      "open_life_days": null,
+      "transit_buffer_days": 0,
+      "tier": "C",
+      "waste_factor": "0.01"
     }
   ],
   "categories": [

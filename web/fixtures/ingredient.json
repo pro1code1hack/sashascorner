@@ -36,11 +36,15 @@
         "is_preferred": false
       }
     ],
-    "used_in_count": 103,
+    "used_in_count": 104,
     "retired": false,
     "storage": "AMBIENT",
     "shelf_life_days": null,
-    "shelf_life_source": "ESTIMATE"
+    "shelf_life_source": "ESTIMATE",
+    "open_life_days": null,
+    "transit_buffer_days": 0,
+    "tier": "A",
+    "waste_factor": "0.01"
   },
   "offers": [
     {
@@ -76,6 +80,12 @@
   ],
   "preferred_supplier": "Cups Direct",
   "used_in": [
+    {
+      "menu_item_id": 276,
+      "name": "'card' (£3.00)",
+      "via": "one-off",
+      "template_name": null
+    },
     {
       "menu_item_id": 1,
       "name": "Banana Milkshake",
@@ -713,7 +723,7 @@
     "counts": 10,
     "batches": 2,
     "prices": 1,
-    "one-off recipe lines": 101,
+    "one-off recipe lines": 102,
     "recipe components": 1,
     "supplier links": 2
   },

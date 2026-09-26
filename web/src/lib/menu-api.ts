@@ -155,6 +155,12 @@ export function useItemSales(id: number, page: number, pageSize: number, allSize
     placeholderData: (prev) => prev,
   })
 }
+/** Imperative read of one menu item (cached), for "copy the recipe from size S". */
+export function useFetchMenuItem() {
+  const qc = useQueryClient()
+  return (id: number) =>
+    qc.fetchQuery({ queryKey: MENU_KEYS.menuItem(id), queryFn: () => read<MenuItemDetail>(`/api/menu-items/${id}`) })
+}
 export function useIngredients() {
   return useQuery({
     queryKey: MENU_KEYS.ingredients,

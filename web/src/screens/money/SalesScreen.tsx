@@ -1,5 +1,6 @@
 /**
- * Money → Sales: one row per trading day, read-only.
+ * Money → Sales: profit by month (the retired Profit & loss screen, as charts:
+ * ProfitSection), then one row per trading day, read-only.
  *
  * Card figures come from imports (Mettle via the workbook, Lightspeed/CSV
  * exports), never from typing. The one thing a person adds here is cash: till
@@ -52,7 +53,9 @@ import {
   shortDate,
 } from './filters'
 import type { DateRange, PenceRange } from './filters'
-import { fd, gbp, londonToday, mLabel, useFinancePeriod } from './shared'
+import { ProfitSection } from './ProfitSection'
+import { SalesDashboard } from './SalesDashboard'
+import { addDays, fd, gbp, londonToday, mLabel, useFinancePeriod } from './shared'
 
 const PAID_OPTIONS = [
   { value: 'all', label: 'Card or cash' },
@@ -124,6 +127,12 @@ function avgTicket(s: Sums): number | null {
 
 const dash = <span className="text-ink-3">—</span>
 
+function shiftMonth(month: string, by: number): string {
+  const [y = 0, m = 1] = month.split('-').map(Number)
+  const d = new Date(Date.UTC(y, m - 1 + by, 1))
+  return d.toISOString().slice(0, 7)
+}
+
 type DrawerState = { kind: 'add' } | { kind: 'day'; date: string } | null
 
 export function SalesScreen() {
@@ -135,6 +144,10 @@ export function SalesScreen() {
   const [orders, setOrders] = useState('all')
   const [amount, setAmount] = useState<PenceRange>({ min: null, max: null })
   const [drawer, setDrawer] = useState<DrawerState>(null)
+  // The period before, for "vs last month" on the figures: the month before a
+  // month, or the same number of days before a custom range.
+  const prevMonth = !range && period && period !== 'all' ? shiftMonth(period, -1) : null
+  const prevQ = useSales(prevMonth !== null && months.includes(prevMonth) ? prevMonth : null)
 
   const all = q.data?.days
   const rows = useMemo(
@@ -150,6 +163,27 @@ export function SalesScreen() {
     [all, range, weekday, paid, orders, amount],
   )
   const totals = useMemo(() => sum(rows), [rows])
+  const keep = (d: SalesDay) => matchesWeekday(d.date, weekday) && matchesPaid(d, paid) && inPence(d.total_pence, amount)
+  const prev = useMemo(() => {
+    if (range) {
+      const len = Math.round((Date.parse(range.to) - Date.parse(range.from)) / 864e5) + 1
+      const to = addDays(range.from, -1)
+      const from = addDays(range.from, -len)
+      return { label: `previous ${len} days`, s: sum((all ?? []).filter((d) => d.date >= from && d.date <= to && keep(d))) }
+    }
+    if (prevMonth && prevQ.data) return { label: mLabel(prevMonth), s: sum(prevQ.data.days.filter(keep)) }
+    return null
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [range, all, prevMonth, prevQ.data, weekday, paid, amount])
+  const vs = (now: number, before: number | undefined) => {
+    if (!prev || before === undefined || before === 0) return undefined
+    const pct = Math.round(((now - before) / before) * 100)
+    return (
+      <span className={pct < 0 ? 'text-bad-ink' : 'text-ink-2'}>
+        {pct > 0 ? '▲' : pct < 0 ? '▼' : '='} {Math.abs(pct)}% vs {prev.label}
+      </span>
+    )
+  }
   const inWindow = useMemo(() => (all ?? []).filter((d) => inRange(d.date, range)).length, [all, range])
   const multiMonth = useMemo(() => new Set(rows.map((d) => d.date.slice(0, 7))).size > 1, [rows])
   const hasDeposits = rows.some((d) => d.basis !== 'TILL' && d.card_pence !== null)
@@ -193,7 +227,7 @@ export function SalesScreen() {
     <>
       <PageHeader
         title="Sales"
-        subtitle="one row per trading day"
+        subtitle="how the takings are going, where they come from, day by day"
         actions={
           <Button variant="primary" onClick={() => setDrawer({ kind: 'add' })}>
             + Add cash
@@ -233,9 +267,19 @@ export function SalesScreen() {
                     label: 'Total',
                     value: gbp(totals.total),
                     strong: true,
-                    sub: `${count(totals.days)} ${totals.days === 1 ? 'day' : 'days'}`,
+                    sub: (
+                      <>
+                        {count(totals.days)} {totals.days === 1 ? 'day' : 'days'}
+                        {prev && vs(totals.total, prev.s.total) ? <> · {vs(totals.total, prev.s.total)}</> : null}
+                      </>
+                    ),
                   },
-                  { label: 'Card', value: gbp(totals.card) },
+                  { label: 'Card', value: gbp(totals.card), sub: vs(totals.card, prev?.s.card) },
+                  {
+                    label: 'Per trading day',
+                    value: totals.days ? gbp(Math.round(totals.total / totals.days)) : '—',
+                    sub: prev && prev.s.days ? vs(totals.total / Math.max(1, totals.days), prev.s.total / prev.s.days) : undefined,
+                  },
                   {
                     label: 'Cash',
                     value: gbp(totals.till + totals.own),
@@ -271,6 +315,9 @@ export function SalesScreen() {
                   )}
                 </div>
               )}
+              <SalesDashboard rows={rows} />
+              <ProfitSection />
+              <h2 className="mt-6 text-xl font-extrabold tracking-[-.01em]">Day by day</h2>
               <SalesTable
                 rows={rows}
                 multiMonth={multiMonth}

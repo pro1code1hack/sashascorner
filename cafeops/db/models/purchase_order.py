@@ -73,6 +73,13 @@ class PurchaseOrder(Base):
     #: it is a set of enum names, it is greppable in a database browser, and nothing about
     #: it is nested.
     note_codes: Mapped[str | None] = mapped_column(String(600))
+    #: Photo of the delivery note / till receipt (owner, 2026-09-26). The order is an
+    #: expense, and the receipt is its evidence. `SET NULL` for the same reason as
+    #: `menu_item.photo_asset_id`.
+    receipt_asset_id: Mapped[int | None] = mapped_column(
+        ForeignKey("media_asset.id", ondelete="SET NULL")
+    )
+    receipt_uploaded_by: Mapped[str | None] = mapped_column(String(120))
 
     supplier: Mapped[Supplier] = relationship()
     lines: Mapped[list[POLine]] = relationship(back_populates="po", cascade="all, delete-orphan")

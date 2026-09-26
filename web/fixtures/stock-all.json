@@ -150,6 +150,16 @@
         "safety_days": "2",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 49,
+        "supplier_id": 4,
+        "supplier_name": "Cups Direct",
+        "pack_size": "1000",
+        "pack_unit": "EACH",
+        "size_in_unit": "1000",
+        "price_pence": 2574,
+        "is_preferred": true
       }
     },
     {
@@ -274,6 +284,16 @@
         "safety_days": "2",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 48,
+        "supplier_id": 4,
+        "supplier_name": "Cups Direct",
+        "pack_size": "500",
+        "pack_unit": "EACH",
+        "size_in_unit": "500",
+        "price_pence": 4794,
+        "is_preferred": true
       }
     },
     {
@@ -398,6 +418,16 @@
         "safety_days": "2",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 51,
+        "supplier_id": 4,
+        "supplier_name": "Cups Direct",
+        "pack_size": "1000",
+        "pack_unit": "EACH",
+        "size_in_unit": "1000",
+        "price_pence": 2874,
+        "is_preferred": true
       }
     },
     {
@@ -522,6 +552,16 @@
         "safety_days": "2",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 50,
+        "supplier_id": 4,
+        "supplier_name": "Cups Direct",
+        "pack_size": "400",
+        "pack_unit": "EACH",
+        "size_in_unit": "400",
+        "price_pence": 4134,
+        "is_preferred": true
       }
     },
     {
@@ -646,6 +686,16 @@
         "safety_days": "2",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 47,
+        "supplier_id": 4,
+        "supplier_name": "Cups Direct",
+        "pack_size": "1000",
+        "pack_unit": "EACH",
+        "size_in_unit": "1000",
+        "price_pence": 2574,
+        "is_preferred": true
       }
     },
     {
@@ -770,6 +820,16 @@
         "safety_days": "2",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 46,
+        "supplier_id": 4,
+        "supplier_name": "Cups Direct",
+        "pack_size": "500",
+        "pack_unit": "EACH",
+        "size_in_unit": "500",
+        "price_pence": 4254,
+        "is_preferred": true
       }
     },
     {
@@ -883,6 +943,16 @@
         "safety_days": "2",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 37,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1",
+        "pack_unit": "KG",
+        "size_in_unit": "1",
+        "price_pence": 700,
+        "is_preferred": true
       }
     },
     {
@@ -1007,6 +1077,16 @@
         "safety_days": "2",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 8,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "5",
+        "pack_unit": "KG",
+        "size_in_unit": "5",
+        "price_pence": 9500,
+        "is_preferred": true
       }
     },
     {
@@ -1120,6 +1200,16 @@
         "safety_days": "2",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 40,
+        "supplier_id": 5,
+        "supplier_name": "Monolith",
+        "pack_size": "0.05",
+        "pack_unit": "KG",
+        "size_in_unit": "0.05",
+        "price_pence": 1000,
+        "is_preferred": true
       }
     },
     {
@@ -1244,6 +1334,16 @@
         "safety_days": "2",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 54,
+        "supplier_id": 4,
+        "supplier_name": "Cups Direct",
+        "pack_size": "500",
+        "pack_unit": "EACH",
+        "size_in_unit": "500",
+        "price_pence": 400,
+        "is_preferred": true
       }
     },
     {
@@ -1368,6 +1468,16 @@
         "safety_days": "2",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 1,
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "pack_size": "3.4",
+        "pack_unit": "L",
+        "size_in_unit": "3.4",
+        "price_pence": 237,
+        "is_preferred": true
       }
     },
     {
@@ -1481,6 +1591,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 45,
+        "supplier_id": 4,
+        "supplier_name": "Cups Direct",
+        "pack_size": "100",
+        "pack_unit": "EACH",
+        "size_in_unit": "100",
+        "price_pence": 600,
+        "is_preferred": true
       }
     },
     {
@@ -1592,6 +1712,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 4,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1",
+        "pack_unit": "L",
+        "size_in_unit": "1",
+        "price_pence": 250,
+        "is_preferred": true
       }
     },
     {
@@ -1705,6 +1835,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 31,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "size_in_unit": "1000",
+        "price_pence": 900,
+        "is_preferred": true
       }
     },
     {
@@ -1818,6 +1958,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 27,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "size_in_unit": "1000",
+        "price_pence": 900,
+        "is_preferred": true
       }
     },
     {
@@ -1931,6 +2081,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 36,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1",
+        "pack_unit": "KG",
+        "size_in_unit": "1",
+        "price_pence": 4000,
+        "is_preferred": true
       }
     },
     {
@@ -2044,6 +2204,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 24,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "size_in_unit": "1000",
+        "price_pence": 900,
+        "is_preferred": true
       }
     },
     {
@@ -2155,6 +2325,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 11,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "size_in_unit": "1000",
+        "price_pence": 900,
+        "is_preferred": true
       }
     },
     {
@@ -2268,6 +2448,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 33,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "size_in_unit": "1000",
+        "price_pence": 1000,
+        "is_preferred": true
       }
     },
     {
@@ -2381,6 +2571,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 22,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "size_in_unit": "1000",
+        "price_pence": 900,
+        "is_preferred": true
       }
     },
     {
@@ -2494,6 +2694,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 29,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "size_in_unit": "1000",
+        "price_pence": 900,
+        "is_preferred": true
       }
     },
     {
@@ -2607,6 +2817,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 6,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1",
+        "pack_unit": "L",
+        "size_in_unit": "1",
+        "price_pence": 250,
+        "is_preferred": true
       }
     },
     {
@@ -2720,6 +2940,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 28,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "size_in_unit": "1000",
+        "price_pence": 900,
+        "is_preferred": true
       }
     },
     {
@@ -2833,6 +3063,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 44,
+        "supplier_id": 5,
+        "supplier_name": "Monolith",
+        "pack_size": "1",
+        "pack_unit": "L",
+        "size_in_unit": "1",
+        "price_pence": 250,
+        "is_preferred": true
       }
     },
     {
@@ -2946,6 +3186,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 9,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1",
+        "pack_unit": "KG",
+        "size_in_unit": "1",
+        "price_pence": 2400,
+        "is_preferred": true
       }
     },
     {
@@ -3059,6 +3309,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 39,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "size_in_unit": "1000",
+        "price_pence": 900,
+        "is_preferred": true
       }
     },
     {
@@ -3172,6 +3432,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 113,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "18",
+        "pack_unit": "EACH",
+        "size_in_unit": "18",
+        "price_pence": 750,
+        "is_preferred": true
       }
     },
     {
@@ -3285,6 +3555,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 32,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "size_in_unit": "1000",
+        "price_pence": 1120,
+        "is_preferred": true
       }
     },
     {
@@ -3398,6 +3678,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 20,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "size_in_unit": "1000",
+        "price_pence": 900,
+        "is_preferred": true
       }
     },
     {
@@ -3511,6 +3801,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 30,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "size_in_unit": "1000",
+        "price_pence": 900,
+        "is_preferred": true
       }
     },
     {
@@ -3624,6 +3924,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 35,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1",
+        "pack_unit": "KG",
+        "size_in_unit": "1",
+        "price_pence": 3000,
+        "is_preferred": true
       }
     },
     {
@@ -3737,6 +4047,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 26,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "size_in_unit": "1000",
+        "price_pence": 900,
+        "is_preferred": true
       }
     },
     {
@@ -3850,6 +4170,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 18,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "size_in_unit": "1000",
+        "price_pence": 900,
+        "is_preferred": true
       }
     },
     {
@@ -3976,6 +4306,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 3,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1",
+        "pack_unit": "L",
+        "size_in_unit": "1",
+        "price_pence": 250,
+        "is_preferred": true
       }
     },
     {
@@ -4089,6 +4429,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 19,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "size_in_unit": "1000",
+        "price_pence": 900,
+        "is_preferred": true
       }
     },
     {
@@ -4202,6 +4552,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 25,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "size_in_unit": "1000",
+        "price_pence": 900,
+        "is_preferred": true
       }
     },
     {
@@ -4331,6 +4691,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 21,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "size_in_unit": "1000",
+        "price_pence": 900,
+        "is_preferred": true
       }
     },
     {
@@ -4444,6 +4814,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 23,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "size_in_unit": "1000",
+        "price_pence": 900,
+        "is_preferred": true
       }
     },
     {
@@ -4557,6 +4937,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 14,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "size_in_unit": "1000",
+        "price_pence": 900,
+        "is_preferred": true
       }
     },
     {
@@ -4670,6 +5060,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 13,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "size_in_unit": "1000",
+        "price_pence": 900,
+        "is_preferred": true
       }
     },
     {
@@ -4783,6 +5183,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 12,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "size_in_unit": "1000",
+        "price_pence": 900,
+        "is_preferred": true
       }
     },
     {
@@ -4880,6 +5290,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 2,
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "pack_size": "3.4",
+        "pack_unit": "L",
+        "size_in_unit": "3.4",
+        "price_pence": 237,
+        "is_preferred": true
       }
     },
     {
@@ -4993,6 +5413,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 5,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1",
+        "pack_unit": "L",
+        "size_in_unit": "1",
+        "price_pence": 250,
+        "is_preferred": true
       }
     },
     {
@@ -5106,6 +5536,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 17,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "size_in_unit": "1000",
+        "price_pence": 900,
+        "is_preferred": true
       }
     },
     {
@@ -5219,6 +5659,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 52,
+        "supplier_id": 4,
+        "supplier_name": "Cups Direct",
+        "pack_size": "250",
+        "pack_unit": "EACH",
+        "size_in_unit": "250",
+        "price_pence": 1500,
+        "is_preferred": true
       }
     },
     {
@@ -5332,6 +5782,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 41,
+        "supplier_id": 5,
+        "supplier_name": "Monolith",
+        "pack_size": "1",
+        "pack_unit": "KG",
+        "size_in_unit": "1",
+        "price_pence": 800,
+        "is_preferred": true
       }
     },
     {
@@ -5445,6 +5905,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 34,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "320",
+        "pack_unit": "EACH",
+        "size_in_unit": "320",
+        "price_pence": 1916,
+        "is_preferred": true
       }
     },
     {
@@ -5558,6 +6028,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 15,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "size_in_unit": "1000",
+        "price_pence": 900,
+        "is_preferred": true
       }
     },
     {
@@ -5671,6 +6151,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 16,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "size_in_unit": "1000",
+        "price_pence": 900,
+        "is_preferred": true
       }
     },
     {
@@ -5784,6 +6274,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 43,
+        "supplier_id": 5,
+        "supplier_name": "Monolith",
+        "pack_size": "1",
+        "pack_unit": "L",
+        "size_in_unit": "1",
+        "price_pence": 400,
+        "is_preferred": true
       }
     },
     {
@@ -5897,6 +6397,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 42,
+        "supplier_id": 5,
+        "supplier_name": "Monolith",
+        "pack_size": "1",
+        "pack_unit": "L",
+        "size_in_unit": "1",
+        "price_pence": 400,
+        "is_preferred": true
       }
     },
     {
@@ -6023,6 +6533,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 10,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "size_in_unit": "1000",
+        "price_pence": 900,
+        "is_preferred": true
       }
     },
     {
@@ -6120,6 +6640,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 7,
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "pack_size": "1",
+        "pack_unit": "L",
+        "size_in_unit": "1",
+        "price_pence": 350,
+        "is_preferred": true
       }
     },
     {
@@ -6233,6 +6763,16 @@
         "safety_days": "3",
         "min_qty_set_by": null,
         "min_qty_set_at": null
+      },
+      "pack": {
+        "supplier_product_id": 38,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1000",
+        "pack_unit": "ML",
+        "size_in_unit": "1000",
+        "price_pence": 600,
+        "is_preferred": true
       }
     },
     {
@@ -6336,7 +6876,17 @@
         "responded_by": "telegram:sasha"
       },
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 92,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 73,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 65,
@@ -6419,7 +6969,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 65,
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 130,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 68,
@@ -6502,7 +7062,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 68,
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 121,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 106,
@@ -6585,7 +7155,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 106,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 53,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 100,
@@ -6668,7 +7248,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 100,
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 155,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 112,
@@ -6751,7 +7341,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 112,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 50,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 66,
@@ -6834,7 +7434,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 66,
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 176,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 80,
@@ -6917,7 +7527,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 80,
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 150,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 82,
@@ -7000,7 +7620,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 82,
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 35,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 63,
@@ -7083,7 +7713,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 63,
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 109,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 57,
@@ -7166,7 +7806,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 57,
+        "supplier_id": 4,
+        "supplier_name": "Cups Direct",
+        "pack_size": "500",
+        "pack_unit": "EACH",
+        "size_in_unit": "500",
+        "price_pence": 750,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 84,
@@ -7249,7 +7899,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 84,
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "pack_size": "1",
+        "pack_unit": "KG",
+        "size_in_unit": "1",
+        "price_pence": 700,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 102,
@@ -7332,7 +7992,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 102,
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 202,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 94,
@@ -7415,7 +8085,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 94,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 33,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 83,
@@ -7498,7 +8178,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 83,
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "pack_size": "1",
+        "pack_unit": "KG",
+        "size_in_unit": "1",
+        "price_pence": 800,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 97,
@@ -7581,7 +8271,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 97,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 45,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 71,
@@ -7664,7 +8364,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 71,
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 174,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 89,
@@ -7747,7 +8457,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 89,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 61,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 78,
@@ -7830,7 +8550,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 78,
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "pack_size": "1",
+        "pack_unit": "KG",
+        "size_in_unit": "1",
+        "price_pence": 600,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 105,
@@ -7913,7 +8643,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 105,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 40,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 90,
@@ -7996,7 +8736,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 90,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 44,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 111,
@@ -8079,7 +8829,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 111,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 28,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 104,
@@ -8162,7 +8922,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 104,
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 249,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 76,
@@ -8245,7 +9015,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 76,
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "pack_size": "1",
+        "pack_unit": "KG",
+        "size_in_unit": "1",
+        "price_pence": 1000,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 108,
@@ -8328,7 +9108,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 108,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 44,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 87,
@@ -8411,7 +9201,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 87,
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "pack_size": "100",
+        "pack_unit": "EACH",
+        "size_in_unit": "100",
+        "price_pence": 800,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 72,
@@ -8494,7 +9294,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 72,
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 160,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 73,
@@ -8577,7 +9387,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 73,
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 1000,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 69,
@@ -8660,7 +9480,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 69,
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 132,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 64,
@@ -8743,7 +9573,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 64,
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 91,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 101,
@@ -8826,7 +9666,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 101,
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 175,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 103,
@@ -8909,7 +9759,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 103,
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 202,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 56,
@@ -8992,7 +9852,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 56,
+        "supplier_id": 4,
+        "supplier_name": "Cups Direct",
+        "pack_size": "1",
+        "pack_unit": "KG",
+        "size_in_unit": "1",
+        "price_pence": 800,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 70,
@@ -9075,7 +9945,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 70,
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 140,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 99,
@@ -9158,7 +10038,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 99,
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 123,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 93,
@@ -9241,7 +10131,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 93,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 73,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 85,
@@ -9324,7 +10224,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 85,
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "pack_size": "1",
+        "pack_unit": "KG",
+        "size_in_unit": "1",
+        "price_pence": 300,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 81,
@@ -9407,7 +10317,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 81,
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 40,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 74,
@@ -9490,7 +10410,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 74,
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 65,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 95,
@@ -9573,7 +10503,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 95,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 43,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 96,
@@ -9656,7 +10596,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 96,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 62,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 67,
@@ -9739,7 +10689,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 67,
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 130,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 58,
@@ -9822,7 +10782,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 58,
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 160,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 59,
@@ -9905,7 +10875,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 59,
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 150,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 75,
@@ -9988,7 +10968,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 75,
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "pack_size": "1",
+        "pack_unit": "KG",
+        "size_in_unit": "1",
+        "price_pence": 1800,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 62,
@@ -10071,7 +11061,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 62,
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 75,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 60,
@@ -10154,7 +11154,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 60,
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 130,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 77,
@@ -10237,7 +11247,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 77,
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "pack_size": "1",
+        "pack_unit": "KG",
+        "size_in_unit": "1",
+        "price_pence": 2800,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 110,
@@ -10320,7 +11340,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 110,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 34,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 107,
@@ -10403,7 +11433,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 107,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 47,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 61,
@@ -10486,7 +11526,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 61,
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 130,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 88,
@@ -10569,7 +11619,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 88,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 32,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 86,
@@ -10652,7 +11712,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 86,
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "pack_size": "1",
+        "pack_unit": "KG",
+        "size_in_unit": "1",
+        "price_pence": 600,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 53,
@@ -10735,7 +11805,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 53,
+        "supplier_id": 4,
+        "supplier_name": "Cups Direct",
+        "pack_size": "1000",
+        "pack_unit": "EACH",
+        "size_in_unit": "1000",
+        "price_pence": 1200,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 109,
@@ -10818,7 +11898,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 109,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 44,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 79,
@@ -10901,7 +11991,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 79,
+        "supplier_id": 2,
+        "supplier_name": "Brakes",
+        "pack_size": "1",
+        "pack_unit": "KG",
+        "size_in_unit": "1",
+        "price_pence": 900,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 98,
@@ -10984,7 +12084,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 98,
+        "supplier_id": 1,
+        "supplier_name": "Cakesmiths",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 135,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 91,
@@ -11067,7 +12177,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 91,
+        "supplier_id": 3,
+        "supplier_name": "Booker",
+        "pack_size": "1",
+        "pack_unit": "EACH",
+        "size_in_unit": "1",
+        "price_pence": 80,
+        "is_preferred": true
+      }
     },
     {
       "ingredient_id": 55,
@@ -11150,7 +12270,17 @@
       "trust_label": "never_counted",
       "checklist": null,
       "since_count": null,
-      "par": null
+      "par": null,
+      "pack": {
+        "supplier_product_id": 55,
+        "supplier_id": 4,
+        "supplier_name": "Cups Direct",
+        "pack_size": "1000",
+        "pack_unit": "EACH",
+        "size_in_unit": "1000",
+        "price_pence": 400,
+        "is_preferred": true
+      }
     }
   ]
 }

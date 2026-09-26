@@ -8,9 +8,10 @@ Every write goes through a service in `cafeops/services/` (CLAUDE.md 8). The ref
 the services' own `ValueError` subclasses, which the app turns into a 422 whose `detail` is
 the service's sentence, shown verbatim by the screen. Nothing here decides a rule.
 
-**No route in this area creates, confirms or sends a purchase order** (DECISIONS 1,
-invariant 1). Orders can be cancelled, marked sent once confirmed in Telegram, and
-received; a shop run records batches and a routing, never a purchase order.
+**Nothing here sends a purchase order.** Since 2026-09-26 (DECISIONS 18) a named person
+may create a DRAFT from today's run and confirm it with the packs they chose
+(`services/web_orders.py`, invariant 1); orders can then be marked sent, received or
+cancelled. A shop run records batches and a routing, never a purchase order.
 """
 
 from __future__ import annotations
@@ -25,11 +26,13 @@ from sqlalchemy.orm import Session
 from cafeops.api.areas.stock_schemas import (
     ChecklistIn,
     ChecklistOut,
+    ConfirmIn,
     CountIn,
     CountOut,
     DeliveryIn,
     DeliveryOut,
     DrawnBatchOut,
+    FromDraftIn,
     IngredientOptionOut,
     OrderAction,
     OrderCounts,
@@ -72,6 +75,7 @@ from cafeops.db.models import (
     Expense,
     Ingredient,
     IngredientPrice,
+    MediaAsset,
     OrderChannel,
     POStatus,
     PriceSource,
@@ -84,8 +88,9 @@ from cafeops.db.models import (
     WriteOffReason,
 )
 from cafeops.db.repositories.sourcing import _terms
-from cafeops.services import order_actions, suppliers
+from cafeops.services import order_actions, suppliers, web_orders
 from cafeops.services.confirm_terms import SupplierTerms
+from cafeops.services.media_store import media_url, store_image
 from cafeops.services.receive_delivery import DeliveryReceipt, receive_adhoc
 from cafeops.services.record_checklist import record_checklist_answer
 from cafeops.services.record_count import record_count
@@ -95,15 +100,20 @@ from cafeops.services.stock_settings import change_tier, set_par_floor
 __all__ = [
     "cancel_order_view",
     "checklist_view",
+    "confirm_order_view",
     "count_view",
     "delivery_view",
+    "from_draft_view",
     "mark_sent_view",
+    "order_view",
     "orders_view",
     "par_view",
     "product_archive_view",
     "product_link_view",
     "product_patch_view",
     "product_prefer_view",
+    "receipt_clear_view",
+    "receipt_upload_view",
     "receive_view",
     "shop_run_view",
     "shop_runs_view",
@@ -360,9 +370,10 @@ _OPEN = (POStatus.DRAFT, POStatus.PENDING_CONFIRM, POStatus.CONFIRMED, POStatus.
 
 def _actions(status: POStatus) -> tuple[OrderAction, ...]:
     """What the web may do next. The server decides, so the screen cannot drift from the
-    service rules. There is never a 'confirm': that is Telegram's (invariant 1)."""
+    service rules. `confirm` is a named human's decision (invariant 1), made here since
+    the owner stopped using the Telegram bot (2026-09-26)."""
     if status in (POStatus.DRAFT, POStatus.PENDING_CONFIRM):
-        return ("cancel",)
+        return ("confirm", "cancel")
     if status is POStatus.CONFIRMED:
         return ("mark_sent", "receive", "cancel")
     if status is POStatus.SENT:
@@ -383,8 +394,48 @@ def _order_out(session: Session, po: PurchaseOrder) -> PurchaseOrderOut:
         cancelled_by=po.cancelled_by,
         cancel_reason=po.cancel_reason,
         routing_reason=po.routing_reason,
+        receipt_url=_receipt_url(session, po),
+        receipt_uploaded_by=po.receipt_uploaded_by,
         actions=_actions(po.status),
     )
+
+
+def _receipt_url(session: Session, po: PurchaseOrder) -> str | None:
+    if po.receipt_asset_id is None:
+        return None
+    asset = session.get(MediaAsset, po.receipt_asset_id)
+    return media_url(asset.filename) if asset is not None else None
+
+
+def _po_or_404(session: Session, po_id: int) -> PurchaseOrder:
+    po = session.get(PurchaseOrder, po_id)
+    if po is None:
+        raise LookupError(f"no order {po_id}")
+    return po
+
+
+def order_view(session: Session, *, po_id: int) -> PurchaseOrderOut:
+    return _order_out(session, _po_or_404(session, po_id))
+
+
+def receipt_upload_view(
+    session: Session, *, po_id: int, data: bytes, actor: str | None
+) -> PurchaseOrderOut:
+    """Attach a receipt photo. Evidence only: it changes no quantity, price or status."""
+    po = _po_or_404(session, po_id)  # 404 before any file is written
+    stored = store_image(session, data, uploaded_by=actor)  # MediaRefusedError -> 422
+    po.receipt_asset_id = stored.asset_id
+    po.receipt_uploaded_by = actor
+    session.flush()
+    return _order_out(session, po)
+
+
+def receipt_clear_view(session: Session, *, po_id: int) -> PurchaseOrderOut:
+    po = _po_or_404(session, po_id)
+    po.receipt_asset_id = None
+    po.receipt_uploaded_by = None
+    session.flush()
+    return _order_out(session, po)
 
 
 def orders_view(
@@ -408,6 +459,20 @@ def orders_view(
             waiting=sum(1 for s in every if s in _WAITING),
         ),
     )
+
+
+def from_draft_view(session: Session, *, body: FromDraftIn) -> PurchaseOrderOut:
+    po_id = web_orders.create_order_from_draft(
+        session, supplier_id=body.supplier_id, created_by=body.created_by
+    )
+    return order_view(session, po_id=po_id)
+
+
+def confirm_order_view(session: Session, *, po_id: int, body: ConfirmIn) -> PurchaseOrderOut:
+    po = web_orders.confirm_order(
+        session, po_id=po_id, confirmed_by=body.confirmed_by, final_packs=body.final_packs
+    )
+    return _order_out(session, po)
 
 
 def cancel_order_view(

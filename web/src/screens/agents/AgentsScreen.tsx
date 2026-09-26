@@ -16,6 +16,7 @@ import { Button, Card, ErrorBox, FilterChip, FilterChipRow, Loading, PageHeader,
 import { OperatorNeeded } from '../../components/shell/Operator'
 import { ago, gbp } from '../../lib/format'
 import { useOperator } from '../../lib/operator'
+import { href } from '../../lib/router'
 import {
   PROPOSALS_QUERY_KEY,
   RUNS_QUERY_KEY,
@@ -166,6 +167,9 @@ function OrderCard({ o }: { o: WaitingOrder }) {
         {o.supplier} order, <span className="fig">{gbp(o.total_pence)}</span>: waiting in Telegram
       </h3>
       <p className="text-base text-ink-2">{o.note}</p>
+      <a href={href(`/orders/${o.po_id}`)} className="mt-1 inline-block text-base font-bold text-brand-ink">
+        Open the order ›
+      </a>
     </Card>
   )
 }

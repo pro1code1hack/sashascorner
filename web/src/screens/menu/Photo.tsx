@@ -12,7 +12,7 @@ import { useOperator } from '../../lib/operator'
 
 const MAX_EDGE = 1200
 
-async function shrink(file: File): Promise<Blob> {
+export async function shrink(file: File): Promise<Blob> {
   const bitmap = await createImageBitmap(file)
   const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height))
   const w = Math.max(1, Math.round(bitmap.width * scale))
@@ -64,7 +64,18 @@ export function PhotoView({ url, placeholder, className }: { url: string | null;
   )
 }
 
-export function PhotoSlot({ menuItemId, url, name }: { menuItemId: number; url: string | null; name: string }) {
+export function PhotoSlot({
+  menuItemId,
+  url,
+  name,
+  tall = false,
+}: {
+  menuItemId: number
+  url: string | null
+  name: string
+  /** The item page's side column: a 4:3 photo instead of a 170px strip. */
+  tall?: boolean
+}) {
   const input = useRef<HTMLInputElement>(null)
   const [operator] = useOperator()
   const [busy, setBusy] = useState(false)
@@ -104,9 +115,13 @@ export function PhotoSlot({ menuItemId, url, name }: { menuItemId: number; url: 
         onDragLeave={() => setOver(false)}
         onDrop={onDrop}
         aria-label={url ? `Replace the photo of ${name}` : `Add a photo of ${name}`}
-        className={cx('relative h-[170px] w-full flex-none overflow-hidden rounded-card', over && 'ring-2 ring-brand')}
+        className={cx(
+          'relative w-full flex-none overflow-hidden rounded-card',
+          tall ? 'aspect-[4/3]' : 'h-[170px]',
+          over && 'ring-2 ring-brand',
+        )}
       >
-        <PhotoView url={url} placeholder={busy ? 'Uploading…' : 'Drop a photo of this item'} className="absolute inset-0" />
+        <PhotoView url={url} placeholder={busy ? 'Uploading…' : url ? '' : 'Drop a photo here, or click to choose one'} className="absolute inset-0" />
       </button>
       <input
         ref={input}

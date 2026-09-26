@@ -527,12 +527,12 @@ function ShelfLife({ row }: { row: IngredientRow }) {
         <span className="text-sm text-ink-2">
           {est ? (
             <>
-              <em>Italic = estimate</em>, still capping orders. <a href={href('/stock', { id: row.ingredient_id })}>Confirm it on Stock</a>
+              <em>Italic = estimate</em>, still capping orders. <a href={href(`/stock/${row.ingredient_id}`)}>Confirm it on Stock</a>
             </>
           ) : row.shelf_life_source && row.shelf_life_source !== 'ESTIMATE' ? (
             'Confirmed.'
           ) : (
-            <a href={href('/stock', { id: row.ingredient_id })}>Set on Stock</a>
+            <a href={href(`/stock/${row.ingredient_id}`)}>Set on Stock</a>
           )}
         </span>
         <span className="ml-auto flex items-center gap-1.5 text-sm text-ink-2">

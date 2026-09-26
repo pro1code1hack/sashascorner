@@ -120,8 +120,8 @@ def mark_order_sent(
     po = _order(session, po_id)
     if po.status is not POStatus.CONFIRMED:
         raise OrderActionRefused(
-            f"order {po_id} is {po.status.value.lower()}: only an order confirmed in "
-            "Telegram can be marked sent (invariant 1)"
+            f"order {po_id} is {po.status.value.lower()}: only a confirmed order "
+            "can be marked sent (invariant 1)"
         )
     SqlPurchaseOrderRepository(session).mark_sent(po_id, at=at or datetime.now(UTC))
     po.sent_by = who

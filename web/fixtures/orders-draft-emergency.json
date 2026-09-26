@@ -1,6 +1,6 @@
 {
   "order_date": "2026-09-21",
-  "computed_at": "2026-09-26T10:26:33.130298Z",
+  "computed_at": "2026-09-26T14:46:43.343876Z",
   "reorder_cadence_days": null,
   "tiers": [
     "A",
@@ -30,6 +30,8 @@
         "contact": null,
         "order_url": null,
         "notes": null,
+        "email": null,
+        "phone": null,
         "product_count": null,
         "archived": false
       },
@@ -78,6 +80,8 @@
         "contact": null,
         "order_url": null,
         "notes": null,
+        "email": null,
+        "phone": null,
         "product_count": null,
         "archived": false
       },
@@ -322,6 +326,8 @@
         "contact": null,
         "order_url": null,
         "notes": null,
+        "email": null,
+        "phone": null,
         "product_count": null,
         "archived": false
       },
@@ -433,6 +439,8 @@
         "contact": null,
         "order_url": null,
         "notes": null,
+        "email": null,
+        "phone": null,
         "product_count": null,
         "archived": false
       },
@@ -485,6 +493,8 @@
         "contact": null,
         "order_url": null,
         "notes": null,
+        "email": null,
+        "phone": null,
         "product_count": null,
         "archived": false
       },
@@ -641,6 +651,8 @@
         "contact": null,
         "order_url": null,
         "notes": null,
+        "email": null,
+        "phone": null,
         "product_count": null,
         "archived": false
       },
@@ -688,6 +700,8 @@
         "contact": null,
         "order_url": null,
         "notes": null,
+        "email": null,
+        "phone": null,
         "product_count": null,
         "archived": false
       },
@@ -733,6 +747,8 @@
         "contact": null,
         "order_url": null,
         "notes": null,
+        "email": null,
+        "phone": null,
         "product_count": null,
         "archived": false
       },

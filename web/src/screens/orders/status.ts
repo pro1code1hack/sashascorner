@@ -9,9 +9,9 @@ import type { POStatus } from '../../lib/types/stock'
 export function statusWord(status: POStatus | string): { label: string; tone: StatusTone } {
   switch (status) {
     case 'DRAFT':
-      return { label: 'Draft (in Telegram /orders)', tone: 'ink-3' }
+      return { label: 'Draft', tone: 'ink-3' }
     case 'PENDING_CONFIRM':
-      return { label: 'Waiting in Telegram', tone: 'alert' }
+      return { label: 'Waiting to confirm', tone: 'alert' }
     case 'CONFIRMED':
       return { label: 'Confirmed', tone: 'ink' }
     case 'SENT':

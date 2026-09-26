@@ -17,17 +17,19 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Header, HTTPException, Query, Request, status
 
 from cafeops.api.areas import stock_views as views
 from cafeops.api.areas.stock_schemas import (
     CancelIn,
     ChecklistIn,
     ChecklistOut,
+    ConfirmIn,
     CountIn,
     CountOut,
     DeliveryIn,
     DeliveryOut,
+    FromDraftIn,
     MarkSentIn,
     OrdersListResponse,
     ParChangeOut,
@@ -56,6 +58,7 @@ from cafeops.api.areas.stock_schemas import (
 from cafeops.api.runtime import in_session
 from cafeops.api.security import ApiAuth
 from cafeops.db.models import POStatus
+from cafeops.services.media_store import MAX_BYTES
 
 router = APIRouter(dependencies=[ApiAuth])
 
@@ -200,6 +203,28 @@ async def log_shop_run(body: ShopRunIn) -> ShopRunOut:
 
 
 @router.post(
+    "/api/orders/from-draft",
+    response_model=PurchaseOrderOut,
+    tags=["orders"],
+    summary="Write one supplier's basket from today's run as a DRAFT order. Orders nothing.",
+)
+async def order_from_draft(body: FromDraftIn) -> PurchaseOrderOut:
+    return await in_session(lambda session: views.from_draft_view(session, body=body))
+
+
+@router.post(
+    "/api/orders/{po_id:int}/confirm",
+    response_model=PurchaseOrderOut,
+    tags=["orders"],
+    summary="Confirm a draft order with the packs a named person settled on (invariant 1).",
+)
+async def confirm_order(po_id: int, body: ConfirmIn) -> PurchaseOrderOut:
+    return await in_session(
+        lambda session: views.confirm_order_view(session, po_id=po_id, body=body)
+    )
+
+
+@router.post(
     "/api/orders/{po_id}/cancel",
     response_model=PurchaseOrderOut,
     tags=["orders"],
@@ -217,7 +242,7 @@ async def cancel_order(po_id: int, body: CancelIn) -> PurchaseOrderOut:
     "/api/orders/{po_id}/mark-sent",
     response_model=PurchaseOrderOut,
     tags=["orders"],
-    summary="Record that an order confirmed in Telegram went to the supplier.",
+    summary="Record that a confirmed order went to the supplier.",
 )
 async def mark_sent(po_id: int, body: MarkSentIn) -> PurchaseOrderOut:
     return await in_session(
@@ -233,6 +258,49 @@ async def mark_sent(po_id: int, body: MarkSentIn) -> PurchaseOrderOut:
 )
 async def receive_order(po_id: int, body: ReceiveIn) -> ReceiveOut:
     return await in_session(lambda session: views.receive_view(session, po_id=po_id, body=body))
+
+
+@router.get(
+    "/api/orders/{po_id:int}",
+    response_model=PurchaseOrderOut,
+    tags=["orders"],
+    summary="One stored purchase order, with its lines and receipt photo.",
+)
+async def get_order(po_id: int) -> PurchaseOrderOut:
+    return await in_session(lambda session: views.order_view(session, po_id=po_id))
+
+
+@router.post(
+    "/api/orders/{po_id}/receipt",
+    response_model=PurchaseOrderOut,
+    tags=["orders"],
+    summary="Attach a receipt / delivery-note photo (raw body, <= 2 MB, PNG/JPEG/WebP).",
+)
+async def upload_receipt(
+    po_id: int,
+    request: Request,
+    x_operator: Annotated[str | None, Header()] = None,
+    content_length: Annotated[int | None, Header()] = None,
+) -> PurchaseOrderOut:
+    if content_length is not None and content_length > MAX_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="that photo is over 2 MB; resize it and try again",
+        )
+    data = await request.body()
+    return await in_session(
+        lambda session: views.receipt_upload_view(session, po_id=po_id, data=data, actor=x_operator)
+    )
+
+
+@router.post(
+    "/api/orders/{po_id}/receipt/clear",
+    response_model=PurchaseOrderOut,
+    tags=["orders"],
+    summary="Remove the receipt photo from the order (the file is kept).",
+)
+async def clear_receipt(po_id: int) -> PurchaseOrderOut:
+    return await in_session(lambda session: views.receipt_clear_view(session, po_id=po_id))
 
 
 # --------------------------------------------------------------------------

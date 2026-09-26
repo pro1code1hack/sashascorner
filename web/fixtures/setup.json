@@ -84,8 +84,8 @@
     {
       "severity": "INFO",
       "name": "takings",
-      "detail": "160 day(s) of takings recorded, but 160 row(s) omit a deduction, so net is withheld rather than computed from the parts that were reported (invariant 8)",
-      "fix": "an export that breaks out refunds, fees AND discounts makes net figures possible; without one, gross is the only honest headline"
+      "detail": "no payment days recorded, so nothing knows what the cafe took. Money & P&L can show what is being SPENT and what was wasted, but not contribution",
+      "fix": "export a payment report from the back office and run `cafeops payments import --commit`, or point CAFEOPS_PAYMENTS_CSV_DIR at it"
     },
     {
       "severity": "INFO",

@@ -4,10 +4,11 @@ Everything except `/api/health` and `/api/meta` requires auth. In THIS module ev
 except the composition-editor and confirm POSTs is a GET. The redesign's write routes
 live in `cafeops/api/areas/` (stock, menu, finance, shell), one module per area.
 
-There is deliberately **no route that creates, confirms or sends a purchase order.**
-Invariant 1: nothing is ordered without human confirmation, and in v1 that confirmation
-happens in Telegram. `GET /api/orders/draft` computes a full ordering run and persists
-none of it.
+No route in THIS module creates, confirms or sends a purchase order, and
+`GET /api/orders/draft` computes a full ordering run and persists none of it. Since
+2026-09-26 (owner: the bot is not in use) a named person creates and confirms orders
+from the back office, in `api/areas/stock.py` via `services/web_orders.py`; invariant 1
+stands, because confirmation still needs a name. Nothing is ever *sent* by the API.
 """
 
 from __future__ import annotations

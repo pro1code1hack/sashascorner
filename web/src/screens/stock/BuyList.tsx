@@ -6,10 +6,10 @@
  * screen only flattens the per-supplier drafts into rows, filters, sorts and
  * adds up integer pence for the rows shown. No forecast, cover window, cap or
  * pack count is worked out here: a second copy of that maths would be a list
- * that disagrees with the order Telegram asks you to confirm.
+ * that disagrees with the order you are asked to confirm.
  *
- * Invariant 1: nothing is ordered from this page. Drafts are confirmed in
- * Telegram. Invariant 4: a capped line says why, on the line. Invariant 9: a
+ * Invariant 1: nothing is ordered from this page. Orders are created and
+ * confirmed by a person on the Orders page. Invariant 4: a capped line says why, on the line. Invariant 9: a
  * withheld forecast shows its reason where the number would be.
  */
 import { useMemo, useState } from 'react'
@@ -282,7 +282,7 @@ export function BuyList({ stockRows }: { stockRows: StockRow[] }) {
       <div className="flex flex-none flex-col gap-3 px-4 pt-3.5 sm:px-5">
         <InfoPanel>
           A list, not an order. Worked out {fmtD(draft.order_date)} by the same run that drafts the
-          orders; nothing is ordered from here — drafts are confirmed in Telegram. On-hand figures are
+          orders; nothing is ordered from here — orders are created and confirmed on the Orders page. On-hand figures are
           estimates (<em>italic</em>).
         </InfoPanel>
         <Leftovers draft={draft} />

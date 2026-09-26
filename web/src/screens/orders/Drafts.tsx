@@ -1,11 +1,11 @@
 /**
  * Draft orders (§2.2): what the next ordering run will send, per supplier.
  *
- * Read-only by decision (DECISIONS §1): there are no steppers and no "send"
- * button. The bot builds these before each delivery day and posts them to
- * Telegram; nothing is ordered until somebody taps Confirm there. A basket
- * already stored for the same delivery date shows the stored lines and its
- * status instead of the live suggestion (C14).
+ * The Telegram bot is not in use for now (DECISIONS 18): "Create order" writes a
+ * supplier's basket as a DRAFT order (recomputed by the server, never taken from
+ * this page), and the order page is where its packs are set and a named person
+ * confirms it (invariant 1). A basket already stored for the same delivery date
+ * shows the stored lines and its status instead of the live suggestion (C14).
  *
  * Invariants on the page: a shelf-life or season cap is stated on the line
  * (4); top-up suggestions are non-perishable only, from the server (5); a
@@ -17,7 +17,6 @@ import { useQuery } from '@tanstack/react-query'
 import { OperatorNeeded } from '../../components/shell/Operator'
 import {
   Button,
-  Card,
   DashedPanel,
   Empty,
   ErrorBox,
@@ -32,10 +31,12 @@ import { poundsToPence } from '../../components/confirm/numbers'
 import { mul, mustDec, parseDec } from '../../lib/dec'
 import { gbp, plural } from '../../lib/format'
 import { useOperator } from '../../lib/operator'
+import { href, navigate } from '../../lib/router'
 import { KEYS, orderWrites, stockApi } from '../../lib/stock-api'
 import type { EmergencyLine, OrderLine, PersistedOrder, SupplierOrder } from '../../lib/types/stock'
 import { decStr, fmtD, fmtQ, sumPence } from '../stock/fmt'
 import { OutcomeLine, useWrite } from '../stock/writes'
+import { orderPath } from './OrderBits'
 import { statusWord } from './status'
 
 export function Drafts() {
@@ -60,7 +61,14 @@ export function Drafts() {
       {baskets.length === 0 ? (
         <Empty>Nothing needs ordering right now.</Empty>
       ) : (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(520px,100%),1fr))] items-start gap-4">
+        <div className="overflow-hidden rounded-card-lg bg-surface shadow-raised">
+          <div className="hidden grid-cols-[44px_minmax(0,1fr)_150px_110px_90px] gap-3 border-b border-line px-3.5 py-2 text-label font-bold uppercase tracking-[.06em] text-ink-3 compact:grid">
+            <span />
+            <span>Supplier · what</span>
+            <span>Status</span>
+            <span className="text-center">Packs</span>
+            <span className="text-right">Total</span>
+          </div>
           {baskets.map((s) => (
             <Basket key={s.supplier.supplier_id} s={s} />
           ))}
@@ -88,8 +96,8 @@ export function Drafts() {
         </p>
       )}
       <p className="mt-4 text-sm text-ink-2">
-        Nothing is ordered from this page. Before each delivery day the bot sends these baskets to Telegram, and an
-        order is placed only when somebody taps Confirm there.
+        Nothing is ordered from this page. “Create order” makes a draft; you set the packs and confirm it on the order’s
+        page, and only then does it count as ordered.
       </p>
     </div>
   )
@@ -116,17 +124,40 @@ function Basket({ s }: { s: SupplierOrder }) {
   const status = p ? statusWord(p.status) : { label: 'Draft', tone: 'ink-3' as const }
   const total = p ? p.total_pence + p.delivery_fee_pence : s.total_pence
   const short = s.supplier.min_order_pence - s.subtotal_pence
-  return (
-    <Card className="flex flex-col">
-      <div className="flex items-baseline gap-2.5">
-        <h2 className="min-w-0 flex-1 truncate text-xl font-extrabold">{s.supplier.name}</h2>
+  const lineCount = p ? p.lines.length : s.lines.length
+  const head = (
+    <>
+      <span className="grid size-11 place-items-center rounded-control bg-brand-wash text-lg font-extrabold text-brand-ink" aria-hidden="true">
+        {s.supplier.name.slice(0, 1)}
+      </span>
+      <span className="min-w-0">
+        <span className="block truncate text-md font-bold">
+          {s.supplier.name}
+          {p && <span className="font-normal text-ink-3"> #{p.po_id}</span>}
+          <span className="font-normal text-ink-2"> · {lineCount} {plural(lineCount, 'line')}</span>
+        </span>
+        <span className="block text-sm text-ink-2">{termsLine(s)}</span>
+      </span>
+      <span className="max-compact:hidden">
         <StatusTag tone={status.tone}>{status.label}</StatusTag>
-        <span className="fig text-xl">{gbp(total)}</span>
-      </div>
-      <p className="mb-2 mt-0.5 text-base text-ink-2">{termsLine(s)}</p>
+      </span>
+      <span className="max-compact:hidden" />
+      <span className="fig text-right text-md font-bold">{gbp(total)}</span>
+    </>
+  )
+  const rowCls = 'grid grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-x-3 bg-canvas-2 px-3.5 py-2.5 compact:grid-cols-[44px_minmax(0,1fr)_150px_110px_90px]'
+  return (
+    <section className="border-b border-line last:border-b-0" aria-label={`${s.supplier.name} basket`}>
+      {p ? (
+        <a href={href(orderPath(p.po_id))} className={cx(rowCls, 'text-ink no-underline hover:bg-canvas')}>
+          {head}
+        </a>
+      ) : (
+        <div className={rowCls}>{head}</div>
+      )}
       {p ? <PendingLines p={p} /> : s.lines.map((l) => <DraftLine key={l.ingredient_id} l={l} />)}
       {!p && !s.meets_minimum && s.supplier.min_order_pence > 0 && short > 0 && (
-        <div className="border-t border-line pt-2 text-base text-bad-ink">
+        <div className="border-t border-line-row py-2 pl-[70px] pr-3.5 text-base text-bad-ink">
           <p>
             {gbp(short)} under their {gbp(s.supplier.min_order_pence)} minimum. Top up with something that keeps (never
             with fresh stock):
@@ -147,22 +178,55 @@ function Basket({ s }: { s: SupplierOrder }) {
           )}
         </div>
       )}
-      <div className="mt-2.5 flex items-center gap-2.5">
-        <p className="flex-1 text-sm text-ink-2">
-          {p?.status === 'PENDING_CONFIRM'
-            ? 'Sent to Telegram. Nothing is ordered until someone taps Confirm.'
-            : p?.status === 'DRAFT'
-              ? 'Built for Telegram: it is in the bot’s /orders list, waiting for someone to confirm.'
-              : p?.status === 'CONFIRMED'
-                ? `Confirmed by ${p.confirmed_by ?? 'someone'}. See History.`
-                : p?.status === 'SENT'
-                  ? `Sent${p.sent_by ? ` by ${p.sent_by}` : ''}. Receive it in History when it arrives.`
-                  : s.supplier.terms_are_placeholders
-                    ? 'Terms are a guess.'
-                    : 'Terms confirmed.'}
+      <div className="flex flex-wrap items-center gap-2 border-t border-line-row py-2 pl-[70px] pr-3.5">
+        <p className="min-w-0 flex-1 text-sm text-ink-2">
+        {p?.status === 'PENDING_CONFIRM'
+          ? 'Waiting to be confirmed. Open it to set the packs and confirm.'
+          : p?.status === 'DRAFT'
+            ? 'Draft: open it to set the packs and confirm. Nothing is ordered until then.'
+            : p?.status === 'CONFIRMED'
+              ? `Confirmed by ${p.confirmed_by ?? 'someone'}. Open the order to receive it when it arrives.`
+              : p?.status === 'SENT'
+                ? `Sent${p.sent_by ? ` by ${p.sent_by}` : ''}. Open the order to receive it when it arrives.`
+                : s.supplier.terms_are_placeholders
+                  ? 'Terms are a guess.'
+                  : 'Terms confirmed.'}
         </p>
+        <BasketAction s={s} />
       </div>
-    </Card>
+    </section>
+  )
+}
+
+function BasketAction({ s }: { s: SupplierOrder }) {
+  const [operator] = useOperator()
+  const w = useWrite()
+  const p = s.persisted ?? null
+  if (p) {
+    return (
+      <a href={href(orderPath(p.po_id))} className="inline-flex h-8 items-center rounded-button border border-line-strong px-3 text-sm font-bold text-brand-ink no-underline hover:bg-canvas">
+        {p.status === 'DRAFT' || p.status === 'PENDING_CONFIRM' ? 'Open to confirm ›' : 'Open order ›'}
+      </a>
+    )
+  }
+  return (
+    <span className="flex items-center gap-2">
+      <OutcomeLine outcome={w.outcome} />
+      <Button
+        variant="primary"
+        size="sm"
+        pending={w.pending}
+        pendingLabel="Creating…"
+        onClick={() =>
+          void w.run(() => orderWrites.fromDraft(s.supplier.supplier_id, operator), {
+            invalidate: [KEYS.orders, KEYS.draft],
+            after: (po) => navigate(orderPath(po.po_id)),
+          })
+        }
+      >
+        Create order · {gbp(s.total_pence)}
+      </Button>
+    </span>
   )
 }
 
@@ -195,7 +259,7 @@ function DraftLine({ l }: { l: OrderLine }) {
   const why = whyLine(l)
   const cap = capLine(l)
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2.5 sm:grid-cols-[minmax(0,1fr)_110px_70px] border-t border-line py-[7px]">
+    <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-x-3 border-t border-line-row py-2 pl-[70px] pr-3.5 compact:grid-cols-[minmax(0,1fr)_110px_90px]">
       <div className="min-w-0">
         <div className="text-md">{l.ingredient_name}</div>
         <div className={cx('text-sm', why.reason ? 'text-ink-2 italic' : 'text-ink-2')}>{why.text}</div>
@@ -213,12 +277,12 @@ function PendingLines({ p }: { p: PersistedOrder }) {
   return (
     <>
       {p.lines.map((l) => (
-        <div key={l.po_line_id} className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2.5 sm:grid-cols-[minmax(0,1fr)_110px_70px] border-t border-line py-[7px]">
+        <div key={l.po_line_id} className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-x-3 border-t border-line-row py-2 pl-[70px] pr-3.5 compact:grid-cols-[minmax(0,1fr)_110px_90px]">
           <div className="min-w-0">
             <div className="text-md">{l.ingredient_name}</div>
             {l.final_packs !== l.suggested_packs && (
               <div className="text-sm text-ink-2">
-                Suggested {l.suggested_packs}, changed to {l.final_packs} in Telegram.
+                Suggested {l.suggested_packs}, changed to {l.final_packs}.
               </div>
             )}
             {l.checklist_requested_by && (

@@ -30,7 +30,7 @@ function screen<K extends string>(
 }
 
 const StockScreen = screen(() => import('./screens/stock/StockScreen'), 'StockScreen')
-const OrdersScreen = screen(() => import('./screens/orders/OrdersScreen'), 'OrdersScreen')
+const OrdersArea = screen(() => import('./screens/orders/OrdersScreen'), 'OrdersArea')
 const AgentsScreen = screen(() => import('./screens/agents/AgentsScreen'), 'AgentsScreen')
 /** Recipes live inside Menu now (#/menu/recipes); #/recipes redirects there. */
 const RecipesRedirect = screen(() => import('./screens/menu/MenuArea'), 'RecipesRedirect')
@@ -39,11 +39,8 @@ const IngredientsScreen = screen(() => import('./screens/ingredients/Ingredients
 const SuppliersScreen = screen(() => import('./screens/suppliers/SuppliersScreen'), 'SuppliersScreen')
 const OverviewScreen = screen(() => import('./screens/money/OverviewScreen'), 'OverviewScreen')
 const SalesScreen = screen(() => import('./screens/money/SalesScreen'), 'SalesScreen')
-const ExpensesScreen = screen(() => import('./screens/money/ExpensesScreen'), 'ExpensesScreen')
+const ExpensesArea = screen(() => import('./screens/money/ExpensesArea'), 'ExpensesArea')
 const TransactionsScreen = screen(() => import('./screens/money/TransactionsScreen'), 'TransactionsScreen')
-const ReconcileScreen = screen(() => import('./screens/money/ReconcileScreen'), 'ReconcileScreen')
-const ProfitLossScreen = screen(() => import('./screens/money/ProfitLossScreen'), 'ProfitLossScreen')
-const DirectorsAccountScreen = screen(() => import('./screens/money/DirectorsAccountScreen'), 'DirectorsAccountScreen')
 const SettingsScreen = screen(() => import('./screens/settings/SettingsScreen'), 'SettingsScreen')
 const SetupScreen = screen(() => import('./screens/setup/SetupScreen'), 'SetupScreen')
 
@@ -59,15 +56,12 @@ export type RouteId =
   | 'money.sales'
   | 'money.expenses'
   | 'money.transactions'
-  | 'money.reconcile'
-  | 'money.pnl'
-  | 'money.director'
   | 'settings'
   | 'setup'
 
 export interface RouteDef {
   id: RouteId
-  /** Hash path, "/money/reconcile". */
+  /** Hash path, "/money/sales". */
   path: string
   /** Nav label and the page title on the phone top bar. */
   label: string
@@ -78,7 +72,8 @@ export interface RouteDef {
 
 export const ROUTES: Record<RouteId, RouteDef> = {
   stock: { id: 'stock', path: '/stock', label: 'Stock', Screen: StockScreen },
-  orders: { id: 'orders', path: '/orders', label: 'Orders', Screen: OrdersScreen, badge: 'orders_waiting' },
+  /** Orders, Draft orders, Shop runs; one page per order (owner, 2026-09-26). */
+  orders: { id: 'orders', path: '/orders', label: 'Orders', Screen: OrdersArea, badge: 'orders_waiting' },
   agents: { id: 'agents', path: '/agents', label: 'Agents', Screen: AgentsScreen, badge: 'proposals_waiting' },
   recipes: { id: 'recipes', path: '/recipes', label: 'Recipes', Screen: RecipesRedirect },
   menu: { id: 'menu', path: '/menu', label: 'Menu items', Screen: MenuArea },
@@ -86,20 +81,17 @@ export const ROUTES: Record<RouteId, RouteDef> = {
   suppliers: { id: 'suppliers', path: '/suppliers', label: 'Suppliers', Screen: SuppliersScreen },
   'money.overview': { id: 'money.overview', path: '/money/overview', label: 'Overview', Screen: OverviewScreen },
   'money.sales': { id: 'money.sales', path: '/money/sales', label: 'Sales', Screen: SalesScreen },
-  'money.expenses': { id: 'money.expenses', path: '/money/expenses', label: 'Expenses', Screen: ExpensesScreen },
+  'money.expenses': {
+    id: 'money.expenses',
+    path: '/money/expenses',
+    label: 'Expenses',
+    Screen: ExpensesArea,
+  },
   'money.transactions': {
     id: 'money.transactions',
     path: '/money/transactions',
     label: 'Transactions',
     Screen: TransactionsScreen,
-  },
-  'money.reconcile': { id: 'money.reconcile', path: '/money/reconcile', label: 'Reconcile', Screen: ReconcileScreen },
-  'money.pnl': { id: 'money.pnl', path: '/money/pnl', label: 'Profit & loss', Screen: ProfitLossScreen },
-  'money.director': {
-    id: 'money.director',
-    path: '/money/director',
-    label: "Director's account",
-    Screen: DirectorsAccountScreen,
   },
   settings: { id: 'settings', path: '/settings', label: 'Settings', Screen: SettingsScreen },
   setup: { id: 'setup', path: '/setup', label: 'Setup checklist', Screen: SetupScreen },
@@ -107,11 +99,11 @@ export const ROUTES: Record<RouteId, RouteDef> = {
 
 /** Sidebar groups, in the design's order. Settings sits in the footer. */
 export const NAV_GROUPS: ReadonlyArray<{ head: string; items: readonly RouteId[] }> = [
-  { head: 'Every day', items: ['stock', 'orders', 'agents'] },
+  { head: 'Every day', items: ['stock', 'agents'] },
   { head: 'Menu', items: ['menu', 'ingredients', 'suppliers'] },
   {
     head: 'Money',
-    items: ['money.overview', 'money.sales', 'money.transactions', 'money.expenses', 'money.reconcile', 'money.pnl', 'money.director'],
+    items: ['money.overview', 'money.sales', 'money.transactions', 'money.expenses', 'orders'],
   },
 ]
 
