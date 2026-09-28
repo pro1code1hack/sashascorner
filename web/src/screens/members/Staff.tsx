@@ -33,30 +33,37 @@ import { OutcomeLine, PIN_RE, Panel, PinInput, ROLE_LABEL, useWriteState } from 
 const ROLES: StaffRole[] = ['STAFF', 'MANAGER', 'OWNER']
 
 export function Staff() {
-  const staff = useStaff()
-  const devices = useDevices()
   return (
     <>
       <PageHeader title="Staff & devices" subtitle="Who can stamp on the scanner, with what PIN, and which tablets and phones it is paired to." />
       <PageBody className="bg-canvas">
-        <div className="grid gap-5 wide:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
-          <div className="flex min-w-0 flex-col gap-5">
-            <Panel title="Staff" id="staff-h">
-              {staff.isError && <ErrorBox error={staff.error} what="the staff" />}
-              {staff.isPending && <Loading what="Reading the staff" />}
-              {staff.data && <StaffTable users={staff.data.users} />}
-              <AddStaff />
-            </Panel>
-          </div>
-          <Panel title="Scanner devices" id="devices-h" className="self-start">
-            {devices.isError && <ErrorBox error={devices.error} what="the devices" />}
-            {devices.isPending && <Loading what="Reading the devices" />}
-            {devices.data && <DeviceList devices={devices.data.devices} />}
-            <PairDevice />
-          </Panel>
-        </div>
+        <StaffAndDevices />
       </PageBody>
     </>
+  )
+}
+
+/** The page body without its header: Loyalty card › Programme folds it in. */
+export function StaffAndDevices({ stacked = false }: { stacked?: boolean }) {
+  const staff = useStaff()
+  const devices = useDevices()
+  return (
+    <div className={stacked ? 'grid gap-5' : 'grid gap-5 wide:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]'}>
+      <div className="flex min-w-0 flex-col gap-5">
+        <Panel title="Staff" id="staff-h">
+          {staff.isError && <ErrorBox error={staff.error} what="the staff" />}
+          {staff.isPending && <Loading what="Reading the staff" />}
+          {staff.data && <StaffTable users={staff.data.users} />}
+          <AddStaff />
+        </Panel>
+      </div>
+      <Panel title="Scanner devices" id="devices-h" className="self-start">
+        {devices.isError && <ErrorBox error={devices.error} what="the devices" />}
+        {devices.isPending && <Loading what="Reading the devices" />}
+        {devices.data && <DeviceList devices={devices.data.devices} />}
+        <PairDevice />
+      </Panel>
+    </div>
   )
 }
 

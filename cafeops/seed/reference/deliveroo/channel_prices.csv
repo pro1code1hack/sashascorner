@@ -1,0 +1,185 @@
+ops_name,deliveroo_name,size_or_option,deliveroo_price_pence,ops_price_pence,difference_pence
+Lunch Deal,Lunch deal,One size,835,695,140
+Black Americano,Black Americano,Small 177ml (ops S),350,280,70
+Black Americano,Black Americano,Medium 236ml (ops M),355,310,45
+Black Americano,Black Americano,Large 354ml (ops XL),375,340,35
+White Americano,White Americano,Small 177ml (ops S),350,280,70
+White Americano,White Americano,Medium 236ml (ops M),355,310,45
+White Americano,White Americano,Large 354ml (ops XL),375,340,35
+Latte,Latte,Small 177ml (ops S),400,320,80
+Latte,Latte,Medium 236ml (ops M),405,350,55
+Latte,Latte,Large 354ml (ops XL),425,380,45
+Cappuccino,Cappucino,Small 177ml (ops S),400,320,80
+Cappuccino,Cappucino,Medium 236ml (ops M),405,350,55
+Cappuccino,Cappucino,Large 354ml (ops XL),425,380,45
+Chai Latte,Chai Latte,Small 177ml (ops S),425,340,85
+Chai Latte,Chai Latte,Medium 236ml (ops M),430,370,60
+Chai Latte,Chai Latte,Large 354ml (ops XL),450,400,50
+Hot Chocolate,Hot Chocolate,Small 177ml (ops S),425,340,85
+Hot Chocolate,Hot Chocolate,Medium 236ml (ops M),430,370,60
+Hot Chocolate,Hot Chocolate,Large 354ml (ops XL),450,400,50
+White Hot Chocolate,White Hot Chocolate,Small 177ml (ops S),425,340,85
+White Hot Chocolate,White Hot Chocolate,Medium 236ml (ops M),430,370,60
+White Hot Chocolate,White Hot Chocolate,Large 354ml (ops XL),450,400,50
+Mocha,Mocha,Small 177ml (ops S),425,340,85
+Mocha,Mocha,Medium 236ml (ops M),430,370,60
+Mocha,Mocha,Large 354ml (ops XL),450,400,50
+White Mocha,White Mocha,Small 177ml (ops S),435,350,85
+White Mocha,White Mocha,Medium 236ml (ops M),440,380,60
+White Mocha,White Mocha,Large 354ml (ops XL),460,410,50
+Raff Coffee,Raff Coffee,Small 177ml (ops S),435,350,85
+Raff Coffee,Raff Coffee,Medium 236ml (ops M),440,380,60
+Raff Coffee,Raff Coffee,Large 354ml (ops XL),460,410,50
+Orange Americano,Orange Americano,Small 177ml (ops S),425,340,85
+Orange Americano,Orange Americano,Medium 236ml (ops M),430,370,60
+Orange Americano,Orange Americano,Large 354ml (ops XL),450,400,50
+Afternoon Deal,Afternoon Bundle,One size (vs ops M; ops also has S),635,500,135
+Single Espresso,Single Espresso,One size,235,190,45
+Double Espresso,Double Espresso,One size,250,200,50
+Single Macchiato,Single Macchiato,One size,250,200,50
+Double Macchiato,Double Macchiato,One size,260,210,50
+Single Espresso Con Pana,Single Espresso con Pana,One size,275,220,55
+Double Espresso Con Pana,Double Espresso con Pana,One size,300,240,60
+Cortado,Catado,One size,385,310,75
+Mocha Cortado,Mocha Cortado,One size,385,315,70
+Flat White,Flat white,One size,390,325,65
+English Breakfast,English Breakfast Tea,One size,235,190,45
+Earl Grey,Earl Grey Tea,One size,235,190,45
+Decaf Tea,Decaf Tea,One size,235,190,45
+Mint,Mint Tea,One size,235,190,45
+Green,Green Tea,One size,235,190,45
+Berry Tea,Berry Tea,One size,235,190,45
+Strawberry Black,Strawberry Black Tea,One size,250,200,50
+Ginger and Lemongrass Tea,Ginger and Lemongrass Tea,One size,250,200,50
+Jasmine and Mint Green Tea,Jasmine and Mint Green Tea,One size,250,200,50
+Spiced Apple Chai,Spiced Apple Chai,One size,250,200,50
+Forest Fruits Tea,Forest Fruits Tea,One size,250,200,50
+Blue Honey Matcha,Hot Blue Honey Matcha,Small 177ml (ops S),500,400,100
+Blue Honey Matcha,Hot Blue Honey Matcha,Medium 236ml (ops M),505,420,85
+Blue Honey Matcha,Hot Blue Honey Matcha,Large 354ml (ops XL),525,460,65
+Hot Matcha,Hot Matcha,Small 177ml (ops S),425,340,85
+Hot Matcha,Hot Matcha,Medium 236ml (ops M),430,370,60
+Hot Matcha,Hot Matcha,Large 354ml (ops XL),450,390,60
+Hot Strawberry Matcha,Hot Strawberry Matcha,Small 177ml (ops S),450,360,90
+Hot Strawberry Matcha,Hot Strawberry Matcha,Medium 236ml (ops M),455,390,65
+Hot Strawberry Matcha,Hot Strawberry Matcha,Large 354ml (ops XL),475,420,55
+Hot Vanilla Matcha,Hot Vanilla Matcha,Small 177ml (ops S),450,360,90
+Hot Vanilla Matcha,Hot Vanilla Matcha,Medium 236ml (ops M),455,390,65
+Hot Vanilla Matcha,Hot Vanilla Matcha,Large 354ml (ops XL),475,420,55
+Hot White Choc Matcha,Hot White Choc Matcha,Small 177ml (ops S),450,360,90
+Hot White Choc Matcha,Hot White Choc Matcha,Medium 236ml (ops M),455,390,65
+Hot White Choc Matcha,Hot White Choc Matcha,Large 354ml (ops XL),475,420,55
+Hot Lavender Matcha,Hot Lavender Matcha,Small 177ml (ops S),450,360,90
+Hot Lavender Matcha,Hot Lavender Matcha,Medium 236ml (ops M),455,390,65
+Hot Lavender Matcha,Hot Lavender Matcha,Large 354ml (ops XL),475,420,55
+Hot Rose Matcha,Hot Rose Matcha,Small 177ml (ops S),450,360,90
+Hot Rose Matcha,Hot Rose Matcha,Medium 236ml (ops M),455,390,65
+Hot Rose Matcha,Hot Rose Matcha,Large 354ml (ops XL),475,420,55
+Blue Lavender Matcha,Hot Blue Lavender Matcha,Small 177ml (ops S),485,400,85
+Blue Lavender Matcha,Hot Blue Lavender Matcha,Medium 236ml (ops M),490,420,70
+Blue Lavender Matcha,Hot Blue Lavender Matcha,Large 354ml (ops XL),510,460,50
+Blue Vanilla Matcha,Hot Blue Vanilla Matcha,Small 177ml (ops S),485,400,85
+Blue Vanilla Matcha,Hot Blue Vanilla Matcha,Medium 236ml (ops M),490,420,70
+Blue Vanilla Matcha,Hot Blue Vanilla Matcha,Large 354ml (ops XL),510,460,50
+Iced Black Americano,Iced Black Americano,Medium 236ml (ops S),350,280,70
+Iced Black Americano,Iced Black Americano,Large 354ml (ops M),375,300,75
+Iced White Americano,Iced White Americano,Medium 236ml (ops S),350,280,70
+Iced White Americano,Iced White Americano,Large 354ml (ops M),375,300,75
+Iced Latte,Iced Latte,Medium 236ml (ops S),375,340,35
+Iced Latte,Iced Latte,Large 354ml (ops M),400,360,40
+Iced Cappuccino,Iced Cappuccino,Medium 236ml (ops S),385,340,45
+Iced Cappuccino,Iced Cappuccino,Large 354ml (ops M),410,360,50
+Iced Chai Latte,Iced Chai Latte,Medium 236ml (ops S),425,345,80
+Iced Chai Latte,Iced Chai Latte,Large 354ml (ops M),450,380,70
+Iced Mocha,Iced Mocha,Medium 236ml (ops S),435,350,85
+Iced Mocha,Iced Mocha,Large 354ml (ops M),460,400,60
+Iced White Mocha,Iced White Mocha,Medium 236ml (ops S),435,350,85
+Iced White Mocha,Iced White Mocha,Large 354ml (ops M),460,410,50
+Iced Flat White,Iced Flat White,Medium 236ml (ops S),400,320,80
+Iced Flat White,Iced Flat White,Large 354ml (ops M),425,350,75
+Espresso Tonic,Espresso Tonic,Medium 236ml (ops S),435,350,85
+Espresso Tonic,Espresso Tonic,Large 354ml (ops M),460,370,90
+Iced lavender matcha,Iced Lavender Matcha,Medium 236ml (ops S),500,400,100
+Iced lavender matcha,Iced Lavender Matcha,Large 354ml (ops M),525,440,85
+Iced rose matcha,Iced Rose Matcha,Medium 236ml (ops S),500,400,100
+Iced rose matcha,Iced Rose Matcha,Large 354ml (ops M),525,440,85
+Iced Peach Matcha,Iced Peach Matcha,Medium 236ml (ops S),500,400,100
+Iced Peach Matcha,Iced Peach Matcha,Large 354ml (ops M),525,440,85
+Iced Mango Matcha,Iced Mango Matcha,Medium 236ml (ops S),500,400,100
+Iced Mango Matcha,Iced Mango Matcha,Large 354ml (ops M),525,440,85
+Iced Strawberry Matcha,Iced Strawberry Matcha,Medium 236ml (ops S),500,400,100
+Iced Strawberry Matcha,Iced Strawberry Matcha,Large 354ml (ops M),525,440,85
+Iced Coconut Matcha,Iced Coconut Matcha,Medium 236ml (ops S),500,400,100
+Iced Coconut Matcha,Iced Coconut Matcha,Large 354ml (ops M),525,440,85
+Iced Banana Matcha,Iced Banana Matcha,Medium 236ml (ops S),500,400,100
+Iced Banana Matcha,Iced Banana Matcha,Large 354ml (ops M),525,440,85
+Iced Citrus Blue Matcha,Iced Citrus Blue Matcha,Medium 236ml (ops S),575,460,115
+Iced Citrus Blue Matcha,Iced Citrus Blue Matcha,Large 354ml (ops M),600,480,120
+Iced green apple matcha,Iced Green Apple Matcha,Medium 236ml (ops S),500,400,100
+Iced green apple matcha,Iced Green Apple Matcha,Large 354ml (ops M),525,440,85
+Iced kiwi matcha,Iced Kiwi Matcha,Medium 236ml (ops S),500,400,100
+Iced kiwi matcha,Iced Kiwi Matcha,Large 354ml (ops M),525,440,85
+Iced raspberry matcha,Iced Raspberry Matcha,Medium 236ml (ops S),500,400,100
+Iced raspberry matcha,Iced Raspberry Matcha,Large 354ml (ops M),525,440,85
+Iced vanilla matcha,Iced Vanilla Matcha,Medium 236ml (ops S),500,400,100
+Iced vanilla matcha,Iced Vanilla Matcha,Large 354ml (ops M),525,440,85
+Green Apple Bubble Tea,Green Apple Bubble Tea,Medium 236ml (ops S),550,440,110
+Green Apple Bubble Tea,Green Apple Bubble Tea,Large 354ml (ops M),575,480,95
+Passion Fruit Bubble Tea,Passion Fruit Bubble Tea,Medium 236ml (ops S),550,440,110
+Passion Fruit Bubble Tea,Passion Fruit Bubble Tea,Large 354ml (ops M),575,480,95
+Kiwi Bubble Tea,Kiwi Bubble Tea,Medium 236ml (ops S),550,440,110
+Kiwi Bubble Tea,Kiwi Bubble Tea,Large 354ml (ops M),575,480,95
+Honey Bubble Tea,Honey Bubble Tea,Medium 236ml (ops S),550,440,110
+Honey Bubble Tea,Honey Bubble Tea,Large 354ml (ops M),575,480,95
+Strawberry Bubble Tea,Strawberry Bubble Tea,Medium 236ml (ops S),550,440,110
+Strawberry Bubble Tea,Strawberry Bubble Tea,Large 354ml (ops M),575,480,95
+Iced Lemon & Honey Tea,Iced Lemon and Honey Tea,Medium 236ml (ops S),460,370,90
+Iced Lemon & Honey Tea,Iced Lemon and Honey Tea,Large 354ml (ops M),485,400,85
+Peach Iced Tea,Peach Iced Tea,Medium 236ml (ops S),450,360,90
+Peach Iced Tea,Peach Iced Tea,Large 354ml (ops M),475,390,85
+Iced Rose Tea,Iced Rose Tea,Medium 236ml (ops S),450,360,90
+Iced Rose Tea,Iced Rose Tea,Large 354ml (ops M),475,390,85
+Banana Milkshake,Banana Milkshake,Medium 236ml (ops S),525,420,105
+Banana Milkshake,Banana Milkshake,Large 354ml (ops M),550,460,90
+Salted Caramel Coffee Milkshake,Salted Caramel Coffee Milkshake,Medium 236ml (ops S),550,440,110
+Salted Caramel Coffee Milkshake,Salted Caramel Coffee Milkshake,Large 354ml (ops M),575,480,95
+Coffee Milkshake,Coffee Milkshake,Medium 236ml (ops S),510,410,100
+Coffee Milkshake,Coffee Milkshake,Large 354ml (ops M),535,450,85
+Chocolate Coffee Milkshake,Chocolate Coffee Milkshake,Medium 236ml (ops S),550,440,110
+Chocolate Coffee Milkshake,Chocolate Coffee Milkshake,Large 354ml (ops M),575,480,95
+Chocolate Milkshake,Chocolate Milkshake,Medium 236ml (ops S),525,420,105
+Chocolate Milkshake,Chocolate Milkshake,Large 354ml (ops M),550,460,90
+Strawberry,Strawberry Milkshake,Medium 236ml (ops S),525,390,135
+Strawberry,Strawberry Milkshake,Large 354ml (ops M),550,420,130
+Salted Caramel Milkshake,Salted Caramel Milkshake,Medium 236ml (ops S),525,420,105
+Salted Caramel Milkshake,Salted Caramel Milkshake,Large 354ml (ops M),550,460,90
+Mango milkshake,Mango Milkshake,Medium 236ml (ops S),525,420,105
+Mango milkshake,Mango Milkshake,Large 354ml (ops M),550,460,90
+Kiwi milkshake,Kiwi Milkshake,Medium 236ml (ops S),525,420,105
+Kiwi milkshake,Kiwi Milkshake,Large 354ml (ops M),550,460,90
+Babyccino,Chocolate Babyccino,One size,75,50,25
+Coca-Cola,Coca Cola 330ml,One size,250,190,60
+Fanta,Fanta 330ml,One size,250,190,60
+Still Water,Still Water,One size,200,160,40
+Apple Juice,Apple Juice,One size,235,160,75
+Pringles,Salt & Vinegar Pringles 40g,One size,250,190,60
+Pringles,BBQ Pringles 40g,One size,250,190,60
+Dark Blue Wafer,Dark Blue Wafer,One size,250,190,60
+Pringles,Pringles Sour Cream & Onion 40g,One size,235,190,45
+Pom-Bear crisps,Pom-Bear Original Potato Snacks 19g,One size,125,100,25
+Pringles,Pringles Original 40g,One size,250,190,60
+Cinnamon classic,Fresh Cinnamon Bun,One size,400,300,100
+Lemon and Pistachio,Lemon and Pistachio,One size,425,340,85
+Tiramisu blondie,Tiramisu blondie,One size,450,,
+Billionaire's shortbread,Billionaire’s shortbread,One size,450,360,90
+Brownie Bar,The Handmade Cake Company Gluten-Free Chocolate Brownie 60g,One size,255,205,50
+Toast with butter,Toasts with butter,One size,250,,
+Soup of the day,Soup of the day,One size,650,,
+Granola pot,Fresh Granola Pod,One size,500,,
+Ham and Cheese Panini,Ham and cheese panini,One size,475,400,75
+Bacon roll,Homemade Bacon Roll,One size,480,,
+Chia pudding,Healthy Chia Pudding,One size,550,,
+Avocado toast,Avocado toast,One size,650,,
+Iced banana bread hojicha,Iced Banana Bread Hojicha,One size (vs ops M; ops also has S),600,500,100
+Iced brown sugar hojicha,Iced Brown Sugar Hojicha,One size (vs ops M; ops also has S),580,480,100
+Iced Biscoff hojicha,Iced Biscoff Hojicha,One size (vs ops M; ops also has S),580,480,100

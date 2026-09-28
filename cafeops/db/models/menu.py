@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
+    Date,
     ForeignKey,
     Index,
     Integer,
@@ -179,6 +180,34 @@ class MenuCategory(Base):
     name: Mapped[str] = mapped_column(String(80), nullable=False, unique=True)
     kind: Mapped[MenuKind] = mapped_column(enum_col(MenuKind), nullable=False)
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+
+
+class MenuItemReference(Base):
+    """Researched presentation and a benchmark for one menu product, keyed by name.
+
+    Written by `cafeops seed-reference` from `seed/reference/menu.csv`. Keyed by name
+    (every size shares it), like the website's `site_menu_item_meta` overlay.
+    `benchmark_price_pence` is what comparable cafés charge, for comparison only:
+    it is NEVER a sell price and nothing copies it to `menu_item.price_pence`.
+    """
+
+    __tablename__ = "menu_item_reference"
+
+    item_name: Mapped[str] = mapped_column(String(200), primary_key=True)
+    description: Mapped[str | None] = mapped_column(String(300))
+    #: e.g. ["vegan-possible", "contains-caffeine", "iced"].
+    tags: Mapped[list[str] | None] = mapped_column(JSON(none_as_null=True))
+    benchmark_price_pence: Mapped[int | None] = mapped_column(Integer)
+    benchmark_source_url: Mapped[str | None] = mapped_column(String(500))
+    fetched_on: Mapped[date | None] = mapped_column(Date)
+    updated_at: Mapped[datetime] = mapped_column(UTCDateTime, nullable=False)
+
+    __table_args__ = (
+        CheckConstraint(
+            "benchmark_price_pence IS NULL OR benchmark_price_pence > 0",
+            name="benchmark_positive",
+        ),
+    )
 
 
 class MenuItemCost(Base):

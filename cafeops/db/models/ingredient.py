@@ -6,7 +6,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, CheckConstraint, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import JSON, Boolean, CheckConstraint, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from cafeops.db.base import Base
@@ -77,6 +77,17 @@ class Ingredient(Base, TimestampedMixin):
     #: The service refuses to retire one still used by an open recipe line.
     retired_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
     retired_by: Mapped[str | None] = mapped_column(String(120))
+
+    #: Allergens from the UK 14 (`milk`, `cereals_gluten`, ...). NULL means UNKNOWN;
+    #: `[]` means somebody checked and there are none. Written by `seed-reference`
+    #: only where NULL, so a list a person entered is never replaced by research.
+    allergens: Mapped[list[str] | None] = mapped_column(JSON(none_as_null=True))
+    #: Where the allergen list came from (a page URL, or who checked the label).
+    allergens_source: Mapped[str | None] = mapped_column(String(500))
+    #: A reference photo of the product (the media library). ON DELETE SET NULL.
+    photo_asset_id: Mapped[int | None] = mapped_column(
+        ForeignKey("media_asset.id", ondelete="SET NULL")
+    )
 
     prices: Mapped[list[IngredientPrice]] = relationship(
         back_populates="ingredient",

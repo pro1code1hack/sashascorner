@@ -28,25 +28,32 @@ from cafeops.api.areas.members_schemas import (
     DevicesOut,
     EligibilityIn,
     EligibilityPreviewOut,
+    GiveRewardIn,
+    InsightsOut,
     LinkIn,
+    MemberCreateIn,
     MemberDetailOut,
+    MemberPatchIn,
     MembersPageOut,
     MenuFacetsOut,
     PosCustomersAdminOut,
-    ProgramAdminOut,
     ProgramCreateIn,
     ProgramEditIn,
     ProgramFullOut,
     ProgramIn,
     ProgramsAdminOut,
+    ProgramSettingsOut,
     SegmentName,
+    SendLinkOut,
     SendOut,
     SortName,
     StaffCreateIn,
     StaffListOut,
     StaffOut,
     StaffPatchIn,
+    StampIn,
     StatsOut,
+    StickerIn,
     TargetsIn,
     TargetsOut,
 )
@@ -70,6 +77,27 @@ async def members(
             s, q=q, segment=segment, sort=sort, limit=limit, offset=offset, program=program
         )
     )
+
+
+@router.post(
+    "",
+    response_model=MemberDetailOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Add a member from the back office (terms confirmed by staff).",
+)
+async def member_create(body: MemberCreateIn, background: BackgroundTasks) -> MemberDetailOut:
+    out = await in_session(lambda s: views.create_member_view(s, body))
+    background.add_task(kick_wallets)
+    return out
+
+
+@router.get(
+    "/insights",
+    response_model=InsightsOut,
+    summary="How the card is doing: this window against the one before.",
+)
+async def member_insights(days: Annotated[int, Query(ge=7, le=366)] = 90) -> InsightsOut:
+    return await in_session(lambda s: views.insights_view(s, days))
 
 
 @router.get("/stats", response_model=StatsOut, summary="The spec's 90-day success metrics.")
@@ -137,13 +165,17 @@ async def pos_customers(days: Annotated[int, Query(ge=1, le=90)] = 14) -> PosCus
     return await in_session(lambda s: views.pos_customers_view(s, days))
 
 
-@router.get("/program", response_model=ProgramAdminOut, summary="The stamp card's settings.")
-async def program() -> ProgramAdminOut:
+@router.get("/program", response_model=ProgramSettingsOut, summary="The stamp card's settings.")
+async def program() -> ProgramSettingsOut:
     return await in_session(views.program_view)
 
 
-@router.put("/program", response_model=ProgramAdminOut, summary="Edit them. Manager PIN.")
-async def program_update(body: ProgramIn, request: Request) -> ProgramAdminOut:
+@router.put(
+    "/program",
+    response_model=ProgramSettingsOut,
+    summary="Edit them. Manager PIN once a manager exists.",
+)
+async def program_update(body: ProgramIn, request: Request) -> ProgramSettingsOut:
     ip = client_ip(request)
     return await in_session(lambda s: views.program_update_view(s, body, ip))
 
@@ -202,8 +234,22 @@ async def campaigns() -> CampaignsOut:
     status_code=status.HTTP_201_CREATED,
     summary="Draft a campaign (sent now by /send, or at scheduled_at by the job).",
 )
-async def campaign_create(body: CampaignIn) -> CampaignOut:
-    return await in_session(lambda s: views.campaign_create_view(s, body))
+async def campaign_create(body: CampaignIn, background: BackgroundTasks) -> CampaignOut:
+    out, outgoing = await in_session(lambda s: views.campaign_create_view(s, body))
+    if body.send_now:
+        background.add_task(kick_wallets)
+    if outgoing:
+        background.add_task(deliver_after_commit, outgoing)
+    return out
+
+
+@router.post(
+    "/campaigns/{campaign_id}/cancel",
+    response_model=CampaignOut,
+    summary="Cancel a campaign that has not gone out.",
+)
+async def campaign_cancel(campaign_id: int) -> CampaignOut:
+    return await in_session(lambda s: views.campaign_cancel_view(s, campaign_id))
 
 
 @router.post(
@@ -287,6 +333,75 @@ async def member_adjust(
         )
     )
     background.add_task(kick_wallets)
+    return out
+
+
+@router.patch(
+    "/{member_id}",
+    response_model=MemberDetailOut,
+    summary="Edit contact, birthday, consent (source: back office) and notes.",
+)
+async def member_patch(
+    member_id: int, body: MemberPatchIn, background: BackgroundTasks
+) -> MemberDetailOut:
+    out = await in_session(lambda s: views.patch_member_view(s, member_id, body))
+    background.add_task(kick_wallets)
+    return out
+
+
+@router.post("/{member_id}/stamp", response_model=MemberDetailOut, summary="One stamp.")
+async def member_stamp(
+    member_id: int, body: StampIn, background: BackgroundTasks
+) -> MemberDetailOut:
+    out = await in_session(lambda s: views.stamp_view(s, member_id, body.sticker))
+    background.add_task(kick_wallets)
+    return out
+
+
+@router.post(
+    "/{member_id}/give-reward", response_model=MemberDetailOut, summary="Give the free drink."
+)
+async def member_give_reward(
+    member_id: int, body: GiveRewardIn, background: BackgroundTasks
+) -> MemberDetailOut:
+    out = await in_session(lambda s: views.give_reward_view(s, member_id, body))
+    background.add_task(kick_wallets)
+    return out
+
+
+@router.post(
+    "/{member_id}/undo-last",
+    response_model=MemberDetailOut,
+    summary="Reverse the newest stamp, correction or free drink on the card.",
+)
+async def member_undo_last(member_id: int, background: BackgroundTasks) -> MemberDetailOut:
+    out = await in_session(lambda s: views.undo_last_view(s, member_id))
+    background.add_task(kick_wallets)
+    return out
+
+
+@router.put(
+    "/{member_id}/stickers",
+    response_model=MemberDetailOut,
+    summary="Change the sticker in one filled slot (cosmetic; the ledger is untouched).",
+)
+async def member_sticker(
+    member_id: int, body: StickerIn, background: BackgroundTasks
+) -> MemberDetailOut:
+    out = await in_session(lambda s: views.sticker_view(s, member_id, body))
+    background.add_task(kick_wallets)
+    return out
+
+
+@router.post(
+    "/{member_id}/send-link",
+    response_model=SendLinkOut,
+    summary="Send the member their web-card link (email or text when configured).",
+)
+async def member_send_link(member_id: int, background: BackgroundTasks) -> SendLinkOut:
+    out, outgoing = await in_session(lambda s: views.send_link_view(s, member_id))
+    if outgoing:
+        background.add_task(deliver_after_commit, outgoing)
     return out
 
 

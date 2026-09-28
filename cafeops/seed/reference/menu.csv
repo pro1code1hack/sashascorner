@@ -1,0 +1,223 @@
+name,category,description,tags,benchmark_price_pence,benchmark_source_url,fetched_on
+Afternoon Deal,Deals,Afternoon offer built around a croissant.,,,,
+Apple Juice,Cold drinks,Carton of apple juice.,,280,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+BKK Kyiv cake,Cakes & bakes,"Kyiv cake, older till button for the whole cake.",,,,
+Babyccino,Hot drinks,"Warm frothed milk for little ones, with marshmallows.",,,,
+Brownie Bar,Cakes & bakes,Chocolate brownie bar.,,395,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Butterfly Hot Chocolate,Signature hot drinks,Hot chocolate with butterfly syrup.,,515,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Capri-Sun,Cold drinks,Capri-Sun pouch.,,,,
+Caramel syrup (add-on),Extras,Add a shot of caramel syrup to any drink.,,80,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Cinnamon Bun Hot Chocolate,Signature hot drinks,Hot chocolate with cinnamon bun syrup.,,515,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Cinnamon Bun Latte,Signature hot drinks,Espresso and steamed milk with cinnamon bun syrup.,contains-caffeine|vegan-possible,505,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Coca-Cola,Cold drinks,Coca-Cola.,,260,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+Coconut milk (+upcharge),Extras,Swap to coconut milk in any drink.,vegan-possible,50,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Dark Blue Wafer,Snacks,Sweet wafer snack.,,,,
+Extra shot,Extras,An extra shot of espresso.,contains-caffeine,80,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Fanta,Cold drinks,Fanta.,,200,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/loom-deli,2026-09-28
+Ham Croissant,Lunch,Warm croissant with ham and butter.,,550,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+Ham and Cheese Panini,Lunch,"Panini with ham, cheese and mayo.",,450,https://deliveroo.co.uk/menu/dundee/dundee/poba-bubble-tea,2026-09-28
+Ham and Cheese Toastie,Lunch,"White bloomer with ham and mild cheddar, topped with béchamel, cheddar and mozzarella.",,495,https://deliveroo.co.uk/menu/Dundee/dundee/crollas,2026-09-28
+Homemade Roll,Lunch,Filled bread roll.,,,,
+Hot blue matcha,Signature hot drinks,Blue matcha (butterfly pea) with steamed milk.,vegan-possible,,,
+Iced Butterfly Latte,Signature iced drinks,Espresso and cold milk over ice with butterfly syrup.,contains-caffeine|iced|vegan-possible,499,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Iced Cinnamon Bun Latte,Signature iced drinks,Espresso and cold milk over ice with cinnamon bun syrup.,contains-caffeine|iced|vegan-possible,499,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Iced Mint Latte,Signature iced drinks,Espresso and cold milk over ice with mint syrup.,contains-caffeine|iced|vegan-possible,499,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Iced Orange Latte,Signature iced drinks,Espresso and cold milk over ice with orange syrup.,contains-caffeine|iced|vegan-possible,499,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Iced Pumpkin Spice Latte,Signature iced drinks,Espresso and cold milk over ice with pumpkin spice syrup.,contains-caffeine|iced|vegan-possible|seasonal,499,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Iced Rose Latte,Signature iced drinks,Espresso and cold milk over ice with rose syrup.,contains-caffeine|iced|vegan-possible,499,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Iced Salted Caramel Latte,Signature iced drinks,Espresso and cold milk over ice with salted caramel syrup.,contains-caffeine|iced|vegan-possible,499,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Iced Toffee Latte,Signature iced drinks,Espresso and cold milk over ice with toffee syrup.,contains-caffeine|iced|vegan-possible,499,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Iced matcha (plain),Iced green matcha,Matcha whisked fresh and poured over cold milk and ice.,contains-caffeine|iced|vegan-possible,525,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/the-flame-tree-cafe-dundee,2026-09-28
+Juice (generic),Cold drinks,Bottled or carton juice.,,280,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+Lemon Drizzle Bar,Cakes & bakes,Lemon drizzle traybake.,,375,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/dundee-cycle-hub-cafe-waterfront-place-riverside,2026-09-28
+Lunch Deal,Deals,Lunch offer built around a ham and cheese panini.,,,,
+Marshmallow,Extras,Add marshmallows to a hot drink.,,,,
+Mini Cookie,Cakes & bakes,Cookie from the counter.,,,,
+Mint Hot Chocolate,Signature hot drinks,Hot chocolate with mint syrup.,,515,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Mint Latte,Signature hot drinks,Espresso and steamed milk with mint syrup.,contains-caffeine|vegan-possible,505,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Oat milk (+upcharge),Extras,Swap to oat milk in any drink.,vegan-possible,50,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Orange Hot Chocolate,Signature hot drinks,Hot chocolate with orange syrup.,,515,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Orange Juice,Cold drinks,Carton of orange juice.,,280,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+Orange Latte,Signature hot drinks,Espresso and steamed milk with orange syrup.,contains-caffeine|vegan-possible,505,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Pom-Bear crisps,Snacks,"Ready salted teddy-shaped potato snack, 19 g.",,,,
+Pringles,Snacks,"Pringles, 40 g.",,,,
+Pumpkin Spice Hot Chocolate,Signature hot drinks,Hot chocolate with pumpkin spice syrup.,seasonal,515,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Pumpkin Spice Latte,Signature hot drinks,Espresso and steamed milk with pumpkin spice syrup.,contains-caffeine|vegan-possible|seasonal,505,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Salami Croissant,Lunch,Warm croissant with salami and cheese.,,550,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+Salami Roll,Lunch,Bread roll with salami and butter.,,,,
+Salmon Croissant,Lunch,Croissant with smoked salmon and cream cheese.,,,,
+Salted Caramel Bar,Cakes & bakes,Salted caramel traybake.,,375,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/dundee-cycle-hub-cafe-waterfront-place-riverside,2026-09-28
+Salted Caramel Hot Chocolate,Signature hot drinks,Hot chocolate with salted caramel syrup.,,515,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Still Water,Cold drinks,Bottle of still water.,,150,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/dundee-cycle-hub-cafe-waterfront-place-riverside,2026-09-28
+Strawberry bliss,Milkshakes,Strawberry shake with vanilla ice cream and milk (older till button).,,,,
+Strawberry syrup (add-on),Extras,Add a shot of strawberry syrup to any drink.,,80,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Syrup Gift Set,Retail,Gift set of flavoured syrups.,,,,
+Toffee Hot Chocolate,Signature hot drinks,Hot chocolate with toffee syrup.,,515,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Toffee Nut Latte,Signature hot drinks,Espresso and steamed milk with toffee nut syrup.,contains-caffeine|vegan-possible,505,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Tropicana,Cold drinks,Tropicana orange juice.,,280,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+Tuna Toastie,Lunch,Toasted sandwich with tuna and melted cheese.,,,,
+Vanilla syrup (add-on),Extras,Add a shot of vanilla syrup to any drink.,,80,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Water,Cold drinks,Bottle of water.,,150,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/dundee-cycle-hub-cafe-waterfront-place-riverside,2026-09-28
+Brown sugar bubble tea,Autumn specials,Milk tea with brown sugar syrup and tapioca pearls.,contains-caffeine|iced|seasonal,399,https://deliveroo.co.uk/menu/dundee/dundee/poba-bubble-tea,2026-09-28
+Iced Biscoff hojicha,Autumn specials,"Roasted green tea with milk and Biscoff, over ice.",contains-caffeine|iced|seasonal,495,https://deliveroo.co.uk/menu/edinburgh/southwest-edinburgh/matcha-sando-edinburgh-matcha-coffee-and-sandwich-shop-116-bruntsfield-place,2026-09-28
+Iced banana bread hojicha,Autumn specials,"Fresh banana with cinnamon and fresh milk, finished with roasted green tea.",contains-caffeine|iced|seasonal,495,https://deliveroo.co.uk/menu/edinburgh/southwest-edinburgh/matcha-sando-edinburgh-matcha-coffee-and-sandwich-shop-116-bruntsfield-place,2026-09-28
+Iced brown sugar hojicha,Autumn specials,"Roasted green tea with milk and brown sugar syrup, over ice.",contains-caffeine|iced|seasonal|vegan-possible,495,https://deliveroo.co.uk/menu/edinburgh/southwest-edinburgh/matcha-sando-edinburgh-matcha-coffee-and-sandwich-shop-116-bruntsfield-place,2026-09-28
+Iced creamy pumpkin spice,Autumn specials,"Espresso, condensed milk and pumpkin-spice syrup over milk and ice, topped with cream.",contains-caffeine|iced|seasonal,499,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Mango bubble tea,Autumn specials,Creamy milk tea with mango and tapioca pearls.,contains-caffeine|iced|seasonal,399,https://deliveroo.co.uk/menu/dundee/dundee/poba-bubble-tea,2026-09-28
+Avocado toast,Breakfast,"Seeded brown toast with avocado, tomatoes and wild rocket, with salad on the side.",vegan-possible,795,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/dundee-cycle-hub-cafe-waterfront-place-riverside,2026-09-28
+Bacon roll,Breakfast,Fresh roll with bacon.,,455,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Cheese & vegetable omelette,Breakfast,"Cheese and vegetable omelette, with salad on the side.",,,,
+Chia pudding,Breakfast,"Chia seeds, Greek yoghurt, cottage cheese, golden syrup and oats, with fresh fruit.",vegan-possible,,,
+Granola pot,Breakfast,"Vanilla yoghurt with honey and granola with nuts, topped with strawberries, blueberries and raspberries.",,795,https://www.thecourier.co.uk/fp/lifestyle/food-drink/2719482/breakfast-places-dundee/,2026-09-28
+Porridge,Breakfast,Porridge with milk and fresh fruit.,vegan-possible,395,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Sausage roll,Breakfast,"Sausage in a bread roll, from the breakfast menu.",,,,
+Toast with butter,Breakfast,"Toast with butter. Jam, marmalade, honey or beans +50p.",,350,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/the-flame-tree-cafe-dundee,2026-09-28
+Cheesy potato waffles,Brunch waffles,"Cheesy potato waffles, with salad on the side.",,,,
+Cheesy waffles,Brunch waffles,"Savoury cheesy waffles, with salad on the side.",,,,
+Chocolate waffles,Brunch waffles,"Waffles with chocolate, fresh fruit, ice cream and sauce.",,949,https://deliveroo.co.uk/menu/Dundee/dundee/crollas,2026-09-28
+Maple fruity waffles,Brunch waffles,"Waffles with maple, fresh fruit, ice cream and sauce.",,949,https://deliveroo.co.uk/menu/Dundee/dundee/crollas,2026-09-28
+Pistachio waffles,Brunch waffles,"Pistachio spread, fresh fruit, ice cream and sauce.",,949,https://deliveroo.co.uk/menu/Dundee/dundee/crollas,2026-09-28
+Banana and Pecan Muffin,Cakes & bakes,Banana and pecan muffin.,,420,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Billionaire's shortbread,Cakes & bakes,"Melt-in-the-mouth biscuit base, caramel, and smooth dark-milk chocolate.",,395,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Blueberry Muffin,Cakes & bakes,Blueberry muffin.,,420,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Cinnamon classic,Cakes & bakes,Classic cinnamon bun.,,395,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+Croissant with Jam,Cakes & bakes,Croissant with butter and jam.,,375,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/the-flame-tree-cafe-dundee,2026-09-28
+Kyiv cake (slice),Cakes & bakes,"Hazelnut meringue, buttercream and cocoa — Kyiv's own celebration cake.",,410,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+Kyiv cake (whole),Cakes & bakes,Whole Kyiv cake. Order ahead.,,,,
+Lemon and Pistachio,Cakes & bakes,"Squishy blondie with a zip of lemon, chopped pistachios and white chocolate buttons.",,395,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Raspberry Brownie Cheesecake,Cakes & bakes,Raspberry brownie cheesecake.,,475,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Raspberry and Almond Muffin,Cakes & bakes,Raspberry and almond muffin.,,420,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Raspberry and matcha cheesecake,Cakes & bakes,Raspberry and matcha cheesecake.,,475,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Salted Caramel Brownie,Cakes & bakes,Salted caramel brownie.,,395,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Sticky Toffee Biscoff,Cakes & bakes,Sticky toffee and Biscoff slice.,,395,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Strawberry Pancake,Cakes & bakes,Pancakes with fresh strawberries and vanilla syrup.,,,,
+Tiramisu blondie,Cakes & bakes,"Dense, fudgy white chocolate blondie with coffee and dark and white chocolate chunks, topped with white chocolate and cocoa.",contains-caffeine,395,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Green Apple Bubble Tea,Creamy bubble tea,Creamy milk tea with green apple and tapioca pearls.,contains-caffeine|iced,399,https://deliveroo.co.uk/menu/dundee/dundee/poba-bubble-tea,2026-09-28
+Honey Bubble Tea,Creamy bubble tea,Creamy milk tea with honey and tapioca pearls.,contains-caffeine|iced,399,https://deliveroo.co.uk/menu/dundee/dundee/poba-bubble-tea,2026-09-28
+Honey banana bubble tea,Creamy bubble tea,Creamy milk tea with honey and banana and tapioca pearls.,contains-caffeine|iced,399,https://deliveroo.co.uk/menu/dundee/dundee/poba-bubble-tea,2026-09-28
+Kiwi Bubble Tea,Creamy bubble tea,Creamy milk tea with kiwi and tapioca pearls.,contains-caffeine|iced,399,https://deliveroo.co.uk/menu/dundee/dundee/poba-bubble-tea,2026-09-28
+Passion Fruit Bubble Tea,Creamy bubble tea,Creamy milk tea with passion fruit and tapioca pearls.,contains-caffeine|iced,399,https://deliveroo.co.uk/menu/dundee/dundee/poba-bubble-tea,2026-09-28
+Raspberry bubble tea,Creamy bubble tea,Creamy milk tea with raspberry and tapioca pearls.,contains-caffeine|iced,399,https://deliveroo.co.uk/menu/dundee/dundee/poba-bubble-tea,2026-09-28
+Strawberry Bubble Tea,Creamy bubble tea,Creamy milk tea with strawberry and tapioca pearls.,contains-caffeine|iced,399,https://deliveroo.co.uk/menu/dundee/dundee/poba-bubble-tea,2026-09-28
+Cortado,Espresso bar,Espresso cut with a little steamed milk (60 ml).,contains-caffeine|vegan-possible,350,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+Double Espresso,Espresso bar,Double shot of espresso (60 ml).,contains-caffeine|vegan-possible,,,
+Double Espresso Con Pana,Espresso bar,Double espresso (60 ml) topped with cream.,contains-caffeine,,,
+Double Macchiato,Espresso bar,Double espresso marked with milk foam (80 ml).,contains-caffeine|vegan-possible,,,
+Flat White,Espresso bar,"Tasty, strong coffee with latte art.",contains-caffeine|vegan-possible,380,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+Mocha Cortado,Espresso bar,Cortado with chocolate (60 ml).,contains-caffeine|vegan-possible,,,
+Single Espresso,Espresso bar,Single shot of espresso (30 ml).,contains-caffeine|vegan-possible,270,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/dundee-cycle-hub-cafe-waterfront-place-riverside,2026-09-28
+Single Espresso Con Pana,Espresso bar,Single espresso (30 ml) topped with cream.,contains-caffeine,,,
+Single Macchiato,Espresso bar,Espresso marked with milk foam (40 ml).,contains-caffeine|vegan-possible,325,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/dundee-cycle-hub-cafe-waterfront-place-riverside,2026-09-28
+Black Americano,Hot drinks,Espresso topped with hot water.,contains-caffeine|vegan-possible,330,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+Cappuccino,Hot drinks,Espresso with steamed milk and a deep layer of foam.,contains-caffeine|vegan-possible,390,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+Chai Latte,Hot drinks,Spiced chai with steamed milk.,contains-caffeine|vegan-possible,435,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/the-flame-tree-cafe-dundee,2026-09-28
+Hot Chocolate,Hot drinks,Hot chocolate made with steamed milk.,vegan-possible,400,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+Latte,Hot drinks,Espresso with plenty of steamed milk.,contains-caffeine|vegan-possible,390,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+Mocha,Hot drinks,"Espresso, chocolate and steamed milk.",contains-caffeine|vegan-possible,410,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+Orange Americano,Hot drinks,Black americano with orange flavour.,contains-caffeine,,,
+Raff Coffee,Hot drinks,Espresso steamed with cream and vanilla sugar — an Eastern European café favourite.,contains-caffeine,,,
+White Americano,Hot drinks,Espresso topped with hot water and a splash of milk.,contains-caffeine|vegan-possible,330,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+White Hot Chocolate,Hot drinks,White hot chocolate made with steamed milk.,,435,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+White Mocha,Hot drinks,"Espresso, white chocolate and steamed milk.",contains-caffeine,,,
+Green apple matcha,Hot matcha,Matcha whisked fresh with steamed milk and green apple.,contains-caffeine|vegan-possible,495,https://deliveroo.co.uk/menu/edinburgh/southwest-edinburgh/matcha-sando-edinburgh-matcha-coffee-and-sandwich-shop-116-bruntsfield-place,2026-09-28
+Hot Lavender Matcha,Hot matcha,Matcha whisked fresh with steamed milk and lavender.,contains-caffeine|vegan-possible,495,https://deliveroo.co.uk/menu/edinburgh/southwest-edinburgh/matcha-sando-edinburgh-matcha-coffee-and-sandwich-shop-116-bruntsfield-place,2026-09-28
+Hot Matcha,Hot matcha,"Matcha whisked fresh in front of you, with steamed milk.",contains-caffeine|vegan-possible,400,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+Hot Rose Matcha,Hot matcha,Matcha whisked fresh with steamed milk and rose.,contains-caffeine|vegan-possible,495,https://deliveroo.co.uk/menu/edinburgh/southwest-edinburgh/matcha-sando-edinburgh-matcha-coffee-and-sandwich-shop-116-bruntsfield-place,2026-09-28
+Hot Strawberry Matcha,Hot matcha,Matcha whisked fresh with steamed milk and strawberry.,contains-caffeine|vegan-possible,495,https://deliveroo.co.uk/menu/edinburgh/southwest-edinburgh/matcha-sando-edinburgh-matcha-coffee-and-sandwich-shop-116-bruntsfield-place,2026-09-28
+Hot Vanilla Matcha,Hot matcha,Matcha whisked fresh with steamed milk and vanilla.,contains-caffeine|vegan-possible,495,https://deliveroo.co.uk/menu/edinburgh/southwest-edinburgh/matcha-sando-edinburgh-matcha-coffee-and-sandwich-shop-116-bruntsfield-place,2026-09-28
+Hot White Choc Matcha,Hot matcha,Matcha whisked fresh with steamed milk and white chocolate.,contains-caffeine,495,https://deliveroo.co.uk/menu/edinburgh/southwest-edinburgh/matcha-sando-edinburgh-matcha-coffee-and-sandwich-shop-116-bruntsfield-place,2026-09-28
+Hot banana matcha,Hot matcha,Matcha whisked fresh with steamed milk and banana.,contains-caffeine|vegan-possible,495,https://deliveroo.co.uk/menu/edinburgh/southwest-edinburgh/matcha-sando-edinburgh-matcha-coffee-and-sandwich-shop-116-bruntsfield-place,2026-09-28
+Kiwi matcha,Hot matcha,Matcha whisked fresh with steamed milk and kiwi.,contains-caffeine|vegan-possible,495,https://deliveroo.co.uk/menu/edinburgh/southwest-edinburgh/matcha-sando-edinburgh-matcha-coffee-and-sandwich-shop-116-bruntsfield-place,2026-09-28
+Mango matcha,Hot matcha,Matcha whisked fresh with steamed milk and mango.,contains-caffeine|vegan-possible,495,https://deliveroo.co.uk/menu/edinburgh/southwest-edinburgh/matcha-sando-edinburgh-matcha-coffee-and-sandwich-shop-116-bruntsfield-place,2026-09-28
+Peach matcha,Hot matcha,Matcha whisked fresh with steamed milk and peach.,contains-caffeine|vegan-possible,495,https://deliveroo.co.uk/menu/edinburgh/southwest-edinburgh/matcha-sando-edinburgh-matcha-coffee-and-sandwich-shop-116-bruntsfield-place,2026-09-28
+Raspberry matcha,Hot matcha,Matcha whisked fresh with steamed milk and raspberry.,contains-caffeine|vegan-possible,495,https://deliveroo.co.uk/menu/edinburgh/southwest-edinburgh/matcha-sando-edinburgh-matcha-coffee-and-sandwich-shop-116-bruntsfield-place,2026-09-28
+Espresso Tonic,Iced coffee,Espresso poured over tonic water and ice.,contains-caffeine|iced|vegan-possible,,,
+Iced Black Americano,Iced coffee,Espresso and cold water over ice.,contains-caffeine|iced|vegan-possible,360,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Iced Cappuccino,Iced coffee,"Espresso, cold milk and foam over ice.",contains-caffeine|iced|vegan-possible,390,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+Iced Chai Latte,Iced coffee,Spiced chai with cold milk over ice.,contains-caffeine|iced|vegan-possible,525,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/the-flame-tree-cafe-dundee,2026-09-28
+Iced Flat White,Iced coffee,Espresso and cold milk over ice.,contains-caffeine|iced|vegan-possible,380,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+Iced Latte,Iced coffee,Espresso and cold milk over ice.,contains-caffeine|iced|vegan-possible,390,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+Iced Mocha,Iced coffee,"Espresso, chocolate and cold milk over ice.",contains-caffeine|iced,410,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+Iced White Americano,Iced coffee,"Espresso, cold water and a splash of milk over ice.",contains-caffeine|iced|vegan-possible,360,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Iced White Mocha,Iced coffee,"Espresso, white chocolate and cold milk over ice.",contains-caffeine|iced,,,
+Iced Banana Matcha,Iced green matcha,"Matcha whisked fresh over cold milk and ice, with banana.",contains-caffeine|iced|vegan-possible,460,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+Iced Coconut Matcha,Iced green matcha,"Matcha whisked fresh over cold milk and ice, with coconut.",contains-caffeine|iced|vegan-possible,460,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+Iced Mango Matcha,Iced green matcha,"Matcha whisked fresh over cold milk and ice, with mango.",contains-caffeine|iced|vegan-possible,460,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+Iced Peach Matcha,Iced green matcha,"Matcha whisked fresh over cold milk and ice, with peach.",contains-caffeine|iced|vegan-possible,460,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+Iced Strawberry Matcha,Iced green matcha,"Matcha whisked fresh over cold milk and ice, with strawberry.",contains-caffeine|iced|vegan-possible,460,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+Iced citrus matcha,Iced green matcha,"Matcha whisked fresh over cold milk and ice, with citrus.",contains-caffeine|iced|vegan-possible,460,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+Iced green apple matcha,Iced green matcha,"Matcha whisked fresh over cold milk and ice, with green apple.",contains-caffeine|iced|vegan-possible,460,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+Iced kiwi matcha,Iced green matcha,"Matcha whisked fresh over cold milk and ice, with kiwi.",contains-caffeine|iced|vegan-possible,460,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+Iced lavender matcha,Iced green matcha,"Matcha whisked fresh over cold milk and ice, with lavender.",contains-caffeine|iced|vegan-possible,460,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+Iced raspberry matcha,Iced green matcha,"Matcha whisked fresh over cold milk and ice, with raspberry.",contains-caffeine|iced|vegan-possible,460,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+Iced rose matcha,Iced green matcha,"Matcha whisked fresh over cold milk and ice, with rose.",contains-caffeine|iced|vegan-possible,460,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+Iced vanilla matcha,Iced green matcha,"Matcha whisked fresh over cold milk and ice, with vanilla.",contains-caffeine|iced|vegan-possible,460,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+Iced white chocolate matcha,Iced green matcha,"Matcha whisked fresh over cold milk and ice, with white chocolate.",contains-caffeine|iced,460,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+Berry Breeze Lemonade,"Iced teas, refreshers & smoothies",Berry refresher over ice.,iced,750,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/loom-deli,2026-09-28
+Emerald Zest,"Iced teas, refreshers & smoothies",Fruity iced refresher.,iced,,,
+Iced Lemon & Honey Tea,"Iced teas, refreshers & smoothies",Iced tea with lemon and honey.,contains-caffeine|iced,360,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+Iced Rose Tea,"Iced teas, refreshers & smoothies",Iced tea with rose.,contains-caffeine|iced,,,
+Passion Fruit,"Iced teas, refreshers & smoothies",Passion fruit smoothie.,iced|vegan-possible,350,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/dundee-cycle-hub-cafe-waterfront-place-riverside,2026-09-28
+Peach Iced Tea,"Iced teas, refreshers & smoothies",Iced tea with peach.,contains-caffeine|iced|vegan-possible,360,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+Pineapple & Passion Fruit,"Iced teas, refreshers & smoothies",Pineapple and passion fruit smoothie.,iced|vegan-possible,350,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/dundee-cycle-hub-cafe-waterfront-place-riverside,2026-09-28
+Strawberry blast smoothie,"Iced teas, refreshers & smoothies",Strawberry smoothie.,iced,350,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/dundee-cycle-hub-cafe-waterfront-place-riverside,2026-09-28
+Tropical Mint Bliss,"Iced teas, refreshers & smoothies",Creamy iced refresher.,iced,,,
+Caramel Latte,Latte / flavoured latte,Espresso and steamed milk with caramel syrup.,contains-caffeine|vegan-possible,505,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Vanilla Latte,Latte / flavoured latte,Espresso and steamed milk with vanilla syrup.,contains-caffeine|vegan-possible,505,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Caesar salad,Lunch,Caesar salad. Add chicken for £1.,,,,
+Croissant,Lunch,"Filled croissant: ham & cheese, salami & cheese, or rocket & salmon.",,550,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+Fresh ciabatta,Lunch,Filled ciabatta — the selection is on the counter.,,800,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+Homemade Panini,Lunch,Toasted panini — the selection is in the fridge.,,450,https://deliveroo.co.uk/menu/dundee/dundee/poba-bubble-tea,2026-09-28
+Soup of the day,Lunch,"A fresh soup, different every day. Add toast on the side for £1.",,495,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Tuna salad,Lunch,Tuna salad.,,,,
+Banana Milkshake,Milkshakes,Banana milkshake made with vanilla ice cream and milk.,,495,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/the-flame-tree-cafe-dundee,2026-09-28
+Chocolate Coffee Milkshake,Milkshakes,Chocolate and coffee milkshake.,contains-caffeine,,,
+Chocolate Milkshake,Milkshakes,Chocolate milkshake made with vanilla ice cream and milk.,,495,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/the-flame-tree-cafe-dundee,2026-09-28
+Coffee Milkshake,Milkshakes,Coffee milkshake.,contains-caffeine,,,
+Kiwi milkshake,Milkshakes,Kiwi milkshake made with vanilla ice cream and milk.,,,,
+Mango milkshake,Milkshakes,Mango milkshake made with vanilla ice cream and milk.,,,,
+Salted Caramel Coffee Milkshake,Milkshakes,Salted caramel and coffee milkshake.,contains-caffeine,,,
+Salted Caramel Milkshake,Milkshakes,Salted caramel milkshake.,,495,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/the-flame-tree-cafe-dundee,2026-09-28
+Strawberry,Milkshakes,Strawberry milkshake made with vanilla ice cream and milk.,,495,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/the-flame-tree-cafe-dundee,2026-09-28
+Black Honey,Signature hot drinks,Signature hot drink with honey.,,,,
+Blue Honey Matcha,Signature hot drinks,Blue matcha with steamed milk and honey.,,,,
+Blue Lavender Matcha,Signature hot drinks,Blue matcha with lavender flavour.,vegan-possible,,,
+Blue Vanilla Matcha,Signature hot drinks,Blue matcha and vanilla — warms you up on any day.,vegan-possible,,,
+Butterfly (lavender) Latte,Signature hot drinks,"Espresso, creamy milk and a fresh note of lavender.",contains-caffeine|vegan-possible,505,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Honey Vanilla Latte,Signature hot drinks,Pure honey and vanilla with a smooth espresso.,contains-caffeine,505,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Lavender Hot Chocolate,Signature hot drinks,Hot chocolate with lavender.,,515,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Pistachio Hot Chocolate,Signature hot drinks,Hot chocolate with pistachio.,,515,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Pistachio Latte,Signature hot drinks,Espresso and steamed milk with pistachio.,contains-caffeine|vegan-possible,425,https://deliveroo.co.uk/menu/edinburgh/southwest-edinburgh/matcha-sando-edinburgh-matcha-coffee-and-sandwich-shop-116-bruntsfield-place,2026-09-28
+Raspberry Hot Chocolate,Signature hot drinks,A properly fruity hot chocolate.,,515,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Rose Hot Chocolate,Signature hot drinks,Hot chocolate with rose.,,515,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Rose Latte,Signature hot drinks,Espresso and steamed milk with rose.,contains-caffeine|vegan-possible,505,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Rose White Mocha,Signature hot drinks,"Espresso, white chocolate, rose and steamed milk.",contains-caffeine,,,
+Salted Caramel Latte,Signature hot drinks,Espresso and steamed milk with salted caramel.,contains-caffeine|vegan-possible,505,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Iced Citrus Blue Matcha,Signature iced drinks,Blue matcha with lemon juice and sparkling water.,iced,,,
+Iced Coconut Water Blue Matcha,Signature iced drinks,Blue matcha with coconut over ice.,iced,,,
+Iced Coconut Water Latte,Signature iced drinks,Smooth espresso over coconut water and ice. Light and naturally sweet.,contains-caffeine|iced,,,
+Iced Honey Blue Matcha,Signature iced drinks,"Pure blue matcha, creamy milk and sweet honey.",iced,,,
+Iced Honey Vanilla Latte,Signature iced drinks,"Espresso, cold milk, honey and vanilla over ice.",contains-caffeine|iced,499,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Iced Lavender Blue Matcha,Signature iced drinks,"Blue matcha, cold milk and lavender over ice.",iced|vegan-possible,,,
+Iced Lavender Latte,Signature iced drinks,"Espresso, cold milk and lavender over ice.",contains-caffeine|iced|vegan-possible,499,https://deliveroo.co.uk/menu/dundee/dundee/empire-state-coffee-dundee,2026-09-28
+Iced Pistachio Latte,Signature iced drinks,Espresso and cold milk with rich pistachio cream.,contains-caffeine|iced,425,https://deliveroo.co.uk/menu/edinburgh/southwest-edinburgh/matcha-sando-edinburgh-matcha-coffee-and-sandwich-shop-116-bruntsfield-place,2026-09-28
+Iced Raspberry Mocha,Signature iced drinks,"Espresso, chocolate, raspberry and cold milk over ice.",contains-caffeine|iced,,,
+Iced Rose Mocha,Signature iced drinks,"Espresso, chocolate, rose and cold milk over ice.",contains-caffeine|iced,,,
+Iced Rose White Mocha,Signature iced drinks,"Espresso, creamy milk, rose and white chocolate.",contains-caffeine|iced,,,
+Iced Vanilla Blue Matcha,Signature iced drinks,"Blue matcha, cold milk and vanilla over ice.",iced|vegan-possible,,,
+Iced White Raspberry Mocha,Signature iced drinks,"Espresso, white chocolate, raspberry and cold milk over ice.",contains-caffeine|iced,,,
+Berry Tea,Tea,"Berry tea, 414 ml.",,320,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/the-flame-tree-cafe-dundee,2026-09-28
+Decaf Tea,Tea,"Decaf tea, 414 ml.",vegan-possible,320,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/the-flame-tree-cafe-dundee,2026-09-28
+Earl Grey,Tea,"Earl Grey tea, 414 ml.",contains-caffeine|vegan-possible,320,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/the-flame-tree-cafe-dundee,2026-09-28
+English Breakfast,Tea,"English breakfast tea, 414 ml.",contains-caffeine|vegan-possible,300,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/little-things-cafe-dundee,2026-09-28
+Forest Fruits Tea,Tea,"Special leaf tea: forest fruits, 414 ml.",,,,
+Ginger and Lemongrass Tea,Tea,"Special leaf tea: ginger and lemongrass, 414 ml.",,320,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/the-flame-tree-cafe-dundee,2026-09-28
+Green,Tea,"Green tea, 414 ml.",contains-caffeine|vegan-possible,295,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/dundee-cycle-hub-cafe-waterfront-place-riverside,2026-09-28
+Jasmine and Mint Green Tea,Tea,"Special leaf tea: jasmine and mint green, 414 ml.",contains-caffeine|vegan-possible,,,
+Mint,Tea,"Mint tea, 414 ml.",vegan-possible,320,https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/the-flame-tree-cafe-dundee,2026-09-28
+Spiced Apple Chai,Tea,"Special leaf tea: spiced apple chai, 414 ml.",,,,
+Strawberry Black,Tea,"Special leaf tea: strawberry black, 414 ml.",contains-caffeine,,,
+Iced ube coconut latte,Ube,Purple yam (ube) with coconut milk over ice.,iced|vegan-possible,,,
+Iced ube matcha latte,Ube,Purple yam (ube) and matcha with cold milk over ice.,contains-caffeine|iced|vegan-possible,,,
+Pure ube latte,Ube,Purple yam (ube) latte with steamed milk.,vegan-possible,,,
+Ube coconut cloud latte,Ube,Purple yam (ube) latte with coconut and a cloud of cream.,,,,

@@ -51,6 +51,15 @@ def strip_counts(view: CardView) -> tuple[int, int]:
     return filled, POINT_SLOTS
 
 
+def strip_stickers(view: CardView) -> tuple[str, ...] | None:
+    """The card's own sticker per filled slot (BACKOFFICE-V2 §2); None on a points card,
+    whose strip is a progress bar of the fixed art."""
+    if is_points(view) or not view.stickers:
+        return None
+    filled, _ = strip_counts(view)
+    return tuple(view.stickers[:filled])
+
+
 def stamps_to_go(view: CardView) -> int:
     return max(0, view.stamps_required - view.stamps_current)
 
@@ -136,5 +145,6 @@ __all__ = [
     "stamps_to_go",
     "stamps_value",
     "strip_counts",
+    "strip_stickers",
     "unit_label",
 ]

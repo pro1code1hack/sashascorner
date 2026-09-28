@@ -15,6 +15,7 @@ from cafeops.api.areas.members_schemas import (
     CampaignIn,
     CampaignOut,
     CampaignsOut,
+    CardFaceOut,
     CardRowOut,
     DayOut,
     DeviceAdminOut,
@@ -24,10 +25,18 @@ from cafeops.api.areas.members_schemas import (
     EligibilityIO,
     EligibilityPreviewOut,
     EventOut,
+    GiveRewardIn,
+    HistoryEntryOut,
+    HourOut,
+    InsightsOut,
+    JoinSourceOut,
+    KpiOut,
     LightspeedLinkOut,
     LinkIn,
+    MemberCreateIn,
     MemberDetailOut,
     MemberDetailRowOut,
+    MemberPatchIn,
     MemberRowOut,
     MembersPageOut,
     MenuFacetsOut,
@@ -40,21 +49,28 @@ from cafeops.api.areas.members_schemas import (
     ProgramFullOut,
     ProgramIn,
     ProgramsAdminOut,
+    ProgramSettingsOut,
+    RegularOut,
     RewardOptionAdminOut,
     RewardRowOut,
     SegmentName,
+    SendLinkOut,
     SendOut,
     SortName,
     SourceOut,
+    SourceShareOut,
     StaffCreateIn,
     StaffListOut,
     StaffOut,
     StaffPatchIn,
     StatsOut,
+    StickerIn,
+    StickerOut,
     TargetOut,
     TargetsIn,
     TargetsOut,
     TemplateRefOut,
+    WeekOut,
 )
 from cafeops.config import settings
 from cafeops.db.models import (
@@ -71,16 +87,24 @@ from cafeops.db.models import (
     StaffRole,
     StaffUser,
 )
-from cafeops.domain.loyalty import PROMO_LIMIT_PER_MONTH, Eligibility
+from cafeops.domain.loyalty import (
+    PROMO_LIMIT_PER_MONTH,
+    STICKER_KEYS,
+    STICKER_NAMES,
+    Eligibility,
+    sticker_set,
+)
 from cafeops.services.loyalty import (
     admin,
     alerts,
+    backoffice,
     campaigns,
     pos,
     programs,
     retention,
     staff_auth,
 )
+from cafeops.services.loyalty import insights as insights_service
 from cafeops.services.loyalty import stats as stats_service
 from cafeops.services.loyalty.common import DEFAULT_PROGRAM_SLUG, default_program, now_utc
 from cafeops.services.loyalty.errors import LoyaltyError
@@ -109,12 +133,16 @@ def members_view(
         program_slug=program,
     )
     return MembersPageOut(
-        total=page.total, members=[MemberRowOut(**asdict(row)) for row in page.members]
+        total=page.total,
+        members=[MemberRowOut(**asdict(row)) for row in page.members],
+        counts=page.counts or {},
     )
 
 
 def detail_view(session: Session, member_id: int) -> MemberDetailOut:
     d = admin.member_detail(session, member_id)
+    member, card = backoffice.main_card(session, member_id)
+    extras = backoffice.member_extras(session, member, card, d.member.last_visit_at)
     return MemberDetailOut(
         member=MemberDetailRowOut(
             **asdict(d.member),
@@ -122,7 +150,12 @@ def detail_view(session: Session, member_id: int) -> MemberDetailOut:
             opt_in_at=d.opt_in_at,
             opt_in_source=d.opt_in_source,
             referred_by=d.referred_by,
+            terms_accepted_at=extras.terms_accepted_at,
+            notes=extras.notes,
+            visits_per_month=extras.visits_per_month,
         ),
+        card=CardFaceOut(**asdict(backoffice.card_face(session, card))),
+        history=[HistoryEntryOut(**asdict(h)) for h in backoffice.history(session, member, card)],
         events=[EventOut(**asdict(e)) for e in d.events],
         rewards=[RewardRowOut(**asdict(r)) for r in d.rewards],
         cards=[CardRowOut(**asdict(c)) for c in d.cards],
@@ -424,25 +457,82 @@ def _program_out(p: LoyaltyProgram) -> ProgramAdminOut:
     )
 
 
-def program_view(session: Session) -> ProgramAdminOut:
-    return _program_out(default_program(session))
-
-
-def program_update_view(session: Session, body: ProgramIn, ip: str) -> ProgramAdminOut:
-    sent = body.model_fields_set
-    change = admin.ProgramUpdate(
-        name=body.name,
-        stamps_required=body.stamps_required,
-        max_stamps_per_scan=body.max_stamps_per_scan,
-        reward_text=body.reward_text,
-        reward_max_price_pence=body.reward_max_price_pence,
-        clear_price_cap="reward_max_price_pence" in sent and body.reward_max_price_pence is None,
-        birthday_reward=body.birthday_reward,
-        referral_stamps=body.referral_stamps,
-        active=body.active,
+def _program_settings(session: Session, p: LoyaltyProgram) -> ProgramSettingsOut:
+    cards = int(
+        session.scalar(
+            select(func.count(LoyaltyCard.id)).where(
+                LoyaltyCard.program_id == p.id, LoyaltyCard.voided_at.is_(None)
+            )
+        )
+        or 0
     )
-    program = admin.update_program(session, change, manager_pin=body.manager_pin, client_ip=ip)
-    return _program_out(program)
+    sources = session.execute(
+        select(LoyaltyMember.source, func.count(LoyaltyMember.id))
+        .join(LoyaltyCard, LoyaltyCard.member_id == LoyaltyMember.id)
+        .where(
+            LoyaltyCard.program_id == p.id,
+            LoyaltyMember.deleted_at.is_(None),
+            LoyaltyMember.source.is_not(None),
+        )
+        .group_by(LoyaltyMember.source)
+        .order_by(func.count(LoyaltyMember.id).desc(), LoyaltyMember.source)
+    ).all()
+    return ProgramSettingsOut(
+        **_program_out(p).model_dump(),
+        welcome_stamp=p.welcome_stamp,
+        stamps_expire=p.stamps_expire_months is not None,
+        stickers=list(sticker_set(p.stickers)),
+        sticker_catalogue=[
+            StickerOut(key=k, name=STICKER_NAMES[k], url=f"/stickers/slot-{i}.svg")
+            for i, k in enumerate(STICKER_KEYS, start=1)
+        ],
+        # The public join page (site/web/src/pages/rewards.astro) reads `?src=`.
+        join_url=f"{settings.loyalty_public_url.rstrip('/')}/rewards",
+        join_sources=[JoinSourceOut(source=str(src), members=int(n)) for src, n in sources],
+        cards=cards,
+        pin_required=_managers_exist(session),
+    )
+
+
+def program_view(session: Session) -> ProgramSettingsOut:
+    return _program_settings(session, default_program(session))
+
+
+#: "Stamps expire" in the design is a switch; the rule behind it is 12 months untouched.
+STAMPS_EXPIRE_MONTHS = 12
+
+
+def program_update_view(session: Session, body: ProgramIn, ip: str) -> ProgramSettingsOut:
+    _approve_rules(session, body.manager_pin, ip)
+    program = default_program(session)
+    sent = body.model_fields_set
+    programs.apply_change(
+        session,
+        program,
+        programs.ProgramChange(
+            name=body.name,
+            stamps_required=body.stamps_required,
+            max_stamps_per_scan=body.max_stamps_per_scan,
+            reward_text=body.reward_text,
+            reward_max_price_pence=body.reward_max_price_pence,
+            clear_price_cap="reward_max_price_pence" in sent
+            and body.reward_max_price_pence is None,
+            birthday_reward=body.birthday_reward,
+            referral_stamps=body.referral_stamps,
+            active=body.active,
+        ),
+    )
+    if body.welcome_stamp is not None:
+        program.welcome_stamp = body.welcome_stamp
+    if body.stamps_expire is not None:
+        program.stamps_expire_months = STAMPS_EXPIRE_MONTHS if body.stamps_expire else None
+    if body.stickers is not None:
+        keys = list(dict.fromkeys(body.stickers))
+        if not keys:
+            raise LoyaltyError(422, "stickers_required", "Keep at least one sticker switched on.")
+        program.stickers = keys
+    session.flush()
+    return _program_settings(session, program)
 
 
 def _staff_out(u: StaffUser) -> StaffOut:
@@ -508,12 +598,29 @@ def device_revoke_view(session: Session, device_id: int) -> None:
 
 
 def _campaign_out(session: Session, c: LoyaltyCampaign) -> CampaignOut:
-    returned = session.scalar(
-        select(func.count(LoyaltyCampaignDelivery.id)).where(
-            LoyaltyCampaignDelivery.campaign_id == c.id,
-            LoyaltyCampaignDelivery.returned_at.is_not(None),
+    now = now_utc()
+    returned = int(
+        session.scalar(
+            select(func.count(LoyaltyCampaignDelivery.id)).where(
+                LoyaltyCampaignDelivery.campaign_id == c.id,
+                LoyaltyCampaignDelivery.returned_at.is_not(None),
+            )
         )
+        or 0
     )
+    status = (
+        "cancelled"
+        if c.cancelled_at is not None
+        else "sent"
+        if c.sent_at is not None
+        else "scheduled"
+        if c.scheduled_at is not None
+        else "draft"
+    )
+    rate: float | None = None
+    if c.sent_at is not None and c.recipients:
+        if returned or now - c.sent_at >= campaigns.RETURN_WINDOW:
+            rate = returned / c.recipients
     return CampaignOut(
         id=c.id,
         title=c.title,
@@ -523,35 +630,54 @@ def _campaign_out(session: Session, c: LoyaltyCampaign) -> CampaignOut:
         scheduled_at=c.scheduled_at,
         sent_at=c.sent_at,
         recipients=c.recipients,
-        returned=int(returned or 0),
+        returned=returned,
         audience=(
-            len(campaigns.segment_members(session, c.segment, now=now_utc()))
-            if c.sent_at is None
+            len(campaigns.segment_members(session, c.segment, now=now, promo=c.is_promo))
+            if c.sent_at is None and c.cancelled_at is None
             else None
         ),
         created_by=c.created_by,
         created_at=c.created_at,
+        status=status,
+        cancelled_at=c.cancelled_at,
+        return_rate=rate,
     )
 
 
 def campaigns_view(session: Session) -> CampaignsOut:
+    now = now_utc()
     return CampaignsOut(
         campaigns=[_campaign_out(session, c) for c in campaigns.list_campaigns(session)],
         promo_limit_per_month=PROMO_LIMIT_PER_MONTH,
+        promos_this_month=campaigns.promos_this_month(session, now=now),
+        audiences={
+            seg.value: len(campaigns.segment_members(session, seg, now=now, promo=True))
+            for seg in CampaignSegment
+        },
+        everyone_with_card=len(
+            campaigns.segment_members(session, CampaignSegment.ALL_OPTED_IN, now=now, promo=False)
+        ),
     )
 
 
-def campaign_create_view(session: Session, body: CampaignIn) -> CampaignOut:
+def campaign_create_view(session: Session, body: CampaignIn) -> tuple[CampaignOut, list[Outgoing]]:
     row = campaigns.create_campaign(
         session,
         title=body.title,
         message=body.message,
         segment=CampaignSegment[body.segment.upper()],
-        scheduled_at=body.scheduled_at,
+        scheduled_at=None if body.send_now else body.scheduled_at,
         is_promo=body.is_promo,
         created_by=body.created_by or "back office",
     )
-    return _campaign_out(session, row)
+    outgoing: list[Outgoing] = []
+    if body.send_now:
+        outgoing = list(campaigns.send_campaign(session, row.id).outgoing)
+    return _campaign_out(session, row), outgoing
+
+
+def campaign_cancel_view(session: Session, campaign_id: int) -> CampaignOut:
+    return _campaign_out(session, campaigns.cancel_campaign(session, campaign_id))
 
 
 def campaign_send_view(session: Session, campaign_id: int) -> tuple[SendOut, list[Outgoing]]:
@@ -613,3 +739,89 @@ def targets_update_view(session: Session, body: TargetsIn) -> TargetsOut:
 
 def export_view(session: Session, member_id: int) -> dict[str, Any]:
     return member_export(session, member_id)
+
+
+# --- loyalty card v2: one member's card (BACKOFFICE-V2 §3) ---------------------------
+
+
+def create_member_view(session: Session, body: MemberCreateIn) -> MemberDetailOut:
+    member_id = backoffice.create_member(
+        session,
+        first_name=body.first_name,
+        email=body.email,
+        phone=body.phone,
+        birthday=body.birthday,
+        marketing_opt_in=body.marketing_opt_in,
+        source=body.source,
+    )
+    return detail_view(session, member_id)
+
+
+def patch_member_view(session: Session, member_id: int, body: MemberPatchIn) -> MemberDetailOut:
+    backoffice.patch_member(
+        session,
+        member_id,
+        backoffice.MemberPatch(
+            sent=frozenset(body.model_fields_set),
+            first_name=body.first_name,
+            email=body.email,
+            phone=body.phone,
+            birthday=body.birthday,
+            marketing_opt_in=body.marketing_opt_in,
+            notes=body.notes,
+        ),
+    )
+    return detail_view(session, member_id)
+
+
+def stamp_view(session: Session, member_id: int, sticker: str | None) -> MemberDetailOut:
+    backoffice.add_stamp(session, member_id, sticker=sticker)
+    return detail_view(session, member_id)
+
+
+def give_reward_view(session: Session, member_id: int, body: GiveRewardIn) -> MemberDetailOut:
+    backoffice.give_reward(session, member_id, reward_id=body.reward_id)
+    return detail_view(session, member_id)
+
+
+def undo_last_view(session: Session, member_id: int) -> MemberDetailOut:
+    backoffice.undo_last(session, member_id)
+    return detail_view(session, member_id)
+
+
+def sticker_view(session: Session, member_id: int, body: StickerIn) -> MemberDetailOut:
+    backoffice.set_sticker(session, member_id, slot=body.slot, sticker=body.sticker)
+    return detail_view(session, member_id)
+
+
+def send_link_view(session: Session, member_id: int) -> tuple[SendLinkOut, list[Outgoing]]:
+    r = backoffice.send_link(session, member_id)
+    out = SendLinkOut(
+        delivery="email" if r.delivery == "email" else "sms" if r.delivery == "sms" else "none",
+        to=r.to,
+        url=r.url,
+        message=r.message,
+    )
+    return out, [r.outgoing] if r.outgoing is not None else []
+
+
+def insights_view(session: Session, days: int) -> InsightsOut:
+    i = insights_service.insights(session, days=days)
+    return InsightsOut(
+        days=i.days,
+        members=KpiOut(value=i.members.value, previous=i.members.previous),
+        joined_in_window=i.joined_in_window,
+        active_members=KpiOut(value=i.active_members.value, previous=i.active_members.previous),
+        visits_per_active_member_per_month=i.visits_per_active_member_per_month,
+        stamps=KpiOut(value=i.stamps.value, previous=i.stamps.previous),
+        stamps_per_week=i.stamps_per_week,
+        free_drinks=KpiOut(value=i.free_drinks.value, previous=i.free_drinks.previous),
+        came_back=KpiOut(value=i.came_back.value, previous=i.came_back.previous),
+        opted_in_share=i.opted_in_share,
+        opted_in_count=i.opted_in_count,
+        weekly=[WeekOut(**asdict(w)) for w in i.weekly],
+        by_source=[SourceShareOut(**asdict(b)) for b in i.by_source],
+        hours=[HourOut(hour=h, stamps=n) for h, n in i.hours],
+        regulars=[RegularOut(**asdict(r)) for r in i.regulars],
+        alerts=[AlertOut(at=a.at, kind=a.kind, detail=a.detail) for a in i.alerts],
+    )

@@ -4,7 +4,7 @@
 |---|---|---|
 | `wallet_outbox` | every minute | `wallet_push_outbox.done_at` (the wallet module's) |
 | `loyalty_campaigns` | every 5 minutes | `loyalty_campaign.sent_at`; `returned_at`; `notified_at` |
-| `loyalty_birthdays` | 06:00 | unique `(card_id, kind, birthday_year)` |
+| `loyalty_birthdays` | 06:00 | unique `(card_id, kind, birthday_year)`; expiry: card empty |
 | `loyalty_daily_summary` | 19:30 | read-only |
 | `loyalty_retention` | Sundays 04:00 | `loyalty_member.deleted_at` |
 
@@ -27,7 +27,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from cafeops.bot import formatters as fmt
 from cafeops.bot.notify import Notifier, notifier_for_settings
 from cafeops.db.base import SessionFactory, session_scope
-from cafeops.services.loyalty import alerts, birthdays, campaigns, retention, stats
+from cafeops.services.loyalty import alerts, birthdays, campaigns, retention, stamping, stats
 from cafeops.services.loyalty.common import now_utc
 from cafeops.services.loyalty.messaging import Outgoing, deliver_all
 from cafeops.services.loyalty.wallets import wallet_module
@@ -117,13 +117,20 @@ async def job_loyalty_campaigns(
 
 
 async def job_loyalty_birthdays(factory: sessionmaker[Session] | None = None) -> None:
-    def _run() -> birthdays.BirthdayReport:
-        with session_scope(_factory(factory)) as session:
-            return birthdays.run_birthdays(session)
+    """Also the daily stamp expiry (BACKOFFICE-V2 §4): cards untouched for the
+    programme's `stamps_expire_months` reset to zero. Idempotent -- a reset card is empty."""
 
-    report = await asyncio.to_thread(_run)
+    def _run() -> tuple[birthdays.BirthdayReport, int]:
+        with session_scope(_factory(factory)) as session:
+            report = birthdays.run_birthdays(session)
+            expired = stamping.expire_stamps(session)
+            return report, expired
+
+    report, expired = await asyncio.to_thread(_run)
     log.info(report.summary())
-    if report.issued or report.expired_refreshed:
+    if expired:
+        log.info("loyalty_birthdays: %s card(s) reset after their stamps expired", expired)
+    if report.issued or report.expired_refreshed or expired:
         await job_wallet_outbox(factory)
 
 

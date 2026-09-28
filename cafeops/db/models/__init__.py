@@ -96,6 +96,7 @@ from cafeops.db.models.menu import (
     MenuItem,
     MenuItemCost,
     MenuItemPrice,
+    MenuItemReference,
 )
 from cafeops.db.models.par import ParLevel
 from cafeops.db.models.payment import PaymentDay
@@ -159,6 +160,7 @@ __all__ = [
     "MenuItem",
     "MenuItemCost",
     "MenuItemPrice",
+    "MenuItemReference",
     "MenuKind",
     "MenuPriceSource",
     "Modifier",

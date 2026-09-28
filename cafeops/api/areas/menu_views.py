@@ -1432,6 +1432,15 @@ def _rows(session: Session, ingredients: list[Ingredient]) -> list[IngredientRow
             )
         )
     usage = _usage(session)
+    photo_ids = {i.photo_asset_id for i in ingredients if i.photo_asset_id is not None}
+    photos = (
+        {
+            a.id: a.filename
+            for a in session.scalars(select(MediaAsset).where(MediaAsset.id.in_(photo_ids)))
+        }
+        if photo_ids
+        else {}
+    )
     out: list[IngredientRowOut] = []
     for i in ingredients:
         pack = packs.get(i.id)
@@ -1476,6 +1485,12 @@ def _rows(session: Session, ingredients: list[Ingredient]) -> list[IngredientRow
                 transit_buffer_days=i.transit_buffer_days,
                 tier=i.tier.value,
                 waste_factor=as_qty(i.waste_factor) or "0",
+                photo_url=(
+                    media_url(photos[i.photo_asset_id])
+                    if i.photo_asset_id is not None and i.photo_asset_id in photos
+                    else None
+                ),
+                allergens=tuple(i.allergens) if i.allergens is not None else None,
             )
         )
     return out

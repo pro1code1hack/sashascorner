@@ -32,6 +32,12 @@ class MediaAsset(Base):
     height: Mapped[int | None] = mapped_column(Integer)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, nullable=False, default=utcnow)
     uploaded_by: Mapped[str | None] = mapped_column(String(120))
+    #: Provenance of a photo the café did not take (`seed-reference`): the licence
+    #: ("CC0", "CC BY 4.0", "own (Deliveroo listing)"), the author, and the page it
+    #: came from. NULL for the café's own uploads.
+    licence: Mapped[str | None] = mapped_column(String(80))
+    author: Mapped[str | None] = mapped_column(String(200))
+    source_url: Mapped[str | None] = mapped_column(String(500))
 
     __table_args__ = (
         CheckConstraint("bytes > 0 AND bytes <= 2097152", name="size_limit"),

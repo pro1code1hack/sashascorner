@@ -1,0 +1,132 @@
+group_id,group,min,max,option_id,option,price_pence,implies_ingredient
+2885245109,Extra for your toast,0,2,2798807493,Jam,60,Jam portion
+2885245109,Extra for your toast,0,2,2798807495,Marmalade,60,Marmalade portion
+2885245109,Extra for your toast,0,2,2798807494,Honey,60,Honey portion
+2885245109,Extra for your toast,0,2,2798807492,Beans,60,Baked beans
+2837314048,Caffeinated/Decaf,1,1,2763841337,Caffeinated,0,
+2837314048,Caffeinated/Decaf,1,1,2744937844,Decaf Pod,0,Decaf coffee pods (NEW?)
+2837314042,Sugar,0,5,2763841343,White sugar,0,White sugar sachet
+2837314042,Sugar,0,5,2763841346,Brown sugar,0,Brown sugar sachet
+2837314042,Sugar,0,5,2763841349,Sweetener,0,Sweetener sachet
+2837314044,Extras,0,1,2763841354,Extra Shot,65,Coffee beans (1 shot)
+2837314044,Extras,0,1,2763841336,Marshmallow,65,Marshmallows
+2837314044,Extras,0,1,2763841348,Whipped Cream,65,Whipped cream (aerosol/double cream)
+2842408248,Cold / Hot,1,1,2767064821,Cold,0,
+2842408248,Cold / Hot,1,1,2767064826,Hot,0,
+2836920927,Coffee,1,1,2763691918,Single Espresso,0,(bundle choice: another menu item)
+2836920927,Coffee,1,1,2763691909,Double Espresso,0,(bundle choice: another menu item)
+2836920927,Coffee,1,1,2763691931,Single Macchiato,0,(bundle choice: another menu item)
+2836920927,Coffee,1,1,2763691934,Double Macchiato,0,(bundle choice: another menu item)
+2836920927,Coffee,1,1,2763691917,Single Espresso con Pana,0,(bundle choice: another menu item)
+2836920927,Coffee,1,1,2763691916,Double Espresso con Pana,0,(bundle choice: another menu item)
+2836920927,Coffee,1,1,2763691940,Catado,0,(bundle choice: another menu item)
+2836920927,Coffee,1,1,2763691950,Mocha Cortado,0,(bundle choice: another menu item)
+2836920927,Coffee,1,1,2763691911,Flat white,0,(bundle choice: another menu item)
+2836920927,Coffee,1,1,2763691921,Strawberry Black Tea,0,(bundle choice: another menu item)
+2836920927,Coffee,1,1,2763691922,Jasmine and Mint Green Tea,0,(bundle choice: another menu item)
+2836920927,Coffee,1,1,2763691945,Spiced Apple Chai,0,(bundle choice: another menu item)
+2836920927,Coffee,1,1,2763691936,Ginger and Lemongrass Tea,0,(bundle choice: another menu item)
+2836920927,Coffee,1,1,2763691951,Forest Fruits Tea,0,(bundle choice: another menu item)
+2836920927,Coffee,1,1,2763691923,Black Americano,0,(bundle choice: another menu item)
+2836920927,Coffee,1,1,2763691939,White Americano,0,(bundle choice: another menu item)
+2836920927,Coffee,1,1,2763691924,Latte,0,(bundle choice: another menu item)
+2836920927,Coffee,1,1,2763691944,Cappucino,0,(bundle choice: another menu item)
+2836920927,Coffee,1,1,2763691938,Chai Latte,0,(bundle choice: another menu item)
+2836920927,Coffee,1,1,2763691913,Hot Chocolate,0,(bundle choice: another menu item)
+2836920927,Coffee,1,1,2763691914,White Hot Chocolate,0,(bundle choice: another menu item)
+2836920927,Coffee,1,1,2763691929,Mocha,0,(bundle choice: another menu item)
+2836920927,Coffee,1,1,2763691942,White Mocha,0,(bundle choice: another menu item)
+2836920927,Coffee,1,1,2763691910,Raff Coffee,0,(bundle choice: another menu item)
+2836920927,Coffee,1,1,2763691930,Orange Americano,0,(bundle choice: another menu item)
+2836920927,Coffee,1,1,2763691912,Iced Black Americano,0,(bundle choice: another menu item)
+2836920927,Coffee,1,1,2763691932,Iced White Americano,0,(bundle choice: another menu item)
+2836920927,Coffee,1,1,2763691925,Iced Latte,0,(bundle choice: another menu item)
+2836920927,Coffee,1,1,2763691941,Iced Cappuccino,0,(bundle choice: another menu item)
+2836920927,Coffee,1,1,2763691947,Iced Chai Latte,0,(bundle choice: another menu item)
+2836920927,Coffee,1,1,2763691919,Iced Mocha,0,(bundle choice: another menu item)
+2836920927,Coffee,1,1,2763691928,Iced White Mocha,0,(bundle choice: another menu item)
+2836920927,Coffee,1,1,2763691927,Iced Flat White,0,(bundle choice: another menu item)
+2836920927,Coffee,1,1,2763691937,Espresso Tonic,0,(bundle choice: another menu item)
+2836920927,Coffee,1,1,2763691948,English Breakfast Tea,0,(bundle choice: another menu item)
+2836920927,Coffee,1,1,2763691946,Earl Grey Tea,0,(bundle choice: another menu item)
+2836920927,Coffee,1,1,2763691933,Decaf Tea,0,(bundle choice: another menu item)
+2836920927,Coffee,1,1,2763691949,Mint Tea,0,(bundle choice: another menu item)
+2836920927,Coffee,1,1,2763691943,Green Tea,0,(bundle choice: another menu item)
+2836920927,Coffee,1,1,2763691920,Berry Tea,0,(bundle choice: another menu item)
+2856380414,Choose your favorite sauce,0,2,2777425662,Tomato sauce,10,Tomato ketchup sachet
+2856380414,Choose your favorite sauce,0,2,2777425661,Brown sauce,10,Brown sauce sachet
+2837314046,Milk,1,1,2756699518,Semi-skimmed milk,0,Semi-skimmed milk (ops uses Whole milk)
+2837314046,Milk,1,1,2763841340,Oat Milk,65,Oat milk
+2837314046,Milk,1,1,2763841341,Coconut Milk,65,Coconut milk (NEW?)
+2837314046,Milk,1,1,2763841347,Almond Milk,65,Almond milk (NEW?)
+2837314046,Milk,1,1,2763841338,Soya Milk,0,Soya milk (NEW?)
+2839908778,Hot food,1,1,2765613520,Ham and cheese panini,0,(bundle choice: another menu item)
+2839908778,Hot food,1,1,2765613493,Salami&Cheese panini,0,(bundle choice: another menu item)
+2837314041,Syrups,0,1,2763841344,Caramel Syrup,55,Caramel syrup
+2837314041,Syrups,0,1,2763841342,Sf Caramel Syrup,55,Sugar-free caramel syrup (NEW?)
+2837314041,Syrups,0,1,2763841350,Vanilla Syrup,55,Vanilla syrup
+2837314041,Syrups,0,1,2763841345,Sf Vanilla Syrup,55,Sugar-free vanilla syrup (NEW?)
+2837314041,Syrups,0,1,2763841339,Hazelnut Syrup,55,Hazelnut syrup
+2837314041,Syrups,0,1,2767064823,Cinnamon syrup,55,Cinnamon syrup
+2837314041,Syrups,0,1,2767064816,Gingerbread syrup,55,Gingerbread syrup
+2837314041,Syrups,0,1,2767064820,Mint syrup,55,Mint syrup
+2837314041,Syrups,0,1,2767064815,Rose syrup,55,Rose syrup
+2837314041,Syrups,0,1,2767064822,Lavender syrup,55,Lavender syrup
+2837314041,Syrups,0,1,2767064818,Orange syrup,55,Orange syrup
+2837314041,Syrups,0,1,2767064817,Pumpkin spice syrup,55,Pumpkin spice syrup
+2837314041,Syrups,0,1,2767064825,Salted caramel syrup,55,Salted caramel syrup
+2837314041,Syrups,0,1,2767064819,Rose syrup,55,Rose syrup
+2842408249,Green / Blue Matcha,1,1,2767064827,Green matcha,0,Matcha powder
+2842408249,Green / Blue Matcha,1,1,2767064824,Blue matcha,10,Blue matcha (butterfly pea) powder
+2837314045,Wafers,0,5,2744937822,Balocco Snack Vanilla Wafers 45g,250,"Balocco vanilla wafers 45g (resale, NEW?)"
+2837314045,Wafers,0,5,2744937702,Dark Blue Wafer,250,Balocco cocoa wafers (resale)
+2837314047,Size,1,1,2744937787,Small 177ml,0,8oz cup/lid?
+2837314047,Size,1,1,2763841353,Medium 236ml,5,12oz cup/lid?
+2837314047,Size,1,1,2763841351,Large 354ml,25,16oz cup/lid?
+2839908780,Snack,1,1,2765613521,BBQ Pringles 40g,0,Pringles 40g (resale)
+2839908780,Snack,1,1,2765613501,Pom-Bear Original Potato Snacks 19g,0,Pom-Bear 19g (resale)
+2839908780,Snack,1,1,2765613500,Pringles Original 40g,0,Pringles 40g (resale)
+2839908780,Snack,1,1,2765613518,Pringles Sour Cream & Onion 40g,0,Pringles 40g (resale)
+2839908780,Snack,1,1,2765613507,Salt & Vinegar Pringles 40g,0,Pringles 40g (resale)
+2839908779,Drink,1,1,2765613515,Single Espresso,0,(bundle choice: another menu item)
+2839908779,Drink,1,1,2765613502,Double Espresso,0,(bundle choice: another menu item)
+2839908779,Drink,1,1,2765613513,Single Macchiato,0,(bundle choice: another menu item)
+2839908779,Drink,1,1,2765613484,Double Macchiato,0,(bundle choice: another menu item)
+2839908779,Drink,1,1,2765613474,Single Espresso con Pana,0,(bundle choice: another menu item)
+2839908779,Drink,1,1,2765613495,Double Espresso con Pana,0,(bundle choice: another menu item)
+2839908779,Drink,1,1,2765613473,Catado,0,(bundle choice: another menu item)
+2839908779,Drink,1,1,2765613511,Mocha Cortado,0,(bundle choice: another menu item)
+2839908779,Drink,1,1,2765613471,Flat white,0,(bundle choice: another menu item)
+2839908779,Drink,1,1,2765613483,Strawberry Black Tea,0,(bundle choice: another menu item)
+2839908779,Drink,1,1,2765613512,Jasmine and Mint Green Tea,0,(bundle choice: another menu item)
+2839908779,Drink,1,1,2765613506,Spiced Apple Chai,0,(bundle choice: another menu item)
+2839908779,Drink,1,1,2765613517,Ginger and Lemongrass Tea,0,(bundle choice: another menu item)
+2839908779,Drink,1,1,2765613490,Forest Fruits Tea,0,(bundle choice: another menu item)
+2839908779,Drink,1,1,2765613508,Black Americano,0,(bundle choice: another menu item)
+2839908779,Drink,1,1,2765613494,White Americano,0,(bundle choice: another menu item)
+2839908779,Drink,1,1,2765613504,Latte,0,(bundle choice: another menu item)
+2839908779,Drink,1,1,2765613476,Cappucino,0,(bundle choice: another menu item)
+2839908779,Drink,1,1,2765613477,Chai Latte,0,(bundle choice: another menu item)
+2839908779,Drink,1,1,2765613499,Hot Chocolate,0,(bundle choice: another menu item)
+2839908779,Drink,1,1,2765613492,White Hot Chocolate,0,(bundle choice: another menu item)
+2839908779,Drink,1,1,2765613487,Mocha,0,(bundle choice: another menu item)
+2839908779,Drink,1,1,2765613503,White Mocha,0,(bundle choice: another menu item)
+2839908779,Drink,1,1,2765613489,Raff Coffee,0,(bundle choice: another menu item)
+2839908779,Drink,1,1,2765613509,Orange Americano,0,(bundle choice: another menu item)
+2839908779,Drink,1,1,2765613475,Iced Black Americano,0,(bundle choice: another menu item)
+2839908779,Drink,1,1,2765613505,Iced White Americano,0,(bundle choice: another menu item)
+2839908779,Drink,1,1,2765613482,Iced Latte,0,(bundle choice: another menu item)
+2839908779,Drink,1,1,2765613479,Iced Cappuccino,0,(bundle choice: another menu item)
+2839908779,Drink,1,1,2765613519,Iced Chai Latte,0,(bundle choice: another menu item)
+2839908779,Drink,1,1,2765613498,Iced Mocha,0,(bundle choice: another menu item)
+2839908779,Drink,1,1,2765613514,Iced White Mocha,0,(bundle choice: another menu item)
+2839908779,Drink,1,1,2765613480,Iced Flat White,0,(bundle choice: another menu item)
+2839908779,Drink,1,1,2765613516,Espresso Tonic,0,(bundle choice: another menu item)
+2839908779,Drink,1,1,2765613488,English Breakfast Tea,0,(bundle choice: another menu item)
+2839908779,Drink,1,1,2765613472,Earl Grey Tea,0,(bundle choice: another menu item)
+2839908779,Drink,1,1,2765613485,Decaf Tea,0,(bundle choice: another menu item)
+2839908779,Drink,1,1,2765613486,Mint Tea,0,(bundle choice: another menu item)
+2839908779,Drink,1,1,2765613497,Green Tea,0,(bundle choice: another menu item)
+2839908779,Drink,1,1,2765613478,Berry Tea,0,(bundle choice: another menu item)
+2837314043,Size,1,1,2756513250,Medium 236ml,0,12oz cup/lid?
+2837314043,Size,1,1,2763841352,Large 354ml,25,16oz cup/lid?

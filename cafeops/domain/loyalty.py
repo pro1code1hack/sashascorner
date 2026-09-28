@@ -51,6 +51,8 @@ __all__ = [
     "PROMO_LIMIT_PER_MONTH",
     "QR_PREFIX",
     "RETENTION_MONTHS",
+    "STICKER_KEYS",
+    "STICKER_NAMES",
     "UNDO_SECONDS",
     "BirthdayDecision",
     "Eligibility",
@@ -174,6 +176,69 @@ def apply_stamps(current: int, delta: int, required: int) -> StampOutcome:
         raise ValueError(f"that would leave the card at {total} stamps; it holds {current}")
     issued, after = divmod(total, required)
     return StampOutcome(stamps_after=after, rewards_issued=issued)
+
+
+# --------------------------------------------------------------------------
+# stickers (docs/loyalty/BACKOFFICE-V2.md §2)
+# --------------------------------------------------------------------------
+
+#: The eight stickers, in catalogue order. Key i is the art `slot-<i+1>.svg`.
+STICKER_KEYS: tuple[str, ...] = ("cat", "seal", "matcha", "boba", "cake", "knight", "latte", "star")
+STICKER_NAMES: dict[str, str] = {
+    "cat": "Cat",
+    "seal": "Seal",
+    "matcha": "Matcha",
+    "boba": "Boba",
+    "cake": "Cake",
+    "knight": "Knight",
+    "latte": "Rose latte",
+    "star": "Star",
+}
+
+
+def sticker_set(raw: Iterable[Any] | None) -> tuple[str, ...]:
+    """A programme's enabled stickers in order: known keys, no repeats; all eight if none."""
+    if raw is None:
+        return STICKER_KEYS
+    keys = tuple(dict.fromkeys(str(k) for k in raw if str(k) in STICKER_NAMES))
+    return keys or STICKER_KEYS
+
+
+def fit_stickers(current: Iterable[Any] | None, count: int, stickers: tuple[str, ...]) -> list[str]:
+    """The slot list cut or padded to `count`; a padded slot i gets `stickers[i % n]`."""
+    out = [str(k) if str(k) in STICKER_NAMES else "" for k in (current or [])][: max(0, count)]
+    out = [k or stickers[i % len(stickers)] for i, k in enumerate(out)]
+    for i in range(len(out), count):
+        out.append(stickers[i % len(stickers)])
+    return out
+
+
+def add_stickers(
+    current: list[str],
+    delta: int,
+    required: int,
+    stickers: tuple[str, ...],
+    stamps_after: int,
+    first: str | None = None,
+) -> tuple[list[str], str | None]:
+    """The slot list after `delta` stamps, and the sticker the first new stamp got.
+
+    Each new stamp in slot i gets `stickers[i % n]` (the first may be named instead); a
+    card that fills starts again empty, so carry-over slots get fresh stickers. A negative
+    delta drops slots from the end. The result is fitted to `stamps_after`, the count the
+    stamp arithmetic settled on, so the two can never disagree.
+    """
+    slots = list(current)
+    placed: str | None = None
+    for k in range(max(0, delta)):
+        key = first if (k == 0 and first) else stickers[len(slots) % len(stickers)]
+        placed = placed or key
+        slots.append(key)
+        if len(slots) >= required:
+            slots = []
+    if delta < 0:
+        slots = slots[: max(0, len(slots) + delta)]
+    return fit_stickers(slots, stamps_after, stickers), placed
 
 
 def cooldown_exceeded(stamps_in_window: int, delta: int) -> bool:

@@ -5383,3 +5383,7 @@
 {"message":"[200] / 154ms","label":null,"level":"info"}
 {"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
 {"message":"[200] /admin 9ms","label":null,"level":"info"}
+{"message":"[200] /rewards 42ms","label":null,"level":"info"}
+{"message":"http proxy error: /api/info\nError: connect ECONNREFUSED 127.0.0.1:8100\n    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)","label":"vite","level":"error"}
+{"message":"[200] /rewards 5ms","label":null,"level":"info"}
+{"message":"http proxy error: /api/info\nError: connect ECONNREFUSED 127.0.0.1:8100\n    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)","label":"vite","level":"error"}

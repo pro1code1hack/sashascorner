@@ -41,16 +41,10 @@ const OverviewScreen = screen(() => import('./screens/money/OverviewScreen'), 'O
 const SalesScreen = screen(() => import('./screens/money/SalesScreen'), 'SalesScreen')
 const ExpensesArea = screen(() => import('./screens/money/ExpensesArea'), 'ExpensesArea')
 const TransactionsScreen = screen(() => import('./screens/money/TransactionsScreen'), 'TransactionsScreen')
-/** Sasha's Corner Rewards: its own group (owner, 2026-09-28: "a Rewards page so that we can configure rewards"). */
-const RewardsProgramme = screen(() => import('./screens/members/Programme'), 'Programme')
-const RewardsCatalogue = screen(() => import('./screens/members/Catalogue'), 'Catalogue')
-const RewardsMembers = screen(() => import('./screens/members/MembersArea'), 'MembersArea')
-const RewardsCampaigns = screen(() => import('./screens/members/Campaigns'), 'Campaigns')
-const RewardsInsights = screen(() => import('./screens/members/Insights'), 'Insights')
-const RewardsStaff = screen(() => import('./screens/members/Staff'), 'Staff')
-const RewardsAlerts = screen(() => import('./screens/members/Alerts'), 'AlertsScreen')
-/** The old #/members/... links land on the same page under #/rewards/... */
-const MembersRedirect = screen(() => import('./screens/members/MembersArea'), 'MembersRedirect')
+/** Customers › Loyalty card (owner's design, 2026-09-28): one entry, four tabs. */
+const LoyaltyArea = screen(() => import('./screens/loyalty/LoyaltyArea'), 'LoyaltyArea')
+/** The retired Rewards pages (#/rewards/..., #/members/...) land on the matching Loyalty tab. */
+const LoyaltyRedirect = screen(() => import('./screens/loyalty/LoyaltyArea'), 'LoyaltyRedirect')
 const SettingsScreen = screen(() => import('./screens/settings/SettingsScreen'), 'SettingsScreen')
 const SetupScreen = screen(() => import('./screens/setup/SetupScreen'), 'SetupScreen')
 /** The public website's admin, moved in from the site's /admin (owner, 2026-09-28). */
@@ -64,14 +58,9 @@ const WebsiteDetails = screen(() => import('./screens/website/CafeDetailsScreen'
 
 export type RouteId =
   | 'stock'
+  | 'loyalty'
   | 'members'
-  | 'rewards.programme'
-  | 'rewards.catalogue'
-  | 'rewards.members'
-  | 'rewards.campaigns'
-  | 'rewards.insights'
-  | 'rewards.staff'
-  | 'rewards.alerts'
+  | 'rewards'
   | 'orders'
   | 'agents'
   | 'recipes'
@@ -105,16 +94,10 @@ export interface RouteDef {
 
 export const ROUTES: Record<RouteId, RouteDef> = {
   stock: { id: 'stock', path: '/stock', label: 'Stock', Screen: StockScreen },
-  /** Retired path: redirects to #/rewards/members/... (and /members/programme to #/rewards). */
-  members: { id: 'members', path: '/members', label: 'Members', Screen: MembersRedirect },
-  /** Sasha's Corner Rewards. */
-  'rewards.programme': { id: 'rewards.programme', path: '/rewards', label: 'Programme', Screen: RewardsProgramme },
-  'rewards.catalogue': { id: 'rewards.catalogue', path: '/rewards/catalogue', label: 'Reward catalogue', Screen: RewardsCatalogue },
-  'rewards.members': { id: 'rewards.members', path: '/rewards/members', label: 'Members', Screen: RewardsMembers },
-  'rewards.campaigns': { id: 'rewards.campaigns', path: '/rewards/campaigns', label: 'Campaigns', Screen: RewardsCampaigns },
-  'rewards.insights': { id: 'rewards.insights', path: '/rewards/insights', label: 'Insights', Screen: RewardsInsights },
-  'rewards.staff': { id: 'rewards.staff', path: '/rewards/staff', label: 'Staff & devices', Screen: RewardsStaff },
-  'rewards.alerts': { id: 'rewards.alerts', path: '/rewards/alerts', label: 'Alerts', Screen: RewardsAlerts },
+  loyalty: { id: 'loyalty', path: '/loyalty', label: 'Loyalty card', Screen: LoyaltyArea },
+  /** Retired paths: redirect to the matching #/loyalty page. */
+  members: { id: 'members', path: '/members', label: 'Members', Screen: LoyaltyRedirect },
+  rewards: { id: 'rewards', path: '/rewards', label: 'Rewards', Screen: LoyaltyRedirect },
   /** Orders, Draft orders, Shop runs; one page per order (owner, 2026-09-26). */
   orders: { id: 'orders', path: '/orders', label: 'Orders', Screen: OrdersArea, badge: 'orders_waiting' },
   agents: { id: 'agents', path: '/agents', label: 'Agents', Screen: AgentsScreen, badge: 'proposals_waiting' },
@@ -162,19 +145,8 @@ export const ROUTES: Record<RouteId, RouteDef> = {
 /** Sidebar groups, in the design's order. Settings sits in the footer. */
 export const NAV_GROUPS: ReadonlyArray<{ head: string; items: readonly RouteId[] }> = [
   { head: 'Every day', items: ['stock', 'agents'] },
-  {
-    head: 'Rewards',
-    items: [
-      'rewards.programme',
-      'rewards.catalogue',
-      'rewards.members',
-      'rewards.campaigns',
-      'rewards.insights',
-      'rewards.staff',
-      'rewards.alerts',
-    ],
-  },
   { head: 'Menu', items: ['menu', 'ingredients', 'suppliers'] },
+  { head: 'Customers', items: ['loyalty'] },
   {
     head: 'Money',
     items: ['money.overview', 'money.sales', 'money.transactions', 'money.expenses', 'orders'],

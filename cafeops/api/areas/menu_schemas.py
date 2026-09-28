@@ -749,6 +749,10 @@ class IngredientRowOut(Out):
     transit_buffer_days: int = 0
     tier: str = "C"
     waste_factor: str = "0"
+    #: Reference photo (media library), or null.
+    photo_url: str | None = None
+    #: UK 14 allergens; null = unknown, [] = checked, none.
+    allergens: tuple[str, ...] | None = None
 
 
 class SupplierNameOut(Out):

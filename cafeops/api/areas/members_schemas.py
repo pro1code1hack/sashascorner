@@ -9,8 +9,9 @@ from pydantic import Field
 
 from cafeops.api.schemas import In, Out
 
-SegmentName = Literal["all", "lapsed_30", "reward_ready", "opted_in", "new_30"]
-SortName = Literal["recent", "stamps", "name"]
+SegmentName = Literal["all", "lapsed_30", "reward_ready", "opted_in", "new_30", "no_wallet"]
+SortName = Literal["recent", "joined", "stamps", "name"]
+StickerKey = Literal["cat", "seal", "matcha", "boba", "cake", "knight", "latte", "star"]
 RoleName = Literal["staff", "manager", "owner", "STAFF", "MANAGER", "OWNER"]
 CampaignSegmentName = Literal[
     "ALL_OPTED_IN",
@@ -21,6 +22,8 @@ CampaignSegmentName = Literal[
     "lapsed_30",
     "reward_ready",
     "new_30",
+    "BIRTHDAY",
+    "birthday",
 ]
 Pin = str
 
@@ -41,11 +44,15 @@ class MemberRowOut(Out):
     reward_available: bool
     marketing_opt_in: bool
     wallet: str | None = Field(description='"apple" | "google" | "web" | null')
+    #: Last purchase stamp or free drink; null = none since joining (BACKOFFICE-V2).
+    last_visit_at: datetime | None = None
 
 
 class MembersPageOut(Out):
     total: int
     members: list[MemberRowOut]
+    #: Every segment's size, ignoring the search text.
+    counts: dict[str, int] = Field(default_factory=dict)
 
 
 class MemberDetailRowOut(MemberRowOut):
@@ -53,6 +60,32 @@ class MemberDetailRowOut(MemberRowOut):
     opt_in_at: datetime | None
     opt_in_source: str | None
     referred_by: int | None
+    # --- loyalty card v2 (additive) -----------------------------------------------
+    terms_accepted_at: datetime | None = None
+    notes: str | None = None
+    visits_per_month: float | None = None
+
+
+class CardFaceOut(Out):
+    card_id: str
+    short_id: str
+    stamps_current: int
+    stamps_required: int
+    stickers: list[str]
+    reward_available: bool
+    reward_id: int | None
+    reward_text: str
+    voided: bool
+    can_undo: bool
+    undo_label: str | None
+
+
+class HistoryEntryOut(Out):
+    kind: str
+    title: str
+    detail: str | None
+    sticker: str | None
+    at: datetime
 
 
 class EventOut(Out):
@@ -116,6 +149,105 @@ class MemberDetailOut(Out):
     lightspeed: LightspeedLinkOut | None = None
     #: Whether receipts are turned into stamps at all (CAFEOPS_LOYALTY_AUTO_STAMP).
     auto_stamp: bool = False
+    # --- loyalty card v2 ------------------------------------------------------------
+    card: CardFaceOut
+    history: list[HistoryEntryOut]
+
+
+class MemberCreateIn(In):
+    first_name: str = Field(min_length=1, max_length=60)
+    email: str | None = Field(default=None, max_length=254)
+    phone: str | None = Field(default=None, max_length=30)
+    #: "DD-MM"
+    birthday: str | None = Field(default=None, max_length=5)
+    marketing_opt_in: bool = False
+    source: str | None = Field(default=None, max_length=40)
+
+
+class MemberPatchIn(In):
+    """Omitted fields are left alone; a sent null clears email, phone, birthday, notes."""
+
+    first_name: str | None = Field(default=None, max_length=60)
+    email: str | None = Field(default=None, max_length=254)
+    phone: str | None = Field(default=None, max_length=30)
+    birthday: str | None = Field(default=None, max_length=5)
+    marketing_opt_in: bool | None = None
+    notes: str | None = Field(default=None, max_length=1000)
+
+
+class StampIn(In):
+    sticker: StickerKey | None = None
+
+
+class GiveRewardIn(In):
+    reward_id: int | None = None
+
+
+class StickerIn(In):
+    slot: int = Field(ge=0, le=19)
+    sticker: StickerKey
+
+
+class SendLinkOut(Out):
+    delivery: Literal["email", "sms", "none"]
+    to: str | None
+    url: str
+    message: str
+
+
+class AlertOut(Out):
+    at: datetime
+    kind: str
+    detail: str
+
+
+class KpiOut(Out):
+    value: int | float | None
+    previous: int | float | None
+
+
+class WeekOut(Out):
+    week_start: date
+    new_members: int
+    stamps: int
+    free_drinks: int
+
+
+class SourceShareOut(Out):
+    source: str | None
+    label: str
+    members: int
+    share: float
+
+
+class HourOut(Out):
+    hour: int
+    stamps: int
+
+
+class RegularOut(Out):
+    member_id: int
+    first_name: str
+    stamps: int
+
+
+class InsightsOut(Out):
+    days: int
+    members: KpiOut
+    joined_in_window: int
+    active_members: KpiOut
+    visits_per_active_member_per_month: float | None
+    stamps: KpiOut
+    stamps_per_week: float
+    free_drinks: KpiOut
+    came_back: KpiOut
+    opted_in_share: float | None
+    opted_in_count: int
+    weekly: list[WeekOut]
+    by_source: list[SourceShareOut]
+    hours: list[HourOut]
+    regulars: list[RegularOut]
+    alerts: list[AlertOut]
 
 
 class AdjustIn(In):
@@ -192,7 +324,38 @@ class ProgramIn(In):
     birthday_reward: bool | None = None
     referral_stamps: int | None = None
     active: bool | None = None
-    manager_pin: Pin = Field(max_length=12)
+    # --- loyalty card v2 ------------------------------------------------------------
+    welcome_stamp: bool | None = None
+    #: True: cards untouched for 12 months reset to zero.
+    stamps_expire: bool | None = None
+    #: Enabled stickers in scanner order (at least one).
+    stickers: list[StickerKey] | None = Field(default=None, max_length=8)
+    #: Only needed once a manager or owner exists (`pin_required`).
+    manager_pin: Pin | None = Field(default=None, max_length=12)
+
+
+class StickerOut(Out):
+    key: str
+    name: str
+    url: str
+
+
+class JoinSourceOut(Out):
+    source: str
+    members: int
+
+
+class ProgramSettingsOut(ProgramAdminOut):
+    """GET/PUT /api/members/program (BACKOFFICE-V2 §3). The v1 fields stay, additively."""
+
+    welcome_stamp: bool
+    stamps_expire: bool
+    stickers: list[str]
+    sticker_catalogue: list[StickerOut]
+    join_url: str
+    join_sources: list[JoinSourceOut]
+    cards: int
+    pin_required: bool
 
 
 class StaffOut(Out):
@@ -255,24 +418,35 @@ class CampaignOut(Out):
     sent_at: datetime | None
     recipients: int | None
     returned: int
-    #: Unsent campaigns only: opted-in members the segment reaches right now (before the
-    #: monthly promo limit, which is applied per member at send time).
+    #: Unsent campaigns only: members the segment reaches right now (opted-in only for a
+    #: promo; before the monthly promo limit, which is applied per member at send time).
     audience: int | None = None
     created_by: str
     created_at: datetime
+    # --- loyalty card v2 ------------------------------------------------------------
+    status: Literal["draft", "scheduled", "sent", "cancelled"] = "draft"
+    cancelled_at: datetime | None = None
+    #: returned / recipients once the 7 days have passed or anyone returned.
+    return_rate: float | None = None
 
 
 class CampaignsOut(Out):
     campaigns: list[CampaignOut]
     promo_limit_per_month: int
+    promos_this_month: int = 0
+    audiences: dict[str, int] = Field(default_factory=dict)
+    everyone_with_card: int = 0
 
 
 class CampaignIn(In):
-    title: str = Field(min_length=1, max_length=120)
+    #: Blank: the message's first words.
+    title: str | None = Field(default=None, max_length=120)
     message: str = Field(min_length=1, max_length=200)
     segment: CampaignSegmentName
     scheduled_at: datetime | None = None
     is_promo: bool = True
+    #: Create and send in one step.
+    send_now: bool = False
     #: Operator name as typed on this device (DECISIONS.md 6). Optional.
     created_by: str | None = Field(default=None, max_length=120)
 
@@ -280,12 +454,6 @@ class CampaignIn(In):
 class SendOut(Out):
     recipients: int
     skipped_over_limit: int
-
-
-class AlertOut(Out):
-    at: datetime
-    kind: str
-    detail: str
 
 
 class AlertsOut(Out):

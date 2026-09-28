@@ -240,6 +240,7 @@ def loyalty_object(view: CardView, cfg: WalletSettings | None = None) -> dict[st
                     slots,
                     3,
                     reward=content.stamp_reward_ready(view),
+                    keys=content.strip_stickers(view),
                 ),
             },
             "contentDescription": _text(

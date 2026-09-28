@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 
 from cafeops.config import settings
 from cafeops.db.models import LoyaltyCard, LoyaltyReward, RewardKind
-from cafeops.domain.loyalty import qr_payload
+from cafeops.domain.loyalty import fit_stickers, qr_payload, sticker_set
 from cafeops.services.loyalty.common import (
     available_rewards,
     enqueue_wallet_update,
@@ -77,6 +77,8 @@ class CardView:
     reward_ready_label: str = "Free drink ready"
     program_description: str | None = None
     member_id: int = 0
+    #: BACKOFFICE-V2 §2: the sticker key in each filled slot (empty on a points card).
+    stickers: tuple[str, ...] = ()
 
 
 def _reward_view(reward: LoyaltyReward, ready_label: str | None = None) -> RewardView:
@@ -122,6 +124,11 @@ def card_view_of(session: Session, card: LoyaltyCard, *, now: datetime | None = 
         reward_ready_label=program.reward_ready_label,
         program_description=program.description,
         member_id=member.id,
+        stickers=(
+            tuple(fit_stickers(card.stickers, card.stamps_current, sticker_set(program.stickers)))
+            if program.kind.value == "STAMPS"
+            else ()
+        ),
     )
 
 

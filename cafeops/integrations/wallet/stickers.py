@@ -43,6 +43,7 @@ from pathlib import Path
 from PIL import Image, ImageChops, ImageDraw
 
 from cafeops.config import REPO_ROOT
+from cafeops.domain.loyalty import STICKER_KEYS
 from cafeops.integrations.wallet.config import ASSETS_DIR
 
 STICKER_DIR = ASSETS_DIR / "stickers"
@@ -75,6 +76,16 @@ SVG_NS = "{http://www.w3.org/2000/svg}"
 Point = tuple[float, float]
 Matrix = tuple[float, float, float, float, float, float]  # a b c d e f, as SVG's matrix()
 IDENTITY: Matrix = (1.0, 0.0, 0.0, 1.0, 0.0, 0.0)
+
+
+#: BACKOFFICE-V2 §2: sticker key -> art file. Key i of `STICKER_KEYS` is slot-<i+1>.svg.
+KEY_FILES = {key: f"slot-{i}.svg" for i, key in enumerate(STICKER_KEYS, start=1)}
+
+
+def key_sticker(key: str | None, slot: int) -> str:
+    """File name for a card's own sticker key in 0-based `slot`; the fixed slot art when
+    the key is missing or unknown."""
+    return KEY_FILES.get(key or "", slot_sticker(slot))
 
 
 def slot_sticker(slot: int) -> str:

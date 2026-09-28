@@ -58,6 +58,7 @@ __all__ = [
     "list_drinks",
     "redeem",
     "undo_redemption",
+    "unredeem",
 ]
 
 LOYALTY_RECEIPT_ID = "loyalty"
@@ -154,7 +155,7 @@ def _check_item(
 
 def redeem(
     session: Session,
-    actor: StaffActor,
+    actor: StaffActor | None,
     *,
     reward_id: int,
     menu_item_id: int | None,
@@ -214,16 +215,21 @@ def redeem(
     reward.redeemed_at = now
     reward.redeemed_menu_item_id = menu_item_id
     reward.sale_id = sale_id
-    reward.staff_user_id = actor.user_id
+    # `actor` None: given from the back office (BACKOFFICE-V2), behind its password.
+    reward.staff_user_id = actor.user_id if actor else None
     reward.reward_option_id = option.id if option is not None else None
     audit(
         session,
         "redeem",
         f"reward {reward.id} ({reward.kind.value}"
         + (f", as {option.name}" if option is not None else "")
-        + f") given by {actor.name} on {actor.device_name}",
-        staff_user_id=actor.user_id,
-        device_id=actor.device_id,
+        + (
+            f") given by {actor.name} on {actor.device_name}"
+            if actor
+            else ") given from the back office"
+        ),
+        staff_user_id=actor.user_id if actor else None,
+        device_id=actor.device_id if actor else None,
         card_id=card.id,
         member_id=card.member_id,
         at=now,
@@ -261,6 +267,31 @@ def undo_redemption(session: Session, actor: StaffActor, reward_id: int) -> Scan
         )
     card = session.get(LoyaltyCard, reward.card_id)
     assert card is not None
+    unredeem(
+        session,
+        card,
+        reward,
+        now=now,
+        who=f"{actor.name} on {actor.device_name}",
+        staff_user_id=actor.user_id,
+        device_id=actor.device_id,
+    )
+    return scan_view(session, card, now=now)
+
+
+def unredeem(
+    session: Session,
+    card: LoyaltyCard,
+    reward: LoyaltyReward,
+    *,
+    now: datetime,
+    who: str,
+    staff_user_id: int | None = None,
+    device_id: int | None = None,
+) -> None:
+    """Take a given reward back: it is ready again, and its £0 sale is voided. The
+    checks (time limit, who may) are the caller's: the scanner's two-minute rule, or the
+    back office, which has none."""
     if reward.sale_id is not None:
         sale = session.get(Sale, reward.sale_id)
         if sale is not None:
@@ -273,9 +304,9 @@ def undo_redemption(session: Session, actor: StaffActor, reward_id: int) -> Scan
     audit(
         session,
         "redeem_undone",
-        f"reward {reward.id} undone by {actor.name} on {actor.device_name}",
-        staff_user_id=actor.user_id,
-        device_id=actor.device_id,
+        f"reward {reward.id} undone by {who}",
+        staff_user_id=staff_user_id,
+        device_id=device_id,
         card_id=card.id,
         member_id=card.member_id,
         at=now,
@@ -283,7 +314,6 @@ def undo_redemption(session: Session, actor: StaffActor, reward_id: int) -> Scan
     refresh_reward_available(session, card, now)
     touch(card, now)
     enqueue_wallet_update(session, card.id, None)
-    return scan_view(session, card, now=now)
 
 
 # --------------------------------------------------------------------------

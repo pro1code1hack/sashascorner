@@ -62,8 +62,17 @@ __all__ = [
     "update_program",
 ]
 
-Segment = Literal["all", "lapsed_30", "reward_ready", "opted_in", "new_30"]
-Sort = Literal["recent", "stamps", "name"]
+Segment = Literal["all", "lapsed_30", "reward_ready", "opted_in", "new_30", "no_wallet"]
+SEGMENTS: tuple[Segment, ...] = (
+    "all",
+    "reward_ready",
+    "lapsed_30",
+    "new_30",
+    "opted_in",
+    "no_wallet",
+)
+#: "recent" is the last visit (BACKOFFICE-V2), falling back to any activity.
+Sort = Literal["recent", "joined", "stamps", "name"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -83,12 +92,16 @@ class MemberRow:
     reward_available: bool
     marketing_opt_in: bool
     wallet: str | None
+    #: Last purchase stamp or free drink (BACKOFFICE-V2); None = not since joining.
+    last_visit_at: datetime | None = None
 
 
 @dataclass(frozen=True, slots=True)
 class MemberPage:
     total: int
     members: tuple[MemberRow, ...]
+    #: Every segment's size, ignoring the search text.
+    counts: dict[str, int] | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -183,6 +196,7 @@ def _rows(
                 .group_by(LoyaltyReward.card_id)
             ).all()
         }
+    visits = last_visits(session, card_ids)
     out: list[MemberRow] = []
     for member, card in pairs:
         wallet = wallets.get(card.id) or ("web" if card.web_seen_at else None)
@@ -203,9 +217,69 @@ def _rows(
                 reward_available=card.reward_available,
                 marketing_opt_in=member.marketing_opt_in,
                 wallet=wallet,
+                last_visit_at=visits.get(card.id),
             )
         )
     return out
+
+
+def last_visits(session: Session, card_ids: list[str]) -> dict[str, datetime]:
+    """Each card's last visit: a purchase or paper stamp not undone, or a free drink."""
+    if not card_ids:
+        return {}
+    undone = select(LoyaltyStampEvent.undoes_event_id).where(
+        LoyaltyStampEvent.undoes_event_id.is_not(None)
+    )
+    out: dict[str, datetime] = {}
+    for card_id, at in session.execute(
+        select(LoyaltyStampEvent.card_id, func.max(LoyaltyStampEvent.created_at))
+        .where(
+            LoyaltyStampEvent.card_id.in_(card_ids),
+            LoyaltyStampEvent.reason.in_([StampReason.PURCHASE, StampReason.PAPER_MIGRATION]),
+            LoyaltyStampEvent.id.not_in(undone),
+        )
+        .group_by(LoyaltyStampEvent.card_id)
+    ):
+        out[str(card_id)] = at
+    for card_id, at in session.execute(
+        select(LoyaltyReward.card_id, func.max(LoyaltyReward.redeemed_at))
+        .where(LoyaltyReward.card_id.in_(card_ids), LoyaltyReward.redeemed_at.is_not(None))
+        .group_by(LoyaltyReward.card_id)
+    ):
+        if at is not None and (str(card_id) not in out or at > out[str(card_id)]):
+            out[str(card_id)] = at
+    return out
+
+
+def _no_wallet_cards(session: Session, program_id: int) -> list[str]:
+    """Live cards on the programme never opened anywhere: no web view, no wallet pass."""
+    ids = list(
+        session.scalars(
+            select(LoyaltyCard.id).where(
+                LoyaltyCard.program_id == program_id,
+                LoyaltyCard.voided_at.is_(None),
+                LoyaltyCard.web_seen_at.is_(None),
+            )
+        )
+    )
+    wallets = wallet_kind_by_card(session, ids)
+    return [i for i in ids if i not in wallets]
+
+
+def _segment_filter(
+    session: Session, segment: Segment, program_id: int, now: datetime
+) -> ColumnElement[bool] | None:
+    if segment == "lapsed_30":
+        return LoyaltyMember.last_activity_at < now - timedelta(days=30)
+    if segment == "reward_ready":
+        return LoyaltyCard.reward_available.is_(True)
+    if segment == "opted_in":
+        return LoyaltyMember.marketing_opt_in.is_(True)
+    if segment == "new_30":
+        return LoyaltyMember.created_at >= now - timedelta(days=30)
+    if segment == "no_wallet":
+        return LoyaltyCard.id.in_(_no_wallet_cards(session, program_id))
+    return None
 
 
 def members_page(
@@ -230,6 +304,7 @@ def members_page(
         .join(LoyaltyCard, LoyaltyCard.member_id == LoyaltyMember.id)
         .where(LoyaltyCard.program_id == program.id, LoyaltyMember.deleted_at.is_(None))
     )
+    search: list[ColumnElement[bool]] = []
     if q and q.strip():
         text = q.strip()
         email = normalise_email(text) if "@" in text else None
@@ -245,15 +320,20 @@ def members_page(
             phone = normalise_phone(text)
             if phone:
                 conds.append(LoyaltyMember.phone == phone)
-        stmt = stmt.where(or_(*conds))
-    if segment == "lapsed_30":
-        stmt = stmt.where(LoyaltyMember.last_activity_at < now - timedelta(days=30))
-    elif segment == "reward_ready":
-        stmt = stmt.where(LoyaltyCard.reward_available.is_(True))
-    elif segment == "opted_in":
-        stmt = stmt.where(LoyaltyMember.marketing_opt_in.is_(True))
-    elif segment == "new_30":
-        stmt = stmt.where(LoyaltyMember.created_at >= now - timedelta(days=30))
+        search = conds
+    base = stmt
+    counts: dict[str, int] = {}
+    for name in SEGMENTS:
+        cond = _segment_filter(session, name, program.id, now)
+        counted = base if cond is None else base.where(cond)
+        counts[name] = int(
+            session.scalar(select(func.count()).select_from(counted.subquery())) or 0
+        )
+    if search:
+        stmt = stmt.where(or_(*search))
+    chosen = _segment_filter(session, segment, program.id, now)
+    if chosen is not None:
+        stmt = stmt.where(chosen)
     total = int(session.scalar(select(func.count()).select_from(stmt.subquery())) or 0)
     order: tuple[Any, ...]
     if sort == "stamps":
@@ -264,10 +344,27 @@ def members_page(
         )
     elif sort == "name":
         order = (func.lower(LoyaltyMember.first_name), LoyaltyMember.id)
+    elif sort == "joined":
+        order = (LoyaltyMember.created_at.desc(), LoyaltyMember.id.desc())
     else:
         order = (LoyaltyMember.last_activity_at.desc(), LoyaltyMember.id)
-    pairs = [(m, c) for m, c in session.execute(stmt.order_by(*order).limit(limit).offset(offset))]
-    return MemberPage(total=total, members=tuple(_rows(session, pairs, program.stamps_required)))
+    if sort == "recent":
+        # The last VISIT, which the ledger knows and the member row does not: sorted here
+        # (a café's member list is hundreds, not millions), activity as the tie-break.
+        pairs_all = [(m, c) for m, c in session.execute(stmt.order_by(*order))]
+        visits = last_visits(session, [c.id for _, c in pairs_all])
+        epoch = datetime.min.replace(tzinfo=now.tzinfo)
+        pairs_all.sort(key=lambda mc: visits.get(mc[1].id) or epoch, reverse=True)
+        pairs = pairs_all[offset : offset + limit]
+    else:
+        pairs = [
+            (m, c) for m, c in session.execute(stmt.order_by(*order).limit(limit).offset(offset))
+        ]
+    return MemberPage(
+        total=total,
+        members=tuple(_rows(session, pairs, program.stamps_required)),
+        counts=counts,
+    )
 
 
 def _card_of(

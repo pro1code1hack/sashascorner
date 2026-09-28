@@ -39,9 +39,11 @@ from datetime import datetime, timedelta
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from cafeops.config import settings
 from cafeops.db.models import (
     LoyaltyCard,
     LoyaltyMember,
+    LoyaltyProgram,
     LoyaltyReward,
     LoyaltyStampEvent,
     ProgramKind,
@@ -54,8 +56,12 @@ from cafeops.domain.loyalty import (
     COOLDOWN_MINUTES,
     MAX_POINTS_SPEND_PENCE,
     UNDO_SECONDS,
+    add_stickers,
     apply_stamps,
+    fit_stickers,
+    months_before,
     points_for_spend,
+    sticker_set,
 )
 from cafeops.services.loyalty.alerts import check_stamp_rate
 from cafeops.services.loyalty.common import (
@@ -82,10 +88,14 @@ __all__ = [
     "add_spend",
     "adjust",
     "apply_units",
+    "credit_referrer",
+    "expire_stamps",
     "migrate",
     "reverse_event",
+    "reverse_with_referral",
     "stamp",
     "undo",
+    "welcome_stamp",
 ]
 
 #: SPEC flow 5: "enter stickers (1-7)". Eight would be a full card, which is a free drink
@@ -124,12 +134,27 @@ def _apply(
     device_id: int | None = None,
     source_event_id: int | None = None,
     customer_activity: bool = True,
+    sticker: str | None = None,
 ) -> tuple[LoyaltyStampEvent, list[LoyaltyReward]]:
     program = card.program
     try:
         outcome = apply_stamps(card.stamps_current, delta, program.stamps_required)
     except ValueError as exc:
         raise LoyaltyError(409, "would_go_negative", str(exc)) from None
+    placed: str | None = None
+    if program.kind is ProgramKind.STAMPS:
+        # BACKOFFICE-V2 §2: the card keeps one sticker per filled slot, written here and
+        # only here (with `_reverse`), so the list and the count move together.
+        chosen = sticker_set(program.stickers)
+        slots, placed = add_stickers(
+            fit_stickers(card.stickers, card.stamps_current, chosen),
+            delta,
+            program.stamps_required,
+            chosen,
+            outcome.stamps_after,
+            first=sticker,
+        )
+        card.stickers = slots
     event = LoyaltyStampEvent(
         card_id=card.id,
         delta=delta,
@@ -138,6 +163,7 @@ def _apply(
         staff_user_id=staff_user_id,
         device_id=device_id,
         source_event_id=source_event_id,
+        sticker=placed,
         created_at=now,
     )
     session.add(event)
@@ -369,6 +395,27 @@ def reverse_event(session: Session, event: LoyaltyStampEvent, *, note: str) -> L
     return _reverse(session, event, now=now_utc(), staff_user_id=None, device_id=None, note=note)
 
 
+def welcome_stamp(session: Session, card: LoyaltyCard, *, now: datetime) -> bool:
+    """The programme's "first stamp is on us" for a card just made. True if given.
+
+    WELCOME, not PURCHASE: it is not a visit, so statistics, the cooldown and the
+    referral's "first purchase" rule all leave it out.
+    """
+    program = card.program
+    if not program.welcome_stamp or program.kind is not ProgramKind.STAMPS:
+        return False
+    _apply(
+        session,
+        card,
+        1,
+        StampReason.WELCOME,
+        now=now,
+        note="welcome stamp",
+        customer_activity=False,
+    )
+    return True
+
+
 def migrate(session: Session, actor: StaffActor, *, card_id: str, paper_stamps: int) -> StampResult:
     now = now_utc()
     card = _live_card(session, card_id)
@@ -478,6 +525,8 @@ def _reverse(
         created_at=now,
     )
     session.add(undo_row)
+    if card.program.kind is ProgramKind.STAMPS:
+        card.stickers = fit_stickers(card.stickers, after, sticker_set(card.program.stickers))
     card.stamps_current = after
     refresh_reward_available(session, card, now)
     touch(card, now)
@@ -518,14 +567,30 @@ def undo(
             403, "not_allowed", "Only the till that stamped it, or a manager, can undo this."
         )
     card = _live_card(session, event.card_id)
-    _reverse(
+    reverse_with_referral(
         session,
+        card,
         event,
         now=now,
         staff_user_id=actor.user_id,
         device_id=actor.device_id,
         note=f"undone by {actor.name}",
     )
+    return scan_view(session, card, now=now)
+
+
+def reverse_with_referral(
+    session: Session,
+    card: LoyaltyCard,
+    event: LoyaltyStampEvent,
+    *,
+    now: datetime,
+    staff_user_id: int | None,
+    device_id: int | None,
+    note: str,
+) -> None:
+    """Undo `event` (the checks are the caller's) and the referral it triggered, if any."""
+    _reverse(session, event, now=now, staff_user_id=staff_user_id, device_id=device_id, note=note)
     # A referral this stamp triggered goes with it, and the referred member can earn it
     # again on their real first visit.
     referral = session.scalar(
@@ -540,8 +605,8 @@ def undo(
                 session,
                 referral,
                 now=now,
-                staff_user_id=actor.user_id,
-                device_id=actor.device_id,
+                staff_user_id=staff_user_id,
+                device_id=device_id,
                 note=f"referral reversed: its stamp #{event.id} was undone",
             )
             card.member.referral_rewarded_at = None
@@ -555,4 +620,56 @@ def undo(
                 card_id=referral.card_id,
                 at=now,
             )
-    return scan_view(session, card, now=now)
+
+
+def credit_referrer(
+    session: Session, card: LoyaltyCard, first_stamp: LoyaltyStampEvent, now: datetime
+) -> None:
+    """The referral rule, for stamps given outside the scanner (the back office)."""
+    _credit_referrer(session, card, first_stamp, now)
+
+
+def expire_stamps(session: Session, *, now: datetime | None = None) -> int:
+    """Reset cards untouched for the programme's `stamps_expire_months` (BACKOFFICE-V2).
+
+    A MANUAL_FIX taking the card to zero, with the reason in the note -- the ledger says
+    exactly what happened and a manager can undo it. Rewards already issued are kept:
+    the rule is about stamps, and a ready drink "doesn't expire while the card is active".
+    Returns the number of cards reset. Idempotent: a reset card holds no stamps.
+    """
+    now = now or now_utc()
+    reset = 0
+    for program in session.scalars(
+        select(LoyaltyProgram).where(
+            LoyaltyProgram.stamps_expire_months.is_not(None),
+            LoyaltyProgram.kind == ProgramKind.STAMPS,
+        )
+    ):
+        months = int(program.stamps_expire_months or 0)
+        if months < 1:
+            continue
+        cutoff_day = months_before(now.astimezone(settings.tz).date(), months)
+        cutoff = datetime.combine(cutoff_day, datetime.min.time(), tzinfo=settings.tz)
+        stale = session.scalars(
+            select(LoyaltyCard)
+            .join(LoyaltyMember, LoyaltyMember.id == LoyaltyCard.member_id)
+            .where(
+                LoyaltyCard.program_id == program.id,
+                LoyaltyCard.voided_at.is_(None),
+                LoyaltyCard.stamps_current > 0,
+                LoyaltyMember.deleted_at.is_(None),
+                LoyaltyMember.last_activity_at < cutoff,
+            )
+        )
+        for card in list(stale):
+            _apply(
+                session,
+                card,
+                -card.stamps_current,
+                StampReason.MANUAL_FIX,
+                now=now,
+                note=f"stamps expired: no visit in {months} months",
+                customer_activity=False,
+            )
+            reset += 1
+    return reset

@@ -1,0 +1,43 @@
+deliveroo_item_id,deliveroo_name,deliveroo_category,price_pence,available,description,has_photo,note
+2767060160,Iced Caramel Matcha,Iced Matcha,500,true,Perfect taste!,no,no ops item; nearest Iced vanilla/other iced matcha
+2756513249,Raspberry Milkshake,Milkshakes,525,true,Lovely raspberry taste,yes,no ops item
+2756513235,Vanilla Milkshake,Milkshakes,525,true,,yes,no ops item
+2744937742,Coca Cola Zero 330ml,Soft Drinks,250,true,,yes,ops has only Coca-Cola
+2744937717,Diet Coke 330ml,Soft Drinks,250,true,,yes,ops has only Coca-Cola
+2744937836,Sprite 330ml,Soft Drinks,250,true,,yes,
+2744937668,Irn Brew 330ml,Soft Drinks,250,true,,yes,
+2744937669,Irn Brew SF 330ml,Soft Drinks,250,true,,yes,
+2744937797,Sparkling Water,Soft Drinks,200,true,,yes,ops has Still Water / Water only
+2744937822,Balocco Snack Vanilla Wafers 45g,Snacks,250,true,Crispy wafers filled with milk-vanilla cream (79% cream). 45g,yes,ops has only Dark Blue Wafer (Balocco cocoa)
+2795297858,"White chocolate, Macadamia&Miso cookie",Cakes,400,true,"Soft. Crunchy. Sweet and salty. This cookie has got it all!  Our classic vanilla cookie dough is infused with a hit of salty umami miso and loaded with crunchy chopped macadamia nuts and white chocolate buttons throughout. Baked until perfectly crisp on top and soft in the middle, we’ve hand-dipped each half in a sweet yoghurt topping and finished with a sprinkle of more nibbed macadamia nuts.",yes,not ops Mini Cookie (different product and price)
+2795297860,Ultimate Brownie,Cakes,450,true,Seriously chocolatey naughtiness. A dark moist chocolate brownie with the bite of milk and white chocolate chunks!,yes,not the same as Salted Caramel Brownie / Brownie Bar
+2763349534,Vegan Blueberry Bakewell,Cakes,415,true,Very tasty and soft vegan blueberry bakewell,yes,
+2763349535,Toasted Coconut Dark Chocolate,Cakes,415,true,Perfect match of toasted coconut with dark chocolate,yes,
+2840133738,Houmous&Halloumi Croissant,Homemade food,480,true,"Fresh-baked croissant filled with houmous, halloumi cheese and wild rocket",yes,"ops ""Croissant"" (Lunch) is a generic filled croissant"
+2795297861,Mozzarella&Pesto panini,Homemade food,490,true,An amazing taste of: pesto with fresh mozzarella and tomatoes!,no,"possibly ops ""Homemade Panini"" (generic)"
+2840133736,Breakfast croissant,Homemade food,480,true,"Fresh-baked croissant filled with soft cheese, cheesy omelette, fresh cucumbers and wild rocket",yes,"ops ""Croissant"" (Lunch) is a generic filled croissant"
+2840133735,Houmous&Prosciutto,Homemade food,550,true,"Fresh baton with humous, prosciutto, wild rocket and cucumbers",yes,
+2744937718,Salami&Cheese panini,Homemade food,475,true,"Homemade panini with salami, Edam cheese and wild rocket",no,"possibly ops ""Homemade Panini"" (generic)"
+2840133737,Breakfast Baton,Homemade food,550,true,"Cream cheese base, cheesy omelette with wild rocket and fresh tomatoes",yes,
+2842119506,Cranberry Brie&Bacon,Homemade food,650,true,Full of Brie cheese and bacon with real cranberry sauce! Definitely recommend!,no,
+2835406225,Blue Lagoon,🍂 Autumn Seasonal Drinks,580,true,"Blue curaçao syrup with pineapple juice, ice, fresh orange slices and jelly dolphin on top",yes,
+2835406231,Golden Creamy Maple Latte,🍂 Autumn Seasonal Drinks,580,true,"Condensed milk mixed with double espresso, steammed milk and topped up with golden sprks!",yes,
+2835406232,London Fog Tea,🍂 Autumn Seasonal Drinks,450,true,Your perfect cosy cup this autumn,yes,
+2835406222,Creamy Pumpkin Spice Latte,🍂 Autumn Seasonal Drinks,580,true,"Condensed milk mixed with pumpkin spice syrup, steamed milk, bold espresso finished with whipped cream on top",yes,"hot, with condensed milk; ops has ""Iced creamy pumpkin spice"" (iced) and plain Pumpkin Spice Latte"
+2835406224,Maple Latte,🍂 Autumn Seasonal Drinks,510,true,Pure maple coffee,yes,
+2835406219,Spanish Latte,🍂 Autumn Seasonal Drinks,510,true,Pure condensed milk in your perfect latte,yes,
+2835406230,Spanish White Hot Chocolate,🍂 Autumn Seasonal Drinks,520,true,Pure condensed milk with white hot chocolate,yes,
+2835406234,Banana Bread Latte,🍂 Autumn Seasonal Drinks,520,true,Very tasty and cosy drink,yes,
+2835406237,Apple Pie Latte,🍂 Autumn Seasonal Drinks,520,true,Perfect autumn taste,yes,
+2835406220,Iced Pumpkin Maple Matcha,🍂 Autumn Seasonal Drinks,530,true,Pumpkin spice syrup mixed with maple,yes,
+2835406221,Brown Sugar Hojicha,🍂 Autumn Seasonal Drinks,580,true,New best-seller drink!,no,hot version; ops has only the iced one
+2835406223,Biscoff Hojicha,🍂 Autumn Seasonal Drinks,580,true,Perfect match in one cup,no,hot version; ops has only the iced one
+2835406227,Strawberry Vanilla Matcha,🍂 Autumn Seasonal Drinks,580,true,Cosy cup of matcha,no,
+2835406235,White Chocolate Mango Matcha,🍂 Autumn Seasonal Drinks,580,true,Cosy and fresh taste,no,
+2835406236,Blue Honey Lavender Matcha,🍂 Autumn Seasonal Drinks,580,true,"Perfect taste of blue matcha, honey and lavender",no,
+2835406233,Salted Caramel Hojicha,🍂 Autumn Seasonal Drinks,580,true,,no,
+2835406239,Cherry Bomb,🍂 Autumn Seasonal Drinks,580,true,Have you ever tried condensed milk mixed with coffee with ice and cherry juice?,yes,
+2835406228,Iced Spanish White Mocha,🍂 Autumn Seasonal Drinks,570,true,"Condensed milk, white hot chocolate, double espresso",no,
+2765613470,Tomato&Cheese with wild rocket panini,(hidden item),0,false,"Vegetarian panini with tomato base, Edam cheese and wild rocket. Vegetarian.",no,"possibly ops ""Homemade Panini"" (generic); hidden item; not in any Deliveroo category, price 0 - likely retired or hidden"
+2765613481,Tuna&Cheese panini,(hidden item),0,false,Homemade tasty panini,no,"possibly ops ""Homemade Panini"" (generic); hidden item; not in any Deliveroo category, price 0 - likely retired or hidden"
+2765613510,Mozzarella and pesto toastie,(hidden item),0,false,Crunchy mozzarella and pesto toastie gluten free,yes,"hidden item; ops has Ham and Cheese / Tuna toasties only; not in any Deliveroo category, price 0 - likely retired or hidden"

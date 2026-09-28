@@ -214,6 +214,154 @@ def menu_import_board_cmd(
         session.close()
 
 
+@app.command(name="seed-reference")
+def seed_reference_cmd(
+    commit: Annotated[
+        bool, typer.Option("--commit/--dry-run", help="Write through the services.")
+    ] = False,
+    only: Annotated[
+        str | None,
+        typer.Option(
+            "--only",
+            help="Comma-separated sections: ingredients, prices, menu, recipes, photos, "
+            "ingredient-photos; stock-photos runs only when named here.",
+        ),
+    ] = None,
+    directory: Annotated[
+        Path | None,
+        typer.Option("--dir", help="Folder with the CSVs. Default: cafeops/seed/reference."),
+    ] = None,
+    show: Annotated[int, typer.Option("--show", help="Detailed changes printed per section.")] = 15,
+) -> None:
+    """Load researched reference data (cafeops/seed/reference/README.md).
+
+    Validates every file first and lists every error. Then, per section, one
+    transaction: insert / update / skip counts with the reasons for skips. Never
+    overwrites what the owner entered (INVOICE or SUPPLIER_FEED prices, a confirmed
+    shelf life, sell prices, existing recipes, photos). Re-running a commit is a no-op.
+    """
+    from sqlalchemy import select
+
+    from cafeops.db.models import Ingredient
+    from cafeops.seed.reference_csv import (
+        DEFAULT_DIR,
+        OPT_IN,
+        SECTIONS,
+        board_described,
+        load,
+        site_library_add,
+    )
+    from cafeops.services import reference_seed as rs
+
+    root = (directory or DEFAULT_DIR).expanduser().resolve()
+    if not root.is_dir():
+        raise typer.BadParameter(f"not a folder: {root}")
+    chosen = list(SECTIONS)
+    if only:
+        chosen = [s.strip() for s in only.split(",") if s.strip()]
+        unknown = [s for s in chosen if s not in (*SECTIONS, *OPT_IN)]
+        if unknown:
+            raise typer.BadParameter(
+                f"unknown section(s) {', '.join(unknown)}; use {', '.join((*SECTIONS, *OPT_IN))}"
+            )
+
+    session = SessionFactory()
+    try:
+        bundle = load(root, session)
+        existing = set(session.scalars(select(Ingredient.name)))
+        described = board_described(session)
+    finally:
+        session.close()
+    console.print(f"reference folder: {root}", markup=False, highlight=False, emoji=False)
+    for w in bundle.warnings[:20]:
+        console.print(f"[yellow]warning[/yellow] {w}", highlight=False)
+    if len(bundle.warnings) > 20:
+        console.print(f"[yellow]... and {len(bundle.warnings) - 20} more warnings[/yellow]")
+    if bundle.errors:
+        console.print(f"\n[red]{len(bundle.errors)} error(s); nothing was written:[/red]")
+        for e in bundle.errors:
+            console.print(f"  {e}", markup=False, highlight=False, emoji=False)
+        raise typer.Exit(code=2)
+    planned = bundle.planned_new(existing)
+
+    def show_report(report: rs.SectionReport) -> None:
+        state = "committed" if report.committed else "dry run"
+        table = Table(title=f"{report.section} ({state})", title_justify="left")
+        for col in ("insert", "update", "skip"):
+            table.add_column(col, justify="right")
+        table.add_row(
+            str(report.count("insert")),
+            str(report.count("update")),
+            str(report.count("skip")),
+        )
+        console.print(table)
+        for reason, n in report.skip_reasons():
+            console.print(f"  skip {n:>4}  {reason}", markup=False, highlight=False, emoji=False)
+        writes = [c for c in report.changes if c.action != "skip"]
+        for c in writes[:show]:
+            mark = "+" if c.action == "insert" else "~"
+            console.print(
+                f"  {mark} {c.key}: {c.detail}", markup=False, highlight=False, emoji=False
+            )
+        if len(writes) > show:
+            console.print(f"  ... {len(writes) - show} more (--show N)")
+        for note in report.notes:
+            console.print(f"  {note}", markup=False, highlight=False, emoji=False)
+
+    def run_library(jobs: list[rs.LibraryJob]) -> None:
+        for job in jobs:
+            try:
+                out = site_library_add(job.file, job.alt)
+            except (RuntimeError, OSError) as exc:
+                console.print(f"  [red]library:[/red] {exc}", highlight=False)
+                continue
+            console.print(f"  library: {out}", markup=False, highlight=False, emoji=False)
+
+    photo_names: frozenset[str] = frozenset()
+    order = [*SECTIONS, *OPT_IN]
+    for section in [s for s in order if s in chosen]:
+        if section not in bundle.present:
+            console.print(f"\n{section}: no file in the folder, skipped", highlight=False)
+            continue
+        console.print()
+        session = SessionFactory()
+        try:
+            if section == "ingredients":
+                report = rs.seed_ingredients(session, bundle.ingredients, commit=commit)
+            elif section == "prices":
+                report = rs.seed_prices(session, bundle.products, commit=commit, planned=planned)
+            elif section == "menu":
+                report = rs.seed_menu(
+                    session, bundle.menu, commit=commit, board_described=described
+                )
+            elif section == "recipes":
+                report = rs.seed_recipes(session, bundle.recipes, commit=commit, planned=planned)
+            elif section == "ingredient-photos":
+                report = rs.seed_ingredient_photos(
+                    session, bundle.ingredient_photos, commit=commit, planned=planned
+                )
+            else:
+                fallback = section == "stock-photos"
+                report, jobs, names = rs.seed_menu_photos(
+                    session,
+                    bundle.stock_photos if fallback else bundle.photos,
+                    commit=commit,
+                    section=section,
+                    fallback=fallback,
+                    skip_names=photo_names if fallback and not commit else frozenset(),
+                )
+                photo_names = names
+                show_report(report)
+                if commit:
+                    run_library(jobs)
+                continue
+        finally:
+            session.close()
+        show_report(report)
+    if not commit:
+        console.print("\n[yellow]DRY RUN: nothing written. Re-run with --commit.[/yellow]")
+
+
 @app.command(name="purge-demo")
 def purge_demo_cmd(
     commit: Annotated[

@@ -18,6 +18,7 @@ import asyncio
 
 from fastapi import APIRouter, HTTPException, Response
 
+from cafeops.domain.loyalty import STICKER_NAMES
 from cafeops.integrations.wallet.assets import PUBLIC_FILES, pass_asset
 from cafeops.integrations.wallet.strips import SCALES, strip_png
 
@@ -27,14 +28,21 @@ CACHE = "public, max-age=31536000, immutable"
 
 
 @router.get("/strip/{stamps}-{required}@{scale}x.png")
-async def strip(stamps: int, required: int, scale: int, r: int = 0, v: str = "") -> Response:
+async def strip(
+    stamps: int, required: int, scale: int, r: int = 0, v: str = "", s: str = ""
+) -> Response:
     # `r=1`: a stamp-card reward is ready (the reward sticker). `v` is only a cache key
     # (`strip_version()`); any value serves the current art.
     if not (1 <= required <= 20 and 0 <= stamps <= required and scale in SCALES and r in (0, 1)):
         raise HTTPException(status_code=404)
     del v
+    # `s`: the card's own stickers, keys joined by "." (BACKOFFICE-V2 §2). Unknown keys
+    # are a 404 rather than a silently different picture.
+    keys: tuple[str, ...] | None = tuple(s.split(".")) if s else None
+    if keys is not None and (len(keys) > stamps or any(k not in STICKER_NAMES for k in keys)):
+        raise HTTPException(status_code=404)
     # First render of a size is ~100 ms of Pillow; keep it off the event loop.
-    data = await asyncio.to_thread(strip_png, stamps, required, scale, bool(r))
+    data = await asyncio.to_thread(strip_png, stamps, required, scale, bool(r), keys)
     return Response(content=data, media_type="image/png", headers={"Cache-Control": CACHE})
 
 

@@ -1,0 +1,279 @@
+deliveroo_item_id,deliveroo_name,deliveroo_category,ops_name,match,confidence,note
+2765613496,Lunch deal,Standard Hot Drinks,Lunch Deal,normalised,1.0,case
+2744937756,Black Americano,Standard Hot Drinks,Black Americano,exact,1.0,
+2744937824,White Americano,Standard Hot Drinks,White Americano,exact,1.0,
+2744937847,Latte,Standard Hot Drinks,Latte,exact,1.0,
+2744937831,Cappucino,Standard Hot Drinks,Cappuccino,normalised,1.0,Deliveroo misspelling
+2744937738,Chai Latte,Standard Hot Drinks,Chai Latte,exact,1.0,
+2744937798,Hot Chocolate,Standard Hot Drinks,Hot Chocolate,exact,1.0,
+2744937854,White Hot Chocolate,Standard Hot Drinks,White Hot Chocolate,exact,1.0,
+2744937841,Mocha,Standard Hot Drinks,Mocha,exact,1.0,
+2744937835,White Mocha,Standard Hot Drinks,White Mocha,exact,1.0,
+2744937725,Raff Coffee,Standard Hot Drinks,Raff Coffee,exact,1.0,
+2744937817,Orange Americano,Standard Hot Drinks,Orange Americano,exact,1.0,
+2763691915,Afternoon Bundle,Standard Hot Drinks,Afternoon Deal,manual,0.8,"""drink and a muffin"" bundle; ops calls it Afternoon Deal. Listed but unavailable on Deliveroo"
+2744937839,Single Espresso,One Size Hot Drinks,Single Espresso,exact,1.0,
+2744937818,Double Espresso,One Size Hot Drinks,Double Espresso,exact,1.0,
+2744937698,Single Macchiato,One Size Hot Drinks,Single Macchiato,exact,1.0,
+2744937680,Double Macchiato,One Size Hot Drinks,Double Macchiato,exact,1.0,
+2744937834,Single Espresso con Pana,One Size Hot Drinks,Single Espresso Con Pana,normalised,1.0,case
+2744937815,Double Espresso con Pana,One Size Hot Drinks,Double Espresso Con Pana,normalised,1.0,case
+2744937793,Catado,One Size Hot Drinks,Cortado,manual,0.95,"Deliveroo misspelling ""Catado""; 60ml one-size, sits between Double Macchiato and Mocha Cortado"
+2744937820,Mocha Cortado,One Size Hot Drinks,Mocha Cortado,exact,1.0,
+2756513240,Flat white,One Size Hot Drinks,Flat White,normalised,1.0,case
+2744937856,English Breakfast Tea,Teas,English Breakfast,normalised,1.0,"ops drops ""Tea"""
+2744937767,Earl Grey Tea,Teas,Earl Grey,normalised,1.0,"ops drops ""Tea"""
+2744937783,Decaf Tea,Teas,Decaf Tea,exact,1.0,
+2744937693,Mint Tea,Teas,Mint,normalised,1.0,"ops drops ""Tea"" (Tea category)"
+2744937676,Green Tea,Teas,Green,normalised,1.0,"ops drops ""Tea"" (Tea category)"
+2744937805,Berry Tea,Teas,Berry Tea,exact,1.0,
+2744937748,Strawberry Black Tea,Teas,Strawberry Black,normalised,1.0,"ops drops ""Tea"""
+2744937786,Ginger and Lemongrass Tea,Teas,Ginger and Lemongrass Tea,exact,1.0,
+2744937747,Jasmine and Mint Green Tea,Teas,Jasmine and Mint Green Tea,exact,1.0,
+2744937851,Spiced Apple Chai,Teas,Spiced Apple Chai,exact,1.0,
+2744937827,Forest Fruits Tea,Teas,Forest Fruits Tea,exact,1.0,
+2744937863,Hot Blue Honey Matcha,Hot Matcha,Blue Honey Matcha,normalised,0.95,"ops drops ""Hot"""
+2744937810,Hot Matcha,Hot Matcha,Hot Matcha,exact,1.0,
+2744937866,Hot Strawberry Matcha,Hot Matcha,Hot Strawberry Matcha,exact,1.0,
+2744937706,Hot Vanilla Matcha,Hot Matcha,Hot Vanilla Matcha,exact,1.0,
+2744937845,Hot White Choc Matcha,Hot Matcha,Hot White Choc Matcha,exact,1.0,
+2744937658,Hot Lavender Matcha,Hot Matcha,Hot Lavender Matcha,exact,1.0,
+2744937734,Hot Rose Matcha,Hot Matcha,Hot Rose Matcha,exact,1.0,
+2744937695,Hot Blue Lavender Matcha,Hot Matcha,Blue Lavender Matcha,normalised,0.95,"ops drops ""Hot"""
+2744937707,Hot Blue Vanilla Matcha,Hot Matcha,Blue Vanilla Matcha,normalised,0.95,"ops drops ""Hot"""
+2744937757,Iced Black Americano,Standard Iced Drinks,Iced Black Americano,exact,1.0,
+2744937796,Iced White Americano,Standard Iced Drinks,Iced White Americano,exact,1.0,
+2744937697,Iced Latte,Standard Iced Drinks,Iced Latte,exact,1.0,
+2744937785,Iced Cappuccino,Standard Iced Drinks,Iced Cappuccino,exact,1.0,
+2744937825,Iced Chai Latte,Standard Iced Drinks,Iced Chai Latte,exact,1.0,
+2744937744,Iced Mocha,Standard Iced Drinks,Iced Mocha,exact,1.0,
+2744937657,Iced White Mocha,Standard Iced Drinks,Iced White Mocha,exact,1.0,
+2744937842,Iced Flat White,Standard Iced Drinks,Iced Flat White,exact,1.0,
+2744937846,Espresso Tonic,Standard Iced Drinks,Espresso Tonic,exact,1.0,
+2756513232,Iced Lavender Matcha,Iced Matcha,Iced lavender matcha,normalised,1.0,case
+2756513251,Iced Rose Matcha,Iced Matcha,Iced rose matcha,normalised,1.0,case
+2744937654,Iced Peach Matcha,Iced Matcha,Iced Peach Matcha,exact,1.0,
+2744937778,Iced Mango Matcha,Iced Matcha,Iced Mango Matcha,exact,1.0,
+2744937751,Iced Strawberry Matcha,Iced Matcha,Iced Strawberry Matcha,exact,1.0,
+2744937728,Iced Coconut Matcha,Iced Matcha,Iced Coconut Matcha,exact,1.0,
+2744937750,Iced Banana Matcha,Iced Matcha,Iced Banana Matcha,exact,1.0,
+2744937813,Iced Citrus Blue Matcha,Iced Matcha,Iced Citrus Blue Matcha,exact,1.0,
+2756513244,Iced Green Apple Matcha,Iced Matcha,Iced green apple matcha,normalised,1.0,case
+2756513247,Iced Kiwi Matcha,Iced Matcha,Iced kiwi matcha,normalised,1.0,case
+2767060152,Iced Raspberry Matcha,Iced Matcha,Iced raspberry matcha,normalised,1.0,case
+2767060138,Iced Vanilla Matcha,Iced Matcha,Iced vanilla matcha,normalised,1.0,case
+2767060160,Iced Caramel Matcha,Iced Matcha,,none,0,no ops item; nearest Iced vanilla/other iced matcha
+2744937670,Green Apple Bubble Tea,Creamy Bubble Tea,Green Apple Bubble Tea,exact,1.0,
+2744937789,Passion Fruit Bubble Tea,Creamy Bubble Tea,Passion Fruit Bubble Tea,exact,1.0,
+2744937749,Kiwi Bubble Tea,Creamy Bubble Tea,Kiwi Bubble Tea,exact,1.0,
+2744937795,Honey Bubble Tea,Creamy Bubble Tea,Honey Bubble Tea,exact,1.0,
+2744937791,Strawberry Bubble Tea,Creamy Bubble Tea,Strawberry Bubble Tea,exact,1.0,
+2744937868,Iced Lemon and Honey Tea,Iced Teas,Iced Lemon & Honey Tea,normalised,1.0,"""and"" vs ""&"""
+2744937745,Peach Iced Tea,Iced Teas,Peach Iced Tea,exact,1.0,
+2744937659,Iced Rose Tea,Iced Teas,Iced Rose Tea,exact,1.0,
+2744937694,Banana Milkshake,Milkshakes,Banana Milkshake,exact,1.0,
+2744937826,Salted Caramel Coffee Milkshake,Milkshakes,Salted Caramel Coffee Milkshake,exact,1.0,
+2744937838,Coffee Milkshake,Milkshakes,Coffee Milkshake,exact,1.0,
+2744937720,Chocolate Coffee Milkshake,Milkshakes,Chocolate Coffee Milkshake,exact,1.0,
+2744937774,Chocolate Milkshake,Milkshakes,Chocolate Milkshake,exact,1.0,
+2744937724,Strawberry Milkshake,Milkshakes,Strawberry,manual,0.95,"ops Milkshakes category item is named just ""Strawberry"""
+2744937782,Salted Caramel Milkshake,Milkshakes,Salted Caramel Milkshake,exact,1.0,
+2756513245,Mango Milkshake,Milkshakes,Mango milkshake,normalised,1.0,case
+2756513249,Raspberry Milkshake,Milkshakes,,none,0,no ops item
+2756513230,Kiwi Milkshake,Milkshakes,Kiwi milkshake,normalised,1.0,case
+2756513235,Vanilla Milkshake,Milkshakes,,none,0,no ops item
+2744937735,Chocolate Babyccino,Kids,Babyccino,manual,0.8,Deliveroo sells a chocolate babyccino (75p); ops has one Babyccino at 50p
+2744937776,Coca Cola 330ml,Soft Drinks,Coca-Cola,normalised,0.95,size in name; hyphen
+2744937742,Coca Cola Zero 330ml,Soft Drinks,,none,0,ops has only Coca-Cola
+2744937717,Diet Coke 330ml,Soft Drinks,,none,0,ops has only Coca-Cola
+2744937836,Sprite 330ml,Soft Drinks,,none,0,
+2744937668,Irn Brew 330ml,Soft Drinks,,none,0,
+2744937669,Irn Brew SF 330ml,Soft Drinks,,none,0,
+2744937833,Fanta 330ml,Soft Drinks,Fanta,normalised,0.95,size in name
+2744937857,Still Water,Soft Drinks,Still Water,exact,1.0,
+2744937797,Sparkling Water,Soft Drinks,,none,0,ops has Still Water / Water only
+2744937819,Apple Juice,Soft Drinks,Apple Juice,exact,1.0,
+2744937673,Salt & Vinegar Pringles 40g,Snacks,Pringles,normalised,0.9,ops has one Pringles item for all flavours
+2744937864,BBQ Pringles 40g,Snacks,Pringles,normalised,0.9,ops has one Pringles item for all flavours
+2744937702,Dark Blue Wafer,Snacks,Dark Blue Wafer,exact,1.0,
+2744937733,Pringles Sour Cream & Onion 40g,Snacks,Pringles,normalised,0.9,ops has one Pringles item for all flavours
+2744937780,Pom-Bear Original Potato Snacks 19g,Snacks,Pom-Bear crisps,normalised,0.95,pack size/flavour in name
+2744937822,Balocco Snack Vanilla Wafers 45g,Snacks,,none,0,ops has only Dark Blue Wafer (Balocco cocoa)
+2756513252,Pringles Original 40g,Snacks,Pringles,normalised,0.9,ops has one Pringles item for all flavours; this photo used for ops Pringles
+2804572841,Fresh Cinnamon Bun,Cakes,Cinnamon classic,manual,0.5,"UNSURE: iced cinnamon bun; ops ""Cinnamon classic"" (Cakes & bakes, 3.00) may be a different product. Photo NOT assigned"
+2795297858,"White chocolate, Macadamia&Miso cookie",Cakes,,none,0,not ops Mini Cookie (different product and price)
+2744937777,Lemon and Pistachio,Cakes,Lemon and Pistachio,exact,1.0,
+2744937681,Tiramisu blondie,Cakes,Tiramisu blondie,exact,1.0,
+2744937701,Billionaire’s shortbread,Cakes,Billionaire's shortbread,normalised,1.0,curly vs straight apostrophe
+2795297860,Ultimate Brownie,Cakes,,none,0,not the same as Salted Caramel Brownie / Brownie Bar
+2763349534,Vegan Blueberry Bakewell,Cakes,,none,0,
+2763349535,Toasted Coconut Dark Chocolate,Cakes,,none,0,
+2744937671,The Handmade Cake Company Gluten-Free Chocolate Brownie 60g,Cakes,Brownie Bar,manual,0.7,"wrapped 60g bar; ops Brownie Bar sits with the other Handmade Cake Co bars (Lemon Drizzle Bar, Salted Caramel Bar). Confirm with owner"
+2798802951,Toasts with butter,Hot food,Toast with butter,normalised,1.0,plural
+2756513236,Soup of the day,Homemade food,Soup of the day,exact,1.0,
+2840133738,Houmous&Halloumi Croissant,Homemade food,,none,0,"ops ""Croissant"" (Lunch) is a generic filled croissant"
+2840133739,Fresh Granola Pod,Homemade food,Granola pot,manual,0.9,"Deliveroo typo ""Pod"""
+2795297861,Mozzarella&Pesto panini,Homemade food,,none,0,"possibly ops ""Homemade Panini"" (generic)"
+2840133736,Breakfast croissant,Homemade food,,none,0,"ops ""Croissant"" (Lunch) is a generic filled croissant"
+2840133735,Houmous&Prosciutto,Homemade food,,none,0,
+2744937715,Ham and cheese panini,Homemade food,Ham and Cheese Panini,normalised,1.0,case
+2744937718,Salami&Cheese panini,Homemade food,,none,0,"possibly ops ""Homemade Panini"" (generic)"
+2777420773,Homemade Bacon Roll,Homemade food,Bacon roll,manual,0.9,"""Homemade"" prefix"
+2840133737,Breakfast Baton,Homemade food,,none,0,
+2842119506,Cranberry Brie&Bacon,Homemade food,,none,0,
+2845571304,Healthy Chia Pudding,Homemade food,Chia pudding,manual,0.9,"""Healthy"" prefix"
+2845571305,Avocado toast,Homemade food,Avocado toast,exact,1.0,
+2835406238,Iced Banana Bread Hojicha,🍂 Autumn Seasonal Drinks,Iced banana bread hojicha,normalised,1.0,case
+2835406225,Blue Lagoon,🍂 Autumn Seasonal Drinks,,none,0,
+2835406231,Golden Creamy Maple Latte,🍂 Autumn Seasonal Drinks,,none,0,
+2835406232,London Fog Tea,🍂 Autumn Seasonal Drinks,,none,0,
+2835406222,Creamy Pumpkin Spice Latte,🍂 Autumn Seasonal Drinks,,none,0,"hot, with condensed milk; ops has ""Iced creamy pumpkin spice"" (iced) and plain Pumpkin Spice Latte"
+2835406224,Maple Latte,🍂 Autumn Seasonal Drinks,,none,0,
+2835406219,Spanish Latte,🍂 Autumn Seasonal Drinks,,none,0,
+2835406230,Spanish White Hot Chocolate,🍂 Autumn Seasonal Drinks,,none,0,
+2835406234,Banana Bread Latte,🍂 Autumn Seasonal Drinks,,none,0,
+2835406237,Apple Pie Latte,🍂 Autumn Seasonal Drinks,,none,0,
+2835406220,Iced Pumpkin Maple Matcha,🍂 Autumn Seasonal Drinks,,none,0,
+2835406221,Brown Sugar Hojicha,🍂 Autumn Seasonal Drinks,,none,0,hot version; ops has only the iced one
+2835406223,Biscoff Hojicha,🍂 Autumn Seasonal Drinks,,none,0,hot version; ops has only the iced one
+2835406227,Strawberry Vanilla Matcha,🍂 Autumn Seasonal Drinks,,none,0,
+2835406235,White Chocolate Mango Matcha,🍂 Autumn Seasonal Drinks,,none,0,
+2835406236,Blue Honey Lavender Matcha,🍂 Autumn Seasonal Drinks,,none,0,
+2835406233,Salted Caramel Hojicha,🍂 Autumn Seasonal Drinks,,none,0,
+2835406239,Cherry Bomb,🍂 Autumn Seasonal Drinks,,none,0,
+2835406226,Iced Brown Sugar Hojicha,🍂 Autumn Seasonal Drinks,Iced brown sugar hojicha,normalised,1.0,case
+2835406229,Iced Biscoff Hojicha,🍂 Autumn Seasonal Drinks,Iced Biscoff hojicha,normalised,1.0,case
+2835406228,Iced Spanish White Mocha,🍂 Autumn Seasonal Drinks,,none,0,
+2798807493,Jam,(modifier option),,none,0,
+2798807495,Marmalade,(modifier option),,none,0,
+2798807494,Honey,(modifier option),,none,0,
+2798807492,Beans,(modifier option),,none,0,
+2763841337,Caffeinated,(modifier option),,none,0,
+2744937844,Decaf Pod,(modifier option),,none,0,
+2763841343,White sugar,(modifier option),,none,0,
+2763841346,Brown sugar,(modifier option),,none,0,
+2763841349,Sweetener,(modifier option),,none,0,
+2763841354,Extra Shot,(modifier option),Extra shot,normalised,1.0,modifier option
+2763841336,Marshmallow,(modifier option),Marshmallow,exact,1.0,
+2763841348,Whipped Cream,(modifier option),,none,0,
+2767064821,Cold,(modifier option),,none,0,
+2767064826,Hot,(modifier option),,none,0,
+2763691918,Single Espresso,(modifier option),Single Espresso,exact,1.0,
+2763691909,Double Espresso,(modifier option),Double Espresso,exact,1.0,
+2763691931,Single Macchiato,(modifier option),Single Macchiato,exact,1.0,
+2763691934,Double Macchiato,(modifier option),Double Macchiato,exact,1.0,
+2763691917,Single Espresso con Pana,(modifier option),Single Espresso Con Pana,normalised,1.0,case
+2763691916,Double Espresso con Pana,(modifier option),Double Espresso Con Pana,normalised,1.0,case
+2763691940,Catado,(modifier option),Cortado,manual,0.95,"Deliveroo misspelling ""Catado""; 60ml one-size, sits between Double Macchiato and Mocha Cortado"
+2763691950,Mocha Cortado,(modifier option),Mocha Cortado,exact,1.0,
+2763691911,Flat white,(modifier option),Flat White,normalised,1.0,case
+2763691921,Strawberry Black Tea,(modifier option),Strawberry Black,normalised,1.0,"ops drops ""Tea"""
+2763691922,Jasmine and Mint Green Tea,(modifier option),Jasmine and Mint Green Tea,exact,1.0,
+2763691945,Spiced Apple Chai,(modifier option),Spiced Apple Chai,exact,1.0,
+2763691936,Ginger and Lemongrass Tea,(modifier option),Ginger and Lemongrass Tea,exact,1.0,
+2763691951,Forest Fruits Tea,(modifier option),Forest Fruits Tea,exact,1.0,
+2763691923,Black Americano,(modifier option),Black Americano,exact,1.0,
+2763691939,White Americano,(modifier option),White Americano,exact,1.0,
+2763691924,Latte,(modifier option),Latte,exact,1.0,
+2763691944,Cappucino,(modifier option),Cappuccino,normalised,1.0,Deliveroo misspelling
+2763691938,Chai Latte,(modifier option),Chai Latte,exact,1.0,
+2763691913,Hot Chocolate,(modifier option),Hot Chocolate,exact,1.0,
+2763691914,White Hot Chocolate,(modifier option),White Hot Chocolate,exact,1.0,
+2763691929,Mocha,(modifier option),Mocha,exact,1.0,
+2763691942,White Mocha,(modifier option),White Mocha,exact,1.0,
+2763691910,Raff Coffee,(modifier option),Raff Coffee,exact,1.0,
+2763691930,Orange Americano,(modifier option),Orange Americano,exact,1.0,
+2763691912,Iced Black Americano,(modifier option),Iced Black Americano,exact,1.0,
+2763691932,Iced White Americano,(modifier option),Iced White Americano,exact,1.0,
+2763691925,Iced Latte,(modifier option),Iced Latte,exact,1.0,
+2763691941,Iced Cappuccino,(modifier option),Iced Cappuccino,exact,1.0,
+2763691947,Iced Chai Latte,(modifier option),Iced Chai Latte,exact,1.0,
+2763691919,Iced Mocha,(modifier option),Iced Mocha,exact,1.0,
+2763691928,Iced White Mocha,(modifier option),Iced White Mocha,exact,1.0,
+2763691927,Iced Flat White,(modifier option),Iced Flat White,exact,1.0,
+2763691937,Espresso Tonic,(modifier option),Espresso Tonic,exact,1.0,
+2763691948,English Breakfast Tea,(modifier option),English Breakfast,normalised,1.0,"ops drops ""Tea"""
+2763691946,Earl Grey Tea,(modifier option),Earl Grey,normalised,1.0,"ops drops ""Tea"""
+2763691933,Decaf Tea,(modifier option),Decaf Tea,exact,1.0,
+2763691949,Mint Tea,(modifier option),Mint,normalised,1.0,"ops drops ""Tea"" (Tea category)"
+2763691943,Green Tea,(modifier option),Green,normalised,1.0,"ops drops ""Tea"" (Tea category)"
+2763691920,Berry Tea,(modifier option),Berry Tea,exact,1.0,
+2777425662,Tomato sauce,(modifier option),,none,0,
+2777425661,Brown sauce,(modifier option),,none,0,
+2756699518,Semi-skimmed milk,(modifier option),,none,0,
+2763841340,Oat Milk,(modifier option),Oat milk (+upcharge),normalised,0.95,modifier option
+2763841341,Coconut Milk,(modifier option),Coconut milk (+upcharge),normalised,0.95,modifier option
+2763841347,Almond Milk,(modifier option),,none,0,
+2763841338,Soya Milk,(modifier option),,none,0,
+2765613520,Ham and cheese panini,(modifier option),Ham and Cheese Panini,normalised,1.0,case
+2765613493,Salami&Cheese panini,(modifier option),,none,0,"possibly ops ""Homemade Panini"" (generic)"
+2765613470,Tomato&Cheese with wild rocket panini,(hidden item),,none,0,"possibly ops ""Homemade Panini"" (generic); hidden item"
+2765613481,Tuna&Cheese panini,(hidden item),,none,0,"possibly ops ""Homemade Panini"" (generic); hidden item"
+2765613491,Ham and cheese toastie,(hidden item),Ham and Cheese Toastie,normalised,1.0,"case; hidden item on Deliveroo (no category, price 0)"
+2765613510,Mozzarella and pesto toastie,(hidden item),,none,0,hidden item; ops has Ham and Cheese / Tuna toasties only
+2763841344,Caramel Syrup,(modifier option),Caramel syrup (add-on),normalised,0.95,modifier option
+2763841342,Sf Caramel Syrup,(modifier option),,none,0,
+2763841350,Vanilla Syrup,(modifier option),Vanilla syrup (add-on),normalised,0.95,modifier option
+2763841345,Sf Vanilla Syrup,(modifier option),,none,0,
+2763841339,Hazelnut Syrup,(modifier option),,none,0,
+2767064823,Cinnamon syrup,(modifier option),,none,0,
+2767064816,Gingerbread syrup,(modifier option),,none,0,
+2767064820,Mint syrup,(modifier option),,none,0,
+2767064815,Rose syrup,(modifier option),,none,0,
+2767064822,Lavender syrup,(modifier option),,none,0,
+2767064818,Orange syrup,(modifier option),,none,0,
+2767064817,Pumpkin spice syrup,(modifier option),,none,0,
+2767064825,Salted caramel syrup,(modifier option),,none,0,
+2767064819,Rose syrup,(modifier option),,none,0,
+2767064827,Green matcha,(modifier option),,none,0,
+2767064824,Blue matcha,(modifier option),,none,0,
+2744937787,Small 177ml,(modifier option),,none,0,
+2763841353,Medium 236ml,(modifier option),,none,0,
+2763841351,Large 354ml,(modifier option),,none,0,
+2765613521,BBQ Pringles 40g,(modifier option),Pringles,normalised,0.9,ops has one Pringles item for all flavours
+2765613501,Pom-Bear Original Potato Snacks 19g,(modifier option),Pom-Bear crisps,normalised,0.95,pack size/flavour in name
+2765613500,Pringles Original 40g,(modifier option),Pringles,normalised,0.9,ops has one Pringles item for all flavours; this photo used for ops Pringles
+2765613518,Pringles Sour Cream & Onion 40g,(modifier option),Pringles,normalised,0.9,ops has one Pringles item for all flavours
+2765613507,Salt & Vinegar Pringles 40g,(modifier option),Pringles,normalised,0.9,ops has one Pringles item for all flavours
+2765613515,Single Espresso,(modifier option),Single Espresso,exact,1.0,
+2765613502,Double Espresso,(modifier option),Double Espresso,exact,1.0,
+2765613513,Single Macchiato,(modifier option),Single Macchiato,exact,1.0,
+2765613484,Double Macchiato,(modifier option),Double Macchiato,exact,1.0,
+2765613474,Single Espresso con Pana,(modifier option),Single Espresso Con Pana,normalised,1.0,case
+2765613495,Double Espresso con Pana,(modifier option),Double Espresso Con Pana,normalised,1.0,case
+2765613473,Catado,(modifier option),Cortado,manual,0.95,"Deliveroo misspelling ""Catado""; 60ml one-size, sits between Double Macchiato and Mocha Cortado"
+2765613511,Mocha Cortado,(modifier option),Mocha Cortado,exact,1.0,
+2765613471,Flat white,(modifier option),Flat White,normalised,1.0,case
+2765613483,Strawberry Black Tea,(modifier option),Strawberry Black,normalised,1.0,"ops drops ""Tea"""
+2765613512,Jasmine and Mint Green Tea,(modifier option),Jasmine and Mint Green Tea,exact,1.0,
+2765613506,Spiced Apple Chai,(modifier option),Spiced Apple Chai,exact,1.0,
+2765613517,Ginger and Lemongrass Tea,(modifier option),Ginger and Lemongrass Tea,exact,1.0,
+2765613490,Forest Fruits Tea,(modifier option),Forest Fruits Tea,exact,1.0,
+2765613508,Black Americano,(modifier option),Black Americano,exact,1.0,
+2765613494,White Americano,(modifier option),White Americano,exact,1.0,
+2765613504,Latte,(modifier option),Latte,exact,1.0,
+2765613476,Cappucino,(modifier option),Cappuccino,normalised,1.0,Deliveroo misspelling
+2765613477,Chai Latte,(modifier option),Chai Latte,exact,1.0,
+2765613499,Hot Chocolate,(modifier option),Hot Chocolate,exact,1.0,
+2765613492,White Hot Chocolate,(modifier option),White Hot Chocolate,exact,1.0,
+2765613487,Mocha,(modifier option),Mocha,exact,1.0,
+2765613503,White Mocha,(modifier option),White Mocha,exact,1.0,
+2765613489,Raff Coffee,(modifier option),Raff Coffee,exact,1.0,
+2765613509,Orange Americano,(modifier option),Orange Americano,exact,1.0,
+2765613475,Iced Black Americano,(modifier option),Iced Black Americano,exact,1.0,
+2765613505,Iced White Americano,(modifier option),Iced White Americano,exact,1.0,
+2765613482,Iced Latte,(modifier option),Iced Latte,exact,1.0,
+2765613479,Iced Cappuccino,(modifier option),Iced Cappuccino,exact,1.0,
+2765613519,Iced Chai Latte,(modifier option),Iced Chai Latte,exact,1.0,
+2765613498,Iced Mocha,(modifier option),Iced Mocha,exact,1.0,
+2765613514,Iced White Mocha,(modifier option),Iced White Mocha,exact,1.0,
+2765613480,Iced Flat White,(modifier option),Iced Flat White,exact,1.0,
+2765613516,Espresso Tonic,(modifier option),Espresso Tonic,exact,1.0,
+2765613488,English Breakfast Tea,(modifier option),English Breakfast,normalised,1.0,"ops drops ""Tea"""
+2765613472,Earl Grey Tea,(modifier option),Earl Grey,normalised,1.0,"ops drops ""Tea"""
+2765613485,Decaf Tea,(modifier option),Decaf Tea,exact,1.0,
+2765613486,Mint Tea,(modifier option),Mint,normalised,1.0,"ops drops ""Tea"" (Tea category)"
+2765613497,Green Tea,(modifier option),Green,normalised,1.0,"ops drops ""Tea"" (Tea category)"
+2765613478,Berry Tea,(modifier option),Berry Tea,exact,1.0,
+2756513250,Medium 236ml,(modifier option),,none,0,
+2763841352,Large 354ml,(modifier option),,none,0,

@@ -136,12 +136,23 @@ class WalletSettings(BaseSettings):
     def asset_url(self, name: str) -> str:
         return f"{self.base_url}/api/loyalty/pass-assets/{name}"
 
-    def strip_url(self, stamps: int, required: int, scale: int = 3, *, reward: bool = False) -> str:
+    def strip_url(
+        self,
+        stamps: int,
+        required: int,
+        scale: int = 3,
+        *,
+        reward: bool = False,
+        keys: tuple[str, ...] | None = None,
+    ) -> str:
         # `v` is the sticker-art hash: strips are cached `immutable` and Google only
         # re-fetches a heroImage whose URL changed, so new art must mean a new URL.
         from cafeops.integrations.wallet.strips import strip_version
 
         query = f"v={strip_version()}" + ("&r=1" if reward else "")
+        if keys:
+            # The card's own stickers, BACKOFFICE-V2 §2: a different set is a different URL.
+            query += "&s=" + ".".join(keys)
         return f"{self.base_url}/api/loyalty/strip/{stamps}-{required}@{scale}x.png?{query}"
 
 

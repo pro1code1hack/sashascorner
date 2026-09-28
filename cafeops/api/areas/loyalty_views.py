@@ -188,6 +188,7 @@ def _state(session: Session, card: LoyaltyCard) -> CardState:
         points_per_pound=view.points_per_pound,
         reward_ready_label=view.reward_ready_label,
         program_description=view.program_description,
+        stickers=list(view.stickers),
         other_cards=_siblings(session, card),
         joinable=_joinable(session, card),
         # Referrals pay into the main card (stamping._credit_referrer), whichever of

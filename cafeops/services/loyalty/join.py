@@ -48,6 +48,7 @@ from cafeops.services.loyalty.common import (
     touch,
 )
 from cafeops.services.loyalty.errors import LoyaltyError
+from cafeops.services.loyalty.stamping import welcome_stamp
 
 __all__ = [
     "DetailsChange",
@@ -55,6 +56,8 @@ __all__ = [
     "Joined",
     "add_program_card",
     "birthday_counts_from",
+    "check_birthday",
+    "clean_first_name",
     "find_member_by_contact",
     "join",
     "new_card",
@@ -163,7 +166,7 @@ def find_member_by_contact(session: Session, contact: str) -> LoyaltyMember | No
     return session.scalar(select(LoyaltyMember).where(cond, LoyaltyMember.deleted_at.is_(None)))
 
 
-def _clean_first_name(raw: str) -> str:
+def clean_first_name(raw: str) -> str:
     first_name = " ".join(raw.split())
     if not first_name:
         raise LoyaltyError(422, "first_name_required", "Tell us your first name.")
@@ -172,7 +175,7 @@ def _clean_first_name(raw: str) -> str:
     return first_name
 
 
-def _check_birthday(day: int | None, month: int | None) -> None:
+def check_birthday(day: int | None, month: int | None) -> None:
     if (day is None) != (month is None):
         raise LoyaltyError(422, "bad_birthday", "Give both the day and the month, or neither.")
     if day is not None and month is not None and not is_valid_birthday(day, month):
@@ -180,7 +183,7 @@ def _check_birthday(day: int | None, month: int | None) -> None:
 
 
 def join(session: Session, req: JoinRequest) -> Joined:
-    first_name = _clean_first_name(req.first_name)
+    first_name = clean_first_name(req.first_name)
     if not req.terms:
         raise LoyaltyError(422, "terms_required", "Please accept the terms to get a card.")
 
@@ -199,7 +202,7 @@ def join(session: Session, req: JoinRequest) -> Joined:
         )
 
     day, month = req.birthday_day, req.birthday_month
-    _check_birthday(day, month)
+    check_birthday(day, month)
 
     clauses = []
     if email:
@@ -251,6 +254,7 @@ def join(session: Session, req: JoinRequest) -> Joined:
         ) from None
 
     card = new_card(session, member, program, now)
+    welcome_stamp(session, card, now=now)
     extra: list[tuple[str, str, str]] = []
     for slug in dict.fromkeys(s.strip() for s in req.also_join if s.strip()):
         if slug == program.slug:
@@ -300,13 +304,13 @@ def update_details(session: Session, card: LoyaltyCard, change: DetailsChange) -
     now = now_utc()
     changed: list[str] = []
     if change.first_name is not None:
-        name = _clean_first_name(change.first_name)
+        name = clean_first_name(change.first_name)
         if name != member.first_name:
             member.first_name = name
             changed.append("first name")
     if change.set_birthday:
         day, month = change.birthday
-        _check_birthday(day, month)
+        check_birthday(day, month)
         if (day, month) != (member.birthday_day, member.birthday_month):
             member.birthday_day, member.birthday_month = day, month
             member.birthday_set_at = now if day is not None else None

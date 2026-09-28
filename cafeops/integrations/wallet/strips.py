@@ -167,10 +167,17 @@ _EMPTY_RING = 0.8  # empty ring diameter as a fraction of the slot
 
 
 @lru_cache(maxsize=256)
-def strip_png(stamps: int, required: int, scale: int, reward: bool = False) -> bytes:
+def strip_png(
+    stamps: int,
+    required: int,
+    scale: int,
+    reward: bool = False,
+    keys: tuple[str, ...] | None = None,
+) -> bytes:
     """PNG bytes for a strip showing `stamps` of `required` earned. Cached.
 
-    Earned slots carry their sticker (`stickers.slot_sticker`, fixed per slot); empty
+    Earned slots carry their sticker: the card's own (`keys`, one sticker key per slot,
+    BACKOFFICE-V2 §2), else the fixed art per slot (`stickers.slot_sticker`); empty
     ones a faint dashed ring and the slot number, so the customer can count what is
     left. The last position is the reward: a ghosted cup until `reward` (a stamp-card
     reward is ready), then the reward sticker.
@@ -184,6 +191,7 @@ def strip_png(stamps: int, required: int, scale: int, reward: bool = False) -> b
     if scale not in SCALES:
         raise ValueError(f"scale must be one of {SCALES}, got {scale}")
     stamps = max(0, min(stamps, required))
+    own = keys
     w, h = STRIP_PT[0] * scale, STRIP_PT[1] * scale
     slots = _layout(required, w, h)
 
@@ -217,7 +225,8 @@ def strip_png(stamps: int, required: int, scale: int, reward: bool = False) -> b
             name, size = stickers.REWARD, round(d * _REWARD_SCALE * _STICKER_SCALE)
             cy -= d * 0.08  # the rosette's ribbons hang low; lift it back into line
         elif i < stamps:
-            name, size = stickers.slot_sticker(i), round(d * _STICKER_SCALE)
+            key = own[i] if own is not None and i < len(own) else None
+            name, size = stickers.key_sticker(key, i), round(d * _STICKER_SCALE)
         else:
             continue
         art = stickers.sticker_image(name, size)

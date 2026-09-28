@@ -414,6 +414,58 @@ class LinesApplied:
     diff: tuple[str, ...] = ()
 
 
+def _stage_lines(
+    session: Session,
+    target: MenuItem,
+    normalised: Sequence[tuple[int, Decimal]],
+    *,
+    at: datetime,
+    actor: str,
+) -> tuple[list[str], int]:
+    """Close the open lines, open `normalised` from `at`, sign it. (diff, lines closed)."""
+    before = [(r.ingredient_id, r.qty) for r in _open_lines(session, target.id, at)]
+    diff = _line_diff(session, before, normalised)
+    if not diff:
+        return [], 0
+    closed = _write_lines(session, target.id, normalised, at)
+    session.add(
+        RecipeChange(
+            menu_item_id=target.id,
+            change_kind="manual_lines",
+            effective_from=at,
+            actor=actor,
+            summary=" · ".join(diff[:3]) + (f" · +{len(diff) - 3} more" if len(diff) > 3 else ""),
+            lines=diff,
+        )
+    )
+    return diff, closed
+
+
+def stage_manual_lines(
+    session: Session,
+    menu_item_id: int,
+    lines: Sequence[LineIn],
+    *,
+    actor: str,
+    effective_from: datetime | None = None,
+) -> list[str]:
+    """`apply_manual_lines` for one size, WITHOUT committing or rolling up.
+
+    For a caller that writes several things in one unit of work (`seed-reference`
+    loads a whole file in one transaction) and runs the cost rollup once at the end.
+    Same rules: one-off items only, effective-dated from `effective_from` (now),
+    never retroactive, signed in `recipe_change`. Returns the diff lines.
+    """
+    at = require_not_retroactive(effective_from or datetime.now(UTC))
+    actor = _signed(actor)
+    (target,) = _manual_targets(session, menu_item_id, ())
+    diff, _closed = _stage_lines(
+        session, target, normalise_lines(session, lines), at=at, actor=actor
+    )
+    session.flush()
+    return diff
+
+
 def apply_manual_lines(
     session: Session,
     menu_item_id: int,
@@ -432,25 +484,13 @@ def apply_manual_lines(
     all_diff: list[str] = []
     try:
         for target in targets:
-            before = [(r.ingredient_id, r.qty) for r in _open_lines(session, target.id, at)]
-            diff = _line_diff(session, before, normalised)
+            diff, closed = _stage_lines(session, target, normalised, at=at, actor=actor)
             if not diff:
                 continue
-            result.lines_closed += _write_lines(session, target.id, normalised, at)
+            result.lines_closed += closed
             result.lines_opened += len(normalised)
             size = target.size_code.value if target.size_code else "One"
             all_diff.extend(f"{target.name} {size}: {line}" for line in diff)
-            session.add(
-                RecipeChange(
-                    menu_item_id=target.id,
-                    change_kind="manual_lines",
-                    effective_from=at,
-                    actor=actor,
-                    summary=" · ".join(diff[:3])
-                    + (f" · +{len(diff) - 3} more" if len(diff) > 3 else ""),
-                    lines=diff,
-                )
-            )
         if not all_diff:
             raise ValueError("there is nothing to apply: the recipe is already exactly this")
         session.flush()

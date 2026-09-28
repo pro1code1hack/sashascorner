@@ -412,6 +412,10 @@ export interface IngredientRow {
   tier?: string
   /** Decimal string, fraction lost in use (stock depletion only, never cost). */
   waste_factor?: string
+  /** Reference photo from the media library, or null. */
+  photo_url?: string | null
+  /** UK 14 allergens: null = unknown, [] = checked and none. */
+  allergens?: string[] | null
 }
 export interface IngredientsResponse {
   rows: IngredientRow[]

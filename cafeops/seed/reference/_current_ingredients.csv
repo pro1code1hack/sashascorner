@@ -1,0 +1,114 @@
+id,name,unit,category,storage,shelf_life_days,current_cost_pence_per_unit,current_cost_source
+92,"Apple juice carton",EACH,Bottled,AMBIENT,270,73000000,INVOICE
+106,"Black Cola",EACH,Bottled,AMBIENT,270,53000000,INVOICE
+112,"Blue chocolate wafer",EACH,Bottled,AMBIENT,270,50000000,INVOICE
+94,"Capri-Sun pouch",EACH,Bottled,AMBIENT,270,33000000,INVOICE
+97,"Chocolate wafer",EACH,Bottled,AMBIENT,270,45000000,INVOICE
+89,Coca-Cola,EACH,Bottled,AMBIENT,270,61000000,INVOICE
+105,"Diet Coke",EACH,Bottled,AMBIENT,270,40000000,INVOICE
+90,Fanta,EACH,Bottled,AMBIENT,270,44000000,INVOICE
+111,"Fruit Shoot",EACH,Bottled,AMBIENT,270,28000000,INVOICE
+108,Irn-Bru,EACH,Bottled,AMBIENT,270,44000000,INVOICE
+93,"Orange juice carton",EACH,Bottled,AMBIENT,270,73000000,INVOICE
+95,"Pom-Bear crisps",EACH,Bottled,AMBIENT,270,43000000,INVOICE
+96,"Pringles can",EACH,Bottled,AMBIENT,270,62000000,INVOICE
+110,"Sparkling water",EACH,Bottled,AMBIENT,270,34000000,INVOICE
+107,Sprite,EACH,Bottled,AMBIENT,270,47000000,INVOICE
+88,"Still water (bottle)",EACH,Bottled,AMBIENT,270,32000000,INVOICE
+109,"Sugar-free Irn-Bru",EACH,Bottled,AMBIENT,270,44000000,INVOICE
+91,"Tropicana OJ carton",EACH,Bottled,AMBIENT,270,80000000,ESTIMATE
+65,"Banana pecan muffin",EACH,Cake,CHILLED,4,130000000,ESTIMATE
+68,"Billionaire's shortbread",EACH,Cake,CHILLED,4,121000000,INVOICE
+100,"Blood orange cake (slice)",EACH,Cake,CHILLED,4,155000000,INVOICE
+66,"Blueberry muffin",EACH,Cake,CHILLED,4,176000000,INVOICE
+63,"Brownie bar",EACH,Cake,CHILLED,4,109000000,INVOICE
+71,"Cinnamon classic bun",EACH,Cake,CHILLED,4,174000000,INVOICE
+72,"Kyiv cake (slice)",EACH,Cake,CHILLED,4,160000000,ESTIMATE
+73,"Kyiv cake (whole)",EACH,Cake,CHILLED,4,1000000000,ESTIMATE
+69,"Lemon & pistachio cake",EACH,Cake,CHILLED,4,132000000,INVOICE
+64,"Lemon drizzle bar",EACH,Cake,CHILLED,4,91000000,INVOICE
+101,"Lemon muffin",EACH,Cake,CHILLED,4,175000000,INVOICE
+70,"Mini cookie",EACH,Cake,CHILLED,4,140000000,ESTIMATE
+99,"Morello cake (slice)",EACH,Cake,CHILLED,4,123000000,INVOICE
+67,"Raspberry almond muffin",EACH,Cake,CHILLED,4,130000000,ESTIMATE
+98,"Tiramisu cake (slice)",EACH,Cake,CHILLED,4,135000000,INVOICE
+58,"Raspberry brownie cheesecake",EACH,"Cake (CakeSmiths)",CHILLED,4,160000000,ESTIMATE
+59,"Raspberry matcha cheesecake",EACH,"Cake (CakeSmiths)",CHILLED,4,150000000,ESTIMATE
+62,"Salted caramel bar",EACH,"Cake (CakeSmiths)",CHILLED,4,75000000,INVOICE
+60,"Salted caramel brownie",EACH,"Cake (CakeSmiths)",CHILLED,4,130000000,ESTIMATE
+61,"Sticky toffee Biscoff",EACH,"Cake (CakeSmiths)",CHILLED,4,130000000,ESTIMATE
+37,"Chocolate powder",KG,Chocolate,AMBIENT,540,700000000,INVOICE
+39,"Dark chocolate sauce",ML,Chocolate,AMBIENT,540,900000,ESTIMATE
+38,"White chocolate sauce",ML,Chocolate,AMBIENT,540,600000,INVOICE
+9,"Coffee beans (decaf)",KG,Coffee,AMBIENT,365,2400000000,ESTIMATE
+8,"Coffee beans (house blend)",KG,Coffee,AMBIENT,365,1900000000,INVOICE
+113,"Decaf coffee pod",EACH,Coffee,AMBIENT,365,41666667,INVOICE
+2,"Semi-skimmed milk",L,Dairy,CHILLED,7,69705882,ESTIMATE
+7,"Whipping cream",L,Dairy,CHILLED,14,350000000,ESTIMATE
+1,"Whole milk",L,Dairy,CHILLED,7,69705882,INVOICE
+4,"Almond milk (barista)",L,"Dairy alt",AMBIENT,270,250000000,INVOICE
+6,"Coconut milk (barista)",L,"Dairy alt",AMBIENT,270,250000000,INVOICE
+3,"Oat milk (barista)",L,"Dairy alt",AMBIENT,270,250000000,INVOICE
+5,"Soy milk (barista)",L,"Dairy alt",AMBIENT,270,250000000,INVOICE
+80,"Bread (toastie)",EACH,Food,CHILLED,4,150000000,ESTIMATE
+82,"Bread roll",EACH,Food,CHILLED,4,35000000,ESTIMATE
+84,Butter,KG,Food,CHILLED,4,700000000,ESTIMATE
+102,"Cajun chicken panini (premade)",EACH,Food,CHILLED,4,202000000,INVOICE
+83,"Cheese (toastie)",KG,Food,CHILLED,4,800000000,ESTIMATE
+78,"Cream cheese",KG,Food,CHILLED,4,600000000,ESTIMATE
+104,"Ham & cheese toastie (premade)",EACH,Food,CHILLED,4,249000000,INVOICE
+76,"Ham (sliced)",KG,Food,CHILLED,4,1000000000,ESTIMATE
+87,"Jam sachet",EACH,Food,CHILLED,4,8000000,ESTIMATE
+103,"Margarita panini (premade)",EACH,Food,CHILLED,4,202000000,INVOICE
+85,"Pancake mix",KG,Food,CHILLED,4,300000000,ESTIMATE
+81,"Panini bread",EACH,Food,CHILLED,4,40000000,ESTIMATE
+74,"Plain croissant",EACH,Food,CHILLED,4,65000000,ESTIMATE
+75,"Salami (sliced)",KG,Food,CHILLED,4,1800000000,ESTIMATE
+77,"Smoked salmon",KG,Food,CHILLED,4,2800000000,ESTIMATE
+86,"Strawberries (fresh)",KG,Food,CHILLED,4,600000000,ESTIMATE
+79,"Tinned tuna",KG,Food,CHILLED,4,900000000,ESTIMATE
+49,"12oz cup lid",EACH,Packaging,AMBIENT,,2574000,ESTIMATE
+48,"12oz paper cup",EACH,Packaging,AMBIENT,,9588000,INVOICE
+51,"16oz cup lid",EACH,Packaging,AMBIENT,,2874000,INVOICE
+50,"16oz paper cup",EACH,Packaging,AMBIENT,,10335000,INVOICE
+45,"4oz / small cup",EACH,Packaging,AMBIENT,,6000000,ESTIMATE
+47,"8oz cup lid",EACH,Packaging,AMBIENT,,2574000,INVOICE
+46,"8oz paper cup",EACH,Packaging,AMBIENT,,8508000,INVOICE
+52,"Takeaway bag",EACH,Packaging,AMBIENT,,6000000,ESTIMATE
+44,"Coconut water",L,Specialty,AMBIENT,540,250000000,ESTIMATE
+40,"Matcha powder",KG,Specialty,AMBIENT,540,20000000000,INVOICE
+41,"Tapioca pearls",KG,Specialty,AMBIENT,540,800000000,ESTIMATE
+43,"Tonic water",L,Specialty,AMBIENT,540,400000000,INVOICE
+42,"Vanilla ice cream",L,Specialty,AMBIENT,540,400000000,ESTIMATE
+57,"Bubble tea straw (wide)",EACH,Sundries,AMBIENT,,1500000,ESTIMATE
+56,Marshmallow,KG,Sundries,AMBIENT,,800000000,INVOICE
+54,Napkin,EACH,Sundries,AMBIENT,,800000,ESTIMATE
+53,"Sugar sachet",EACH,Sundries,AMBIENT,,1200000,ESTIMATE
+55,"Wooden stirrer",EACH,Sundries,AMBIENT,,400000,ESTIMATE
+31,"Apple syrup (Monin)",ML,Syrup,AMBIENT,730,900000,INVOICE
+27,"Banana syrup (Monin)",ML,Syrup,AMBIENT,730,900000,INVOICE
+24,"Butterfly syrup (Monin)",ML,Syrup,AMBIENT,730,900000,INVOICE
+11,"Caramel syrup (Monin)",ML,Syrup,AMBIENT,730,900000,INVOICE
+33,"Chai concentrate",ML,Syrup,AMBIENT,730,1000000,ESTIMATE
+22,"Cinnamon bun syrup (Monin)",ML,Syrup,AMBIENT,730,900000,INVOICE
+29,"Citrus / lime syrup (Monin)",ML,Syrup,AMBIENT,730,900000,INVOICE
+28,"Coconut syrup (Monin)",ML,Syrup,AMBIENT,730,900000,INVOICE
+32,Honey,ML,Syrup,AMBIENT,730,1120000,ESTIMATE
+20,"Lavender syrup (Monin)",ML,Syrup,AMBIENT,730,900000,INVOICE
+30,"Lemon syrup (Monin)",ML,Syrup,AMBIENT,730,900000,INVOICE
+26,"Mango syrup/puree (Monin)",ML,Syrup,AMBIENT,730,900000,INVOICE
+18,"Mint syrup (Monin)",ML,Syrup,AMBIENT,730,900000,INVOICE
+19,"Orange syrup (Monin)",ML,Syrup,AMBIENT,730,900000,INVOICE
+25,"Peach syrup (Monin)",ML,Syrup,AMBIENT,730,900000,INVOICE
+21,"Pistachio syrup (Monin)",ML,Syrup,AMBIENT,730,900000,INVOICE
+23,"Pumpkin spice syrup (Monin)",ML,Syrup,AMBIENT,730,900000,INVOICE
+14,"Raspberry syrup (Monin)",ML,Syrup,AMBIENT,730,900000,INVOICE
+13,"Rose syrup (Monin)",ML,Syrup,AMBIENT,730,900000,INVOICE
+12,"Salted caramel syrup (Monin)",ML,Syrup,AMBIENT,730,900000,INVOICE
+17,"Strawberry syrup (Monin)",ML,Syrup,AMBIENT,730,900000,INVOICE
+15,"Toffee nut syrup (Monin)",ML,Syrup,AMBIENT,730,900000,INVOICE
+16,"Toffee syrup (Monin)",ML,Syrup,AMBIENT,730,900000,INVOICE
+10,"Vanilla syrup (Monin)",ML,Syrup,AMBIENT,730,900000,INVOICE
+36,"Butterfly pea flowers",KG,Tea,AMBIENT,730,4000000000,ESTIMATE
+35,"Loose-leaf tea (black)",KG,Tea,AMBIENT,730,3000000000,ESTIMATE
+34,"Tea bag (standard)",EACH,Tea,AMBIENT,730,5987500,INVOICE

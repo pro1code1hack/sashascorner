@@ -63,6 +63,8 @@ class StampReason(enum.Enum):
     REDEEM = "REDEEM"
     REFERRAL = "REFERRAL"
     UNDO = "UNDO"
+    #: The programme's "first stamp is on us" at join (BACKOFFICE-V2 §4). Not a purchase.
+    WELCOME = "WELCOME"
 
 
 class RewardKind(enum.Enum):
@@ -101,6 +103,8 @@ class CampaignSegment(enum.Enum):
     LAPSED_30 = "LAPSED_30"
     REWARD_READY = "REWARD_READY"
     NEW_30 = "NEW_30"
+    #: Birthday in the current calendar month (local).
+    BIRTHDAY = "BIRTHDAY"
 
 
 class LoyaltyProgram(Base):
@@ -152,6 +156,16 @@ class LoyaltyProgram(Base):
     #: The owner's 90-day targets, `{metric: number}` (SPEC "Exact targets are an open
     #: question" -- so they are the owner's to set). Shares are 0..1. NULL = none set.
     targets: Mapped[dict[str, Any] | None] = mapped_column(JSON)
+    # --- loyalty card v2 (docs/loyalty/BACKOFFICE-V2.md) ------------------------------
+    #: The sticker set: enabled sticker keys in scanner order. NULL = all eight, in the
+    #: catalogue's order (`domain.loyalty.STICKER_KEYS`).
+    stickers: Mapped[list[str] | None] = mapped_column(JSON)
+    #: "The first stamp is on us when they join."
+    welcome_stamp: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="0"
+    )
+    #: Cards untouched this many months reset to zero. NULL = stamps never expire.
+    stamps_expire_months: Mapped[int | None] = mapped_column(Integer)
 
     __table_args__ = (
         CheckConstraint("stamps_required >= 1", name="stamps_required_positive"),
@@ -203,6 +217,8 @@ class LoyaltyMember(Base):
     lightspeed_linked_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
     #: "auto_email" | "auto_phone" | "staff" | "back_office".
     lightspeed_link_source: Mapped[str | None] = mapped_column(String(20))
+    #: Staff's own notes ("Oat flat white, no lid. Comes in Tuesdays."). Back office only.
+    notes: Mapped[str | None] = mapped_column(String(1000))
 
     __table_args__ = (
         CheckConstraint(
@@ -235,6 +251,10 @@ class LoyaltyCard(Base):
     #: First time the web card was opened. Written once, never refreshed: a write per page
     #: view would put every customer's phone on the single SQLite writer.
     web_seen_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
+    #: The sticker in each filled slot (BACKOFFICE-V2 §2): one key per stamp, so its
+    #: length equals `stamps_current` on a STAMPS card. A cache the stamp writer keeps;
+    #: changing a slot's sticker edits only this (cosmetic -- the ledger is untouched).
+    stickers: Mapped[list[str] | None] = mapped_column(JSON)
     voided_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, nullable=False, default=utcnow)
     #: Bumps on EVERY state change: Apple's "passes updated since" reads it.
@@ -266,6 +286,8 @@ class LoyaltyStampEvent(Base):
     #: The event that caused this one: a REFERRAL row points at the referred member's
     #: first purchase stamp, so undoing that stamp can undo the referral too.
     source_event_id: Mapped[int | None] = mapped_column(ForeignKey("loyalty_stamp_event.id"))
+    #: The sticker this stamp put on the card (the first, for a +2 or +3). History only.
+    sticker: Mapped[str | None] = mapped_column(String(20))
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, nullable=False, default=utcnow)
 
     __table_args__ = (
@@ -425,6 +447,8 @@ class LoyaltyCampaign(Base):
     scheduled_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
     sent_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
     recipients: Mapped[int | None] = mapped_column(Integer)
+    #: Cancelled before it went out; the scheduled send skips it.
+    cancelled_at: Mapped[datetime | None] = mapped_column(UTCDateTime)
     created_by: Mapped[str] = mapped_column(String(120), nullable=False)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, nullable=False, default=utcnow)
 

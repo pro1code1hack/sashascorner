@@ -161,6 +161,9 @@ class CardState(Out):
     birthday_month: int | None = None
     #: The first birthday that will bring a drink, after the 30-day rule. NULL: none set.
     birthday_counts_from: date | None = None
+    #: BACKOFFICE-V2 §2: the sticker key in each filled slot (slot-N art: cat, seal,
+    #: matcha, boba, cake, knight, latte, star). Empty on a points card.
+    stickers: list[str] = Field(default_factory=list)
     #: "e***@example.com" / "*******123": which contact recovery uses. Never in full.
     contact_masked: str | None = None
 

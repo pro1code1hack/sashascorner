@@ -177,6 +177,7 @@ def _bundle_files(view: CardView, latest_message: str | None) -> dict[str, bytes
             slots,
             scale,
             reward=content.stamp_reward_ready(view),
+            keys=content.strip_stickers(view),
         )
     return files
 

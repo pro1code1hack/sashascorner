@@ -1,0 +1,223 @@
+name,category,sizes,templated,manual,manual_lines,has_photo
+"Afternoon Deal",,"M:500 S:500",0,1,7,0
+"Apple Juice",,M:160,0,1,1,0
+"BKK Kyiv cake",,M:2000,0,1,1,0
+Babyccino,,M:50,0,1,2,0
+"Brownie Bar",,M:205,0,1,1,0
+"Butterfly Hot Chocolate",,"M:420 S:400 XL:440",0,1,18,0
+Capri-Sun,,M:160,0,1,1,0
+"Caramel syrup (add-on)",,M:40,0,1,1,0
+"Cinnamon Bun Hot Chocolate",,"M:420 S:400 XL:460",0,1,18,0
+"Cinnamon Bun Latte",,"M:410 S:390 XL:450",0,1,18,0
+Coca-Cola,,M:190,0,1,1,0
+"Coconut milk (+upcharge)",,M:50,0,1,2,0
+"Dark Blue Wafer",,M:190,0,1,1,0
+"Extra shot",,M:50,0,1,1,0
+Fanta,,M:190,0,1,1,0
+"Ham Croissant",,M:360,0,1,3,0
+"Ham and Cheese Panini",,M:400,0,1,3,0
+"Ham and Cheese Toastie",,M:420,0,1,4,0
+"Homemade Roll",,M:300,0,1,1,0
+"Hot blue matcha",,M:400,0,1,5,0
+"Iced Butterfly Latte",,"M:410 S:390",0,1,12,0
+"Iced Cinnamon Bun Latte",,"M:410 S:390",0,1,12,0
+"Iced Mint Latte",,"M:410 S:390",0,1,12,0
+"Iced Orange Latte",,"M:410 S:390",0,1,12,0
+"Iced Pumpkin Spice Latte",,"M:410 S:390",0,1,12,0
+"Iced Rose Latte",,"M:410 S:390",0,1,12,0
+"Iced Salted Caramel Latte",,"M:410 S:390",0,1,12,0
+"Iced Toffee Latte",,"M:410 S:390",0,1,12,0
+"Iced matcha (plain)",,M:400,0,1,5,0
+"Juice (generic)",,M:190,0,1,1,0
+"Lemon Drizzle Bar",,M:205,0,1,1,0
+"Lunch Deal",,M:695,0,1,3,0
+Marshmallow,,M:50,0,1,1,0
+"Mini Cookie",,M:355,0,1,1,0
+"Mint Hot Chocolate",,"M:420 S:400 XL:460",0,1,18,0
+"Mint Latte",,"M:410 S:390 XL:440",0,1,18,0
+"Oat milk (+upcharge)",,M:50,0,1,2,0
+"Orange Hot Chocolate",,"M:420 S:400 XL:460",0,1,18,0
+"Orange Juice",,M:160,0,1,1,0
+"Orange Latte",,"M:410 S:390 XL:440",0,1,18,0
+"Pom-Bear crisps",,M:100,0,1,1,0
+Pringles,,M:190,0,1,1,0
+"Pumpkin Spice Hot Chocolate",,"M:420 S:400 XL:440",0,1,18,0
+"Pumpkin Spice Latte",,"M:410 S:390 XL:440",0,1,18,0
+"Salami Croissant",,M:360,0,1,3,0
+"Salami Roll",,M:260,0,1,3,0
+"Salmon Croissant",,M:400,0,1,3,0
+"Salted Caramel Bar",,M:190,0,1,1,0
+"Salted Caramel Hot Chocolate",,"M:420 S:400 XL:440",0,1,18,0
+"Still Water",,M:160,0,1,1,0
+"Strawberry bliss",,M:400,0,1,6,0
+"Strawberry syrup (add-on)",,M:40,0,1,1,0
+"Syrup Gift Set",,M:1099,0,1,0,0
+"Toffee Hot Chocolate",,"M:420 S:400 XL:440",0,1,18,0
+"Toffee Nut Latte",,"M:410 S:390 XL:440",0,1,18,0
+Tropicana,,M:200,0,1,1,0
+"Tuna Toastie",,M:420,0,1,4,0
+"Vanilla syrup (add-on)",,M:40,0,1,1,0
+Water,,M:160,0,1,1,0
+"Brown sugar bubble tea","Autumn specials","M:480 S:440",0,1,0,0
+"Iced Biscoff hojicha","Autumn specials","M:480 S:460",0,1,0,0
+"Iced banana bread hojicha","Autumn specials","M:500 S:480",0,1,0,0
+"Iced brown sugar hojicha","Autumn specials","M:480 S:460",0,1,0,0
+"Iced creamy pumpkin spice","Autumn specials",M:500,0,1,0,0
+"Mango bubble tea","Autumn specials","M:480 S:440",0,1,0,0
+"Avocado toast",Breakfast,,0,1,0,0
+"Bacon roll",Breakfast,,0,1,0,0
+"Cheese & vegetable omelette",Breakfast,,0,1,0,0
+"Chia pudding",Breakfast,,0,1,0,0
+"Granola pot",Breakfast,,0,1,0,0
+Porridge,Breakfast,,0,1,0,0
+"Sausage roll",Breakfast,,0,1,0,0
+"Toast with butter",Breakfast,,0,1,0,0
+"Cheesy potato waffles","Brunch waffles",,0,1,0,0
+"Cheesy waffles","Brunch waffles",,0,1,0,0
+"Chocolate waffles","Brunch waffles",,0,1,0,0
+"Maple fruity waffles","Brunch waffles",,0,1,0,0
+"Pistachio waffles","Brunch waffles",,0,1,0,0
+"Banana and Pecan Muffin","Cakes & bakes",M:320,0,1,1,0
+"Billionaire's shortbread","Cakes & bakes",M:360,0,1,1,0
+"Blueberry Muffin","Cakes & bakes",M:320,0,1,1,0
+"Cinnamon classic","Cakes & bakes",M:300,0,1,1,0
+"Croissant with Jam","Cakes & bakes",M:250,0,1,3,0
+"Kyiv cake (slice)","Cakes & bakes",M:400,0,1,1,0
+"Kyiv cake (whole)","Cakes & bakes",M:2500,0,1,1,0
+"Lemon and Pistachio","Cakes & bakes",M:340,0,1,1,0
+"Raspberry Brownie Cheesecake","Cakes & bakes",M:360,0,1,1,0
+"Raspberry and Almond Muffin","Cakes & bakes",M:320,0,1,1,0
+"Raspberry and matcha cheesecake","Cakes & bakes",M:340,0,1,1,0
+"Salted Caramel Brownie","Cakes & bakes",M:310,0,1,1,0
+"Sticky Toffee Biscoff","Cakes & bakes",M:310,0,1,1,0
+"Strawberry Pancake","Cakes & bakes",M:300,0,1,3,0
+"Tiramisu blondie","Cakes & bakes",,0,1,0,0
+"Green Apple Bubble Tea","Creamy bubble tea","M:480 S:440",0,1,16,0
+"Honey Bubble Tea","Creamy bubble tea","M:480 S:440",0,1,16,0
+"Honey banana bubble tea","Creamy bubble tea","M:480 S:440",0,1,0,0
+"Kiwi Bubble Tea","Creamy bubble tea","M:480 S:440",0,1,16,0
+"Passion Fruit Bubble Tea","Creamy bubble tea","M:480 S:440",0,1,16,0
+"Raspberry bubble tea","Creamy bubble tea","M:480 S:440",0,1,0,0
+"Strawberry Bubble Tea","Creamy bubble tea","M:480 S:440",0,1,16,0
+Cortado,"Espresso bar",ONE:310,0,1,5,0
+"Double Espresso","Espresso bar",ONE:200,0,1,4,0
+"Double Espresso Con Pana","Espresso bar",ONE:240,0,1,5,0
+"Double Macchiato","Espresso bar",ONE:210,0,1,5,0
+"Flat White","Espresso bar",ONE:325,0,1,5,0
+"Mocha Cortado","Espresso bar",ONE:315,0,1,6,0
+"Single Espresso","Espresso bar",ONE:190,0,1,4,0
+"Single Espresso Con Pana","Espresso bar",ONE:220,0,1,5,0
+"Single Macchiato","Espresso bar",ONE:200,0,1,5,0
+"Black Americano","Hot drinks","M:310 S:280 XL:340",0,1,12,0
+Cappuccino,"Hot drinks","M:350 S:320 XL:380",0,1,15,0
+"Chai Latte","Hot drinks","M:370 S:340 XL:400",0,1,15,0
+"Hot Chocolate","Hot drinks","M:370 S:340 XL:400",0,1,15,0
+Latte,"Hot drinks","M:350 S:320 XL:380",0,1,15,0
+Mocha,"Hot drinks","M:370 S:340 XL:400",0,1,18,0
+"Orange Americano","Hot drinks","M:370 S:340 XL:400",0,1,15,0
+"Raff Coffee","Hot drinks","M:380 S:350 XL:410",0,1,18,0
+"White Americano","Hot drinks","M:310 S:280 XL:340",0,1,15,0
+"White Hot Chocolate","Hot drinks","M:370 S:340 XL:400",0,1,15,0
+"White Mocha","Hot drinks","M:380 S:350 XL:410",0,1,18,0
+"Green apple matcha","Hot matcha","M:390 S:360 XL:420",0,1,0,0
+"Hot Lavender Matcha","Hot matcha","M:390 S:360 XL:420",0,1,18,0
+"Hot Matcha","Hot matcha","M:370 S:340 XL:390",0,1,15,0
+"Hot Rose Matcha","Hot matcha","M:390 S:360 XL:420",0,1,18,0
+"Hot Strawberry Matcha","Hot matcha","M:390 S:360 XL:420",0,1,18,0
+"Hot Vanilla Matcha","Hot matcha","M:390 S:360 XL:420",0,1,18,0
+"Hot White Choc Matcha","Hot matcha","M:390 S:360 XL:420",0,1,15,0
+"Hot banana matcha","Hot matcha","M:400 S:360 XL:420",0,1,18,0
+"Kiwi matcha","Hot matcha","M:390 S:360 XL:420",0,1,0,0
+"Mango matcha","Hot matcha","M:390 S:360 XL:420",0,1,0,0
+"Peach matcha","Hot matcha","M:390 S:360 XL:420",0,1,0,0
+"Raspberry matcha","Hot matcha","M:390 S:360 XL:420",0,1,0,0
+"Espresso Tonic","Iced coffee","M:370 S:350",0,1,10,0
+"Iced Black Americano","Iced coffee","M:300 S:280",0,1,8,0
+"Iced Cappuccino","Iced coffee","M:360 S:340",0,1,10,0
+"Iced Chai Latte","Iced coffee","M:380 S:345",0,1,10,0
+"Iced Flat White","Iced coffee","M:350 S:320",0,1,10,0
+"Iced Latte","Iced coffee","M:360 S:340",0,1,10,0
+"Iced Mocha","Iced coffee","M:400 S:350",0,1,12,0
+"Iced White Americano","Iced coffee","M:300 S:280",0,1,10,0
+"Iced White Mocha","Iced coffee","M:410 S:350",0,1,12,0
+"Iced Banana Matcha","Iced green matcha","M:440 S:400",0,1,12,0
+"Iced Coconut Matcha","Iced green matcha","M:440 S:400",0,1,12,0
+"Iced Mango Matcha","Iced green matcha","M:440 S:400",0,1,12,0
+"Iced Peach Matcha","Iced green matcha","M:440 S:400",0,1,12,0
+"Iced Strawberry Matcha","Iced green matcha","M:440 S:400",0,1,12,0
+"Iced citrus matcha","Iced green matcha","M:440 S:400",0,1,0,0
+"Iced green apple matcha","Iced green matcha","M:440 S:400",0,1,0,0
+"Iced kiwi matcha","Iced green matcha","M:440 S:400",0,1,0,0
+"Iced lavender matcha","Iced green matcha","M:440 S:400",0,1,0,0
+"Iced raspberry matcha","Iced green matcha","M:440 S:400",0,1,0,0
+"Iced rose matcha","Iced green matcha","M:440 S:400",0,1,0,0
+"Iced vanilla matcha","Iced green matcha","M:440 S:400",0,1,0,0
+"Iced white chocolate matcha","Iced green matcha","M:440 S:400",0,1,0,0
+"Berry Breeze Lemonade","Iced teas, refreshers & smoothies","M:490 S:450",0,1,8,0
+"Emerald Zest","Iced teas, refreshers & smoothies","M:490 S:450",0,1,10,0
+"Iced Lemon & Honey Tea","Iced teas, refreshers & smoothies","M:400 S:370",0,1,10,0
+"Iced Rose Tea","Iced teas, refreshers & smoothies","M:390 S:360",0,1,10,0
+"Passion Fruit","Iced teas, refreshers & smoothies","M:420 S:390",0,1,8,0
+"Peach Iced Tea","Iced teas, refreshers & smoothies","M:390 S:360",0,1,10,0
+"Pineapple & Passion Fruit","Iced teas, refreshers & smoothies","M:420 S:390",0,1,8,0
+"Strawberry blast smoothie","Iced teas, refreshers & smoothies","M:420 S:400",0,1,0,0
+"Tropical Mint Bliss","Iced teas, refreshers & smoothies","M:490 S:450",0,1,12,0
+"Caramel Latte","Latte / flavoured latte","M:360 S:320 XL:410",1,0,0,0
+"Vanilla Latte","Latte / flavoured latte","M:360 S:320 XL:410",1,0,0,0
+"Caesar salad",Lunch,,0,1,0,0
+Croissant,Lunch,,0,1,0,0
+"Fresh ciabatta",Lunch,,0,1,0,0
+"Homemade Panini",Lunch,M:380,0,1,2,0
+"Soup of the day",Lunch,,0,1,0,0
+"Tuna salad",Lunch,,0,1,0,0
+"Banana Milkshake",Milkshakes,"M:460 S:420",0,1,12,0
+"Chocolate Coffee Milkshake",Milkshakes,"M:480 S:440",0,1,12,0
+"Chocolate Milkshake",Milkshakes,"M:460 S:420",0,1,10,0
+"Coffee Milkshake",Milkshakes,"M:450 S:410",0,1,12,0
+"Kiwi milkshake",Milkshakes,"M:460 S:420",0,1,0,0
+"Mango milkshake",Milkshakes,"M:460 S:420",0,1,0,0
+"Salted Caramel Coffee Milkshake",Milkshakes,"M:480 S:440",0,1,14,0
+"Salted Caramel Milkshake",Milkshakes,"M:460 S:420",0,1,12,0
+Strawberry,Milkshakes,"M:420 S:390",0,1,12,0
+"Black Honey","Signature hot drinks","M:400 S:380 XL:420",0,1,15,0
+"Blue Honey Matcha","Signature hot drinks","M:420 S:400 XL:460",0,1,18,0
+"Blue Lavender Matcha","Signature hot drinks","M:420 S:400 XL:460",0,1,18,0
+"Blue Vanilla Matcha","Signature hot drinks","M:420 S:400 XL:460",0,1,18,0
+"Butterfly (lavender) Latte","Signature hot drinks","M:410 S:390 XL:430",0,1,18,0
+"Honey Vanilla Latte","Signature hot drinks","M:410 S:390 XL:430",0,1,18,0
+"Lavender Hot Chocolate","Signature hot drinks","M:420 S:400 XL:440",0,1,18,0
+"Pistachio Hot Chocolate","Signature hot drinks","M:420 S:400 XL:440",0,1,18,0
+"Pistachio Latte","Signature hot drinks","M:410 S:390 XL:430",1,0,18,0
+"Raspberry Hot Chocolate","Signature hot drinks","M:420 S:400 XL:440",0,1,18,0
+"Rose Hot Chocolate","Signature hot drinks","M:420 S:400 XL:460",0,1,18,0
+"Rose Latte","Signature hot drinks","M:410 S:390 XL:440",0,1,18,0
+"Rose White Mocha","Signature hot drinks","M:420 S:400 XL:460",0,1,21,0
+"Salted Caramel Latte","Signature hot drinks","M:410 S:390 XL:440",0,1,18,0
+"Iced Citrus Blue Matcha","Signature iced drinks","M:480 S:460",0,1,12,0
+"Iced Coconut Water Blue Matcha","Signature iced drinks","M:480 S:460",0,1,12,0
+"Iced Coconut Water Latte","Signature iced drinks","M:450 S:420",0,1,12,0
+"Iced Honey Blue Matcha","Signature iced drinks","M:480 S:460",0,1,12,0
+"Iced Honey Vanilla Latte","Signature iced drinks","M:460 S:430",0,1,12,0
+"Iced Lavender Blue Matcha","Signature iced drinks","M:460 S:420",0,1,12,0
+"Iced Lavender Latte","Signature iced drinks","M:410 S:390",0,1,12,0
+"Iced Pistachio Latte","Signature iced drinks","M:440 S:420",0,1,12,0
+"Iced Raspberry Mocha","Signature iced drinks","M:450 S:420",0,1,14,0
+"Iced Rose Mocha","Signature iced drinks","M:450 S:420",0,1,14,0
+"Iced Rose White Mocha","Signature iced drinks","M:460 S:430",0,1,14,0
+"Iced Vanilla Blue Matcha","Signature iced drinks","M:460 S:420",0,1,12,0
+"Iced White Raspberry Mocha","Signature iced drinks","M:460 S:430",0,1,14,0
+"Berry Tea",Tea,ONE:190,0,1,4,0
+"Decaf Tea",Tea,ONE:190,0,1,4,0
+"Earl Grey",Tea,ONE:190,0,1,4,0
+"English Breakfast",Tea,ONE:190,0,1,4,0
+"Forest Fruits Tea",Tea,ONE:200,0,1,4,0
+"Ginger and Lemongrass Tea",Tea,ONE:200,0,1,4,0
+Green,Tea,ONE:190,0,1,4,0
+"Jasmine and Mint Green Tea",Tea,ONE:200,0,1,4,0
+Mint,Tea,ONE:190,0,1,4,0
+"Spiced Apple Chai",Tea,ONE:200,0,1,5,0
+"Strawberry Black",Tea,ONE:200,0,1,5,0
+"Iced ube coconut latte",Ube,"M:480 XL:500",0,1,0,0
+"Iced ube matcha latte",Ube,"M:480 XL:500",0,1,0,0
+"Pure ube latte",Ube,"M:400 S:390 XL:440",0,1,0,0
+"Ube coconut cloud latte",Ube,"M:470 S:410 XL:500",0,1,0,0
