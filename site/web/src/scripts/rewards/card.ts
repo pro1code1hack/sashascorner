@@ -5,6 +5,11 @@ import { qrSvg } from './qr';
 import { REWARD_STICKER, stickerImg, stickerSrc } from './stickers';
 
 // ---- API shapes (docs/loyalty/CONTRACT.md §4) --------------------------------------
+export interface RewardOption {
+  name: string;
+  description: string | null;
+  max_price_pence: number | null;
+}
 export interface Program {
   name: string;
   stamps_required: number;
@@ -13,6 +18,15 @@ export interface Program {
   referral_stamps: number;
   max_stamps_per_scan: number;
   wallets: { apple: boolean; google: boolean };
+  // Additive (absent from an older server).
+  slug?: string;
+  kind?: 'STAMPS' | 'POINTS' | string;
+  description?: string | null;
+  reward_ready_label?: string;
+  /** null: the free drink can be any drink. */
+  reward_max_price_pence?: number | null;
+  points_per_pound?: number | null;
+  catalogue?: RewardOption[];
 }
 export interface Reward {
   id: number;
@@ -31,6 +45,7 @@ export interface PublicProgram {
   reward_text: string;
   reward_ready_label: string;
   is_default: boolean;
+  catalogue?: RewardOption[];
 }
 /** Another card of the same member (phase 3). */
 export interface SiblingCard {
@@ -65,6 +80,14 @@ export interface CardState {
   program_description?: string | null;
   other_cards?: SiblingCard[];
   joinable?: PublicProgram[];
+  // The member's own details (additive).
+  referral_stamps?: number;
+  birthday_reward?: boolean;
+  birthday_day?: number | null;
+  birthday_month?: number | null;
+  /** YYYY-MM-DD: the first birthday that brings a drink, after the 30-day rule. */
+  birthday_counts_from?: string | null;
+  contact_masked?: string | null;
 }
 export interface JoinResult {
   card_id: string;
@@ -113,6 +136,14 @@ export const untilDate = (iso: string | null) => {
   if (!iso) return '';
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? '' : fmtDayMonth.format(d);
+};
+
+/** Integer pence to "£3.50" / "£3". Money is never a float until this edge. */
+export const pounds = (pence: number) => {
+  const p = Math.round(pence);
+  const whole = Math.floor(p / 100);
+  const rest = p % 100;
+  return rest ? `£${whole}.${String(rest).padStart(2, '0')}` : `£${whole}`;
 };
 
 export const ordinal = (n: number) => {

@@ -10,6 +10,8 @@ import '../scripts/rewards/card.css';
 const site = Astro.site!;
 const url = new URL('/rewards', site).href;
 const ninth = ordinal(P.stamps_required + 1);
+const rewardText = P.reward_text.replace(/\.$/, '');
+const rewardLc = rewardText.charAt(0).toLowerCase() + rewardText.slice(1);
 
 // The sample card's QR opens this page: a real-looking card must never carry a code the
 // scanner would try to read as somebody's card.
@@ -96,13 +98,14 @@ const jsonLd = {
 >
   <section class="rhead wrap" aria-labelledby="rewards-title">
     <div class="rhead__copy">
-      <p class="label">Sasha's Corner Rewards</p>
+      <p class="label" data-p="name">{P.name}</p>
       <h1 id="rewards-title">
-        <span data-p="stamps">{P.stamps_required}</span> stamps, <span class="soft">then a drink on us.</span>
+        <span data-p="stamps">{P.stamps_required}</span> stamps, <span class="soft">then <span data-p="reward-lc">{rewardLc}</span>.</span>
       </h1>
       <p class="rhead__lede">
         Our stamp card, now on your phone. One stamp for every drink, hot or cold. Your{' '}
-        <span data-p="ninth">{ninth}</span> drink is free, and it can be any drink.
+        <span data-p="ninth">{ninth}</span> drink is free<span data-p-any>, and it can be any drink</span>.
+        <span data-p-cap hidden></span>
       </p>
       <ul class="rhead__points">
         <li>Lives in Apple Wallet or Google Wallet</li>
@@ -141,6 +144,9 @@ const jsonLd = {
         <p class="label">Join</p>
         <h2 id="join-title">Get your card.</h2>
         <p>It's free. We only need a first name and one way to reach you, so you can get the card back if you change phones.</p>
+        <p class="join__here" data-ref-note hidden>
+          A friend sent you this link. Join, and when your first drink is stamped they get a stamp too.
+        </p>
         <p class="join__here" data-have-card hidden>
           This device already has a card. <a href="#" data-have-card-link>Open my card</a>
         </p>
@@ -307,11 +313,22 @@ const jsonLd = {
     <!-- OWNER TO CONFIRM: any further conditions (e.g. "no cash value", staff drinks). None stated until confirmed. -->
     <ol class="rules__list">
       <li>One stamp for each drink, hot or cold. Up to <span data-p="per-scan">{P.max_stamps_per_scan}</span> stamps in one scan when you're buying for others.</li>
-      <li>After <span data-p="stamps">{P.stamps_required}</span> stamps, your next drink is free. <span data-p="reward">{P.reward_text}</span>.</li>
+      <li>
+        After <span data-p="stamps">{P.stamps_required}</span> stamps, your next drink is free. <span data-p="reward">{rewardText}</span>.
+        <span data-p-cap hidden></span>
+      </li>
+      <li data-catalogue hidden>
+        When your card is full, choose your reward:
+        <ul class="rules__catalogue" data-catalogue-list></ul>
+      </li>
       <li>A free drink doesn't expire while your card is active. Stamps above <span data-p="stamps">{P.stamps_required}</span> carry over to the next round.</li>
       <li data-p-birthday>
         Birthday drink: from 7 days before to 7 days after your birthday, once a year. A birthday added or changed less than 30 days
         before the date counts from the following year.
+      </li>
+      <li data-p-referral hidden={P.referral_stamps <= 0}>
+        Invite a friend with the link on your card. When they have their first stamped drink, you get{' '}
+        <span data-p="referral">{P.referral_stamps} extra stamp{P.referral_stamps === 1 ? '' : 's'}</span> on your card.
       </li>
       <li>One card per email address or mobile number.</li>
       <li>Cards not used for 24 months are deleted, with their stamps.</li>
@@ -732,13 +749,30 @@ const jsonLd = {
     list-style: none;
     counter-reset: r;
   }
-  .rules__list li {
+  .rules__list > li {
     counter-increment: r;
     position: relative;
     padding: 14px 0 14px calc(2.4ch + 12px);
     border-top: 1px solid var(--rule);
   }
-  .rules__list li::before {
+  /* The reward catalogue, a plain list inside rule 2: no numbers, no rules between. */
+  .rules__list .rules__catalogue {
+    margin: 8px 0 0;
+    padding: 0 0 0 1.1em;
+    list-style: disc;
+  }
+  .rules__list .rules__catalogue :global(li) {
+    counter-increment: none;
+    padding: 2px 0;
+    border-top: 0;
+  }
+  .rules__list .rules__catalogue :global(li)::before {
+    content: none;
+  }
+  .rules__list .rules__catalogue :global(span) {
+    color: var(--olive-700);
+  }
+  .rules__list > li::before {
     content: counter(r);
     position: absolute;
     left: 0;

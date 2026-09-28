@@ -1,11 +1,14 @@
 /**
- * One member, as a page (`#/members/<id>`), laid out like the order page: the
+ * One member, as a page (`#/rewards/members/<id>`), laid out like the order page: the
  * card and its ledger in the main column; contact, consent, the manual
  * adjustment and erasure in the side column.
  *
  * The stamp ledger is append-only (CONTRACT §2): an undo is its own row with
  * the opposite change, and a manual adjustment is a MANUAL_FIX row carrying the
  * reason and the manager who approved it. Nothing here edits history.
+ *
+ * "Their data" downloads everything held about the member as JSON, for a UK GDPR
+ * subject access request (`GET /api/members/<id>/export`).
  *
  * Phase 3: a member may hold several cards (one per programme) -- "All cards" lists
  * them, the ledger and rewards say which card each row is on, and a correction picks
@@ -16,7 +19,7 @@ import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Button, ErrorBox, Field, Input, Loading, Pill, Textarea, cx } from '../../components/ui'
 import { ago, dayFull, stamp } from '../../lib/format'
-import { MEMBERS_KEY, membersApi, useMember, usePosCustomers } from '../../lib/members-api'
+import { MEMBERS_KEY, downloadMemberData, membersApi, useMember, usePosCustomers, usePrograms } from '../../lib/members-api'
 import { gbp } from '../../lib/format'
 import { href, navigate } from '../../lib/router'
 import type { MemberCard, MemberDetail, MemberDetailRow, MemberReward, ReferredBy } from '../../lib/types/members'
@@ -41,7 +44,7 @@ export function MemberPage({ memberId }: { memberId: number }) {
   return (
     <>
       <header className="flex flex-none flex-wrap items-center gap-x-3 gap-y-1 border-b border-line px-4 py-3 sm:px-5">
-        <a href={href('/members')} className="text-base font-bold text-brand-ink no-underline hover:underline">
+        <a href={href('/rewards/members')} className="text-base font-bold text-brand-ink no-underline hover:underline">
           ‹ Members
         </a>
         <span aria-hidden="true" className="text-ink-3">
@@ -68,6 +71,7 @@ export function MemberPage({ memberId }: { memberId: number }) {
                 <ConsentPanel m={d.member} />
                 <TillPanel d={d} />
                 <AdjustPanel d={d} />
+                <DataPanel d={d} />
                 <ErasePanel d={d} />
               </aside>
             </div>
@@ -462,7 +466,7 @@ function ConsentPanel({ m }: { m: MemberDetailRow }) {
           <>
             <dt className="text-ink-2">Referred by</dt>
             <dd>
-              <a href={href(`/members/${ref.id}`)} className="text-brand-ink underline">
+              <a href={href(`/rewards/members/${ref.id}`)} className="text-brand-ink underline">
                 {ref.name}
               </a>
             </dd>
@@ -523,6 +527,7 @@ function AdjustPanel({ d }: { d: MemberDetail }) {
   const belowZero = after !== null && after < 0
   const reasonShort = reason.trim().length > 0 && reason.trim().length < 5
   const ready = n !== null && !belowZero && reason.trim().length >= 5 && PIN_RE.test(pin)
+  const noManager = usePrograms().data?.pin_required === false
 
   const submit = async () => {
     if (!ready || n === null) return
@@ -552,6 +557,15 @@ function AdjustPanel({ d }: { d: MemberDetail }) {
         For mistakes past the scanner’s 2-minute undo. It adds a correction to the history with your reason; nothing is rewritten. A
         manager’s PIN approves it.
       </p>
+      {noManager && (
+        <p className="mb-3 rounded-button bg-canvas px-3 py-2 text-sm">
+          Nobody has a manager PIN yet.{' '}
+          <a href={href('/rewards/staff')} className="font-bold text-brand-ink underline">
+            Add a manager
+          </a>{' '}
+          first.
+        </p>
+      )}
       <form
         className="flex flex-col gap-3"
         onSubmit={(e) => {
@@ -598,6 +612,37 @@ function AdjustPanel({ d }: { d: MemberDetail }) {
   )
 }
 
+/* ----------------------------------------------------------------- data --- */
+
+function DataPanel({ d }: { d: MemberDetail }) {
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState<{ tone: 'ok' | 'bad'; text: string } | null>(null)
+  const m = d.member
+  return (
+    <Panel title="Their data" id="data-h">
+      <p className="mb-3 text-sm text-ink-2">
+        When somebody asks what you hold about them (a subject access request, UK GDPR): one file with their details, consent, cards, every stamp and reward,
+        messages sent and till receipts. Send it to them within a month.
+      </p>
+      <Button
+        variant="secondary"
+        pending={busy}
+        pendingLabel="Preparing…"
+        onClick={async () => {
+          setBusy(true)
+          setMsg(null)
+          const err = await downloadMemberData(m.member_id, m.first_name)
+          setBusy(false)
+          setMsg(err === null ? { tone: 'ok', text: 'Downloaded. Card access codes are left out of the file.' } : { tone: 'bad', text: err })
+        }}
+      >
+        Download their data
+      </Button>
+      <OutcomeLine outcome={msg} className="mt-2" />
+    </Panel>
+  )
+}
+
 /* ---------------------------------------------------------------- erase --- */
 
 function ErasePanel({ d }: { d: MemberDetail }) {
@@ -640,7 +685,7 @@ function ErasePanel({ d }: { d: MemberDetail }) {
             outcome={w.outcome}
             onErased={() => {
               void qc.invalidateQueries({ queryKey: MEMBERS_KEY })
-              navigate('/members')
+              navigate('/rewards/members')
             }}
           />
         </div>

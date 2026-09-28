@@ -103,15 +103,18 @@ CMD ["cafeops", "serve", "--host", "0.0.0.0", "--port", "8000"]
 # missing executable rather than a wrong image.
 FROM node:22-alpine AS web-builder
 WORKDIR /web
-# Both empty => the bundle renders from the recorded fixtures in web/fixtures and
-# never touches the network, which is how the screens were developed (spec 10.10).
+# Live by default: same-origin requests go to /api/* through this Caddy. The recorded
+# fixtures in web/fixtures are opt-in only (VITE_FIXTURES=1, and VITE_LIVE empty), so
+# an image can never ship sample figures by accident.
 # VITE_LIVE=1 => same-origin live mode: requests go to /api/* through this Caddy,
 # behind the single shared password. VITE_API_BASE is for a DIFFERENT origin only,
 # and must be a bare origin -- the request paths already carry the /api prefix.
 ARG VITE_API_BASE=""
-ARG VITE_LIVE=""
+ARG VITE_LIVE="1"
+ARG VITE_FIXTURES=""
 ENV VITE_API_BASE=$VITE_API_BASE
 ENV VITE_LIVE=$VITE_LIVE
+ENV VITE_FIXTURES=$VITE_FIXTURES
 COPY web/package.json web/package-lock.json ./
 RUN npm ci
 COPY web/ ./

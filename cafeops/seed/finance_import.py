@@ -14,8 +14,9 @@ Rules, each with a reason:
 * **The workbook's "Square cash" column holds Just Eat money** on 7 rows (£114.92,
   README row 37). Just Eat never paid cash (DECISIONS 4), so those amounts become Just
   Eat monthly statements (gross only; commission and ads unreported, never zero) and
-  no till-cash row is written for them.
-* **Renames** (DECISIONS 4): "Square fees" -> "Card fees". Square cash is till cash.
+  no cash row is written for them.
+* **Renames** (DECISIONS 4): "Square fees" -> "Card fees". Square cash and Own cash are
+  one figure, "Cash" (DECISIONS 26): both columns sum into a single CASH row.
 * **Drawings are stored once.** Each DRAWINGS expense creates its director's-account
   mirror; the Director Account sheet's Drawings rows are matched to those mirrors by
   (date, description, amount) and linked, not inserted a second time.
@@ -108,8 +109,8 @@ class FinanceImportReport:
     director: SheetCounts = field(default_factory=SheetCounts)
     just_eat: SheetCounts = field(default_factory=SheetCounts)
     card_pence: int = 0
-    till_cash_pence: int = 0
-    own_cash_pence: int = 0
+    #: Till cash + own cash from the workbook, stored as one CASH figure (DECISIONS 26).
+    cash_pence: int = 0
     just_eat_pence: int = 0
     just_eat_rows: int = 0
     expense_total_pence: int = 0
@@ -300,6 +301,10 @@ def _import_daily_sales(session: Session, wb: Any, rep: FinanceImportReport) -> 
             )
             rep.card_pence += card
             tx = None  # the count rides on one row only
+        # One cash figure per day (DECISIONS 26): the workbook's till cash (E) and its own
+        # cash (G override, else F auto) are written as ONE CASH row. Own cash is never
+        # stored apart any more; nothing is lost, it is summed into the day's Cash.
+        till_cash = 0
         if cash:
             m = JUST_EAT_NOTE.match(note or "")
             if m:
@@ -313,30 +318,24 @@ def _import_daily_sales(session: Session, wb: Any, rep: FinanceImportReport) -> 
                 rep.just_eat_pence += cash
                 rep.just_eat_rows += 1
             else:
-                _upsert_payment(
-                    session,
-                    rep,
-                    day,
-                    PaymentMethod.CASH,
-                    cash,
-                    PaymentBasis.TILL,
-                    f"Daily Sales!E{n}",
-                    tx,
-                )
-                rep.till_cash_pence += cash
-                tx = None
-        if own:
+                till_cash = cash
+        own_cash = own or 0
+        if till_cash or own_cash:
+            refs = ([f"E{n}"] if till_cash else []) + (
+                [f"{'G' if override else 'F'}{n}"] if own_cash else []
+            )
             _upsert_payment(
                 session,
                 rep,
                 day,
-                PaymentMethod.CASH_OFF_TILL,
-                own,
+                PaymentMethod.CASH,
+                till_cash + own_cash,
                 PaymentBasis.TILL,
-                f"Daily Sales!{'G' if override else 'F'}{n}",
+                "Daily Sales!" + "+".join(refs),
                 tx,
             )
-            rep.own_cash_pence += own
+            rep.cash_pence += till_cash + own_cash
+            tx = None
 
     for month, parts in sorted(just_eat.items()):
         rep.just_eat.read += 1
@@ -640,8 +639,7 @@ def report_lines(rep: FinanceImportReport) -> list[str]:
         f"workbook: {rep.workbook}",
         f"Daily Sales days      {rep.days.line()}",
         f"  takings rows        {rep.takings_rows.line()}",
-        f"  card {_gbp(rep.card_pence)} · till cash {_gbp(rep.till_cash_pence)} · "
-        f"own cash {_gbp(rep.own_cash_pence)}",
+        f"  card {_gbp(rep.card_pence)} · cash {_gbp(rep.cash_pence)}",
         f"  Just Eat months     {rep.just_eat.line()}",
         f"  Just Eat money      {_gbp(rep.just_eat_pence)} over {rep.just_eat_rows} rows "
         "(imported as Just Eat takings, not cash)",
@@ -691,7 +689,7 @@ def check_against_workbook(session: Session, workbook: Path) -> list[str]:
         je = fig.delivery_gross_pence or 0
         pairs = (
             ("card", cell("Card sales"), fig.card_pence),
-            ("cash (+Just Eat)", cell("Square cash sales"), fig.cash_till_pence + je),
+            ("cash (+Just Eat)", cell("Square cash sales"), fig.cash_pence + je),
             ("COGS", cell("TOTAL COGS"), fig.stock_bought_pence),
             (
                 "Rent",

@@ -2,7 +2,7 @@
  * Members list: the Menu items list layout (CLAUDE.md §10). Search and sort
  * on top, the segments as chips under them, rows below with pagination.
  *
- * Every filter lives in the URL (`#/members?seg=lapsed_30&sort=stamps&page=2`)
+ * Every filter lives in the URL (`#/rewards/members?seg=lapsed_30&sort=stamps&page=2`)
  * so a reload or a shared link keeps it. Filtering and paging happen on the
  * server (`GET /api/members`); the list never pretends to know a count it did
  * not ask for.
@@ -19,7 +19,7 @@ import { useMembers, usePrograms } from '../../lib/members-api'
 import { href, navigate, useLocation } from '../../lib/router'
 import type { MemberRow, MemberSegment, MemberSort } from '../../lib/types/members'
 import { AlertStrip } from './Alerts'
-import { MembersTabs, SEGMENT_LABEL, StampDots, WALLET_LABEL, contactOf, sourceLabel } from './shared'
+import { SEGMENT_LABEL, StampDots, WALLET_LABEL, contactOf, sourceLabel } from './shared'
 
 const SEGMENTS: MemberSegment[] = ['all', 'reward_ready', 'lapsed_30', 'opted_in', 'new_30']
 const SORT_LABEL: Record<MemberSort, string> = {
@@ -61,7 +61,7 @@ export function MembersList() {
     if (!('page' in patch)) next.page = '1'
     const query: Record<string, string> = {}
     for (const k of Object.keys(DEFAULTS) as (keyof Filters)[]) if (next[k] !== DEFAULTS[k]) query[k] = next[k]
-    navigate('/members', { query, replace: true })
+    navigate('/rewards/members', { query, replace: true })
   }
 
   const [debounced, setDebounced] = useState(q)
@@ -88,7 +88,7 @@ export function MembersList() {
 
   return (
     <>
-      <PageHeader title="Members" subtitle={<MembersTabs current="list" />} saved={data.isFetching ? 'Loading…' : undefined} />
+      <PageHeader title="Members" subtitle="Everyone holding a Sasha’s Corner Rewards card. Open one to see their card, correct stamps, download or erase their data." saved={data.isFetching ? 'Loading…' : undefined} />
       <div className="flex-none border-b border-line bg-surface px-4 pb-2.5 pt-3 sm:px-5">
         <FilterBar
           label="Search members"
@@ -200,7 +200,7 @@ function MemberRows({ rows }: { rows: MemberRow[] }) {
         {rows.map((m) => (
           <li key={m.member_id} className="border-b border-line-row last:border-b-0">
             <a
-              href={href(`/members/${m.member_id}`)}
+              href={href(`/rewards/members/${m.member_id}`)}
               className={cx(
                 'grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 px-3.5 py-2.5 text-ink no-underline hover:bg-canvas-2',
                 COLS,

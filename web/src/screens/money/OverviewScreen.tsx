@@ -78,8 +78,8 @@ function statement(c: PeriodFigures, p: PeriodFigures | null): Line[] {
     {
       key: 'cash',
       label: 'Cash',
-      now: money(c.cash_till_pence + c.cash_off_till_pence, '—'),
-      prev: pv((x) => money(x.cash_till_pence + x.cash_off_till_pence, '—')),
+      now: money(c.cash_pence, '—'),
+      prev: pv((x) => money(x.cash_pence, '—')),
       indent: true,
     },
   ]

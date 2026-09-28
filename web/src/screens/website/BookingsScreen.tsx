@@ -7,8 +7,14 @@
  * the hash (`#/website/bookings?date=2026-09-28&view=week&q=smith&status=arrived`),
  * and one booking opens as `#/website/bookings/<id>` over the same view; a phone
  * booking as `#/website/bookings/new`. The phone is the main place this is read.
+ *
+ * "Print day sheet" (from the old /admin/bookings) prints the day as a plain list
+ * for the counter: time, name, party, phone, notes, with a box to tick on arrival.
+ * The sheet is its own element under <body>, shown only by `@media print`, so the
+ * app shell never reaches the paper.
  */
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import {
   Banner,
   Button,
@@ -347,12 +353,20 @@ function DayView({
 
   return (
     <section aria-labelledby="bk-day-h" aria-busy={dayQ.isFetching}>
-      <div className="mb-3">
-        <h2 id="bk-day-h" className="text-xl font-extrabold tracking-[-.01em]">
-          {title}
-        </h2>
-        {sub && <p className="text-base text-ink-2">{sub}</p>}
+      <div className="mb-3 flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
+        <div className="min-w-0">
+          <h2 id="bk-day-h" className="text-xl font-extrabold tracking-[-.01em]">
+            {title}
+          </h2>
+          {sub && <p className="text-base text-ink-2">{sub}</p>}
+        </div>
+        {day && !day.closed && (
+          <Button className="hidden min-h-11 sm:inline-flex" onClick={() => window.print()}>
+            Print day sheet
+          </Button>
+        )}
       </div>
+      {day && <DaySheet day={day} title={title} sub={sub} />}
       {dayQ.isPending && <Loading what="Reading the day's bookings" />}
       {dayQ.isError && <ErrorBox error={dayQ.error} what="the day's bookings" />}
       {day && (
@@ -396,6 +410,71 @@ function DayView({
         </div>
       )}
     </section>
+  )
+}
+
+/* -------------------------------------------------------------- day sheet --- */
+
+const PRINT_CSS = `
+.bk-sheet { display: none; }
+@media print {
+  @page { margin: 12mm; }
+  body > *:not(.bk-sheet) { display: none !important; }
+  html, body { background: #fff !important; height: auto !important; overflow: visible !important; }
+  .bk-sheet { display: block; color: #000; font: 11pt/1.35 system-ui, sans-serif; }
+  .bk-sheet h1 { font-size: 16pt; margin: 0 0 2pt; }
+  .bk-sheet p { margin: 0 0 10pt; }
+  .bk-sheet table { width: 100%; border-collapse: collapse; }
+  .bk-sheet th { text-align: left; font-size: 9pt; text-transform: uppercase; letter-spacing: .05em; border-bottom: 1.5pt solid #000; padding: 3pt 6pt 3pt 0; }
+  .bk-sheet td { vertical-align: top; border-bottom: .5pt solid #999; padding: 5pt 6pt 5pt 0; }
+  .bk-sheet tr { break-inside: avoid; }
+  .bk-sheet .n { text-align: right; font-variant-numeric: tabular-nums; }
+  .bk-sheet .t { font-variant-numeric: tabular-nums; white-space: nowrap; font-weight: 700; }
+  .bk-sheet .ph { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .bk-sheet .box { width: 12pt; height: 12pt; border: 1.2pt solid #000; }
+  .bk-sheet .notes { white-space: pre-wrap; }
+}`
+
+/** The printed day: bookings that hold a table (confirmed, arrived), by time. */
+function DaySheet({ day, title, sub }: { day: NonNullable<ReturnType<typeof useBookingDay>['data']>; title: string; sub: string }) {
+  const rows = day.bookings.filter(holds).sort((a, b) => a.time.localeCompare(b.time) || a.id - b.id)
+  return createPortal(
+    <div className="bk-sheet" aria-hidden="true">
+      <style>{PRINT_CSS}</style>
+      <h1>Bookings · {title.replace(/^Today · /, '')}</h1>
+      <p>{sub}</p>
+      {rows.length ? (
+        <table>
+          <thead>
+            <tr>
+              <th aria-label="Arrived" />
+              <th>Time</th>
+              <th>Name</th>
+              <th className="n">Party</th>
+              <th>Phone</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((b) => (
+              <tr key={b.id}>
+                <td>
+                  <div className="box" />
+                </td>
+                <td className="t">{b.time}</td>
+                <td>{b.name}</td>
+                <td className="n">{b.party}</td>
+                <td className="ph">{b.phone ?? ''}</td>
+                <td className="notes">{b.notes ?? ''}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        <p>No bookings.</p>
+      )}
+    </div>,
+    document.body,
   )
 }
 

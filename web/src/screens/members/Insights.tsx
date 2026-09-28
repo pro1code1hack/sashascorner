@@ -1,5 +1,5 @@
 /**
- * Members › Insights: the spec's 90-day success metrics (SPEC.md "Success
+ * Rewards › Insights (`#/rewards/insights`): the spec's 90-day success metrics (SPEC.md "Success
  * metrics"), from `GET /api/members/stats?days=90`.
  *
  * Numbers first, as a statement (label, what it means, the figure), not a KPI
@@ -13,18 +13,23 @@
  * title names it). Hover or focus a bar for its value; the table under the
  * charts is the table view.
  *
+ * Targets (SPEC: "Exact targets are an open question", so the owner sets them):
+ * each figure shows its target and how far along it is; "Set targets" edits them
+ * (`PUT /api/members/targets`). A figure with no target shows none, never 0.
+ *
  * Phase 3: a programme selector (every figure is one programme's), and the spec's
  * "repeat-visit rate, members vs non-members" from Lightspeed till customers -- or,
  * when no receipt names a customer, the server's reason in its place.
  */
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
-import { ErrorBox, Loading, PageBody, PageHeader, Segmented, cx } from '../../components/ui'
+import { useQueryClient } from '@tanstack/react-query'
+import { Button, ErrorBox, Field, Input, Loading, PageBody, PageHeader, Pill, Segmented, cx } from '../../components/ui'
 import { dayShort } from '../../lib/format'
-import { useMembersStats, usePrograms } from '../../lib/members-api'
-import type { MembersStats } from '../../lib/types/members'
+import { MEMBERS_KEY, membersApi, useMembersStats, usePrograms, useTargets } from '../../lib/members-api'
+import type { MembersStats, TargetRow, TargetUnit } from '../../lib/types/members'
 import { Tip, barPath, niceMax, useWidth } from '../money/chartKit'
-import { MembersTabs, rate, share, sourceLabel } from './shared'
+import { OutcomeLine, Panel, rate, share, sourceLabel, useWriteState } from './shared'
 
 const DAYS = 90
 
@@ -32,10 +37,11 @@ export function Insights() {
   const programs = usePrograms().data?.programs ?? []
   const [prog, setProg] = useState('')
   const q = useMembersStats(DAYS, prog)
+  const t = useTargets(prog)
   const current = programs.find((p) => (prog ? p.slug === prog : p.is_default))
   return (
     <>
-      <PageHeader title="Members" subtitle={<MembersTabs current="insights" />} saved={q.isFetching ? 'Loading…' : undefined} />
+      <PageHeader title="Insights" subtitle="How the card is doing over the last 90 days, against the targets you set." saved={q.isFetching ? 'Loading…' : undefined} />
       <PageBody className="bg-canvas">
         {programs.length > 1 && (
           <Segmented
@@ -52,7 +58,18 @@ export function Insights() {
         ) : !q.data ? (
           <Loading what="Working out the figures" />
         ) : (
-          <Body s={q.data} points={current?.kind === 'POINTS'} programName={programs.length > 1 ? current?.name : undefined} />
+          <>
+            <Body
+              s={q.data}
+              targets={t.data?.targets ?? []}
+              points={current?.kind === 'POINTS'}
+              programName={programs.length > 1 ? current?.name : undefined}
+            />
+            <div className="mt-8">
+              {t.isError && <ErrorBox error={t.error} what="the targets" />}
+              {t.data && <TargetsEditor key={t.data.program_slug} rows={t.data.targets} program={prog} />}
+            </div>
+          </>
         )}
       </PageBody>
     </>
@@ -61,6 +78,8 @@ export function Insights() {
 
 interface Line {
   key: string
+  /** The /api/members/targets metric this line is measured against. */
+  metric?: string
   label: string
   what: string
   value: ReactNode
@@ -71,11 +90,13 @@ function Missing({ why }: { why: string }) {
   return <span className="text-right text-sm font-normal text-ink-2">{why}</span>
 }
 
-function Body({ s, points = false, programName }: { s: MembersStats; points?: boolean; programName?: string }) {
+function Body({ s, targets, points = false, programName }: { s: MembersStats; targets: TargetRow[]; points?: boolean; programName?: string }) {
+  const byMetric = new Map(targets.map((t) => [t.metric, t]))
   const repeatWhy = s.repeat_rate_reason ?? 'not enough till data'
   const lines: Line[] = [
     {
       key: 'members',
+      metric: 'members_total',
       label: 'Members',
       what: `${s.members_new_in_window} joined in the last ${DAYS} days.`,
       value: s.members_total,
@@ -83,42 +104,49 @@ function Body({ s, points = false, programName }: { s: MembersStats; points?: bo
     },
     {
       key: 'optin',
+      metric: 'opted_in_share',
       label: 'Opted in to messages',
       what: 'Share of members who ticked the marketing box.',
       value: share(s.opted_in_share),
     },
     {
       key: 'stampshare',
+      metric: 'stamp_share_of_transactions',
       label: 'Transactions with a stamp',
       what: 'Stamps given ÷ till receipts, same days.',
       value: s.stamp_share_of_transactions === null ? <Missing why="no till receipts synced" /> : share(s.stamp_share_of_transactions),
     },
     {
       key: 'redemptions',
+      metric: 'redemptions_per_week',
       label: 'Redemptions a week',
       what: 'Free drinks handed over, weekly average.',
       value: rate(s.redemptions_per_week),
     },
     {
       key: 'visits',
+      metric: 'visits_per_member_per_month',
       label: 'Visits per member a month',
       what: 'Days with a stamp or reward, per member.',
       value: s.visits_per_member_per_month === null ? <Missing why="not enough history yet" /> : rate(s.visits_per_member_per_month),
     },
     {
       key: 'redeemed',
+      metric: 'members_with_redemption_share',
       label: 'Members with a reward redeemed',
       what: 'Have filled a card and used it at least once.',
       value: share(s.members_with_redemption_share),
     },
     {
       key: 'campaign',
+      metric: 'campaign_return_rate',
       label: 'Came back after a message',
       what: 'Campaign recipients stamped within 7 days.',
       value: s.campaign_return_rate === null ? <Missing why="no campaign sent yet" /> : share(s.campaign_return_rate),
     },
     {
       key: 'repeat-m',
+      metric: 'repeat_rate_members',
       label: 'Came back: members',
       what: `Till customers who are members and visited on 2+ days (${s.repeat_customers_members ?? 0} seen).`,
       value: s.repeat_rate_members == null ? <Missing why={s.repeat_rate_non_members == null ? 'see the note below' : repeatWhy} /> : share(s.repeat_rate_members),
@@ -140,7 +168,7 @@ function Body({ s, points = false, programName }: { s: MembersStats; points?: bo
           <h2 id="stmt-h" className="text-2xl font-extrabold tracking-[-.01em]">
             The last {DAYS} days{programName ? `: ${programName}` : ''}
           </h2>
-          <p className="mb-3 mt-1 text-base text-ink-2">How the stamp card is doing against the goals set at launch.</p>
+          <p className="mb-3 mt-1 text-base text-ink-2">How the card is doing, each figure against its target where you have set one.</p>
           <div role="table" aria-label={`Members figures, last ${DAYS} days`}>
             {lines.map((l) => (
               <div
@@ -155,8 +183,9 @@ function Body({ s, points = false, programName }: { s: MembersStats; points?: bo
                   <span className={cx('block', l.big ? 'text-xl font-bold' : 'text-lg')}>{l.label}</span>
                   <span className="block text-sm text-ink-2">{l.what}</span>
                 </span>
-                <span role="cell" className={cx('fig text-right', l.big ? 'text-2xl font-extrabold' : 'text-xl font-bold')}>
-                  {l.value}
+                <span role="cell" className="flex flex-col items-end gap-1">
+                  <span className={cx('fig text-right', l.big ? 'text-2xl font-extrabold' : 'text-xl font-bold')}>{l.value}</span>
+                  {l.metric && <TargetLine t={byMetric.get(l.metric)} />}
                 </span>
               </div>
             ))}
@@ -420,5 +449,130 @@ function MiniBars({
         )}
       </div>
     </figure>
+  )
+}
+
+/* -------------------------------------------------------------- targets --- */
+
+function fmtValue(v: number, unit: TargetUnit): string {
+  if (unit === 'share') return `${(v * 100).toFixed(v * 100 >= 10 || Number.isInteger(v * 100) ? 0 : 1)}%`
+  if (unit === 'count') return String(Math.round(v))
+  return v.toFixed(1)
+}
+
+/** Under a figure: "target 150 · 12% of the way", with a thin meter. Nothing when no target. */
+function TargetLine({ t }: { t: TargetRow | undefined }) {
+  if (!t || t.target === null) return <span className="text-xs text-ink-3">no target</span>
+  const pct = t.progress === null ? null : Math.max(0, Math.min(1, t.progress))
+  return (
+    <span className="flex items-center gap-2 text-xs text-ink-2">
+      {t.met ? <Pill tone="ok">Met</Pill> : null}
+      <span className="fig">target {fmtValue(t.target, t.unit)}</span>
+      {pct !== null && !t.met && (
+        <span className="flex items-center gap-1.5">
+          <span className="block h-1.5 w-16 rounded-full bg-line-soft" aria-hidden="true">
+            <span className="block h-1.5 rounded-full bg-brand" style={{ width: `${pct * 100}%` }} />
+          </span>
+          <span className="fig">{Math.round(pct * 100)}%</span>
+        </span>
+      )}
+    </span>
+  )
+}
+
+/** The text a person types for a target: shares as a percentage. */
+function toText(v: number | null, unit: TargetUnit): string {
+  if (v === null) return ''
+  if (unit === 'share') return String(Math.round(v * 1000) / 10)
+  return String(v)
+}
+
+/** Parsed input: `null` = cleared, `undefined` = not a number. */
+function fromText(text: string, unit: TargetUnit): number | null | undefined {
+  const t = text.trim().replace(/%$/, '').trim()
+  if (t === '') return null
+  if (!/^\d{1,7}(\.\d{1,2})?$/.test(t)) return undefined
+  const n = Number(t)
+  if (unit === 'share') return n <= 100 ? Math.round(n * 10) / 1000 : undefined
+  if (unit === 'count') return Number.isInteger(n) ? n : undefined
+  return n
+}
+
+const UNIT_HINT: Record<TargetUnit, string> = { count: 'members', share: '%', rate: 'a number, like 1.5' }
+
+function TargetsEditor({ rows, program }: { rows: TargetRow[]; program: string }) {
+  const qc = useQueryClient()
+  const [open, setOpen] = useState(false)
+  const [text, setText] = useState<Record<string, string>>({})
+  const w = useWriteState()
+  const reset = () => setText(Object.fromEntries(rows.map((r) => [r.metric, toText(r.target, r.unit)])))
+  // A refetch after saving replaces the starting point.
+  useEffect(reset, [rows])
+  const parsed = rows.map((r) => ({ r, v: fromText(text[r.metric] ?? '', r.unit) }))
+  const bad = parsed.filter((x) => x.v === undefined)
+  const changes = Object.fromEntries(parsed.filter((x) => x.v !== undefined && x.v !== x.r.target).map((x) => [x.r.metric, x.v as number | null]))
+  const n = Object.keys(changes).length
+  const set = rows.filter((r) => r.target !== null).length
+  return (
+    <Panel
+      title={`Targets for the first ${DAYS} days`}
+      id="targets-h"
+      right={
+        !open && (
+          <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+            {set === 0 ? 'Set targets' : 'Change targets'}
+          </Button>
+        )
+      }
+    >
+      {!open ? (
+        <p className="text-base text-ink-2">
+          {set === 0
+            ? 'No targets yet. The spec left them open: set what success looks like, and each figure above shows how far along it is.'
+            : `${set} of ${rows.length} figures have a target. Shown under each figure above.`}
+        </p>
+      ) : (
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault()
+            if (bad.length || n === 0) return
+            const r = await w.run(() => membersApi.saveTargets({ program: program || null, targets: changes }), () => `Saved ${n} ${n === 1 ? 'target' : 'targets'}.`)
+            if (r) {
+              await qc.invalidateQueries({ queryKey: [...MEMBERS_KEY, 'targets'] })
+              setOpen(false)
+            }
+          }}
+        >
+          <p className="mb-3 text-sm text-ink-2">Leave a box empty for no target. Percentages are of members or receipts, as the figure says.</p>
+          <div className="grid gap-x-5 gap-y-3 sm:grid-cols-2 wide:grid-cols-4">
+            {parsed.map(({ r, v }) => (
+              <Field key={r.metric} label={r.label} hint={UNIT_HINT[r.unit]} error={v === undefined ? (r.unit === 'share' ? '0 to 100.' : r.unit === 'count' ? 'A whole number.' : 'A number.') : undefined}>
+                <div className="w-28">
+                  <Input numeric value={text[r.metric] ?? ''} onChange={(e) => setText((t) => ({ ...t, [r.metric]: e.target.value }))} placeholder="none" />
+                </div>
+              </Field>
+            ))}
+          </div>
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <Button type="submit" variant="primary" size="sm" disabled={bad.length > 0 || n === 0} pending={w.busy} pendingLabel="Saving…">
+              Save targets
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={w.busy}
+              onClick={() => {
+                reset()
+                setOpen(false)
+              }}
+            >
+              Cancel
+            </Button>
+            <span className="text-sm text-ink-2">{n === 0 ? 'Nothing changed yet.' : `${n} to save.`}</span>
+          </div>
+        </form>
+      )}
+      <OutcomeLine outcome={w.outcome} className="mt-2" />
+    </Panel>
   )
 }

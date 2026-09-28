@@ -27,6 +27,7 @@ using the resolutions recommended in each spec's "Conflicts" section.
    - Capital injections are shown separately on Director's account and do **not** count
      toward "company owes you".
    - Rename "Square cash" / "Square fees" → "Till cash" / "Card fees" everywhere.
+     *(Superseded for cash by 26: it is just "Cash" now.)*
    - Just Eat never paid cash: the £114.92 of Just Eat money in the workbook's cash column
      is imported as Just Eat (card/platform) takings, not cash.
    - VAT: unanswered. Do not claim prices include or exclude VAT; drop the "Prices exclude
@@ -84,11 +85,11 @@ using the resolutions recommended in each spec's "Conflicts" section.
     card per job (Use soon, Running out, Drifting, Count these, Marked low), each with its
     action; the ingredient opens as a page (`#/stock/<id>`), not a drawer.
 21. **Sales is a dashboard** above the day-by-day table: figures with "vs previous period",
-    takings over time (stacked by card / till cash / own cash, day/week/month, legend keys
+    takings over time (stacked by card / cash — till/own split retired by 26 — day/week/month, legend keys
     toggle series, hover for the breakdown), where it came from (till methods + delivery
     apps from monthly statements, with commission and ads; a month not uploaded is
     "missing", never £0), by weekday, best days, then Profit by month. Colours validated
-    with the dataviz checker: card #4a6fd1, till cash #1baf7a, own cash #eb6834, delivery
+    with the dataviz checker: card #4a6fd1, cash #1baf7a (`--color-chart-cash`), delivery
     apps #8a4fc8. Per-order channels need Lightspeed; the `sale` rows today are demo seed.
 
 ## Ingredient stock page (owner, 2026-09-26, later the same day)
@@ -149,3 +150,22 @@ using the resolutions recommended in each spec's "Conflicts" section.
     login, logout and password routes are not forwarded. Photo files come through the open
     `/api/website-media/*` (they are public on the site anyway). Site admin passwords no
     longer matter to the owner; the back office's Settings password guards both.
+
+## One cash figure per day (owner, 2026-09-28)
+26. **One Cash entry per day; "Own cash" retired.** Owner: *"what is the difference for
+    the till cash vs cash itself like we need only one entry of the cash please
+    properly"*. The Sales tab, its drawer ("Add cash": Date, **Cash** — "Cash taken
+    today", Note), the table, the charts, Overview, Profit by month and Transactions all
+    show a single **Cash** figure. The words "Till cash" and "Own cash" are gone from
+    the UI.
+    **Data:** a typed cash figure is a `payment_day` row with `method = CASH`, source
+    MANUAL. `PaymentMethod.CASH_OFF_TILL` stays in the enum (old rows and migrations
+    reference it) but **nothing writes it** — not the Sales tab, not `import-finance`,
+    which now sums the workbook's "Square cash" and "Own cash" (override, else auto)
+    into one CASH row. Every read folds any legacy CASH_OFF_TILL row into Cash, so no
+    money is dropped; typing a new cash figure for a day removes a typed/workbook
+    CASH_OFF_TILL row, so the day keeps one figure.
+    **API:** `cash_till_pence` + `cash_off_till_pence` → `cash_pence` (Sales days,
+    totals, P&L/overview period figures); `editable.cash_till` + `editable.cash_off_till`
+    → `editable.cash`; `POST /api/finance/sales` and `PATCH …/sales/{date}` take
+    `cash_pence`. Do not reintroduce a second cash field without the owner.

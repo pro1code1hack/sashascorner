@@ -55,7 +55,6 @@ from cafeops.domain.loyalty import (
     MAX_POINTS_SPEND_PENCE,
     UNDO_SECONDS,
     apply_stamps,
-    cooldown_exceeded,
     points_for_spend,
 )
 from cafeops.services.loyalty.alerts import check_stamp_rate
@@ -250,15 +249,18 @@ def stamp(
             "bad_delta",
             f"A scan adds 1 to {program.max_stamps_per_scan} stamps.",
         )
-    recent = net_purchase_stamps_since(session, card.id, now - timedelta(minutes=COOLDOWN_MINUTES))
+    # The programme's own cooldown (Rewards > Programme); defaults to the SPEC's 3 in 10.
+    window = program.cooldown_minutes or COOLDOWN_MINUTES
+    limit = program.cooldown_max_stamps or COOLDOWN_MAX_STAMPS
+    recent = net_purchase_stamps_since(session, card.id, now - timedelta(minutes=window))
     approver: StaffUser | None = None
-    if cooldown_exceeded(recent, delta):
+    if recent + delta > limit:
         if not manager_pin:
             raise LoyaltyError(
                 409,
                 "manager_pin_required",
                 f"This card has had {recent} stamp{'' if recent == 1 else 's'} in the last "
-                f"{COOLDOWN_MINUTES} minutes; more than {COOLDOWN_MAX_STAMPS} needs a "
+                f"{window} minutes; more than {limit} needs a "
                 "manager's PIN.",
             )
         approver = verify_manager_pin(session, manager_pin, limiter_key=actor.limiter_key)
@@ -278,7 +280,7 @@ def stamp(
         audit(
             session,
             "cooldown_override",
-            f"{approver.name} approved +{delta} after {recent} in {COOLDOWN_MINUTES} min "
+            f"{approver.name} approved +{delta} after {recent} in {window} min "
             f"(stamped by {actor.name} on {actor.device_name})",
             staff_user_id=approver.id,
             device_id=actor.device_id,

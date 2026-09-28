@@ -44,6 +44,7 @@ from sashasite.schemas import (
     BookingIn,
     BookingInfoOut,
     BookingOut,
+    ClosureOut,
     ContactIn,
     GeoOut,
     HoursClosedOut,
@@ -138,6 +139,11 @@ def info_out(cafe: CafeFacts) -> InfoOut:
             min_lead_minutes=b.min_lead_minutes,
         ),
         confirmed=cafe.confirmed,
+        closures=[
+            ClosureOut(date=c.date, note=c.note)
+            for c in sorted(cafe.closures, key=lambda c: c.date)
+            if c.date >= dt.datetime.now(bk.local_tz()).date()
+        ],
     )
 
 

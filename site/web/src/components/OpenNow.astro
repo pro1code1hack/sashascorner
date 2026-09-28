@@ -13,18 +13,26 @@ const allSame = hours.length === 7 && hours.every((h) => !h.closed && 'open' in 
 const fallback = allSame && 'open' in hours[0] ? `Open every day, ${clock(hours[0].open)} – ${clock(hours[0].close)}` : 'Opening hours below';
 ---
 
-<p class:list={['open', `open--${tone}`]} data-open={JSON.stringify(hours)}>
+<p class:list={['open', `open--${tone}`]} data-open={JSON.stringify(hours)} data-closures={JSON.stringify(info?.closures ?? [])}>
   <span class="open__dot" aria-hidden="true"></span>
   <span class="open__text">{fallback}</span>
 </p>
 
 <script>
   import { clock } from '../lib/format';
+  import { liveInfo, londonToday } from '../lib/live-info';
   type H = { weekday: number; open?: string; close?: string; closed?: boolean };
+  type C = { date: string; note: string };
+  const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-  for (const el of document.querySelectorAll<HTMLElement>('[data-open]')) {
-    const hours: H[] = JSON.parse(el.dataset.open ?? '[]');
-    if (!hours.length) continue;
+  function isoPlus(today: string, days: number): string {
+    const d = new Date(`${today}T12:00:00Z`);
+    d.setUTCDate(d.getUTCDate() + days);
+    return d.toISOString().slice(0, 10);
+  }
+
+  function render(el: HTMLElement, hours: H[], closures: C[]) {
+    if (!hours.length) return;
     const parts = new Intl.DateTimeFormat('en-GB', {
       timeZone: 'Europe/London',
       weekday: 'short',
@@ -35,22 +43,42 @@ const fallback = allSame && 'open' in hours[0] ? `Open every day, ${clock(hours[
     const get = (t: string) => parts.find((p) => p.type === t)?.value ?? '';
     const wd = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].indexOf(get('weekday'));
     const now = `${get('hour')}:${get('minute')}`;
-    const today = hours.find((h) => h.weekday === wd);
+    const today = londonToday();
+    const shut = new Map(closures.map((c) => [c.date, c.note]));
     const text = el.querySelector('.open__text')!;
-    if (today && !today.closed && today.open && today.close && now >= today.open && now < today.close) {
-      text.textContent = `Open now · until ${clock(today.close)}`;
+    el.classList.remove('is-open');
+    const todayHours = hours.find((h) => h.weekday === wd);
+    if (shut.has(today)) {
+      const note = shut.get(today);
+      text.textContent = note ? `Closed today · ${note}` : 'Closed today';
+    } else if (todayHours && !todayHours.closed && todayHours.open && todayHours.close && now >= todayHours.open && now < todayHours.close) {
+      text.textContent = `Open now · until ${clock(todayHours.close)}`;
       el.classList.add('is-open');
-    } else {
-      // next opening, looking up to a week ahead
-      for (let i = 0; i < 8; i++) {
-        const h = hours.find((x) => x.weekday === (wd + i) % 7);
-        if (!h || h.closed || !h.open) continue;
-        if (i === 0 && now >= h.open) continue;
-        const when = i === 0 ? 'today' : i === 1 ? 'tomorrow' : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][h.weekday];
-        text.textContent = `Closed now · opens ${when} at ${clock(h.open)}`;
-        break;
-      }
+      return;
     }
+    // next opening, looking up to a week ahead, skipping closure dates
+    for (let i = 0; i < 8; i++) {
+      const h = hours.find((x) => x.weekday === (wd + i) % 7);
+      if (!h || h.closed || !h.open) continue;
+      if (i === 0 && (now >= h.open || shut.has(today))) continue;
+      if (shut.has(isoPlus(today, i))) continue;
+      const when = i === 0 ? 'today' : i === 1 ? 'tomorrow' : DAYS[h.weekday];
+      const lead = shut.has(today) ? text.textContent + ' · opens' : 'Closed now · opens';
+      text.textContent = `${lead} ${when} at ${clock(h.open)}`;
+      break;
+    }
+  }
+
+  const els = [...document.querySelectorAll<HTMLElement>('[data-open]')];
+  for (const el of els) {
+    render(el, JSON.parse(el.dataset.open ?? '[]'), JSON.parse(el.dataset.closures ?? '[]'));
+  }
+  // Hours and closures are edited in the back office: follow the live settings.
+  if (els.length) {
+    liveInfo().then((live) => {
+      if (!live) return;
+      for (const el of els) render(el, live.hours as H[], live.closures ?? []);
+    });
   }
 </script>
 

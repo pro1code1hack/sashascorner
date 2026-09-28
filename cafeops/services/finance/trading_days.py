@@ -1,8 +1,13 @@
 """Sales tab: one row per trading day. Finance spec 1.2, 2.1, 3.5.
 
 A "day" is the union of `trading_day` (note, orders override) and `payment_day` (card,
-till cash, own cash) dates. Money is read through `takings.resolve_takings`, so a day
-with a CSV row and a MANUAL row for the same method shows ONE figure.
+cash) dates. Money is read through `takings.resolve_takings`, so a day with a CSV row and
+a MANUAL row for the same method shows ONE figure.
+
+**One cash figure per day** (DECISIONS 26, owner 2026-09-28). "Till cash" and "Own cash"
+were retired: the Sales tab shows and takes a single Cash amount, written as
+`PaymentMethod.CASH`. A legacy `CASH_OFF_TILL` row is still read and folded into that
+figure (never lost), and typing a new cash figure replaces it, so the day keeps one.
 
 Writes are MANUAL rows. A typed figure never overwrites an export: the CSV/POS row
 still wins by precedence, and the Sales tab shows that input read-only ("from export").
@@ -55,12 +60,11 @@ __all__ = [
     "update_day",
 ]
 
-#: The three money columns on the Sales tab, in order.
-SALES_METHODS: tuple[PaymentMethod, ...] = (
-    PaymentMethod.CARD,
-    PaymentMethod.CASH,
-    PaymentMethod.CASH_OFF_TILL,
-)
+#: The two money columns on the Sales tab, in order: Card, Cash.
+SALES_METHODS: tuple[PaymentMethod, ...] = (PaymentMethod.CARD, PaymentMethod.CASH)
+
+#: Read as part of Cash, never written: the retired "Own cash" (DECISIONS 26).
+_LEGACY_CASH = PaymentMethod.CASH_OFF_TILL
 
 #: A typed figure may replace these; an export (CSV_UPLOAD, POS_API) is never edited here.
 _USER_EDITABLE = frozenset({PaymentSourceKind.MANUAL, PaymentSourceKind.LEGACY_WORKBOOK})
@@ -78,8 +82,7 @@ class SalesSource:
 @dataclass(frozen=True, slots=True)
 class SalesEditable:
     card: bool
-    cash_till: bool
-    cash_off_till: bool
+    cash: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -87,8 +90,7 @@ class SalesDayRow:
     date: date
     weekday: str
     card_pence: int | None
-    cash_till_pence: int | None
-    cash_off_till_pence: int | None
+    cash_pence: int | None
     total_pence: int
     orders: int | None
     orders_source: str | None
@@ -103,8 +105,7 @@ class SalesDayRow:
 class SalesTotals:
     days: int
     card_pence: int
-    cash_till_pence: int
-    cash_off_till_pence: int
+    cash_pence: int
     total_pence: int
     orders: int | None
 
@@ -140,7 +141,12 @@ def _row(
     by = resolved.by_method if resolved is not None else {}
     card = by.get(PaymentMethod.CARD)
     cash = by.get(PaymentMethod.CASH)
-    off = by.get(PaymentMethod.CASH_OFF_TILL)
+    off = by.get(_LEGACY_CASH)
+    cash_pence = (
+        None
+        if cash is None and off is None
+        else (cash.gross_pence if cash else 0) + (off.gross_pence if off else 0)
+    )
     total = sum(f.gross_pence for f in (card, cash, off) if f is not None)
 
     orders: int | None
@@ -170,7 +176,7 @@ def _row(
         for m, f in (
             (PaymentMethod.CARD, card),
             (PaymentMethod.CASH, cash),
-            (PaymentMethod.CASH_OFF_TILL, off),
+            (_LEGACY_CASH, off),
         )
         if f is not None
     )
@@ -182,17 +188,14 @@ def _row(
         date=day,
         weekday=_WEEKDAYS[day.weekday()],
         card_pence=card.gross_pence if card else None,
-        cash_till_pence=cash.gross_pence if cash else None,
-        cash_off_till_pence=off.gross_pence if off else None,
+        cash_pence=cash_pence,
         total_pence=total,
         orders=orders,
         orders_source=orders_source,
         avg_ticket_pence=avg,
         note=trading.note if trading is not None else None,
         basis=basis,
-        editable=SalesEditable(
-            card=editable(card), cash_till=editable(cash), cash_off_till=editable(off)
-        ),
+        editable=SalesEditable(card=editable(card), cash=editable(cash) and editable(off)),
         sources=sources,
     )
 
@@ -213,8 +216,7 @@ def read_sales(
     totals = SalesTotals(
         days=len(rows),
         card_pence=sum(r.card_pence or 0 for r in rows),
-        cash_till_pence=sum(r.cash_till_pence or 0 for r in rows),
-        cash_off_till_pence=sum(r.cash_off_till_pence or 0 for r in rows),
+        cash_pence=sum(r.cash_pence or 0 for r in rows),
         total_pence=sum(r.total_pence for r in rows),
         orders=sum(orders) if orders else None,
     )
@@ -306,17 +308,29 @@ def _set_figure(
         manual.imported_at = now_utc()
 
 
+def _set_cash(session: Session, day: date, pence: int | None, operator: str | None) -> None:
+    """The day's one cash figure, stored as CASH. A legacy own-cash row is folded away.
+
+    The figure shown is CASH + CASH_OFF_TILL, so typing a new total must also remove a
+    typed/workbook CASH_OFF_TILL row, or the old own cash would be added on top of it.
+    """
+    legacy = _rows_for(session, day, _LEGACY_CASH)
+    if any(r.source not in _USER_EDITABLE for r in legacy):
+        raise FinanceConflict(
+            f"Cash for {day.isoformat()} comes from an export and wins over anything typed "
+            "here. Correct it at the source and re-import."
+        )
+    _set_figure(session, day, PaymentMethod.CASH, pence, operator)
+    for r in legacy:
+        session.delete(r)
+
+
 def _validate(
     card: int | _Unset | None,
     cash: int | _Unset | None,
-    off: int | _Unset | None,
     orders: int | _Unset | None,
 ) -> None:
-    for name, value in (
-        ("card_pence", card),
-        ("cash_till_pence", cash),
-        ("cash_off_till_pence", off),
-    ):
+    for name, value in (("card_pence", card), ("cash_pence", cash)):
         if not isinstance(value, _Unset):
             require_pence(value, name)
     if not isinstance(orders, _Unset) and orders is not None:
@@ -333,23 +347,21 @@ def create_day(
     *,
     day: date,
     card_pence: int | None = None,
-    cash_till_pence: int | None = None,
-    cash_off_till_pence: int | None = None,
+    cash_pence: int | None = None,
     orders_override: int | None = None,
     note: str | None = None,
     operator: str | None = None,
 ) -> SalesDayRow:
-    _validate(card_pence, cash_till_pence, cash_off_till_pence, orders_override)
+    _validate(card_pence, cash_pence, orders_override)
     if _day_exists(session, day):
         raise FinanceConflict(f"There is already a row for {_describe(day)}.")
     trading = _trading(session, day, operator)
     trading.note = clean_text(note)
     trading.transactions_override = orders_override
-    for method, value in zip(
-        SALES_METHODS, (card_pence, cash_till_pence, cash_off_till_pence), strict=True
-    ):
-        if value is not None:
-            _set_figure(session, day, method, value, operator)
+    if card_pence is not None:
+        _set_figure(session, day, PaymentMethod.CARD, card_pence, operator)
+    if cash_pence is not None:
+        _set_cash(session, day, cash_pence, operator)
     session.flush()
     return sales_day(session, day)
 
@@ -360,23 +372,21 @@ def update_day(
     *,
     new_date: date | _Unset = UNSET,
     card_pence: int | _Unset | None = UNSET,
-    cash_till_pence: int | _Unset | None = UNSET,
-    cash_off_till_pence: int | _Unset | None = UNSET,
+    cash_pence: int | _Unset | None = UNSET,
     orders_override: int | _Unset | None = UNSET,
     note: str | _Unset | None = UNSET,
     operator: str | None = None,
 ) -> SalesDayRow:
-    _validate(card_pence, cash_till_pence, cash_off_till_pence, orders_override)
+    _validate(card_pence, cash_pence, orders_override)
     if not _day_exists(session, day):
         raise LookupError(f"no sales row for {day.isoformat()}")
     if not isinstance(new_date, _Unset) and new_date != day:
         _move_day(session, day, new_date)
         day = new_date
-    for method, value in zip(
-        SALES_METHODS, (card_pence, cash_till_pence, cash_off_till_pence), strict=True
-    ):
-        if not isinstance(value, _Unset):
-            _set_figure(session, day, method, value, operator)
+    if not isinstance(card_pence, _Unset):
+        _set_figure(session, day, PaymentMethod.CARD, card_pence, operator)
+    if not isinstance(cash_pence, _Unset):
+        _set_cash(session, day, cash_pence, operator)
     if not isinstance(note, _Unset) or not isinstance(orders_override, _Unset):
         trading = _trading(session, day, operator)
         if not isinstance(note, _Unset):

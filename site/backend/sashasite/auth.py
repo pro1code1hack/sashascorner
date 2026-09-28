@@ -1,4 +1,13 @@
-"""Admin authentication: one owner password, cookie sessions, CSRF header, audit.
+"""Admin authentication: the back office's service key, CSRF header, audit.
+
+ONE PASSWORD (owner, 2026-09-28): the website admin lives in the Café Ops back
+office, which forwards each call with ``X-Site-Service-Key`` after its own sign-in.
+When ``SITE_SERVICE_KEY`` is configured that key is the only way in: the cookie
+session, the login route and the password routes below are refused, so the site's
+old password is no longer a door. The cookie machinery is kept only as a dev
+fallback for an install with no service key (``sashasite doctor`` warns).
+
+Dev fallback (no service key):
 
 - The password is scrypt-hashed in ``site_admin_credential`` (one row). While that
   table is empty, ``SITE_ADMIN_PASSWORD`` bootstraps the first sign-in; once a DB
@@ -263,14 +272,33 @@ def _service_key_ok(request: Request) -> bool:
     return hmac.compare_digest(presented.encode("utf-8"), expected.encode("utf-8"))
 
 
+def cookie_login_enabled() -> bool:
+    """The site's own password and cookie sessions work only with no service key
+    configured (dev). With one, the back office is the one way in."""
+    return not get_settings().service_key
+
+
+def back_office_only() -> HTTPException:
+    """410 for the site's own sign-in/password routes once the service key is set."""
+    return HTTPException(
+        410,
+        detail=(
+            "The website admin is in the back office now, behind its one password: "
+            f"{get_settings().ops_url}/#/website"
+        ),
+    )
+
+
 def require_admin_session(request: Request, response: Response) -> None:
-    """FastAPI dependency for every admin route: CSRF header on writes, then a
-    live session cookie (or the back office's service key). Extends the session
-    (and re-issues the cookie) on use."""
+    """FastAPI dependency for every admin route: CSRF header on writes, then the
+    back office's service key. Only with no key configured (dev) does a live
+    session cookie get in; it is extended (and the cookie re-issued) on use."""
     require_csrf(request)
     if _service_key_ok(request):
         request.state.admin_session_id = None
         return
+    if not cookie_login_enabled():
+        raise _unauthorised()
     token = request.cookies.get(COOKIE_NAME)
     if not token:
         raise _unauthorised()

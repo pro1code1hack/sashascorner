@@ -19,7 +19,7 @@ uv run sashasite info-export --out ../web/src/data/info.json
 uv run sashasite media-add PHOTO.jpg --alt "…" [--slot KEY]   # add a photo (and place it)
 uv run sashasite media-list                                    # library + where each photo is used
 uv run sashasite slots-export --out ../web/src/data/slots.json # for the Astro build
-uv run sashasite admin-password [--clear]                      # set the owner's admin password (prompts twice)
+uv run sashasite admin-password [--clear]                      # DEV ONLY (no SITE_SERVICE_KEY): the site's own password
 uv run sashasite admin-sessions [--revoke-all]                 # list / sign out every admin browser
 uv run ruff check . && uv run ruff format --check . && uv run mypy sashasite
 ```
@@ -33,7 +33,9 @@ Read from the process env, the repo-root `.env` (shared with cafeops), then `sit
 | Var | Default | |
 |---|---|---|
 | `SITE_DATABASE_URL` | `sqlite+pysqlite:///<repo>/cafeops.db` | the shared ops DB |
-| `SITE_ADMIN_PASSWORD` | unset | **bootstrap only**: admin sign-in password until one is set in the DB (`sashasite admin-password`), which then wins. Neither → sign-in answers 503 |
+| `SITE_SERVICE_KEY` | unset | the back office's `X-Site-Service-Key`. **Set: the only way into `/api/admin/*`** (login/password answer 410; one password, the back office's). Unset: the dev cookie fallback below, and `doctor` warns |
+| `SITE_OPS_URL` | `http://localhost:5178` | the back office's origin; `/admin*` on the site redirects to `{SITE_OPS_URL}/#/website…` (Caddy reads it too) |
+| `SITE_ADMIN_PASSWORD` | unset | **dev fallback only** (ignored with `SITE_SERVICE_KEY`): bootstrap for the site's own sign-in until one is set in the DB (`sashasite admin-password`) |
 | `SITE_COOKIE_SECURE` | `0` | `1` = always mark the `sc_admin` cookie `Secure` (it already is on https requests) |
 | `SITE_ADMIN_SESSION_DAYS` | `14` | admin session lifetime, extended on use |
 | `SITE_LOGIN_RATE_LIMIT_COUNT` / `_WINDOW_SECONDS` | `5` / `60` | admin sign-in attempts per IP (password changes have their own counter, same limit) |
@@ -45,8 +47,9 @@ Read from the process env, the repo-root `.env` (shared with cafeops), then `sit
 | `SITE_TRUST_PROXY` | `0` | `1` = rate-limit by first `X-Forwarded-For` hop. Only behind a proxy that overwrites it |
 | `CAFEOPS_TELEGRAM_BOT_TOKEN`, `CAFEOPS_TELEGRAM_OWNER_CHAT_ID` | unset | owner notifications (Russian); unset → skipped, logged at INFO |
 
-For local dev, `site/backend/.env` (gitignored) holds `SITE_ADMIN_PASSWORD=dev-admin`
-and the DB has no password set, so `dev-admin` signs in:
+For local dev WITHOUT `SITE_SERVICE_KEY`, `site/backend/.env` (gitignored) may hold
+`SITE_ADMIN_PASSWORD=dev-admin`, and with no DB password `dev-admin` signs in (with the
+key set this answers 410; call through the back office's `/api/website/*` instead):
 
 ```bash
 curl -c jar -H 'X-Admin: 1' -H 'Content-Type: application/json' \
@@ -60,7 +63,10 @@ Contract: `../ADMIN.md` (Auth, Bookings, Messages, Café settings, Dashboard). C
 `sashasite/auth.py` (password, sessions, CSRF, audit), `sashasite/admin_api.py` (routes),
 `sashasite/settings_store.py` (café settings in the DB).
 
-**Auth.** One owner password, scrypt-hashed (`hashlib.scrypt`, N=2^15 r=8 p=1, per-hash
+**Auth.** One password, the back office's (owner, 2026-09-28): with `SITE_SERVICE_KEY`
+set, `X-Site-Service-Key` is the only way in and everything below about the site's own
+password and cookie is refused (login/password → 410). Dev fallback without the key:
+one owner password, scrypt-hashed (`hashlib.scrypt`, N=2^15 r=8 p=1, per-hash
 salt, params stored in the hash string) in `site_admin_credential`. Sessions: a
 `secrets.token_urlsafe(32)` token in the `sc_admin` cookie (HttpOnly, SameSite=Strict,
 Path=/api, Secure on https or with `SITE_COOKIE_SECURE=1`); only its sha256 is stored

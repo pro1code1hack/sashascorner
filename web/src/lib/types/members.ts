@@ -219,11 +219,16 @@ export interface ProgramFull extends LoyaltyProgram {
   reward_options: RewardOption[]
   cards: number
   kind_editable: boolean
+  /** More than this many purchase stamps on one card within `cooldown_minutes` needs a manager's PIN. */
+  cooldown_max_stamps: number
+  cooldown_minutes: number
 }
 
 export interface ProgramsResponse {
   programs: ProgramFull[]
   auto_stamp: boolean
+  /** False while no active manager or owner exists: rules then save without a PIN. */
+  pin_required: boolean
 }
 
 export interface RewardOptionIn {
@@ -251,7 +256,10 @@ export interface ProgramEditIn {
   sort_order?: number
   eligibility?: Eligibility | null
   reward_options?: RewardOptionIn[]
-  manager_pin: string
+  cooldown_max_stamps?: number
+  cooldown_minutes?: number
+  /** Required once a manager or owner exists (`ProgramsResponse.pin_required`). */
+  manager_pin?: string
 }
 
 export interface ProgramCreateIn extends ProgramEditIn {
@@ -269,15 +277,31 @@ export interface EligibilityPreview {
   covers: string
 }
 
-export interface ProgramIn {
-  name?: string
-  stamps_required?: number
-  max_stamps_per_scan?: number
-  reward_text?: string
-  reward_max_price_pence?: number | null
-  birthday_reward?: boolean
-  referral_stamps?: number
-  manager_pin: string
+/* ------------------------------------------------------ 90-day targets --- */
+
+export type TargetUnit = 'count' | 'share' | 'rate'
+
+export interface TargetRow {
+  metric: string
+  label: string
+  unit: TargetUnit
+  /** Shares are 0..1. `null`: no target set. */
+  target: number | null
+  /** Over the window; `null`: cannot be worked out yet. */
+  actual: number | null
+  progress: number | null
+  met: boolean | null
+}
+
+export interface TargetsResponse {
+  program_slug: string
+  days: number
+  targets: TargetRow[]
+}
+
+export interface TargetsIn {
+  program?: string | null
+  targets: Record<string, number | null>
 }
 
 /* ----------------------------------------------------------------- staff --- */

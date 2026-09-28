@@ -60,7 +60,7 @@ const hojicha = drinks.filter((i) => /hojicha/i.test(i.name));
 const bubble = drinks.filter((i) => /bubble tea/i.test(i.name));
 const espresso = find(/^single espresso$/i);
 const latte = find(/^latte$/i);
-const matchaLatte = find(/^matcha latte$/i);
+const matchaLatte = find(/^(hot )?matcha( latte)?$/i);
 const raff = find(/raff/i);
 const kyivSlice = find(/kyiv.*slice/i);
 const kyivWhole = find(/kyiv.*whole/i);

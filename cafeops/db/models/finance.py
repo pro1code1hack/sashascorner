@@ -47,7 +47,8 @@ from cafeops.db.models.enums import (
 class TradingDay(Base):
     """The non-money parts of a Sales-tab row: the day's note and an orders override.
 
-    The money lives in `payment_day` (CARD, CASH, CASH_OFF_TILL). A "day" on the
+    The money lives in `payment_day` (CARD, CASH; legacy CASH_OFF_TILL rows are read
+    as part of CASH, never written: DECISIONS 26). A "day" on the
     Sales tab is the union of `trading_day` and `payment_day` dates.
     """
 
@@ -147,7 +148,7 @@ class Expense(Base):
 class CashCount(Base):
     """Cash counted in the drawer at the end of a trading day (Reconcile C, banner).
 
-    Expected cash = `payment_day` CASH + CASH_OFF_TILL gross for the date (TILL basis,
+    Expected cash = `payment_day` CASH (+ any legacy CASH_OFF_TILL) gross for the date (TILL basis,
     resolved by source precedence). The difference is computed at read time and never
     stored; it is `None` when either side is missing.
     """

@@ -65,8 +65,8 @@ export interface PeriodFigures {
   trading_days: number
   expense_count: number
   card_pence: Pence
-  cash_till_pence: Pence
-  cash_off_till_pence: Pence
+  /** The period's cash: one figure per day (DECISIONS 26; no till/own split). */
+  cash_pence: Pence
   delivery_gross_pence: Pence | null
   delivery_missing: string[]
   revenue_pence: Pence
@@ -144,15 +144,15 @@ export interface SalesDay {
   date: ISODate
   weekday: string
   card_pence: Pence | null
-  cash_till_pence: Pence | null
-  cash_off_till_pence: Pence | null
+  /** The day's one cash figure (DECISIONS 26). Null when none was reported. */
+  cash_pence: Pence | null
   total_pence: Pence
   orders: number | null
   orders_source: 'override' | 'pos' | 'payment_export' | null
   avg_ticket_pence: Pence | null
   note: string | null
   basis: 'TILL' | 'BANK_DEPOSIT' | 'MIXED'
-  editable: { card: boolean; cash_till: boolean; cash_off_till: boolean }
+  editable: { card: boolean; cash: boolean }
   sources: { method: string; source: string; source_ref: string | null }[]
 }
 
@@ -162,8 +162,7 @@ export interface SalesResponse {
   totals: {
     days: number
     card_pence: Pence
-    cash_till_pence: Pence
-    cash_off_till_pence: Pence
+    cash_pence: Pence
     total_pence: Pence
     orders: number | null
   }
@@ -173,8 +172,7 @@ export interface SalesResponse {
 export interface SalesDayIn {
   date?: ISODate
   card_pence?: Pence | null
-  cash_till_pence?: Pence | null
-  cash_off_till_pence?: Pence | null
+  cash_pence?: Pence | null
   orders_override?: number | null
   note?: string | null
   operator?: string | null

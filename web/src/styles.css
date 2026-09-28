@@ -63,10 +63,10 @@
   --color-est-wash: #fdf6e7; /* "italic = estimate" note */
 
   /* chart series (SalesDashboard, ProfitSection). Validated as adjacent pairs on
-   * white; till cash is under 3:1, so each chart carries a legend with values. */
+   * white; cash is under 3:1, so each chart carries a legend with values.
+   * One cash series (DECISIONS 26): the old "own cash" token was retired. */
   --color-chart-card: #4a6fd1;
-  --color-chart-till: #1baf7a;
-  --color-chart-own: #eb6834;
+  --color-chart-cash: #1baf7a;
   --color-chart-delivery: #8a4fc8;
   --color-chart-costs: #b87a1f;
   /* Sales channels, validated as adjacent pairs in this order (all checks pass). */

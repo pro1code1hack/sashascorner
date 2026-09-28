@@ -187,7 +187,7 @@ title H(16px); right text 14px `#5b6475` `"about £{gbp0(revenue/days)} a day"` 
 Chart (single month): a **column chart, one bar per calendar day** of the month.
 - Plot: `display:flex; align-items:flex-end; gap:3px; height:170px; border-bottom:1px solid #e8ebf0; margin-top:8px`.
 - Bars: `flex:1`, colour `#4a6fd1`, no radius, height `max(3, v/max*100)%` where `v` = day's total
-  (card + till cash + own cash — **excludes** delivery apps), `max` = the month's max day.
+  (card + cash — **excludes** delivery apps), `max` = the month's max day.
 - Day with no row / zero: design sets `height:2px; background:transparent` — i.e. **invisible**, although
   the caption says "dashes". **Build: draw a 2px `#d5dae3` dash** so the caption is true.
 - Tooltip (`title`): `"{d}: £123.45"` or `"{d}: nothing entered"`.
@@ -230,6 +230,11 @@ April has sales but **zero expenses entered**, so it shows a large profit that i
 missing data — see the completeness rule in §4.6.
 
 ### 1.2 Sales (`m-sales`)
+
+> **Superseded for cash (DECISIONS 26, owner 2026-09-28):** the built Sales tab has ONE
+> "Cash" column and one "Cash" field in its "Add cash" drawer. The design's separate
+> "Square cash" / "Own cash" columns below (`sq`, `own`) are the design reference only;
+> wherever this spec says `sq + own`, the app has a single `cash_pence`.
 
 Grid (header, rows, total): `grid-template-columns:120px 60px repeat(4,minmax(0,1fr)) 80px 90px minmax(0,1.4fr) 20px`.
 Header row is `position:sticky; top:0; background:#fff`.
@@ -497,6 +502,8 @@ sale = { date:'YYYY-MM-DD', card:int, sqCash:int, ownCash:int, tx:int, note:stri
     not cash in the drawer. → import those as channel revenue (Just Eat), not till cash, so the cash
     reconciliation does not expect them in the drawer (open question to owner, §4.4).
   - "Square cash" = cash rung on the till; "Own cash" = cash sales **not** rung on the till.
+    **Superseded (DECISIONS 26, owner 2026-09-28):** the app keeps ONE cash figure per day,
+    "Cash" (`payment_day` CASH). The workbook's two columns are summed into it on import.
 
 ### 2.2 Cash declaration (Reconcile C, banner)
 
@@ -605,7 +612,7 @@ service/view · **MISSING** — needs new schema.
 |---|---|---|
 | Card takings per day | **EXISTS** (storage) | `payment_day` method CARD. Needs `basis` column (§3.3) and MANUAL/LEGACY source writes. |
 | Till ("Square") cash per day | **EXISTS** (storage) | `payment_day` method CASH. |
-| Own cash (off-till) per day | **MISSING** | New `PaymentMethod.CASH_OFF_TILL` on `payment_day` (keeps one takings table). |
+| Own cash (off-till) per day | **RETIRED** (DECISIONS 26) | Folded into the day's one Cash figure (`payment_day` CASH). `CASH_OFF_TILL` stays in the enum for old rows; nothing writes it. |
 | Orders (tx) per day | **DERIVABLE** + manual override | `COUNT(DISTINCT lightspeed_receipt_id)` over non-voided `sale` per local day; else `payment_day.transactions`; manual override in `trading_day.transactions_override`. |
 | Day note | **MISSING** | `trading_day.note`. |
 | Add / edit / delete a day | **MISSING** | services + endpoints (§5). |
@@ -636,8 +643,8 @@ All new tables use `enum_col(...)` (`cafeops/db/models/_common.py`), `Timestampe
 **Enums** (`db/models/enums.py`):
 ```python
 class PaymentMethod(enum.Enum):  # extend
-    CASH = "CASH"                     # rung on the till
-    CASH_OFF_TILL = "CASH_OFF_TILL"   # NEW: "Own cash" — sold without ringing
+    CASH = "CASH"                     # the day's one "Cash" figure (DECISIONS 26)
+    CASH_OFF_TILL = "CASH_OFF_TILL"   # RETIRED: was "Own cash"; never written, read as Cash
     CARD = "CARD"; VOUCHER = "VOUCHER"; ACCOUNT = "ACCOUNT"; OTHER = "OTHER"
 
 class PaymentSourceKind(enum.Enum):  # extend
@@ -682,7 +689,7 @@ class DirectorEntryType(enum.Enum): CAPITAL_INJECTION="CAPITAL_INJECTION"; LOAN_
 - `id` PK · `business_date: Date` unique · `counted_pence: int` CHECK ≥ 0 · `counted_by: String(120) | None` ·
   `counted_at: UTCDateTime` · `explanation: Text | None` · `explained_at: UTCDateTime | None` ·
   `source: FinanceSource` · `updated_at`.
-- Expected cash = `payment_day` CASH + CASH_OFF_TILL gross for that date (TILL basis only).
+- Expected cash = `payment_day` CASH (+ any legacy CASH_OFF_TILL) gross for that date (TILL basis only).
 
 **`card_payout`**
 - `id` PK · `sold_on: Date` unique (the trading day the card money belongs to) ·
@@ -735,7 +742,7 @@ append-only `finance_edit` log (table, row id, field, old, new, at) — not requ
 ### 3.5 Services (all writes here — CLAUDE.md §8)
 
 `cafeops/services/finance/` (sync, `Session` in; routes call via `asyncio.to_thread` like the rest):
-- `trading_days.py` — `upsert_day(date, card, till_cash, own_cash, transactions_override, note)`
+- `trading_days.py` — `create_day` / `update_day(date, card, cash, orders_override, note)` (one cash figure, DECISIONS 26)
   writes `payment_day` rows with `source=MANUAL, basis=TILL` (one per non-null method) and `trading_day`;
   `move_day(old, new)`; `delete_day(date)` (MANUAL/LEGACY rows only — CSV/POS rows are not user-deletable,
   the UI shows those inputs read-only with "from export").
@@ -762,10 +769,11 @@ New command `uv run cafeops import-finance --workbook sashas_corner_finance.xlsx
 - **Daily Sales** (header row 5): rows with any of D/E/G/I/K. D → `payment_day` CARD with
   `basis = BANK_DEPOSIT` for dates ≤ 2026-03-31 and `TILL` for April (README row 36); E → CASH (TILL),
   **except** rows whose note matches `/^Just Eat: £/` → `channel_statement`/`channel_metric` JUST_EAT
-  gross (commission/ads null) and no cash row; G (or F if G blank) → CASH_OFF_TILL when > 0; I →
+  gross (commission/ads null) and no cash row; G (or F if G blank) is **added to** E's CASH row
+  (one cash figure per day, DECISIONS 26 — never a separate CASH_OFF_TILL row); I →
   `payment_day.transactions` when > 0; K → `trading_day.note`. `source = LEGACY_WORKBOOK`,
   `source_ref = "Daily Sales!R{n}"`. 161 days.
-- **Cash Transactions**: empty in this workbook; if rows exist, sum per date into CASH_OFF_TILL (items are
+- **Cash Transactions**: empty in this workbook; if rows exist, sum per date into the day's CASH (items are
   not imported as `sale`, they have no receipt ids).
 - **Expenses** (header row 5, rows 6–500): B/C/D/E/F/G/H; amount via `Decimal(str(v)) * 100`, refuse
   non-2dp values; category name matched exactly (em dash); `kind` from the §2.3 regexes;
@@ -798,7 +806,8 @@ LEGACY; amend ARCHITECTURE §0 to say so.
 2. **"Square" wording.** The POS is Lightspeed K-Series; Square was the previous POS (ARCHITECTURE §0
    table row "§13.1"). Headers "Square cash £" and category "Square fees" are workbook legacy.
    Recommend "Till cash £" and "Card fees" (keep the import mapping "Square fees" → "Card fees");
-   confirm with owner — copy change only.
+   confirm with owner — copy change only. *(Owner later went further: just "Cash", one figure
+   per day — DECISIONS 26.)*
 3. **Invariant 8 (missing ≠ zero, estimates flagged).** Several design figures treat missing as zero:
    (a) Reconcile assumes unrecorded payouts arrived (§1.4 A) → treat as not recorded;
    (b) P&L/Overview sum channel revenue as 0 for months nobody uploaded → return the month's channel
@@ -886,8 +895,7 @@ interface PeriodFigures {
   trading_days: number
   expense_count: number
   card_pence: Pence
-  cash_till_pence: Pence
-  cash_off_till_pence: Pence
+  cash_pence: Pence                         // one cash figure (DECISIONS 26)
   delivery_gross_pence: Pence | null        // null = some app/month not reported
   revenue_pence: Pence                      // till takings + known delivery gross; incomplete=true if any delivery month is missing
   cogs_by_category: { category: string; pence: Pence }[]   // OPERATING only, non-zero
@@ -934,21 +942,20 @@ interface SalesDay {
   date: ISODate
   weekday: 'Mon'|'Tue'|'Wed'|'Thu'|'Fri'|'Sat'|'Sun'
   card_pence: Pence | null
-  cash_till_pence: Pence | null
-  cash_off_till_pence: Pence | null
+  cash_pence: Pence | null                 // the day's one Cash figure (DECISIONS 26)
   total_pence: Pence
   orders: number | null                    // override ?? derived from sales ?? payment_day.transactions
   orders_source: 'override' | 'pos' | 'payment_export' | null
   avg_ticket_pence: Pence | null
   note: string | null
   basis: 'TILL' | 'BANK_DEPOSIT' | 'MIXED'
-  editable: { card: boolean; cash_till: boolean; cash_off_till: boolean }   // false when a CSV/POS row wins
-  sources: { method: 'CARD'|'CASH'|'CASH_OFF_TILL'; source: Source; source_ref: string | null }[]
+  editable: { card: boolean; cash: boolean }   // false when a CSV/POS row wins
+  sources: { method: 'CARD'|'CASH'|'CASH_OFF_TILL'; source: Source; source_ref: string | null }[]   // CASH_OFF_TILL: legacy row, labelled "Cash"
 }
 interface SalesResponse {
   period: Period
   days: SalesDay[]                         // ascending
-  totals: { days: number; card_pence: Pence; cash_till_pence: Pence; cash_off_till_pence: Pence; total_pence: Pence; orders: number | null }
+  totals: { days: number; card_pence: Pence; cash_pence: Pence; total_pence: Pence; orders: number | null }
   caveats: string[]
 }
 POST   /api/finance/sales            body: SalesDayIn                         -> SalesDay     // 409 if the date exists
@@ -957,8 +964,7 @@ DELETE /api/finance/sales/:date                                               ->
 interface SalesDayIn {
   date: ISODate
   card_pence?: Pence | null
-  cash_till_pence?: Pence | null
-  cash_off_till_pence?: Pence | null
+  cash_pence?: Pence | null               // stored as CASH, MANUAL
   orders_override?: number | null
   note?: string | null
 }
@@ -1035,7 +1041,7 @@ interface ReconcileResponse {
   cash: {
     rows: {
       date: ISODate
-      till_pence: Pence                    // cash_till + cash_off_till
+      till_pence: Pence                    // the day's Cash (CASH + any legacy CASH_OFF_TILL)
       counted_pence: Pence | null
       diff_pence: Pence | null
       status: 'not_counted' | 'spot_on' | 'within' | 'out'   // out = |diff| > tolerance

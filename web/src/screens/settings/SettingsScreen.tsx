@@ -1,7 +1,9 @@
 /**
  * Settings (shell-agents.md §4.2–4.5, DECISIONS §3 and §5).
  *
- * Rows kept from the design: the shared password (safe version: current
+ * Rows kept from the design: the shared password -- the one sign-in for the back
+ * office and the website admin, which the site only reaches through here (owner,
+ * 2026-09-28) -- (safe version: current
  * password required, ≥ 10 characters, every other device signed out, Telegram
  * notice) and Lightspeed status with Sync now. "Show the empty-install screen"
  * became "Setup checklist". Dropped: the bot-language select (the bot has no
@@ -130,7 +132,10 @@ function PasswordRow({ data }: { data: SettingsResponse }) {
         ) : tooShort ? (
           <span className="text-ink-2">At least {min} characters.</span>
         ) : (
-          <span className="text-ink-2">{source} Changing it signs every other device out.</span>
+          <span className="text-ink-2">
+            The one password for the back office and the website admin. {source} Changing it signs every other
+            device out.
+          </span>
         )}
       </div>
     </form>

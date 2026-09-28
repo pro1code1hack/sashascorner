@@ -32,6 +32,13 @@
 		reverse_proxy api:8000
 	}
 
+	# ONE PASSWORD (owner, 2026-09-28). The site's admin API is reached only by the
+	# back office, which calls site-api:8100 directly on the compose network with
+	# X-Site-Service-Key after its own sign-in. From the internet it does not exist.
+	handle /api/admin* {
+		respond "Not found" 404
+	}
+
 	# The site API. Same origin as the pages, so no CORS in production.
 	handle /api/* {
 		# No header_up needed: with no `trusted_proxies` configured, Caddy ignores any
@@ -39,6 +46,17 @@
 		# is what sashasite's rate limit keys on (SITE_TRUST_PROXY=1).
 		reverse_proxy site-api:8100
 	}
+
+	# The old website admin (/admin, /admin/bookings, ...) lives in the back office's
+	# Website section now: one app, one password. Each page goes to its React route.
+	# SITE_OPS_URL is the back office's origin (repo-root .env, read via env_file).
+	map {path} {ops_admin_route} {
+		~^/admin/(bookings|messages|events|menu|photos)(\.html)?/?$ /website/${1}
+		~^/admin/settings(\.html)?/?$ /website/details
+		default /website
+	}
+	@oldadmin path /admin /admin/ /admin.html /admin/*
+	redir @oldadmin {$SITE_OPS_URL:https://ops.sashascorner.co.uk}/#{ops_admin_route} 302
 
 	# One URL per page: /menu.html and /index.html are the files, /menu and / are
 	# the canonical addresses. Redirect rather than serve the same page twice.

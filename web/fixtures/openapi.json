@@ -20057,13 +20057,10 @@
             "type": "integer",
             "title": "Card Pence"
           },
-          "cash_till_pence": {
+          "cash_pence": {
             "type": "integer",
-            "title": "Cash Till Pence"
-          },
-          "cash_off_till_pence": {
-            "type": "integer",
-            "title": "Cash Off Till Pence"
+            "title": "Cash Pence",
+            "description": "The period's cash (one figure per day)."
           },
           "delivery_gross_pence": {
             "anyOf": [
@@ -20231,8 +20228,7 @@
           "trading_days",
           "expense_count",
           "card_pence",
-          "cash_till_pence",
-          "cash_off_till_pence",
+          "cash_pence",
           "delivery_gross_pence",
           "delivery_missing",
           "revenue_pence",
@@ -22736,7 +22732,7 @@
             ],
             "title": "Card Pence"
           },
-          "cash_till_pence": {
+          "cash_pence": {
             "anyOf": [
               {
                 "type": "integer",
@@ -22746,19 +22742,8 @@
                 "type": "null"
               }
             ],
-            "title": "Cash Till Pence"
-          },
-          "cash_off_till_pence": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0.0
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cash Off Till Pence"
+            "title": "Cash Pence",
+            "description": "The day's cash taken. Stored as CASH."
           },
           "orders_override": {
             "anyOf": [
@@ -22826,7 +22811,7 @@
             ],
             "title": "Card Pence"
           },
-          "cash_till_pence": {
+          "cash_pence": {
             "anyOf": [
               {
                 "type": "integer"
@@ -22835,18 +22820,8 @@
                 "type": "null"
               }
             ],
-            "title": "Cash Till Pence"
-          },
-          "cash_off_till_pence": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cash Off Till Pence"
+            "title": "Cash Pence",
+            "description": "The day's one cash figure (DECISIONS 30). Null when none was reported."
           },
           "total_pence": {
             "type": "integer",
@@ -22926,8 +22901,7 @@
           "date",
           "weekday",
           "card_pence",
-          "cash_till_pence",
-          "cash_off_till_pence",
+          "cash_pence",
           "total_pence",
           "orders",
           "orders_source",
@@ -22965,7 +22939,7 @@
             ],
             "title": "Card Pence"
           },
-          "cash_till_pence": {
+          "cash_pence": {
             "anyOf": [
               {
                 "type": "integer",
@@ -22975,19 +22949,8 @@
                 "type": "null"
               }
             ],
-            "title": "Cash Till Pence"
-          },
-          "cash_off_till_pence": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0.0
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cash Off Till Pence"
+            "title": "Cash Pence",
+            "description": "The day's cash taken. Stored as CASH."
           },
           "orders_override": {
             "anyOf": [
@@ -23037,20 +23000,15 @@
             "type": "boolean",
             "title": "Card"
           },
-          "cash_till": {
+          "cash": {
             "type": "boolean",
-            "title": "Cash Till"
-          },
-          "cash_off_till": {
-            "type": "boolean",
-            "title": "Cash Off Till"
+            "title": "Cash"
           }
         },
         "type": "object",
         "required": [
           "card",
-          "cash_till",
-          "cash_off_till"
+          "cash"
         ],
         "title": "SalesEditableOut"
       },
@@ -23127,13 +23085,9 @@
             "type": "integer",
             "title": "Card Pence"
           },
-          "cash_till_pence": {
+          "cash_pence": {
             "type": "integer",
-            "title": "Cash Till Pence"
-          },
-          "cash_off_till_pence": {
-            "type": "integer",
-            "title": "Cash Off Till Pence"
+            "title": "Cash Pence"
           },
           "total_pence": {
             "type": "integer",
@@ -23155,8 +23109,7 @@
         "required": [
           "days",
           "card_pence",
-          "cash_till_pence",
-          "cash_off_till_pence",
+          "cash_pence",
           "total_pence",
           "orders"
         ],

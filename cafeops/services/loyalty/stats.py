@@ -62,7 +62,19 @@ from cafeops.db.models import (
 from cafeops.services.loyalty.campaigns import RETURN_WINDOW
 from cafeops.services.loyalty.common import DEFAULT_PROGRAM_SLUG, default_program, now_utc
 
-__all__ = ["DailySummary", "DayRow", "LoyaltyStats", "SourceRow", "daily_summary", "stats"]
+__all__ = [
+    "TARGET_METRICS",
+    "DailySummary",
+    "DayRow",
+    "LoyaltyStats",
+    "SourceRow",
+    "TargetMetric",
+    "TargetRow",
+    "daily_summary",
+    "set_targets",
+    "stats",
+    "target_rows",
+]
 
 
 @dataclass(frozen=True, slots=True)
@@ -428,3 +440,90 @@ def daily_summary(session: Session, *, day: date | None = None) -> DailySummary:
             )
         ),
     )
+
+
+# --------------------------------------------------------------------------
+# 90-day targets (SPEC: "Exact targets are an open question" -- the owner sets them)
+# --------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class TargetMetric:
+    key: str
+    label: str
+    #: "count" (whole number), "share" (0..1, shown as %) or "rate" (1 dp).
+    unit: str
+    #: Lower is better? None of today's metrics is, but the shape says so explicitly.
+    lower_is_better: bool = False
+
+
+#: The SPEC's success metrics that can carry a target, in reading order.
+TARGET_METRICS: tuple[TargetMetric, ...] = (
+    TargetMetric("members_total", "Members", "count"),
+    TargetMetric("opted_in_share", "Opted in to messages", "share"),
+    TargetMetric("stamp_share_of_transactions", "Transactions with a stamp", "share"),
+    TargetMetric("redemptions_per_week", "Redemptions a week", "rate"),
+    TargetMetric("visits_per_member_per_month", "Visits per member a month", "rate"),
+    TargetMetric("members_with_redemption_share", "Members with a reward redeemed", "share"),
+    TargetMetric("campaign_return_rate", "Came back after a message", "share"),
+    TargetMetric("repeat_rate_members", "Came back: members", "share"),
+)
+_BY_KEY = {m.key: m for m in TARGET_METRICS}
+
+
+@dataclass(frozen=True, slots=True)
+class TargetRow:
+    metric: TargetMetric
+    target: float | None
+    actual: float | None
+    #: actual / target, 0..n; None when either side is missing or the target is 0.
+    progress: float | None
+    met: bool | None
+
+
+def _actual(s: LoyaltyStats, key: str) -> float | None:
+    value = getattr(s, key)
+    return None if value is None else float(value)
+
+
+def target_rows(s: LoyaltyStats, targets: dict[str, object] | None) -> list[TargetRow]:
+    """Each metric with its target (if the owner set one) and how far along it is."""
+    stored = targets or {}
+    out: list[TargetRow] = []
+    for m in TARGET_METRICS:
+        raw = stored.get(m.key)
+        target = float(raw) if isinstance(raw, int | float) and not isinstance(raw, bool) else None
+        actual = _actual(s, m.key)
+        progress = actual / target if actual is not None and target else None
+        met = None if actual is None or target is None else actual >= target
+        out.append(TargetRow(metric=m, target=target, actual=actual, progress=progress, met=met))
+    return out
+
+
+def set_targets(
+    current: dict[str, object] | None, changes: dict[str, float | None]
+) -> dict[str, float]:
+    """The new targets map: `None` removes one. Raises ValueError with a sentence."""
+    merged: dict[str, float] = {
+        k: float(v)
+        for k, v in (current or {}).items()
+        if k in _BY_KEY and isinstance(v, int | float) and not isinstance(v, bool)
+    }
+    for key, value in changes.items():
+        metric = _BY_KEY.get(key)
+        if metric is None:
+            raise ValueError(f"There is no metric called {key!r}.")
+        if value is None:
+            merged.pop(key, None)
+            continue
+        if value < 0:
+            raise ValueError(f"{metric.label}: a target cannot be negative.")
+        if metric.unit == "share" and value > 1:
+            raise ValueError(f"{metric.label}: a share is at most 100%.")
+        if metric.unit == "count":
+            if value != int(value) or value > 1_000_000:
+                raise ValueError(f"{metric.label}: a whole number, please.")
+        elif value > 10_000:
+            raise ValueError(f"{metric.label}: that target is out of range.")
+        merged[key] = round(value, 4)
+    return merged

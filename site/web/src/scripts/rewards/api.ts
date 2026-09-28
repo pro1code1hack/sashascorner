@@ -37,6 +37,10 @@ export async function api<T>(
   const headers: Record<string, string> = { Accept: 'application/json' };
   if (opts.body !== undefined) headers['Content-Type'] = 'application/json';
   if (opts.token) headers['X-Card-Token'] = opts.token;
+  // A server that accepts the connection and never answers (a dead proxy, a stuck
+  // worker) must not leave a button spinning forever: give up and say so.
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
   try {
     const r = await fetch(path, {
       method,
@@ -44,12 +48,66 @@ export async function api<T>(
       body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
       cache: 'no-store',
       credentials: 'same-origin',
+      signal: ctrl.signal,
     });
     const body = r.status === 204 ? null : await r.json().catch(() => null);
     return shape<T>(r.status, body);
   } catch {
-    return { status: 0, ok: false, data: null, error: { error: 'network' } };
+    return { status: 0, ok: false, data: null, error: { error: ctrl.signal.aborted ? 'timeout' : 'network' } };
+  } finally {
+    clearTimeout(timer);
   }
+}
+
+const TIMEOUT_MS = 15_000;
+
+// ---- every error, in words ---------------------------------------------------------
+// One place turns any answer the loyalty API (or the proxy in front of it) can give into
+// a sentence for the customer. Server details from LoyaltyError are already written for
+// customers; FastAPI's own 422s and proxy failures are not, so they are translated here.
+const FIELD_WORDS: Record<string, string> = {
+  first_name: 'your first name',
+  email: 'your email address',
+  phone: 'your mobile number',
+  contact: 'the email or mobile number',
+  birthday_day: 'the birthday day',
+  birthday_month: 'the birthday month',
+  code: 'the code',
+  terms: 'the card rules box',
+  src: 'the link you followed',
+  ref: 'the invite link',
+  also_join: 'the extra cards',
+};
+const OPERATOR_ONLY = new Set(['program_missing', 'invalid_request', 'api_unreachable', 'http_502', 'http_503', 'http_504']);
+
+export function humanError(r: Pick<ApiResult<unknown>, 'status' | 'error'>): string {
+  const code = r.error?.error ?? '';
+  const detail = r.error?.detail;
+  if (r.status === 0) {
+    return code === 'timeout'
+      ? "The café's system took too long to answer. Please try again in a minute."
+      : "Couldn't reach the café. Check your connection and try again.";
+  }
+  if (r.status === 429) {
+    const secs = Number((detail ?? '').replace(/\D+/g, ' ').trim().split(' ')[0]);
+    const wait = secs > 0 ? (secs >= 90 ? `about ${Math.ceil(secs / 60)} minutes` : `${secs} seconds`) : 'a few minutes';
+    return `Too many tries from this connection. Please wait ${wait} and try again.`;
+  }
+  if (r.status === 422 && code === 'invalid_request') {
+    const field = (detail ?? '').split(':')[0].split('.').pop() ?? '';
+    const words = FIELD_WORDS[field];
+    return words ? `Please check ${words}: it doesn't look right.` : 'Please check the form and try again.';
+  }
+  if (r.status === 400 && code === 'rejected') {
+    return "We couldn't accept the form. If your browser filled in something for you, reload the page and try again.";
+  }
+  if (r.status === 401 || code === 'bad_token') return "This card link isn't valid on this device. Get your card back with your email or mobile number.";
+  if (code === 'program_missing' || code === 'program_closed') return 'The rewards card is not open yet. Please ask us at the till.';
+  if (code === 'api_unreachable' || r.status === 502 || r.status === 503 || r.status === 504) {
+    return "Our rewards system isn't answering right now. Please try again in a few minutes, or ask at the till.";
+  }
+  if (detail && !OPERATOR_ONLY.has(code) && r.status < 500) return detail;
+  return 'Something went wrong on our side. Please try again, or ask at the till.';
 }
 
 function shape<T>(status: number, body: unknown): ApiResult<T> {

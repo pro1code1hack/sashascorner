@@ -26,7 +26,7 @@ Nothing in this migration is effective-dated except where stated (`menu_item_pri
 
 | Enum | Members | New / changed |
 |---|---|---|
-| `PaymentMethod` | CASH, **CASH_OFF_TILL**, CARD, VOUCHER, ACCOUNT, OTHER | + CASH_OFF_TILL = "Own cash" (sold without ringing). CASH is "Till cash". |
+| `PaymentMethod` | CASH, **CASH_OFF_TILL**, CARD, VOUCHER, ACCOUNT, OTHER | CASH is the day's one **Cash** figure. CASH_OFF_TILL ("Own cash") is **retired** (DECISIONS 26): kept for old rows and migrations, never written, read as part of Cash. |
 | `PaymentSourceKind` | CSV_UPLOAD, POS_API, MANUAL, **LEGACY_WORKBOOK** | + LEGACY_WORKBOOK |
 | `PAYMENT_SOURCE_PRECEDENCE` (tuple constant) | POS_API > CSV_UPLOAD > MANUAL > LEGACY_WORKBOOK | new; see §2.1 |
 | `PaymentBasis` | TILL, BANK_DEPOSIT | new |
@@ -61,11 +61,12 @@ re-exports them.
 | Column | Type | Null | Default | Notes |
 |---|---|---|---|---|
 | `basis` | `PaymentBasis` | no | `TILL` (server default) | BANK_DEPOSIT = workbook Sep 2025–Mar 2026 card figures (a deposit on its deposit date). |
-| `method` | widened | | | accepts CASH_OFF_TILL |
+| `method` | widened | | | accepts CASH_OFF_TILL (legacy rows only; nothing writes it — DECISIONS 26) |
 | `source` | widened | | | accepts LEGACY_WORKBOOK |
 
-"Own cash" is a `payment_day` row with `method = CASH_OFF_TILL` — there is no own-cash
-column. The day's note and orders override are in `trading_day` (below), not here.
+**One cash figure per day** (DECISIONS 26): the day's Cash is a `payment_day` row with
+`method = CASH`. "Own cash" (`CASH_OFF_TILL`) is retired: never written; any old row is
+summed into Cash on every read, and typing a new cash figure removes it. The day's note and orders override are in `trading_day` (below), not here.
 
 **No double-counted takings — a read rule, not a column.** `payment_day` is unique on
 `(business_date, method, source)`, so MANUAL and CSV rows for one day/method can
@@ -184,7 +185,7 @@ CAPITAL_INJECTION never enters it). The API returns `capital_in_pence` separatel
 | `updated_at` | UTCDateTime | no | |
 
 CHECK `explanation_signed`: `explanation IS NULL OR (explained_by IS NOT NULL AND explained_at IS NOT NULL)`.
-Expected cash = resolved `payment_day` CASH + CASH_OFF_TILL gross for the date (TILL
+Expected cash = resolved `payment_day` CASH (+ any legacy CASH_OFF_TILL) gross for the date (TILL
 basis). Discrepancy is computed at read time, never stored, and is `None` when either
 side is missing. Banner: newest date with `|diff| > finance_setting.cash_tolerance_pence`
 and `explanation IS NULL`.
@@ -584,7 +585,7 @@ Note: the repo-root `cafeops.db` is at `3c41d7a9e2b0`, two revisions behind head
 ## 8. Reconciliations (spec disagreements, conservative choice taken)
 
 1. **Double-counted takings** (FIN 3.5): a precedence *rule* (`PAYMENT_SOURCE_PRECEDENCE`), not a column. FIN proposed none either; the caller's brief asked for "whatever precedence field" — the spec has only the rule.
-2. **Own cash / note / orders override**: FIN puts own cash in `payment_day` (CASH_OFF_TILL) and note/override in `trading_day`; followed FIN rather than adding them as `payment_day` columns (a note is per day, `payment_day` is per day *per method*).
+2. **Own cash / note / orders override**: FIN puts own cash in `payment_day` (CASH_OFF_TILL — since retired, DECISIONS 26: one CASH figure per day) and note/override in `trading_day`; followed FIN rather than adding them as `payment_day` columns (a note is per day, `payment_day` is per day *per method*).
 3. **Enum CHECK recreation** (FIN 3.4 step 1): not needed — these enums have no DB CHECK; only VARCHAR length was widened.
 4. **`expense_category.group`** → `expense_group` (SQL keyword).
 5. **`expense.method`** nullable and `ExpenseMethod.OTHER` added: the workbook's methods are free text; unmappable values are kept and labelled, not forced.

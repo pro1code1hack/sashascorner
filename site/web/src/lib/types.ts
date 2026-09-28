@@ -37,6 +37,8 @@ export interface Info {
   socials: { instagram: string; facebook: string; tiktok: string };
   booking: { max_party: number; slot_minutes: number; horizon_days: number; min_lead_minutes: number };
   confirmed: boolean;
+  /** Upcoming dates the café is shut, today onwards (YYYY-MM-DD). */
+  closures?: Array<{ date: string; note: string }>;
 }
 export interface Slot {
   time: string;

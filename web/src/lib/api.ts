@@ -1,11 +1,11 @@
 /**
  * The data layer.
  *
- * Live (`VITE_LIVE=1` or `VITE_API_BASE`): requests go to the API; auth is one
+ * Live (the default; `VITE_LIVE=1` or `VITE_API_BASE` also force it): requests go to the API; auth is one
  * shared password exchanged for a session token (see "auth" below), kept in
  * sessionStorage rather than localStorage because it is a shared laptop.
  *
- * Fixture mode (neither set): every GET through `request()` is answered from
+ * Fixture mode (opt-in, `VITE_FIXTURES=1` with no API base): every GET through `request()` is answered from
  * `web/fixtures/` -- real responses recorded by `cafeops api-fixtures`, not
  * samples -- via `lib/fixtures`, loaded lazily so they never weigh on the live
  * bundle. Writes answer `offline` and never pretend to have landed.
@@ -29,10 +29,14 @@ import type {
  * is why liveness cannot simply be "is the base non-empty".
  */
 export const API_BASE = (import.meta.env.VITE_API_BASE ?? '').replace(/\/+$/, '')
-export const LIVE = API_BASE !== '' || import.meta.env.VITE_LIVE === '1'
-/** The same decision written so the bundler can fold it: in a live build the
- *  fixture branch in `request()` is dropped, and no fixture chunk is emitted. */
-const FIXTURE_MODE = !import.meta.env.VITE_API_BASE && import.meta.env.VITE_LIVE !== '1'
+/** Fixture mode is opt-in (`VITE_FIXTURES=1`, and no API base): recorded
+ *  responses must never be what somebody sees by accident, so a plain
+ *  `npm run dev` / `npm run build` reads the live API. `VITE_LIVE=1` is still
+ *  accepted and wins over `VITE_FIXTURES`. Written so the bundler can fold it:
+ *  in a live build the fixture branch in `request()` is dropped. */
+const FIXTURE_MODE =
+  !import.meta.env.VITE_API_BASE && import.meta.env.VITE_LIVE !== '1' && import.meta.env.VITE_FIXTURES === '1'
+export const LIVE = !FIXTURE_MODE
 
 /* ------------------------------------------------------------- auth ---- *
  * One place decides how a request proves who it is: `authHeaders()`.

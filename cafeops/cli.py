@@ -214,6 +214,77 @@ def menu_import_board_cmd(
         session.close()
 
 
+@app.command(name="purge-demo")
+def purge_demo_cmd(
+    commit: Annotated[
+        bool, typer.Option("--commit/--dry-run", help="Delete for real. Default: dry run.")
+    ] = False,
+    bot_preview: Annotated[
+        bool,
+        typer.Option(
+            "--bot-preview",
+            help="Also remove what `cafeops bot-preview` wrote (actor telegram:sasha, 23 Sep).",
+        ),
+    ] = False,
+) -> None:
+    """Remove what `seed --demo` fabricated: DEMO- sales, their ledger, counts, batches.
+
+    Identifies rows only by the seeder's own markers (see services/purge_demo.py),
+    refuses if anything real depends on them, and never touches real imports,
+    menu, prices or configuration. Take a backup first:
+    sqlite3 cafeops.db ".backup backups/cafeops-before-purge.db"
+    """
+    from cafeops.services.purge_demo import purge_demo
+
+    session = SessionFactory()
+    try:
+        plan = purge_demo(session, commit=commit, include_bot_preview=bot_preview)
+    finally:
+        session.close()
+    for line in plan.lines():
+        console.print(line, markup=False, highlight=False)
+    if plan.refusals:
+        raise typer.Exit(code=2)
+    if plan.committed:
+        console.print(
+            "\n[green]deleted.[/green] Run `cafeops drift --backfill` and "
+            "`cafeops cost-rollup` next."
+        )
+    else:
+        console.print("\n[yellow]DRY RUN: nothing deleted. Re-run with --commit.[/yellow]")
+
+
+#: `seed --demo` fabricates 60 days of sales, deliveries and counts. On the café's
+#: real database that is indistinguishable from trade in every screen, so it runs
+#: only when asked twice: the flag AND this environment variable.
+DEMO_ENV = "CAFEOPS_ALLOW_DEMO_SEED"
+
+
+def _refuse_demo_unless_dev(command: str) -> None:
+    import os
+
+    if os.environ.get(DEMO_ENV) != "1":
+        console.print(
+            f"[red]{command} writes fake sales, stock and counts.[/red] It is for a "
+            f"development database only. Set {DEMO_ENV}=1 to run it on purpose."
+        )
+        raise typer.Exit(code=2)
+    from sqlalchemy import func, select
+
+    from cafeops.db.models import Sale
+
+    with session_scope() as session:
+        real = session.scalar(
+            select(func.count(Sale.id)).where(~Sale.lightspeed_receipt_id.like("DEMO-%"))
+        )
+    if real:
+        console.print(
+            f"[red]Refused: this database holds {real} real sale line(s).[/red] "
+            "Demo data would mix with them."
+        )
+        raise typer.Exit(code=2)
+
+
 def _workbook_path(workbook: Path | None) -> Path:
     path = workbook or settings.finance_workbook_path
     if path is None:
@@ -238,6 +309,9 @@ def seed(
 ) -> None:
     """Seed a working database. With --demo, a full scenario per spec 14."""
     from cafeops.seed.demo import seed_demo
+
+    if demo:
+        _refuse_demo_unless_dev("seed --demo")
 
     if workbook is not None or settings.finance_workbook_path is not None:
         from cafeops.seed.legacy import import_legacy

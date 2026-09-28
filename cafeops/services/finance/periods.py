@@ -65,8 +65,8 @@ class PeriodFigures:
     trading_days: int
     expense_count: int
     card_pence: int
-    cash_till_pence: int
-    cash_off_till_pence: int
+    #: The day's one cash figure summed (CASH + any legacy CASH_OFF_TILL; DECISIONS 26).
+    cash_pence: int
     delivery_gross_pence: int | None
     delivery_missing: list[str]
     revenue_pence: int
@@ -156,14 +156,14 @@ def period_figures(session: Session, period: Period) -> PeriodFigures:
     # --- takings ---------------------------------------------------------------
     resolved, disagreements = resolve_takings(session, since=since, until=until)
     caveats.extend(disagreements)
-    card = cash = off = 0
+    card = cash = 0
     trading_days = 0
     bank_basis = False
     days_by_month: dict[date, int] = defaultdict(int)
     for day, r in resolved.items():
         card += r.gross(PaymentMethod.CARD) or 0
-        cash += r.gross(PaymentMethod.CASH) or 0
-        off += r.gross(PaymentMethod.CASH_OFF_TILL) or 0
+        # One cash figure per day: a legacy own-cash row is folded in, never dropped.
+        cash += (r.gross(PaymentMethod.CASH) or 0) + (r.gross(PaymentMethod.CASH_OFF_TILL) or 0)
         if r.till_total_pence > 0:
             trading_days += 1
             days_by_month[day.replace(day=1)] += 1
@@ -209,7 +209,7 @@ def period_figures(session: Session, period: Period) -> PeriodFigures:
     for what, ms in unreported.items():
         caveats.append(f"{what} not reported for {_join(ms)}; left out, not counted as zero.")
 
-    revenue = card + cash + off + (delivery_gross or 0)
+    revenue = card + cash + (delivery_gross or 0)
 
     # --- expenses --------------------------------------------------------------
     exp_rows = session.execute(
@@ -294,8 +294,7 @@ def period_figures(session: Session, period: Period) -> PeriodFigures:
         trading_days=trading_days,
         expense_count=len(exp_rows),
         card_pence=card,
-        cash_till_pence=cash,
-        cash_off_till_pence=off,
+        cash_pence=cash,
         delivery_gross_pence=delivery_gross,
         delivery_missing=delivery_missing,
         revenue_pence=revenue,

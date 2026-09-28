@@ -292,17 +292,28 @@ def doctor(
         else f"cafe facts UNCONFIRMED placeholders: {', '.join(cafe.unconfirmed_fields)}",
         hard=False,
     )
-    source_note = {
-        "db": "admin password: set in the DB (SITE_ADMIN_PASSWORD is ignored)",
-        "env": "admin password: bootstrap from SITE_ADMIN_PASSWORD; "
-        "set a real one with `sashasite admin-password`",
-    }
-    line(
-        source is not None,
-        source_note.get(source or "", "admin password NOT set: admin sign-in answers 503"),
-        hard=False,
-    )
-    typer.echo(f"[info] active admin sessions: {n_sessions}")
+    # One password (owner, 2026-09-28): the website admin is reached only through the
+    # back office. Without SITE_SERVICE_KEY the site's own password is still a door.
+    if s.service_key:
+        line(
+            True,
+            "admin access: only through the back office (SITE_SERVICE_KEY set); the "
+            f"site's own password and cookie sign-in are off. Admin: {s.ops_url}/#/website",
+        )
+        if source is not None or n_sessions:
+            typer.echo(
+                "[info] a leftover site password/sessions exist but are refused; "
+                "`sashasite admin-sessions --revoke-all` tidies the sessions"
+            )
+    else:
+        line(
+            False,
+            "SITE_SERVICE_KEY not set: the back office cannot reach the website admin, and "
+            "the site's own password/cookie sign-in is still a separate way in "
+            f"(password {'set' if source else 'NOT set'}; {n_sessions} active session(s)). "
+            "Set SITE_SERVICE_KEY in .env to the same long random value for both apps.",
+            hard=False,
+        )
     line(
         s.telegram_configured,
         "telegram configured: "
@@ -408,12 +419,21 @@ def admin_password(
         False, "--clear", help="Remove the DB password: SITE_ADMIN_PASSWORD bootstraps again"
     ),
 ) -> None:
-    """Set the owner's admin password (prompts twice). Signs out every session."""
+    """DEV ONLY: the site's own admin password, used only while SITE_SERVICE_KEY is
+    unset. With the key set the back office's password is the one in force."""
     import getpass
 
     from sashasite import auth
     from sashasite.db import session_scope
 
+    if not clear and not auth.cookie_login_enabled():
+        typer.echo(
+            "refused: SITE_SERVICE_KEY is set, so the website admin is reached only through "
+            "the back office and uses its password. Change it in the back office's Settings "
+            "(or `cafeops password reset`).",
+            err=True,
+        )
+        raise typer.Exit(1)
     if clear:
         with session_scope(immediate=True) as session:
             had = auth.clear_password(session)

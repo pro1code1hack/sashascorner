@@ -413,7 +413,20 @@ def _ops_snapshot(
         cat = (r.category or "").strip()
         grouped.setdefault((cat, r.name), []).append(r)
 
+    # What the printed board says about an item beyond its price -- the customer
+    # note ("+ £1 chicken", "Order ahead") and the category's seasonal label --
+    # has no back-office column, so ops mode keeps it from the board, matched by
+    # normalised name or alias. Prices, names and sizes still come from ops.
+    board_info: dict[str, tuple[str | None, str | None, str | None, bool]] = {}
+    for bcat in board.category:
+        for bitem in bcat.items:
+            info = (bitem.note, bcat.seasonal, bitem.description, bitem.signature)
+            for alias in (bitem.n, board.aliases.get(bitem.n)):
+                if alias:
+                    board_info.setdefault(normalise(alias), info)
+
     def make_item(name: str, group: list[Any]) -> SourceItem:
+        b_note, b_season, b_desc, b_sig = board_info.get(normalise(name), (None, None, None, False))
         srow = next((g for g in group if g.season_name is not None), None)
         season = None
         if srow is not None:
@@ -422,6 +435,8 @@ def _ops_snapshot(
             season = SeasonInfo(
                 srow.season_name, start, end, recurring, in_season(start, end, recurring, today)
             )
+        elif b_season:
+            season = SeasonInfo(b_season, None, None, False, True)
         note = next(
             (g.note for g in group if shape.has_note and g.note and str(g.note).strip()), None
         )
@@ -430,8 +445,9 @@ def _ops_snapshot(
             id="",
             name=name,
             sizes=_ops_sizes(group),
-            web=_web(overlay.items.get(name), None, False),
+            web=_web(overlay.items.get(name), b_desc, b_sig),
             season=season,
+            board_note=b_note,
             ops_note=note,
             has_photo=shape.has_photo and any(g.photo_asset_id is not None for g in group),
             natural=(rank.get(normalise(name), 1_000_000), name.casefold(), name),
@@ -444,6 +460,10 @@ def _ops_snapshot(
         item = make_item(name, group)
         (by_cat.setdefault(cat, []) if cat else unassigned).append(item)
 
+    # The board's slugs are the site's stable URLs (/menu#hot-matcha, photo slots
+    # `menu.<slug>`). A back-office category with the board's name keeps that slug
+    # unless the overlay sets another, so switching to ops breaks no link.
+    board_slugs = {c.name.casefold(): c.slug for c in board.category}
     cats: list[SourceCategory] = []
     loose: list[str] = []
     for name, items in by_cat.items():
@@ -458,7 +478,9 @@ def _ops_snapshot(
         cats.append(
             SourceCategory(
                 name=name,
-                slug=(meta.slug if meta and meta.slug else "") or slugify(name),
+                slug=(meta.slug if meta and meta.slug else "")
+                or board_slugs.get(name.casefold(), "")
+                or slugify(name),
                 kind=str(ops_row.kind) if ops_row is not None else None,
                 blurb=meta.blurb if meta else None,
                 hidden=bool(meta and meta.hidden),

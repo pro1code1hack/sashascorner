@@ -1,14 +1,15 @@
 # Website admin — contract (phase 3)
 
-> **Moved 2026-09-28.** The owner's screens for this API now live in the ops back office
-> (Website group, `web/src/screens/website/`, DECISIONS.md §25), which forwards to the
-> `/api/admin/*` routes below with `X-Site-Service-Key` instead of the `sc_admin` cookie.
-> The API contract below still holds; the Design and Pages sections describe the old
-> `/admin` pages on the site.
+> **Moved 2026-09-28; one password since 2026-09-28.** The owner's screens for this API
+> live in the ops back office (Website group, `web/src/screens/website/`, DECISIONS.md
+> §25), which forwards to the `/api/admin/*` routes below with `X-Site-Service-Key`.
+> The back office's password is the **only** password: with `SITE_SERVICE_KEY` set the
+> site refuses its own sign-in (see Auth), Caddy answers 404 for `/api/admin*` from the
+> internet (the back office calls `site-api:8100` directly), and the site's old `/admin`
+> pages redirect to `{SITE_OPS_URL}/#/website/...`. The API contract below still holds;
+> the Design and Pages sections are history.
 
-The owner's admin for the public website, at `/admin/*`. It is separate from the ops
-back office in `../cafeops` (being redesigned by another session; do not touch
-`cafeops/` or `web/` at the repo root). Read `BRIEF.md` first for facts and rules.
+The owner's admin for the public website. Read `BRIEF.md` first for facts and rules.
 
 ## Design
 
@@ -23,26 +24,23 @@ targets, chips, uppercase labels) still follow `../docs/design/specs/design-syst
 sidebar. Don't use a dashboard KPI-tile grid. Every screen has to work on a phone
 (375px): the owner will check bookings there.
 
-## Auth (replaces HTTP Basic everywhere)
+## Auth: the back office's service key (one password)
 
-- One owner password, scrypt-hashed in the table `site_admin_credential`, which takes
-  precedence over `SITE_ADMIN_PASSWORD` (the env var only bootstraps the first login).
-  - CLI: `sashasite admin-password` (prompts, and sets the DB hash).
-- Sessions live in `site_admin_session`: store a hash of a random token, never the
-  token itself.
-  - The cookie is `sc_admin`: HttpOnly, SameSite=Strict, Path=/api. It is `Secure`
-    when the request is https or `SITE_COOKIE_SECURE=1`.
-  - Sessions last 14 days, extended on use.
-- `POST /api/admin/login {password}` → 200 `{ok: true}` + cookie; wrong password → 401.
-  Rate limit: 5 attempts per minute per IP → 429.
-- `POST /api/admin/logout` → 204, and revokes this session.
+- **Production (`SITE_SERVICE_KEY` set, the same value in both apps' `.env`).** Every
+  `/api/admin/*` route accepts only the header `X-Site-Service-Key: <key>`, which the
+  back office adds after its own sign-in (`cafeops/api/areas/website.py`). Cookie
+  sessions are ignored; `POST /api/admin/login` and `POST /api/admin/password` answer
+  **410** pointing at `{SITE_OPS_URL}/#/website`; `sashasite admin-password` refuses.
+  The password to change is the back office's (Settings, or `cafeops password reset`).
+- **Dev fallback (no service key).** The old owner password still works so a site-only
+  checkout can be poked with curl: scrypt hash in `site_admin_credential`, bootstrapped
+  by `SITE_ADMIN_PASSWORD`; `sc_admin` cookie (HttpOnly, SameSite=Strict, Path=/api),
+  14 days. `sashasite doctor` warns that this is a second way in until the key is set.
 - `GET /api/admin/me` → 200 `{authenticated: true, password_source: "db"|"env"}`, or 401.
-- `POST /api/admin/password {current, new}` (new must be ≥10 chars) → revokes every
-  session, issues a fresh one for the caller, writes an audit row, and sends a Telegram
-  notice (in Russian).
 - **CSRF:** every non-GET `/api/admin/*` request must send the header `X-Admin: 1`,
-  or it gets a 403.
-- Audit: `site_admin_audit(at, action, detail_json, ip)` records every write.
+  or it gets a 403 (the back office sends it).
+- Audit: `site_admin_audit(at, action, detail_json, ip)` records every write; the IP is
+  the browser's, from the back office's `X-Forwarded-For`.
 - A 401 **never** sends `WWW-Authenticate`.
 
 ## Bookings
@@ -102,13 +100,12 @@ and `site_menu_item_meta(item_name, description, signature, hidden, position)`.
 ## Photos
 
 The existing `/api/admin/media*` and `/api/admin/slots*` endpoints stay, but use the
-session auth. The photo UI moves into the shell at `/admin/photos`.
+same admin auth. The photo UI is the back office's Website › Photos.
 
 ## Pages
 
-These pages sit on one shell layout, `web/src/layouts/Admin.astro`, with a sidebar on
-desktop and a bottom tab bar on phones:
-- `/admin` (sign-in when logged out, otherwise the dashboard)
-- `/admin/bookings`, `/admin/messages`, `/admin/menu`, `/admin/photos`, `/admin/settings`
-
-All of them are noindex and are already excluded from the sitemap and robots.
+The site's own `/admin` pages are gone. `/admin` and `/admin/*` redirect (Caddy in
+production, stub pages in `web/src/pages/admin/` for `astro dev`) to the back office:
+`/admin` → `#/website`, `/admin/bookings|messages|events|menu|photos` → `#/website/<same>`,
+`/admin/settings` → `#/website/details`. The origin is `SITE_OPS_URL` (default
+`https://ops.sashascorner.co.uk`; `http://localhost:5178` under `astro dev`).

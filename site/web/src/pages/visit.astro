@@ -245,11 +245,22 @@ const faqJsonLd = {
 </Base>
 
 <script>
+  import { clock } from '../lib/format';
+  import { liveInfo } from '../lib/live-info';
+
   // Today's row in the hours table, on the café's clock.
   const wd = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].indexOf(
     new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', weekday: 'short' }).format(new Date()),
   );
   document.querySelector(`.hours tr[data-weekday="${wd}"]`)?.classList.add('is-today');
+  // The table is baked at build time; hours are edited in the back office, so each
+  // day's cell follows /api/info when it answers.
+  liveInfo().then((live) => {
+    for (const h of live?.hours ?? []) {
+      const td = document.querySelector(`.hours tr[data-weekday="${h.weekday}"] td`);
+      if (td) td.textContent = h.closed || !h.open || !h.close ? 'Closed' : `${clock(h.open)} – ${clock(h.close)}`;
+    }
+  });
 
   // ---- contact form ------------------------------------------------------
   const TOPICS = ['general', 'order', 'events', 'feedback', 'press', 'jobs'];

@@ -1,5 +1,5 @@
 /**
- * Fixture mode (VITE_LIVE unset, no VITE_API_BASE): every GET is answered from
+ * Fixture mode (opt-in: VITE_FIXTURES=1, no VITE_LIVE, no VITE_API_BASE): every GET is answered from
  * `web/fixtures/`, the real responses `cafeops api-fixtures` recorded, instead of
  * the network. `request()` calls this, so a screen reads the same way in both
  * modes and there is one place that knows about fixtures.

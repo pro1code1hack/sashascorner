@@ -125,8 +125,7 @@ class PeriodFiguresOut(Out):
     trading_days: int
     expense_count: int
     card_pence: Pence
-    cash_till_pence: Pence
-    cash_off_till_pence: Pence
+    cash_pence: Pence = Field(description="The period's cash (one figure per day).")
     delivery_gross_pence: Pence | None = Field(
         description="Known delivery-app customer totals. Null when none known."
     )
@@ -228,16 +227,16 @@ class SalesSourceOut(Out):
 
 class SalesEditableOut(Out):
     card: bool
-    cash_till: bool
-    cash_off_till: bool
+    cash: bool
 
 
 class SalesDayOut(Out):
     date: dt.date
     weekday: str
     card_pence: Pence | None
-    cash_till_pence: Pence | None
-    cash_off_till_pence: Pence | None
+    cash_pence: Pence | None = Field(
+        description="The day's one cash figure (DECISIONS 26). Null when none was reported."
+    )
     total_pence: Pence
     orders: int | None
     orders_source: Literal["override", "pos", "payment_export"] | None
@@ -251,8 +250,7 @@ class SalesDayOut(Out):
 class SalesTotalsOut(Out):
     days: int
     card_pence: Pence
-    cash_till_pence: Pence
-    cash_off_till_pence: Pence
+    cash_pence: Pence
     total_pence: Pence
     orders: int | None
 
@@ -267,8 +265,9 @@ class SalesResponse(Out):
 class SalesDayIn(In):
     date: dt.date
     card_pence: Pence | None = Field(default=None, ge=0)
-    cash_till_pence: Pence | None = Field(default=None, ge=0)
-    cash_off_till_pence: Pence | None = Field(default=None, ge=0)
+    cash_pence: Pence | None = Field(
+        default=None, ge=0, description="The day's cash taken. Stored as CASH."
+    )
     orders_override: int | None = Field(default=None, ge=0)
     note: str | None = Field(default=None, max_length=2000)
     operator: str | None = Field(default=None, max_length=120)
@@ -279,8 +278,9 @@ class SalesDayPatch(In):
 
     date: dt.date | None = None
     card_pence: Pence | None = Field(default=None, ge=0)
-    cash_till_pence: Pence | None = Field(default=None, ge=0)
-    cash_off_till_pence: Pence | None = Field(default=None, ge=0)
+    cash_pence: Pence | None = Field(
+        default=None, ge=0, description="The day's cash taken. Stored as CASH."
+    )
     orders_override: int | None = Field(default=None, ge=0)
     note: str | None = Field(default=None, max_length=2000)
     operator: str | None = Field(default=None, max_length=120)

@@ -40,7 +40,7 @@ settings (`SITE_*`) are listed in `backend/README.md`.
 
 ```bash
 cd site/backend
-uv run sashasite menu-export --out ../web/src/data/menu.json   # menu baked into the HTML
+uv run sashasite menu-export --out ../web/src/data/menu.json   # menu baked into the HTML (from the live DB)
 uv run sashasite info-export --out ../web/src/data/info.json   # address, hours, socials
 cd ../web
 npm run build                      # -> web/dist (static HTML, sitemap, robots.txt)
@@ -70,7 +70,7 @@ values. `deploy/README.md` covers that, plus the shared-database warnings.
 | what | where | notes |
 |---|---|---|
 | Café facts: name, phone, address, geo, hours, socials, booking rules | `backend/config/cafe.toml` | `unconfirmed_fields` lists what is still a guess |
-| Menu and prices | `backend/config/menu_board.toml` | The source of truth for the site, transcribed from the café's TV boards. Validated at startup. `-` means that size isn't sold |
+| Menu and prices | the back office (ops `menu_item` / `menu_category` in `cafeops.db`) | The source of truth for the site once the ops menu has categories: names, sizes and prices come from the back office, so a price changed there reaches `/api/menu` within a minute and the baked HTML on the next `menu-export` + build. `backend/config/menu_board.toml` (transcribed from the café's TV boards) is the fallback when the ops menu has no categories, and still supplies the extras list, category slugs, customer notes and seasonal labels. Bring ops up to the boards with `uv run cafeops menu-import-board --dry-run`; `sashasite doctor` lists remaining price drift |
 | Real photos | `web/public/img/cafe/*.webp` | The only images that may show the café's food or rooms |
 | Mood images from the brand book | `web/public/img/*.webp` | Stock pictures, never presented as the café's food. No page uses them at present |
 | Logo files | `web/public/brand/` | `logo.svg`, `logo-reverse.svg` (on olive), `logo-mono.svg`, `lineart.svg` |
@@ -82,8 +82,9 @@ values. `deploy/README.md` covers that, plus the shared-database warnings.
 
 - [ ] **Register the domain.** The site assumes `https://sashascorner.co.uk`. If you
       buy a different one, set `SITE_PUBLIC_URL`, `SITE_DOMAIN` and
-      `SITE_CORS_ORIGINS` in `.env`, and change the `Sitemap:` line in
-      `web/public/robots.txt`. Point both the bare domain and `www` at the server.
+      `SITE_CORS_ORIGINS` in `.env`. `robots.txt` is generated from the site origin
+      (`web/src/pages/robots.txt.ts`), so its `Sitemap:` line follows by itself.
+      Point both the bare domain and `www` at the server.
 - [ ] **Add the website to the Google Business Profile.** The profile currently shows
       "Add website". Enter the site's address there, and for the booking link use `/book`.
 - [ ] **Set up a mailbox** on the domain, e.g. hello@sashascorner.co.uk. Then put it in
@@ -101,6 +102,11 @@ values. `deploy/README.md` covers that, plus the shared-database warnings.
       `web/public/img/cafe/` as WebP, about 1400px on the long side.
 - [ ] **Confirm the booking rules** in `cafe.toml` (covers per slot, duration, lead
       time). Then set `confirmed = true`.
-- [ ] **Set `SITE_ADMIN_PASSWORD`** so that `/api/admin/*` can be used.
+- [ ] **Set `SITE_SERVICE_KEY`** (one long random value in the root `.env`, read by both
+      apps) and **`SITE_OPS_URL`** (the back office's origin, e.g.
+      `https://ops.sashascorner.co.uk`). The website admin is the back office's Website
+      section, behind the back office's one password; `/admin` on the site redirects
+      there, and without the key the site's old password is still a separate way in
+      (`sashasite doctor` warns).
 - [ ] **Submit the sitemap** (`/sitemap-index.xml`) in Google Search Console once the
       domain is live.

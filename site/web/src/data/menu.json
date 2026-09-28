@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-09-28T11:12:50.876771Z",
-  "source": "board",
-  "version": "57aa7188cb1e",
+  "generated_at": "2026-09-28T16:43:31.318488Z",
+  "source": "ops",
+  "version": "16c7cdd9428b",
   "categories": [
     {
       "slug": "autumn",
@@ -27,29 +27,6 @@
               "code": "M",
               "label": "Medium",
               "price_pence": 500
-            }
-          ],
-          "photo": null
-        },
-        {
-          "id": "iced-biscoff-hojicha",
-          "name": "Iced Biscoff hojicha",
-          "description": null,
-          "note": null,
-          "signature": false,
-          "seasonal": {
-            "name": "Autumn"
-          },
-          "sizes": [
-            {
-              "code": "S",
-              "label": "Small",
-              "price_pence": 460
-            },
-            {
-              "code": "M",
-              "label": "Medium",
-              "price_pence": 480
             }
           ],
           "photo": null
@@ -88,8 +65,8 @@
           },
           "sizes": [
             {
-              "code": "M",
-              "label": "Medium",
+              "code": "One",
+              "label": "One size",
               "price_pence": 500
             }
           ],
@@ -146,7 +123,7 @@
     {
       "slug": "ube",
       "name": "Ube",
-      "blurb": "Purple yam lattes, hot or over ice.",
+      "blurb": "",
       "items": [
         {
           "id": "pure-ube-latte",
@@ -251,7 +228,7 @@
       "items": [
         {
           "id": "black-americano",
-          "name": "Black americano",
+          "name": "Black Americano",
           "description": null,
           "note": null,
           "signature": false,
@@ -277,7 +254,7 @@
         },
         {
           "id": "white-americano",
-          "name": "White americano",
+          "name": "White Americano",
           "description": null,
           "note": null,
           "signature": false,
@@ -355,7 +332,7 @@
         },
         {
           "id": "raff-coffee",
-          "name": "Raff coffee",
+          "name": "Raff Coffee",
           "description": "Espresso steamed with cream and vanilla sugar — an Eastern European café favourite.",
           "note": null,
           "signature": true,
@@ -407,7 +384,7 @@
         },
         {
           "id": "white-mocha",
-          "name": "White mocha",
+          "name": "White Mocha",
           "description": null,
           "note": null,
           "signature": false,
@@ -433,7 +410,7 @@
         },
         {
           "id": "orange-americano",
-          "name": "Orange americano",
+          "name": "Orange Americano",
           "description": null,
           "note": null,
           "signature": false,
@@ -459,7 +436,7 @@
         },
         {
           "id": "chai-latte",
-          "name": "Chai latte",
+          "name": "Chai Latte",
           "description": null,
           "note": null,
           "signature": false,
@@ -485,7 +462,7 @@
         },
         {
           "id": "hot-chocolate",
-          "name": "Hot chocolate",
+          "name": "Hot Chocolate",
           "description": null,
           "note": null,
           "signature": false,
@@ -511,7 +488,7 @@
         },
         {
           "id": "white-hot-chocolate",
-          "name": "White hot chocolate",
+          "name": "White Hot Chocolate",
           "description": null,
           "note": null,
           "signature": false,
@@ -544,7 +521,7 @@
       "items": [
         {
           "id": "single-espresso",
-          "name": "Single espresso",
+          "name": "Single Espresso",
           "description": null,
           "note": null,
           "signature": false,
@@ -560,7 +537,7 @@
         },
         {
           "id": "double-espresso",
-          "name": "Double espresso",
+          "name": "Double Espresso",
           "description": null,
           "note": null,
           "signature": false,
@@ -576,7 +553,7 @@
         },
         {
           "id": "single-macchiato",
-          "name": "Single macchiato",
+          "name": "Single Macchiato",
           "description": null,
           "note": null,
           "signature": false,
@@ -592,7 +569,7 @@
         },
         {
           "id": "double-macchiato",
-          "name": "Double macchiato",
+          "name": "Double Macchiato",
           "description": null,
           "note": null,
           "signature": false,
@@ -607,8 +584,8 @@
           "photo": null
         },
         {
-          "id": "single-espresso-con-panna",
-          "name": "Single espresso con panna",
+          "id": "single-espresso-con-pana",
+          "name": "Single Espresso Con Pana",
           "description": null,
           "note": null,
           "signature": false,
@@ -623,8 +600,8 @@
           "photo": null
         },
         {
-          "id": "double-espresso-con-panna",
-          "name": "Double espresso con panna",
+          "id": "double-espresso-con-pana",
+          "name": "Double Espresso Con Pana",
           "description": null,
           "note": null,
           "signature": false,
@@ -656,7 +633,7 @@
         },
         {
           "id": "mocha-cortado",
-          "name": "Mocha cortado",
+          "name": "Mocha Cortado",
           "description": null,
           "note": null,
           "signature": false,
@@ -672,7 +649,7 @@
         },
         {
           "id": "flat-white",
-          "name": "Flat white",
+          "name": "Flat White",
           "description": null,
           "note": null,
           "signature": false,
@@ -695,7 +672,7 @@
       "items": [
         {
           "id": "honey-vanilla-latte",
-          "name": "Honey vanilla latte",
+          "name": "Honey Vanilla Latte",
           "description": "Pure honey and vanilla with a smooth espresso.",
           "note": null,
           "signature": true,
@@ -720,8 +697,8 @@
           "photo": null
         },
         {
-          "id": "lavender-latte",
-          "name": "Lavender latte",
+          "id": "butterfly-lavender-latte",
+          "name": "Butterfly (lavender) Latte",
           "description": "Espresso, creamy milk and a fresh note of lavender.",
           "note": null,
           "signature": false,
@@ -747,7 +724,7 @@
         },
         {
           "id": "rose-latte",
-          "name": "Rose latte",
+          "name": "Rose Latte",
           "description": null,
           "note": null,
           "signature": false,
@@ -766,14 +743,14 @@
             {
               "code": "XL",
               "label": "Large",
-              "price_pence": 430
+              "price_pence": 440
             }
           ],
           "photo": null
         },
         {
           "id": "pistachio-latte",
-          "name": "Pistachio latte",
+          "name": "Pistachio Latte",
           "description": null,
           "note": null,
           "signature": false,
@@ -799,7 +776,7 @@
         },
         {
           "id": "salted-caramel-latte",
-          "name": "Salted caramel latte",
+          "name": "Salted Caramel Latte",
           "description": null,
           "note": null,
           "signature": false,
@@ -808,7 +785,7 @@
             {
               "code": "S",
               "label": "Small",
-              "price_pence": 400
+              "price_pence": 390
             },
             {
               "code": "M",
@@ -818,14 +795,14 @@
             {
               "code": "XL",
               "label": "Large",
-              "price_pence": 430
+              "price_pence": 440
             }
           ],
           "photo": null
         },
         {
           "id": "rose-white-mocha",
-          "name": "Rose white mocha",
+          "name": "Rose White Mocha",
           "description": null,
           "note": null,
           "signature": false,
@@ -851,7 +828,7 @@
         },
         {
           "id": "blue-vanilla-matcha",
-          "name": "Blue vanilla matcha",
+          "name": "Blue Vanilla Matcha",
           "description": "Blue matcha and vanilla — warms you up on any day.",
           "note": null,
           "signature": false,
@@ -877,7 +854,7 @@
         },
         {
           "id": "blue-lavender-matcha",
-          "name": "Blue lavender matcha",
+          "name": "Blue Lavender Matcha",
           "description": null,
           "note": null,
           "signature": false,
@@ -903,7 +880,7 @@
         },
         {
           "id": "blue-honey-matcha",
-          "name": "Blue honey matcha",
+          "name": "Blue Honey Matcha",
           "description": null,
           "note": null,
           "signature": false,
@@ -929,7 +906,7 @@
         },
         {
           "id": "black-honey",
-          "name": "Black honey",
+          "name": "Black Honey",
           "description": null,
           "note": null,
           "signature": false,
@@ -955,7 +932,7 @@
         },
         {
           "id": "lavender-hot-chocolate",
-          "name": "Lavender hot chocolate",
+          "name": "Lavender Hot Chocolate",
           "description": null,
           "note": null,
           "signature": false,
@@ -981,7 +958,7 @@
         },
         {
           "id": "pistachio-hot-chocolate",
-          "name": "Pistachio hot chocolate",
+          "name": "Pistachio Hot Chocolate",
           "description": null,
           "note": null,
           "signature": false,
@@ -1007,7 +984,7 @@
         },
         {
           "id": "rose-hot-chocolate",
-          "name": "Rose hot chocolate",
+          "name": "Rose Hot Chocolate",
           "description": null,
           "note": null,
           "signature": false,
@@ -1026,14 +1003,14 @@
             {
               "code": "XL",
               "label": "Large",
-              "price_pence": 440
+              "price_pence": 460
             }
           ],
           "photo": null
         },
         {
           "id": "raspberry-hot-chocolate",
-          "name": "Raspberry hot chocolate",
+          "name": "Raspberry Hot Chocolate",
           "description": "A properly fruity hot chocolate.",
           "note": null,
           "signature": false,
@@ -1065,8 +1042,8 @@
       "blurb": "Whisked fresh in front of you.",
       "items": [
         {
-          "id": "matcha-latte",
-          "name": "Matcha latte",
+          "id": "hot-matcha",
+          "name": "Hot Matcha",
           "description": null,
           "note": null,
           "signature": false,
@@ -1091,8 +1068,8 @@
           "photo": null
         },
         {
-          "id": "strawberry-matcha",
-          "name": "Strawberry matcha",
+          "id": "hot-strawberry-matcha",
+          "name": "Hot Strawberry Matcha",
           "description": null,
           "note": null,
           "signature": false,
@@ -1117,8 +1094,8 @@
           "photo": null
         },
         {
-          "id": "vanilla-matcha",
-          "name": "Vanilla matcha",
+          "id": "hot-vanilla-matcha",
+          "name": "Hot Vanilla Matcha",
           "description": null,
           "note": null,
           "signature": false,
@@ -1143,8 +1120,34 @@
           "photo": null
         },
         {
-          "id": "banana-matcha",
-          "name": "Banana matcha",
+          "id": "hot-banana-matcha",
+          "name": "Hot banana matcha",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 360
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 400
+            },
+            {
+              "code": "XL",
+              "label": "Large",
+              "price_pence": 420
+            }
+          ],
+          "photo": null
+        },
+        {
+          "id": "hot-lavender-matcha",
+          "name": "Hot Lavender Matcha",
           "description": null,
           "note": null,
           "signature": false,
@@ -1169,8 +1172,8 @@
           "photo": null
         },
         {
-          "id": "lavender-matcha",
-          "name": "Lavender matcha",
+          "id": "hot-rose-matcha",
+          "name": "Hot Rose Matcha",
           "description": null,
           "note": null,
           "signature": false,
@@ -1195,34 +1198,8 @@
           "photo": null
         },
         {
-          "id": "rose-matcha",
-          "name": "Rose matcha",
-          "description": null,
-          "note": null,
-          "signature": false,
-          "seasonal": null,
-          "sizes": [
-            {
-              "code": "S",
-              "label": "Small",
-              "price_pence": 360
-            },
-            {
-              "code": "M",
-              "label": "Medium",
-              "price_pence": 390
-            },
-            {
-              "code": "XL",
-              "label": "Large",
-              "price_pence": 420
-            }
-          ],
-          "photo": null
-        },
-        {
-          "id": "white-chocolate-matcha",
-          "name": "White chocolate matcha",
+          "id": "hot-white-choc-matcha",
+          "name": "Hot White Choc Matcha",
           "description": null,
           "note": null,
           "signature": false,
@@ -1385,7 +1362,7 @@
       "items": [
         {
           "id": "english-breakfast",
-          "name": "English breakfast",
+          "name": "English Breakfast",
           "description": null,
           "note": null,
           "signature": false,
@@ -1401,7 +1378,7 @@
         },
         {
           "id": "earl-grey",
-          "name": "Earl grey",
+          "name": "Earl Grey",
           "description": null,
           "note": null,
           "signature": false,
@@ -1448,8 +1425,8 @@
           "photo": null
         },
         {
-          "id": "berry",
-          "name": "Berry",
+          "id": "berry-tea",
+          "name": "Berry Tea",
           "description": null,
           "note": null,
           "signature": false,
@@ -1464,8 +1441,8 @@
           "photo": null
         },
         {
-          "id": "decaf",
-          "name": "Decaf",
+          "id": "decaf-tea",
+          "name": "Decaf Tea",
           "description": null,
           "note": null,
           "signature": false,
@@ -1481,7 +1458,7 @@
         },
         {
           "id": "strawberry-black",
-          "name": "Strawberry black",
+          "name": "Strawberry Black",
           "description": null,
           "note": "Special leaf tea",
           "signature": false,
@@ -1496,8 +1473,8 @@
           "photo": null
         },
         {
-          "id": "jasmine-and-mint-green",
-          "name": "Jasmine and mint green",
+          "id": "jasmine-and-mint-green-tea",
+          "name": "Jasmine and Mint Green Tea",
           "description": null,
           "note": "Special leaf tea",
           "signature": false,
@@ -1513,7 +1490,7 @@
         },
         {
           "id": "spiced-apple-chai",
-          "name": "Spiced apple chai",
+          "name": "Spiced Apple Chai",
           "description": null,
           "note": "Special leaf tea",
           "signature": false,
@@ -1528,8 +1505,8 @@
           "photo": null
         },
         {
-          "id": "ginger-and-lemongrass",
-          "name": "Ginger and lemongrass",
+          "id": "ginger-and-lemongrass-tea",
+          "name": "Ginger and Lemongrass Tea",
           "description": null,
           "note": "Special leaf tea",
           "signature": false,
@@ -1544,8 +1521,8 @@
           "photo": null
         },
         {
-          "id": "forest-fruits",
-          "name": "Forest fruits",
+          "id": "forest-fruits-tea",
+          "name": "Forest Fruits Tea",
           "description": null,
           "note": "Special leaf tea",
           "signature": false,
@@ -1568,7 +1545,7 @@
       "items": [
         {
           "id": "iced-black-americano",
-          "name": "Iced black americano",
+          "name": "Iced Black Americano",
           "description": null,
           "note": null,
           "signature": false,
@@ -1577,19 +1554,19 @@
             {
               "code": "S",
               "label": "Small",
-              "price_pence": 290
+              "price_pence": 280
             },
             {
               "code": "M",
               "label": "Medium",
-              "price_pence": 310
+              "price_pence": 300
             }
           ],
           "photo": null
         },
         {
           "id": "iced-white-americano",
-          "name": "Iced white americano",
+          "name": "Iced White Americano",
           "description": null,
           "note": null,
           "signature": false,
@@ -1598,19 +1575,19 @@
             {
               "code": "S",
               "label": "Small",
-              "price_pence": 290
+              "price_pence": 280
             },
             {
               "code": "M",
               "label": "Medium",
-              "price_pence": 310
+              "price_pence": 300
             }
           ],
           "photo": null
         },
         {
           "id": "iced-latte",
-          "name": "Iced latte",
+          "name": "Iced Latte",
           "description": null,
           "note": null,
           "signature": false,
@@ -1631,7 +1608,7 @@
         },
         {
           "id": "iced-cappuccino",
-          "name": "Iced cappuccino",
+          "name": "Iced Cappuccino",
           "description": null,
           "note": null,
           "signature": false,
@@ -1652,7 +1629,7 @@
         },
         {
           "id": "iced-flat-white",
-          "name": "Iced flat white",
+          "name": "Iced Flat White",
           "description": null,
           "note": null,
           "signature": false,
@@ -1673,7 +1650,7 @@
         },
         {
           "id": "iced-mocha",
-          "name": "Iced mocha",
+          "name": "Iced Mocha",
           "description": null,
           "note": null,
           "signature": false,
@@ -1694,28 +1671,7 @@
         },
         {
           "id": "iced-white-mocha",
-          "name": "Iced white mocha",
-          "description": null,
-          "note": null,
-          "signature": false,
-          "seasonal": null,
-          "sizes": [
-            {
-              "code": "S",
-              "label": "Small",
-              "price_pence": 360
-            },
-            {
-              "code": "M",
-              "label": "Medium",
-              "price_pence": 410
-            }
-          ],
-          "photo": null
-        },
-        {
-          "id": "iced-chai-latte",
-          "name": "Iced chai latte",
+          "name": "Iced White Mocha",
           "description": null,
           "note": null,
           "signature": false,
@@ -1729,6 +1685,27 @@
             {
               "code": "M",
               "label": "Medium",
+              "price_pence": 410
+            }
+          ],
+          "photo": null
+        },
+        {
+          "id": "iced-chai-latte",
+          "name": "Iced Chai Latte",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 345
+            },
+            {
+              "code": "M",
+              "label": "Medium",
               "price_pence": 380
             }
           ],
@@ -1736,7 +1713,7 @@
         },
         {
           "id": "espresso-tonic",
-          "name": "Espresso tonic",
+          "name": "Espresso Tonic",
           "description": null,
           "note": null,
           "signature": false,
@@ -1764,7 +1741,7 @@
       "items": [
         {
           "id": "iced-honey-blue-matcha",
-          "name": "Iced honey blue matcha",
+          "name": "Iced Honey Blue Matcha",
           "description": "Pure blue matcha, creamy milk and sweet honey.",
           "note": null,
           "signature": true,
@@ -1785,7 +1762,7 @@
         },
         {
           "id": "iced-citrus-blue-matcha",
-          "name": "Iced citrus blue matcha",
+          "name": "Iced Citrus Blue Matcha",
           "description": "Blue matcha with lemon juice and sparkling water.",
           "note": null,
           "signature": true,
@@ -1805,8 +1782,8 @@
           "photo": null
         },
         {
-          "id": "iced-coconut-blue-matcha",
-          "name": "Iced coconut blue matcha",
+          "id": "iced-coconut-water-blue-matcha",
+          "name": "Iced Coconut Water Blue Matcha",
           "description": null,
           "note": null,
           "signature": false,
@@ -1827,7 +1804,7 @@
         },
         {
           "id": "iced-lavender-blue-matcha",
-          "name": "Iced lavender blue matcha",
+          "name": "Iced Lavender Blue Matcha",
           "description": null,
           "note": null,
           "signature": false,
@@ -1848,7 +1825,7 @@
         },
         {
           "id": "iced-vanilla-blue-matcha",
-          "name": "Iced vanilla blue matcha",
+          "name": "Iced Vanilla Blue Matcha",
           "description": null,
           "note": null,
           "signature": false,
@@ -1869,7 +1846,7 @@
         },
         {
           "id": "iced-coconut-water-latte",
-          "name": "Iced coconut water latte",
+          "name": "Iced Coconut Water Latte",
           "description": "Smooth espresso over coconut water and ice. Light and naturally sweet.",
           "note": null,
           "signature": true,
@@ -1890,7 +1867,7 @@
         },
         {
           "id": "iced-pistachio-latte",
-          "name": "Iced pistachio latte",
+          "name": "Iced Pistachio Latte",
           "description": "Espresso and cold milk with rich pistachio cream.",
           "note": null,
           "signature": false,
@@ -1911,7 +1888,7 @@
         },
         {
           "id": "iced-lavender-latte",
-          "name": "Iced lavender latte",
+          "name": "Iced Lavender Latte",
           "description": null,
           "note": null,
           "signature": false,
@@ -1932,7 +1909,7 @@
         },
         {
           "id": "iced-honey-vanilla-latte",
-          "name": "Iced honey vanilla latte",
+          "name": "Iced Honey Vanilla Latte",
           "description": null,
           "note": null,
           "signature": false,
@@ -1941,19 +1918,19 @@
             {
               "code": "S",
               "label": "Small",
-              "price_pence": 420
+              "price_pence": 430
             },
             {
               "code": "M",
               "label": "Medium",
-              "price_pence": 440
+              "price_pence": 460
             }
           ],
           "photo": null
         },
         {
           "id": "iced-rose-mocha",
-          "name": "Iced rose mocha",
+          "name": "Iced Rose Mocha",
           "description": null,
           "note": null,
           "signature": false,
@@ -1974,7 +1951,7 @@
         },
         {
           "id": "iced-rose-white-mocha",
-          "name": "Iced rose white mocha",
+          "name": "Iced Rose White Mocha",
           "description": "Espresso, creamy milk, rose and white chocolate.",
           "note": null,
           "signature": false,
@@ -1995,7 +1972,7 @@
         },
         {
           "id": "iced-raspberry-mocha",
-          "name": "Iced raspberry mocha",
+          "name": "Iced Raspberry Mocha",
           "description": null,
           "note": null,
           "signature": false,
@@ -2016,7 +1993,7 @@
         },
         {
           "id": "iced-white-raspberry-mocha",
-          "name": "Iced white raspberry mocha",
+          "name": "Iced White Raspberry Mocha",
           "description": null,
           "note": null,
           "signature": false,
@@ -2044,7 +2021,7 @@
       "items": [
         {
           "id": "iced-mango-matcha",
-          "name": "Iced mango matcha",
+          "name": "Iced Mango Matcha",
           "description": null,
           "note": null,
           "signature": false,
@@ -2065,7 +2042,7 @@
         },
         {
           "id": "iced-strawberry-matcha",
-          "name": "Iced strawberry matcha",
+          "name": "Iced Strawberry Matcha",
           "description": null,
           "note": null,
           "signature": false,
@@ -2086,7 +2063,7 @@
         },
         {
           "id": "iced-peach-matcha",
-          "name": "Iced peach matcha",
+          "name": "Iced Peach Matcha",
           "description": null,
           "note": null,
           "signature": false,
@@ -2107,7 +2084,7 @@
         },
         {
           "id": "iced-coconut-matcha",
-          "name": "Iced coconut matcha",
+          "name": "Iced Coconut Matcha",
           "description": null,
           "note": null,
           "signature": false,
@@ -2128,7 +2105,7 @@
         },
         {
           "id": "iced-banana-matcha",
-          "name": "Iced banana matcha",
+          "name": "Iced Banana Matcha",
           "description": null,
           "note": null,
           "signature": false,
@@ -2324,7 +2301,7 @@
       "items": [
         {
           "id": "green-apple-bubble-tea",
-          "name": "Green apple bubble tea",
+          "name": "Green Apple Bubble Tea",
           "description": null,
           "note": null,
           "signature": false,
@@ -2345,7 +2322,7 @@
         },
         {
           "id": "passion-fruit-bubble-tea",
-          "name": "Passion fruit bubble tea",
+          "name": "Passion Fruit Bubble Tea",
           "description": null,
           "note": null,
           "signature": false,
@@ -2366,7 +2343,7 @@
         },
         {
           "id": "kiwi-bubble-tea",
-          "name": "Kiwi bubble tea",
+          "name": "Kiwi Bubble Tea",
           "description": null,
           "note": null,
           "signature": false,
@@ -2387,7 +2364,7 @@
         },
         {
           "id": "honey-bubble-tea",
-          "name": "Honey bubble tea",
+          "name": "Honey Bubble Tea",
           "description": null,
           "note": null,
           "signature": false,
@@ -2408,7 +2385,7 @@
         },
         {
           "id": "strawberry-bubble-tea",
-          "name": "Strawberry bubble tea",
+          "name": "Strawberry Bubble Tea",
           "description": null,
           "note": null,
           "signature": false,
@@ -2477,8 +2454,29 @@
       "blurb": "Made with fresh fruit where it says so.",
       "items": [
         {
-          "id": "strawberry-milkshake",
-          "name": "Strawberry milkshake",
+          "id": "strawberry",
+          "name": "Strawberry",
+          "description": null,
+          "note": null,
+          "signature": false,
+          "seasonal": null,
+          "sizes": [
+            {
+              "code": "S",
+              "label": "Small",
+              "price_pence": 390
+            },
+            {
+              "code": "M",
+              "label": "Medium",
+              "price_pence": 420
+            }
+          ],
+          "photo": null
+        },
+        {
+          "id": "banana-milkshake",
+          "name": "Banana Milkshake",
           "description": null,
           "note": null,
           "signature": false,
@@ -2488,27 +2486,6 @@
               "code": "S",
               "label": "Small",
               "price_pence": 420
-            },
-            {
-              "code": "M",
-              "label": "Medium",
-              "price_pence": 460
-            }
-          ],
-          "photo": null
-        },
-        {
-          "id": "banana-milkshake",
-          "name": "Banana milkshake",
-          "description": null,
-          "note": null,
-          "signature": false,
-          "seasonal": null,
-          "sizes": [
-            {
-              "code": "S",
-              "label": "Small",
-              "price_pence": 440
             },
             {
               "code": "M",
@@ -2562,7 +2539,7 @@
         },
         {
           "id": "chocolate-milkshake",
-          "name": "Chocolate milkshake",
+          "name": "Chocolate Milkshake",
           "description": null,
           "note": null,
           "signature": false,
@@ -2583,7 +2560,7 @@
         },
         {
           "id": "chocolate-coffee-milkshake",
-          "name": "Chocolate coffee milkshake",
+          "name": "Chocolate Coffee Milkshake",
           "description": null,
           "note": null,
           "signature": false,
@@ -2597,14 +2574,14 @@
             {
               "code": "M",
               "label": "Medium",
-              "price_pence": 460
+              "price_pence": 480
             }
           ],
           "photo": null
         },
         {
           "id": "coffee-milkshake",
-          "name": "Coffee milkshake",
+          "name": "Coffee Milkshake",
           "description": null,
           "note": null,
           "signature": false,
@@ -2625,7 +2602,7 @@
         },
         {
           "id": "salted-caramel-milkshake",
-          "name": "Salted caramel milkshake",
+          "name": "Salted Caramel Milkshake",
           "description": null,
           "note": null,
           "signature": false,
@@ -2646,7 +2623,7 @@
         },
         {
           "id": "salted-caramel-coffee-milkshake",
-          "name": "Salted caramel coffee milkshake",
+          "name": "Salted Caramel Coffee Milkshake",
           "description": null,
           "note": null,
           "signature": false,
@@ -2674,7 +2651,7 @@
       "items": [
         {
           "id": "peach-iced-tea",
-          "name": "Peach iced tea",
+          "name": "Peach Iced Tea",
           "description": null,
           "note": null,
           "signature": false,
@@ -2695,7 +2672,7 @@
         },
         {
           "id": "iced-rose-tea",
-          "name": "Iced rose tea",
+          "name": "Iced Rose Tea",
           "description": null,
           "note": null,
           "signature": false,
@@ -2716,7 +2693,7 @@
         },
         {
           "id": "iced-lemon-and-honey-tea",
-          "name": "Iced lemon & honey tea",
+          "name": "Iced Lemon & Honey Tea",
           "description": null,
           "note": null,
           "signature": false,
@@ -2799,8 +2776,8 @@
           "photo": null
         },
         {
-          "id": "passion-fruit-smoothie",
-          "name": "Passion fruit smoothie",
+          "id": "passion-fruit",
+          "name": "Passion Fruit",
           "description": null,
           "note": null,
           "signature": false,
@@ -2809,7 +2786,7 @@
             {
               "code": "S",
               "label": "Small",
-              "price_pence": 400
+              "price_pence": 390
             },
             {
               "code": "M",
@@ -2841,8 +2818,8 @@
           "photo": null
         },
         {
-          "id": "pineapple-and-passion-fruit-smoothie",
-          "name": "Pineapple & passion fruit smoothie",
+          "id": "pineapple-and-passion-fruit",
+          "name": "Pineapple & Passion Fruit",
           "description": null,
           "note": null,
           "signature": false,
@@ -2851,7 +2828,7 @@
             {
               "code": "S",
               "label": "Small",
-              "price_pence": 400
+              "price_pence": 390
             },
             {
               "code": "M",
@@ -3068,8 +3045,8 @@
           "photo": null
         },
         {
-          "id": "panini",
-          "name": "Panini",
+          "id": "homemade-panini",
+          "name": "Homemade Panini",
           "description": null,
           "note": "Selection in the fridge",
           "signature": false,
@@ -3243,7 +3220,7 @@
         },
         {
           "id": "raspberry-and-matcha-cheesecake",
-          "name": "Raspberry & matcha cheesecake",
+          "name": "Raspberry and matcha cheesecake",
           "description": null,
           "note": null,
           "signature": false,
@@ -3259,7 +3236,7 @@
         },
         {
           "id": "raspberry-brownie-cheesecake",
-          "name": "Raspberry brownie cheesecake",
+          "name": "Raspberry Brownie Cheesecake",
           "description": null,
           "note": null,
           "signature": false,
@@ -3275,7 +3252,7 @@
         },
         {
           "id": "lemon-and-pistachio",
-          "name": "Lemon & pistachio",
+          "name": "Lemon and Pistachio",
           "description": null,
           "note": null,
           "signature": false,
@@ -3307,7 +3284,7 @@
         },
         {
           "id": "salted-caramel-brownie",
-          "name": "Salted caramel brownie",
+          "name": "Salted Caramel Brownie",
           "description": null,
           "note": null,
           "signature": false,
@@ -3323,7 +3300,7 @@
         },
         {
           "id": "sticky-toffee-biscoff",
-          "name": "Sticky toffee Biscoff",
+          "name": "Sticky Toffee Biscoff",
           "description": null,
           "note": null,
           "signature": false,
@@ -3339,7 +3316,7 @@
         },
         {
           "id": "blueberry-muffin",
-          "name": "Blueberry muffin",
+          "name": "Blueberry Muffin",
           "description": null,
           "note": null,
           "signature": false,
@@ -3355,7 +3332,7 @@
         },
         {
           "id": "banana-and-pecan-muffin",
-          "name": "Banana & pecan muffin",
+          "name": "Banana and Pecan Muffin",
           "description": null,
           "note": null,
           "signature": false,
@@ -3371,7 +3348,7 @@
         },
         {
           "id": "raspberry-and-almond-muffin",
-          "name": "Raspberry & almond muffin",
+          "name": "Raspberry and Almond Muffin",
           "description": null,
           "note": null,
           "signature": false,
@@ -3403,7 +3380,7 @@
         },
         {
           "id": "strawberry-pancake",
-          "name": "Strawberry pancake",
+          "name": "Strawberry Pancake",
           "description": null,
           "note": null,
           "signature": false,
@@ -3419,7 +3396,7 @@
         },
         {
           "id": "croissant-with-jam",
-          "name": "Croissant with jam",
+          "name": "Croissant with Jam",
           "description": null,
           "note": null,
           "signature": false,

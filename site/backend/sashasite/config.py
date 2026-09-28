@@ -35,15 +35,19 @@ class Settings(BaseSettings):
     )
 
     database_url: str = f"sqlite+pysqlite:///{REPO_ROOT / 'cafeops.db'}"
-    #: Bootstrap only: signs the owner in until a password is set in the DB
-    #: (site_admin_credential), which then takes precedence. With neither, the
-    #: admin login answers 503: fail closed.
+    #: DEV FALLBACK ONLY. The site's own admin password, used only while
+    #: ``service_key`` is unset; with a service key configured the site's cookie
+    #: sign-in is refused and this is ignored (one password: the back office's).
     admin_password: str | None = None
     #: Shared secret the ops back office (cafeops) sends as ``X-Site-Service-Key``
     #: when it forwards an admin call for someone already signed in there. The
-    #: website admin lives inside the back office now, behind its one password.
-    #: Unset: only a cookie session gets into /api/admin/*.
+    #: website admin lives inside the back office, behind its one password.
+    #: SET: the service key is the ONLY way into /api/admin/* (cookie sign-in off).
+    #: Unset (dev): the old cookie sign-in still works and ``doctor`` warns.
     service_key: str | None = None
+    #: The back office's origin. The site's old /admin pages redirect to
+    #: ``{ops_url}/#/website``; Caddy reads the same SITE_OPS_URL from .env.
+    ops_url: str = "http://localhost:5178"
     #: Mark the admin cookie Secure even when the request looks like plain http
     #: (e.g. TLS terminated by a proxy without SITE_TRUST_PROXY).
     cookie_secure: bool = False
@@ -75,7 +79,7 @@ class Settings(BaseSettings):
     def _absolute_media_dir(cls, v: Path) -> Path:
         return v.expanduser().resolve()
 
-    @field_validator("media_base_url")
+    @field_validator("media_base_url", "ops_url")
     @classmethod
     def _no_trailing_slash(cls, v: str) -> str:
         return v.rstrip("/")

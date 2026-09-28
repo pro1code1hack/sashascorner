@@ -12,8 +12,8 @@
  * apply (a product means nothing to a card total) is named on that section.
  *
  * Card figures come from imports (Mettle via the workbook, Lightspeed/CSV
- * exports), never from typing. The one thing a person adds here is cash: till
- * cash and own cash (cash taken for sales not rung on the till), with a note.
+ * exports), never from typing. The one thing a person adds here is cash: one
+ * Cash figure per day, with a note (DECISIONS 26 retired the till/own split).
  * That happens in a drawer, not in the table.
  *
  * Filters run on the loaded period: weekday, how it was paid, whether the day
@@ -89,7 +89,8 @@ const SOURCE_LABEL: Record<string, string> = {
   POS_API: 'Lightspeed',
   MANUAL: 'added here',
 }
-const METHOD_NAME: Record<string, string> = { CARD: 'Card', CASH: 'Till cash', CASH_OFF_TILL: 'Own cash' }
+// CASH_OFF_TILL is a retired method (DECISIONS 26): an old row still reads as Cash.
+const METHOD_NAME: Record<string, string> = { CARD: 'Card', CASH: 'Cash', CASH_OFF_TILL: 'Cash' }
 
 /** The server's long deposit caveat; the screen says it in one line instead. */
 const DEPOSIT_CAVEAT = 'Card figures up to March 2026'
@@ -102,7 +103,7 @@ function weekdaysParam(f: string): string | undefined {
   return f
 }
 
-const hasCash = (d: SalesDay) => (d.cash_till_pence ?? 0) + (d.cash_off_till_pence ?? 0) > 0
+const hasCash = (d: SalesDay) => (d.cash_pence ?? 0) > 0
 
 function matchesPaid(d: SalesDay, f: string): boolean {
   const card = (d.card_pence ?? 0) > 0
@@ -117,8 +118,7 @@ function matchesPaid(d: SalesDay, f: string): boolean {
 interface Sums {
   days: number
   card: number
-  till: number
-  own: number
+  cash: number
   total: number
   orders: number
   /** Takings on days that have an order count: the avg ticket's numerator. */
@@ -126,11 +126,10 @@ interface Sums {
 }
 
 function sum(rows: readonly SalesDay[]): Sums {
-  const s: Sums = { days: rows.length, card: 0, till: 0, own: 0, total: 0, orders: 0, totalWithOrders: 0 }
+  const s: Sums = { days: rows.length, card: 0, cash: 0, total: 0, orders: 0, totalWithOrders: 0 }
   for (const d of rows) {
     s.card += d.card_pence ?? 0
-    s.till += d.cash_till_pence ?? 0
-    s.own += d.cash_off_till_pence ?? 0
+    s.cash += d.cash_pence ?? 0
     s.total += d.total_pence
     if (d.orders !== null && d.orders > 0) {
       s.orders += d.orders
@@ -438,8 +437,8 @@ export function SalesScreen() {
                         },
                         {
                           label: 'Cash',
-                          value: gbp(totals.till + totals.own),
-                          sub: totals.own > 0 ? `${gbp(totals.till)} till · ${gbp(totals.own)} own` : undefined,
+                          value: gbp(totals.cash),
+                          sub: vs(totals.cash, prev?.s.cash),
                         },
                         { label: 'Orders', value: totals.orders > 0 ? count(totals.orders) : '—' },
                         {
@@ -531,11 +530,7 @@ function Totals({ s, label, className }: { s: Sums; label: ReactNode; className:
         <span className="inline-block w-[0.7em]" />
       </td>
       <td className="fig px-2 text-right">
-        {gbp(s.till)}
-        <span className="inline-block w-[0.7em]" />
-      </td>
-      <td className="fig px-2 text-right">
-        {gbp(s.own)}
+        {gbp(s.cash)}
         <span className="inline-block w-[0.7em]" />
       </td>
       <td className="fig px-2 text-right">{gbp(s.total)}</td>
@@ -613,10 +608,7 @@ function SalesTable({
           <Money pence={d.card_pence} dagger={d.basis !== 'TILL' && d.card_pence !== null} />
         </Td>
         <Td numeric>
-          <Money pence={d.cash_till_pence} />
-        </Td>
-        <Td numeric>
-          <Money pence={d.cash_off_till_pence} />
+          <Money pence={d.cash_pence} />
         </Td>
         <Td numeric strong>
           {gbp(d.total_pence)}
@@ -646,15 +638,14 @@ function SalesTable({
 
   return (
     <div className="pt-3">
-      <Table header="upper" stickyHeader minWidth={760} label="Sales by day">
+      <Table header="upper" stickyHeader minWidth={680} label="Sales by day">
         <THead>
           <tr>
             <Th width={112} className="pl-2!">
               Day
             </Th>
             <Th numeric>Card</Th>
-            <Th numeric>Till cash</Th>
-            <Th numeric>Own cash</Th>
+            <Th numeric>Cash</Th>
             <Th numeric>Total</Th>
             <Th numeric width={70}>
               Orders
@@ -669,7 +660,7 @@ function SalesTable({
           {body}
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={8} className="p-10 text-center text-md text-ink-2">
+              <td colSpan={7} className="p-10 text-center text-md text-ink-2">
                 No days match these filters.
               </td>
             </tr>
@@ -696,22 +687,17 @@ function CashDrawer({ day, onClose }: { day: SalesDay | null; onClose: () => voi
   const [operator] = useOperator()
   const refresh = useInvalidateFinance()
   const [date, setDate] = useState(day?.date ?? londonToday())
-  const [till, setTill] = useState(penceToPounds(day?.cash_till_pence ?? null))
-  const [own, setOwn] = useState(penceToPounds(day?.cash_off_till_pence ?? null))
+  const [cash, setCash] = useState(penceToPounds(day?.cash_pence ?? null))
   const [note, setNote] = useState(day?.note ?? '')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-  const tillLocked = day !== null && !day.editable.cash_till
-  const ownLocked = day !== null && !day.editable.cash_off_till
+  const cashLocked = day !== null && !day.editable.cash
 
   async function submit() {
-    const t = poundsToPence(till)
-    const o = poundsToPence(own)
-    if (t.kind === 'bad') return setError(`Till cash: ${t.message}`)
-    if (o.kind === 'bad') return setError(`Own cash: ${o.message}`)
-    const tillP = t.kind === 'value' ? t.value : null
-    const ownP = o.kind === 'value' ? o.value : null
-    if ((tillP ?? 0) < 0 || (ownP ?? 0) < 0) return setError('Cash cannot be negative.')
+    const c = poundsToPence(cash)
+    if (c.kind === 'bad') return setError(`Cash: ${c.message}`)
+    const cashP = c.kind === 'value' ? c.value : null
+    if ((cashP ?? 0) < 0) return setError('Cash cannot be negative.')
     if (!date) return setError('Pick a date.')
     const noteV = note.trim() || null
     setError(null)
@@ -719,7 +705,7 @@ function CashDrawer({ day, onClose }: { day: SalesDay | null; onClose: () => voi
     try {
       let target = day
       if (target === null) {
-        if (tillP === null && ownP === null) return setError('Enter till cash, own cash, or both.')
+        if (cashP === null) return setError('Enter the cash taken.')
         // The day may already have a row (card imported): add the cash to it.
         const monthData = await financeApi.sales(date.slice(0, 7))
         target = monthData.days.find((d) => d.date === date) ?? null
@@ -727,18 +713,15 @@ function CashDrawer({ day, onClose }: { day: SalesDay | null; onClose: () => voi
       if (target === null) {
         const r = await financeWrite.createDay({
           date,
-          cash_till_pence: tillP,
-          cash_off_till_pence: ownP,
+          cash_pence: cashP,
           note: noteV,
           operator,
         })
         if (r.kind !== 'ok') return setError(r.message)
       } else {
         const body: SalesDayIn = {}
-        if (target.editable.cash_till && tillP !== target.cash_till_pence && (day !== null || tillP !== null))
-          body.cash_till_pence = tillP
-        if (target.editable.cash_off_till && ownP !== target.cash_off_till_pence && (day !== null || ownP !== null))
-          body.cash_off_till_pence = ownP
+        if (target.editable.cash && cashP !== target.cash_pence && (day !== null || cashP !== null))
+          body.cash_pence = cashP
         if (day === null) {
           // Adding to an existing day keeps its note; a typed one is appended.
           if (noteV !== null && noteV !== target.note) body.note = target.note ? `${target.note} · ${noteV}` : noteV
@@ -762,7 +745,7 @@ function CashDrawer({ day, onClose }: { day: SalesDay | null; onClose: () => voi
       open
       onClose={onClose}
       title={day ? `${fd(day.date)} ${day.date.slice(0, 4)}` : 'Add cash'}
-      context={day ? 'Sales day' : 'Till cash and own cash for one day'}
+      context={day ? 'Sales day' : 'Cash taken on one day'}
       footer={
         <>
           <Button variant="ghost" className="flex-1" onClick={onClose}>
@@ -780,8 +763,7 @@ function CashDrawer({ day, onClose }: { day: SalesDay | null; onClose: () => voi
             {(
               [
                 ['Card', day.card_pence],
-                ['Till cash', day.cash_till_pence],
-                ['Own cash', day.cash_off_till_pence],
+                ['Cash', day.cash_pence],
               ] as const
             ).map(([k, v]) => (
               <div key={k} className="contents">
@@ -819,22 +801,15 @@ function CashDrawer({ day, onClose }: { day: SalesDay | null; onClose: () => voi
             <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           </Field>
         )}
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Till cash" hint={tillLocked ? 'From an export' : 'Rung on the till'}>
-            <MoneyInput value={till} disabled={tillLocked} placeholder="0.00" onChange={(e) => setTill(e.target.value)} />
-          </Field>
-          <Field label="Own cash" hint={ownLocked ? 'From an export' : 'Not rung on the till'}>
-            <MoneyInput value={own} disabled={ownLocked} placeholder="0.00" onChange={(e) => setOwn(e.target.value)} />
-          </Field>
-        </div>
+        <Field label="Cash" hint={cashLocked ? 'From an export' : 'Cash taken today'}>
+          <MoneyInput value={cash} disabled={cashLocked} placeholder="0.00" onChange={(e) => setCash(e.target.value)} />
+        </Field>
         <Field label="Note" hint="Optional">
           <Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
         </Field>
         <p className="text-sm text-ink-2">
-          Card takings are imported from Mettle and Lightspeed, not typed.
-          {day
-            ? ' Empty a cash box to clear it.'
-            : ' If that day already has cash, what you enter here replaces it.'}
+          All the cash taken that day, in one figure. Card takings are imported from Mettle and Lightspeed, not typed.
+          {day ? ' Empty the box to clear it.' : ' If that day already has cash, what you enter here replaces it.'}
         </p>
         {error && (
           <p role="alert" className="text-sm text-bad-ink">

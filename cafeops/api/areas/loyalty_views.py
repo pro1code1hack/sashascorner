@@ -15,10 +15,12 @@ from cafeops.api.areas.loyalty_schemas import (
     ExtraCardOut,
     JoinIn,
     JoinResult,
+    PreferencesIn,
     ProgramOut,
     ProgramsOut,
     PublicProgramOut,
     RecoverOut,
+    RewardOptionOut,
     RewardOut,
     SiblingCardOut,
     VerifyIn,
@@ -26,6 +28,7 @@ from cafeops.api.areas.loyalty_schemas import (
     WalletsAvailable,
 )
 from cafeops.db.models import LoyaltyCard, LoyaltyProgram
+from cafeops.domain.loyalty import mask_contact
 from cafeops.services.loyalty.card_view import CardView, card_view_of
 from cafeops.services.loyalty.common import (
     DEFAULT_PROGRAM_SLUG,
@@ -35,9 +38,16 @@ from cafeops.services.loyalty.common import (
 )
 from cafeops.services.loyalty.consent import set_marketing_opt_in
 from cafeops.services.loyalty.errors import LoyaltyError
-from cafeops.services.loyalty.join import JoinRequest, add_program_card, join
+from cafeops.services.loyalty.join import (
+    DetailsChange,
+    JoinRequest,
+    add_program_card,
+    birthday_counts_from,
+    join,
+    update_details,
+)
 from cafeops.services.loyalty.messaging import Outgoing
-from cafeops.services.loyalty.programs import programs
+from cafeops.services.loyalty.programs import programs, reward_options
 from cafeops.services.loyalty.recovery import request_recovery, verify_recovery
 from cafeops.services.loyalty.retention import erase_member
 from cafeops.services.loyalty.wallets import apple_configured, google_configured
@@ -73,7 +83,14 @@ def join_result(
     )
 
 
-def public_program(p: LoyaltyProgram) -> PublicProgramOut:
+def catalogue(session: Session, p: LoyaltyProgram) -> list[RewardOptionOut]:
+    return [
+        RewardOptionOut(name=o.name, description=o.description, max_price_pence=o.max_price_pence)
+        for o in reward_options(session, p.id)
+    ]
+
+
+def public_program(p: LoyaltyProgram, session: Session | None = None) -> PublicProgramOut:
     return PublicProgramOut(
         slug=p.slug,
         name=p.name,
@@ -84,11 +101,14 @@ def public_program(p: LoyaltyProgram) -> PublicProgramOut:
         reward_text=p.reward_text,
         reward_ready_label=p.reward_ready_label,
         is_default=p.slug == DEFAULT_PROGRAM_SLUG,
+        catalogue=catalogue(session, p) if session is not None else [],
     )
 
 
 def programs_view(session: Session) -> ProgramsOut:
-    return ProgramsOut(programs=[public_program(p) for p in programs(session, active_only=True)])
+    return ProgramsOut(
+        programs=[public_program(p, session) for p in programs(session, active_only=True)]
+    )
 
 
 def join_program_view(session: Session, card_id: str, token: str | None, slug: str) -> JoinResult:
@@ -107,6 +127,13 @@ def program_view(session: Session) -> ProgramOut:
         referral_stamps=program.referral_stamps,
         max_stamps_per_scan=program.max_stamps_per_scan,
         wallets=WalletsAvailable(apple=apple_configured(), google=google_configured()),
+        slug=program.slug,
+        kind=program.kind.value,
+        description=program.description,
+        reward_ready_label=program.reward_ready_label,
+        reward_max_price_pence=program.reward_max_price_pence,
+        points_per_pound=program.points_per_pound,
+        catalogue=catalogue(session, program),
     )
 
 
@@ -138,6 +165,8 @@ def _live(session: Session, card_id: str, token: str | None) -> LoyaltyCard:
 
 def _state(session: Session, card: LoyaltyCard) -> CardState:
     view = card_view_of(session, card)
+    member = card.member
+    main = default_program(session)
     return CardState(
         card_id=view.card_id,
         first_name=view.first_name,
@@ -161,6 +190,14 @@ def _state(session: Session, card: LoyaltyCard) -> CardState:
         program_description=view.program_description,
         other_cards=_siblings(session, card),
         joinable=_joinable(session, card),
+        # Referrals pay into the main card (stamping._credit_referrer), whichever of
+        # the member's cards the link was shared from.
+        referral_stamps=main.referral_stamps if main.active else 0,
+        birthday_reward=main.birthday_reward,
+        birthday_day=member.birthday_day,
+        birthday_month=member.birthday_month,
+        birthday_counts_from=birthday_counts_from(member),
+        contact_masked=mask_contact(member.email, member.phone),
     )
 
 
@@ -218,10 +255,29 @@ def card_for_wallet(session: Session, card_id: str, token: str | None) -> CardVi
 
 
 def preferences_view(
-    session: Session, card_id: str, token: str | None, *, marketing_opt_in: bool
+    session: Session, card_id: str, token: str | None, body: PreferencesIn
 ) -> CardState:
     card = _live(session, card_id, token)
-    set_marketing_opt_in(session, card, opt_in=marketing_opt_in, source="web_card")
+    sent = body.model_fields_set
+    if not sent:
+        raise LoyaltyError(422, "nothing_to_change", "There was nothing to save.")
+    if "marketing_opt_in" in sent:
+        if body.marketing_opt_in is None:
+            raise LoyaltyError(422, "invalid_request", "Say yes or no to news and offers.")
+        set_marketing_opt_in(session, card, opt_in=body.marketing_opt_in, source="web_card")
+    set_birthday = "birthday_day" in sent or "birthday_month" in sent
+    if "first_name" in sent or set_birthday:
+        if "first_name" in sent and body.first_name is None:
+            raise LoyaltyError(422, "first_name_required", "Tell us your first name.")
+        update_details(
+            session,
+            card,
+            DetailsChange(
+                first_name=body.first_name,
+                set_birthday=set_birthday,
+                birthday=(body.birthday_day, body.birthday_month),
+            ),
+        )
     return _state(session, card)
 
 

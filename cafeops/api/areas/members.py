@@ -13,7 +13,7 @@ from __future__ import annotations
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Query, Request, status
-from fastapi.responses import Response
+from fastapi.responses import JSONResponse, Response
 
 from cafeops.api.areas import members_views as views
 from cafeops.api.areas.loyalty_edge import deliver_after_commit, kick_wallets
@@ -47,6 +47,8 @@ from cafeops.api.areas.members_schemas import (
     StaffOut,
     StaffPatchIn,
     StatsOut,
+    TargetsIn,
+    TargetsOut,
 )
 from cafeops.api.runtime import in_session
 from cafeops.api.security import ApiAuth, client_ip
@@ -222,9 +224,46 @@ async def alerts() -> AlertsOut:
     return await in_session(views.alerts_view)
 
 
+@router.get(
+    "/targets",
+    response_model=TargetsOut,
+    summary="The owner's 90-day targets, each with the figure it is measured against.",
+)
+async def targets(
+    program: Annotated[str | None, Query(max_length=40)] = None,
+    days: Annotated[int, Query(ge=7, le=730)] = 90,
+) -> TargetsOut:
+    return await in_session(lambda s: views.targets_view(s, program, days))
+
+
+@router.put(
+    "/targets",
+    response_model=TargetsOut,
+    summary="Set or clear targets ({metric: number|null}); unnamed metrics are kept.",
+)
+async def targets_update(body: TargetsIn) -> TargetsOut:
+    return await in_session(lambda s: views.targets_update_view(s, body))
+
+
 @router.get("/{member_id}", response_model=MemberDetailOut, summary="One member and history.")
 async def member_detail(member_id: int) -> MemberDetailOut:
     return await in_session(lambda s: views.detail_view(s, member_id))
+
+
+@router.get(
+    "/{member_id}/export",
+    summary="Everything held about one member, as a JSON download (subject access request).",
+    response_class=JSONResponse,
+)
+async def member_export(member_id: int) -> JSONResponse:
+    data = await in_session(lambda s: views.export_view(s, member_id))
+    return JSONResponse(
+        data,
+        headers={
+            "Content-Disposition": f'attachment; filename="member-{member_id}-data.json"',
+            "Cache-Control": "no-store",
+        },
+    )
 
 
 @router.post(

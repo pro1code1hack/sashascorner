@@ -25,6 +25,7 @@ library's files come through `open_router` (`/api/website-media/*`) without auth
 from __future__ import annotations
 
 import logging
+from urllib.parse import quote
 
 import httpx
 from fastapi import APIRouter, HTTPException, Request, status
@@ -73,6 +74,17 @@ def _passed_back(upstream: httpx.Response) -> Response:
     if upstream.status_code == status.HTTP_204_NO_CONTENT:
         return Response(status_code=204, headers=headers)
     return Response(content=upstream.content, status_code=upstream.status_code, headers=headers)
+
+
+def _requote(path: str) -> str:
+    """The decoded path FastAPI hands us, quoted again for the upstream URL.
+
+    A photo or menu name with ``?``, ``#`` or ``%`` arrives decoded; pasted raw into
+    the URL it would become a query, a fragment or a bad escape. Dot segments are
+    refused so a forward can never climb out of the prefix it was given."""
+    if any(seg in (".", "..") for seg in path.split("/")):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    return quote(path, safe="/")
 
 
 async def _forward(request: Request, upstream_path: str) -> Response:
@@ -149,17 +161,15 @@ async def admin(path: str, request: Request) -> Response:
             status_code=status.HTTP_404_NOT_FOUND,
             detail="The website uses the back office's sign-in; change it in Settings.",
         )
-    return await _forward(request, f"/api/admin/{path}")
+    return await _forward(request, f"/api/admin/{_requote(path)}")
 
 
 @open_router.get("/{path:path}")
 async def media(path: str) -> Response:
     """A photo from the site's library (public on the site anyway)."""
-    if ".." in path.split("/"):
-        raise HTTPException(status_code=404)
     try:
         async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
-            upstream = await client.get(f"{_base()}/api/media-files/{path}")
+            upstream = await client.get(f"{_base()}/api/media-files/{_requote(path)}")
     except httpx.HTTPError as exc:
         raise _unreachable(exc) from exc
     return _passed_back(upstream)

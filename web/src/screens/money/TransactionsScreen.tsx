@@ -42,8 +42,9 @@ type Tab = 'receipts' | 'takings'
 
 const METHOD_NAME: Record<string, string> = {
   CARD: 'Card',
-  CASH: 'Till cash',
-  CASH_OFF_TILL: 'Own cash',
+  CASH: 'Cash',
+  // Retired (DECISIONS 26): an older own-cash row is part of the day's Cash.
+  CASH_OFF_TILL: 'Cash',
   VOUCHER: 'Voucher',
   ACCOUNT: 'Account',
   OTHER: 'Other',
@@ -333,7 +334,15 @@ function Takings({ win, range, clearRange }: { win: DateRange | null; range: Dat
     ...amountChip(amount, () => setAmount({ min: null, max: null })),
   ]
 
-  const byMethod = useMemo(() => Object.entries(d?.by_method_pence ?? {}).sort((a, b) => b[1] - a[1]), [d])
+  // Folded by label, so a retired own-cash row adds to Cash rather than showing twice.
+  const byMethod = useMemo(() => {
+    const m = new Map<string, number>()
+    for (const [k, p] of Object.entries(d?.by_method_pence ?? {})) {
+      const label = METHOD_NAME[k] ?? k
+      m.set(label, (m.get(label) ?? 0) + p)
+    }
+    return [...m].sort((a, b) => b[1] - a[1])
+  }, [d])
 
   const body: ReactNode[] = []
   let prev = ''
@@ -351,7 +360,7 @@ function Takings({ win, range, clearRange }: { win: DateRange | null; range: Dat
             label="Method"
             value={method}
             onChange={setMethod}
-            options={[{ value: 'all', label: 'Card and cash' }, ...Object.entries(METHOD_NAME).map(([value, label]) => ({ value, label }))]}
+            options={[{ value: 'all', label: 'Card and cash' }, ...Object.entries(METHOD_NAME).filter(([value]) => value !== 'CASH_OFF_TILL').map(([value, label]) => ({ value, label }))]}
           />
           <FilterSelect
             label="Source"
@@ -382,7 +391,7 @@ function Takings({ win, range, clearRange }: { win: DateRange | null; range: Dat
             <Figures
               items={[
                 { label: 'Counted', value: gbp(d.used_gross_pence), strong: true, sub: `${count(d.total_rows)} rows` },
-                ...byMethod.map(([m, p]) => ({ label: METHOD_NAME[m] ?? m, value: gbp(p) })),
+                ...byMethod.map(([label, p]) => ({ label, value: gbp(p) })),
               ]}
             />
             {d.caveats.length > 0 && <p className="pt-2 text-sm text-ink-2">{d.caveats.join(' ')}</p>}

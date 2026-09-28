@@ -99,6 +99,11 @@ class BookingInfoOut(BaseModel):
     min_lead_minutes: int
 
 
+class ClosureOut(BaseModel):
+    date: dt.date
+    note: str = ""
+
+
 class InfoOut(BaseModel):
     name: str
     address: AddressOut
@@ -109,6 +114,9 @@ class InfoOut(BaseModel):
     socials: SocialsOut
     booking: BookingInfoOut
     confirmed: bool
+    #: Upcoming dates the café is shut (today onwards), so "open now" and the hours
+    #: tables can say so at runtime without a rebuild.
+    closures: list[ClosureOut] = []
 
 
 # --- availability / bookings ------------------------------------------------------------

@@ -53,13 +53,18 @@ const families = [
   { key: 'hojicha', label: 'Hojicha' },
   { key: 'other', label: 'Shakes & bubble tea' },
 ];
+// Each entry lists the id under the back-office (ops) name first, then the board's,
+// so the taste survives whichever source the menu was exported from.
 const tasteIds = [
-  'raff-coffee', 'iced-honey-blue-matcha', 'cortado', 'iced-banana-bread-hojicha', 'lavender-matcha',
-  'honey-vanilla-latte', 'honey-bubble-tea', 'iced-citrus-blue-matcha', 'iced-coconut-water-latte',
-  'iced-mango-matcha', 'lavender-latte', 'strawberry-milkshake', 'iced-coconut-matcha', 'flat-white',
-  'tropical-mint-bliss', 'single-espresso',
+  ['raff-coffee'], ['iced-honey-blue-matcha'], ['cortado'], ['iced-banana-bread-hojicha'],
+  ['hot-lavender-matcha', 'lavender-matcha'], ['honey-vanilla-latte'], ['honey-bubble-tea'],
+  ['iced-citrus-blue-matcha'], ['iced-coconut-water-latte'], ['iced-mango-matcha'],
+  ['butterfly-lavender-latte', 'lavender-latte'], ['strawberry-milkshake', 'strawberry'], ['iced-coconut-matcha'],
+  ['flat-white'], ['tropical-mint-bliss'], ['single-espresso'],
 ];
-const taste = tasteIds.map((id) => byId.get(id)).filter((i) => i !== undefined);
+const taste = tasteIds
+  .map((ids) => ids.map((id) => byId.get(id)).find((i) => i !== undefined))
+  .filter((i) => i !== undefined);
 // Phones show the first twelve.
 const MOBILE_TASTE = 12;
 
@@ -532,12 +537,44 @@ const range = (n: number) => Array.from({ length: n }, (_, i) => i);
 </Base>
 
 <script>
+  import { foldHours, liveInfo } from '../lib/live-info';
+  import { WEEKDAYS } from '../lib/format';
+
   // Mark today's row in the hours table (Europe/London).
   const wd = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].indexOf(
     new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', weekday: 'short' }).format(new Date()),
   );
-  for (const tr of document.querySelectorAll<HTMLElement>('.visit__hours tr[data-days]')) {
-    if ((tr.dataset.days ?? '').split(',').map(Number).includes(wd)) tr.classList.add('is-today');
+  const markToday = () => {
+    for (const tr of document.querySelectorAll<HTMLElement>('.visit__hours tr[data-days]')) {
+      if ((tr.dataset.days ?? '').split(',').map(Number).includes(wd)) tr.classList.add('is-today');
+    }
+  };
+  markToday();
+  // The table was baked at build time; hours are edited in the back office, so
+  // redraw it from /api/info when that answers.
+  const hoursBody = document.querySelector<HTMLElement>('.visit__hours tbody');
+  if (hoursBody) {
+    liveInfo().then((live) => {
+      if (!live?.hours.length) return;
+      const rows = foldHours(live.hours, (h) =>
+        h.closed || !h.open || !h.close ? 'Closed' : `${h.open.replace(/^0/, '')} – ${h.close.replace(/^0/, '')}`,
+      );
+      // Clone a baked row so the page's scoped-style attributes come along.
+      const tpl = hoursBody.querySelector('tr');
+      if (!tpl) return;
+      hoursBody.replaceChildren(
+        ...rows.map((r) => {
+          const tr = tpl.cloneNode(true) as HTMLElement;
+          tr.classList.remove('is-today');
+          tr.dataset.days = r.days.join(',');
+          tr.querySelector('th')!.textContent =
+            r.days.length === 1 ? WEEKDAYS[r.days[0]] : `${WEEKDAYS[r.days[0]]} – ${WEEKDAYS[r.days.at(-1)!]}`;
+          tr.querySelector('td')!.textContent = r.text;
+          return tr;
+        }),
+      );
+      markToday();
+    });
   }
 
   // Build your drink. Every state is a drink on the board. Picking a base shows that

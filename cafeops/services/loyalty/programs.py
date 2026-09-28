@@ -196,6 +196,10 @@ class ProgramChange:
     description: str | None = None
     reward_ready_label: str | None = None
     sort_order: int | None = None
+    #: Cooldown: more than `cooldown_max_stamps` purchase stamps on one card within
+    #: `cooldown_minutes` needs a manager's PIN at the scanner.
+    cooldown_max_stamps: int | None = None
+    cooldown_minutes: int | None = None
     #: The whole catalogue, in order. None = leave it alone; entries missing from a given
     #: list are retired (`active = false`), never deleted -- redeemed rewards point at them.
     reward_options: Sequence[OptionChange] | None = None
@@ -338,8 +342,24 @@ def apply_change(session: Session, program: LoyaltyProgram, change: ProgramChang
         if not change.reward_ready_label.strip():
             raise _bad("Say what the card shows when a reward is ready.")
         program.reward_ready_label = change.reward_ready_label.strip()[:60]
+    if change.cooldown_max_stamps is not None:
+        if not 1 <= change.cooldown_max_stamps <= 20:
+            raise _bad("The cooldown allows 1 to 20 stamps before a manager is needed.")
+        program.cooldown_max_stamps = change.cooldown_max_stamps
+    if change.cooldown_minutes is not None:
+        if not 1 <= change.cooldown_minutes <= 240:
+            raise _bad("The cooldown window is 1 to 240 minutes.")
+        program.cooldown_minutes = change.cooldown_minutes
     if change.sort_order is not None:
         program.sort_order = max(0, min(change.sort_order, 999))
+    if program.kind is ProgramKind.STAMPS and (
+        program.cooldown_max_stamps < program.max_stamps_per_scan
+    ):
+        raise _bad(
+            f"The cooldown ({program.cooldown_max_stamps}) cannot be lower than the most "
+            f"stamps in one scan ({program.max_stamps_per_scan}), or a full scan would "
+            "always need a manager."
+        )
     if change.reward_options is not None:
         _save_options(session, program, change.reward_options)
     session.flush()

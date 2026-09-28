@@ -1,5 +1,5 @@
 /**
- * Members › Staff & devices (CONTRACT §2, §6): who can use the scanner, with
+ * Rewards › Staff & devices (`#/rewards/staff`) (CONTRACT §2, §6): who can use the scanner, with
  * what role, and which devices it runs on.
  *
  * - Staff: role, active, Telegram id, and "Set PIN". The PIN identifies the
@@ -8,7 +8,7 @@
  * - Devices: the scanner only works on a paired device. "Pair a device" gets a
  *   6-digit code, valid for 15 minutes, typed into /staff on that device.
  *   Revoking signs out every session on it.
- * - Stamping alerts, in full.
+ * Stamping alerts have their own page (Rewards › Alerts).
  */
 import { useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
@@ -26,20 +26,18 @@ import {
   Toggle,
 } from '../../components/ui'
 import { ago, dayFull } from '../../lib/format'
-import { MEMBERS_KEY, membersApi, useAlerts, useDevices, useStaff } from '../../lib/members-api'
+import { MEMBERS_KEY, membersApi, useDevices, useStaff } from '../../lib/members-api'
 import type { DevicePairing, StaffDevice, StaffRole, StaffUser } from '../../lib/types/members'
-import { AlertList } from './Alerts'
-import { MembersTabs, OutcomeLine, PIN_RE, Panel, PinInput, ROLE_LABEL, useWriteState } from './shared'
+import { OutcomeLine, PIN_RE, Panel, PinInput, ROLE_LABEL, useWriteState } from './shared'
 
 const ROLES: StaffRole[] = ['STAFF', 'MANAGER', 'OWNER']
 
 export function Staff() {
   const staff = useStaff()
   const devices = useDevices()
-  const alerts = useAlerts()
   return (
     <>
-      <PageHeader title="Members" subtitle={<MembersTabs current="staff" />} />
+      <PageHeader title="Staff & devices" subtitle="Who can stamp on the scanner, with what PIN, and which tablets and phones it is paired to." />
       <PageBody className="bg-canvas">
         <div className="grid gap-5 wide:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
           <div className="flex min-w-0 flex-col gap-5">
@@ -48,10 +46,6 @@ export function Staff() {
               {staff.isPending && <Loading what="Reading the staff" />}
               {staff.data && <StaffTable users={staff.data.users} />}
               <AddStaff />
-            </Panel>
-            <Panel title="Stamping alerts" id="alerts-full-h">
-              {alerts.isError && <ErrorBox error={alerts.error} what="the alerts" />}
-              {alerts.data && <AlertList alerts={alerts.data.alerts} />}
             </Panel>
           </div>
           <Panel title="Scanner devices" id="devices-h" className="self-start">

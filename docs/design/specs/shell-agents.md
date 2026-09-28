@@ -210,7 +210,7 @@ it yet."* ("over" when positive). Action: **Look at it** → `#/money/reconcile`
 
 | Datum | Source | Status |
 |---|---|---|
-| Till cash for a day | `payment_day` with `method = CASH` (`cafeops/db/models/payment.py:46-66`, `enums.py:448`) | DERIVABLE |
+| Cash for a day | `payment_day` with `method = CASH` (`cafeops/db/models/payment.py:46-66`, `enums.py:448`) | DERIVABLE |
 | Counted (declared) cash | none: `PaymentDay` has gross, refunds, fees, discounts and transactions, but **no counted figure** | **MISSING** |
 | "nobody has explained it" | none | **MISSING** |
 

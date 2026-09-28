@@ -16,8 +16,7 @@
       "trading_days": 1,
       "expense_count": 5,
       "card_pence": 98,
-      "cash_till_pence": 0,
-      "cash_off_till_pence": 0,
+      "cash_pence": 0,
       "delivery_gross_pence": null,
       "delivery_missing": [
         "Deliveroo: Oct 25",
@@ -61,8 +60,7 @@
       "trading_days": 20,
       "expense_count": 29,
       "card_pence": 174447,
-      "cash_till_pence": 0,
-      "cash_off_till_pence": 0,
+      "cash_pence": 0,
       "delivery_gross_pence": 2962,
       "delivery_missing": [
         "Deliveroo: Nov 25"
@@ -119,8 +117,7 @@
       "trading_days": 29,
       "expense_count": 13,
       "card_pence": 159232,
-      "cash_till_pence": 0,
-      "cash_off_till_pence": 0,
+      "cash_pence": 0,
       "delivery_gross_pence": 1568,
       "delivery_missing": [
         "Deliveroo: Dec 25"
@@ -181,8 +178,7 @@
       "trading_days": 30,
       "expense_count": 24,
       "card_pence": 178980,
-      "cash_till_pence": 0,
-      "cash_off_till_pence": 0,
+      "cash_pence": 0,
       "delivery_gross_pence": 1773,
       "delivery_missing": [
         "Deliveroo: Jan 26"
@@ -247,8 +243,7 @@
       "trading_days": 28,
       "expense_count": 32,
       "card_pence": 171270,
-      "cash_till_pence": 0,
-      "cash_off_till_pence": 0,
+      "cash_pence": 0,
       "delivery_gross_pence": 2012,
       "delivery_missing": [
         "Deliveroo: Feb 26"
@@ -313,8 +308,7 @@
       "trading_days": 31,
       "expense_count": 46,
       "card_pence": 240544,
-      "cash_till_pence": 0,
-      "cash_off_till_pence": 0,
+      "cash_pence": 0,
       "delivery_gross_pence": 3177,
       "delivery_missing": [
         "Deliveroo: Mar 26"
@@ -379,8 +373,7 @@
       "trading_days": 21,
       "expense_count": 0,
       "card_pence": 129305,
-      "cash_till_pence": 0,
-      "cash_off_till_pence": 0,
+      "cash_pence": 0,
       "delivery_gross_pence": null,
       "delivery_missing": [
         "Deliveroo: Apr 26",
@@ -420,8 +413,7 @@
     "trading_days": 160,
     "expense_count": 149,
     "card_pence": 1053876,
-    "cash_till_pence": 0,
-    "cash_off_till_pence": 0,
+    "cash_pence": 0,
     "delivery_gross_pence": 11492,
     "delivery_missing": [
       "Deliveroo: Oct 25 to Apr 26 (7 months)",

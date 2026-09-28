@@ -7,17 +7,17 @@
  * plus the monthly P&L for the delivery apps, which exist only per month. No
  * figure is computed that the table below cannot be checked against.
  *
- *   Takings over time   stacked bars by how it was paid (card, till cash, own
- *                       cash), per day / week / month; click a legend key to
+ *   Takings over time   stacked bars by how it was paid (card, cash), per
+ *                       day / week / month; click a legend key to
  *                       hide that series; hover a bar for its breakdown
- *   Where it came from  share of takings by channel: the till's three ways of
- *                       paying, plus Deliveroo + Just Eat from the monthly
+ *   Where it came from  share of takings by channel: card and cash at the
+ *                       till, plus Deliveroo + Just Eat from the monthly
  *                       statements, with commission and ads. A month not
  *                       uploaded is "missing", never £0 (invariant 8)
  *   By weekday          average takings per weekday
  *   Best days           the five biggest days in view
  *
- * Colours are the --color-chart-* tokens in styles.css. Till cash is under 3:1
+ * Colours are the --color-chart-* tokens in styles.css. Cash is under 3:1
  * contrast, so every chart carries a legend with values and the day-by-day
  * table below is the table view.
  */
@@ -31,15 +31,15 @@ import { fd, gbp, mLabel } from './shared'
 
 export const SERIES = [
   { key: 'card', label: 'Card', color: 'var(--color-chart-card)' },
-  { key: 'till', label: 'Till cash', color: 'var(--color-chart-till)' },
-  { key: 'own', label: 'Own cash', color: 'var(--color-chart-own)' },
+  // One cash figure per day (DECISIONS 26): no till/own split, no own-cash series.
+  { key: 'cash', label: 'Cash', color: 'var(--color-chart-cash)' },
 ] as const
 const DELIVERY = { label: 'Delivery apps', color: 'var(--color-chart-delivery)' }
 type SeriesKey = (typeof SERIES)[number]['key']
 type Grain = 'day' | 'week' | 'month'
 
 const valueOf = (d: SalesDay, k: SeriesKey) =>
-  k === 'card' ? (d.card_pence ?? 0) : k === 'till' ? (d.cash_till_pence ?? 0) : (d.cash_off_till_pence ?? 0)
+  k === 'card' ? (d.card_pence ?? 0) : (d.cash_pence ?? 0)
 
 function mondayOf(iso: string): string {
   const d = new Date(`${iso}T12:00:00Z`)
@@ -63,7 +63,7 @@ function bucketize(rows: readonly SalesDay[], grain: Grain): Bucket[] {
     if (!b) {
       const label = grain === 'month' ? mLabel(key) : fd(key).split(' ').slice(1).join(' ')
       const long = grain === 'day' ? fd(key) : grain === 'week' ? `Week of ${fd(key)}` : mLabel(key)
-      b = { key, label, long, days: 0, v: { card: 0, till: 0, own: 0 } }
+      b = { key, label, long, days: 0, v: { card: 0, cash: 0 } }
       m.set(key, b)
     }
     b.days += 1

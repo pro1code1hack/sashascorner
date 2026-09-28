@@ -19,6 +19,14 @@ class WalletsAvailable(Out):
     google: bool
 
 
+class RewardOptionOut(Out):
+    """One entry of a programme's reward catalogue, as customers see it."""
+
+    name: str
+    description: str | None
+    max_price_pence: int | None = Field(description="NULL: no cap beyond the programme's.")
+
+
 class ProgramOut(Out):
     name: str
     stamps_required: int
@@ -27,6 +35,16 @@ class ProgramOut(Out):
     referral_stamps: int
     max_stamps_per_scan: int
     wallets: WalletsAvailable
+    # --- additive: what the /rewards page renders instead of its built-in defaults ----
+    slug: str = "stamp"
+    kind: str = Field(default="STAMPS", description='"STAMPS" | "POINTS"')
+    description: str | None = None
+    reward_ready_label: str = "Free drink ready"
+    #: NULL: the free drink can be any drink.
+    reward_max_price_pence: int | None = None
+    points_per_pound: int | None = None
+    #: What a full card can be taken as. Empty: just `reward_text`.
+    catalogue: list[RewardOptionOut] = Field(default_factory=list)
 
 
 class JoinIn(In):
@@ -74,6 +92,7 @@ class PublicProgramOut(Out):
     reward_text: str
     reward_ready_label: str
     is_default: bool
+    catalogue: list[RewardOptionOut] = Field(default_factory=list)
 
 
 class ProgramsOut(Out):
@@ -132,10 +151,32 @@ class CardState(Out):
     program_description: str | None = None
     other_cards: list[SiblingCardOut] = Field(default_factory=list)
     joinable: list[PublicProgramOut] = Field(default_factory=list)
+    # --- additive: the member's own details, editable from the web card ----------
+    #: Stamps a referrer earns when a friend who joined through their link first visits.
+    #: 0: the programme runs no referrals, so the web card offers no invite link.
+    referral_stamps: int = 0
+    #: The programme gives a birthday drink at all (else the card hides the birthday).
+    birthday_reward: bool = False
+    birthday_day: int | None = None
+    birthday_month: int | None = None
+    #: The first birthday that will bring a drink, after the 30-day rule. NULL: none set.
+    birthday_counts_from: date | None = None
+    #: "e***@example.com" / "*******123": which contact recovery uses. Never in full.
+    contact_masked: str | None = None
 
 
 class PreferencesIn(In):
-    marketing_opt_in: bool
+    """Any subset of the member's own details. A field left out is left alone.
+
+    `birthday_day` and `birthday_month` go together; both `null` removes the birthday.
+    Email and phone are not editable here: they are how a lost card is recovered, and a
+    typo would lock the member out. Staff change them from the back office.
+    """
+
+    marketing_opt_in: bool | None = None
+    first_name: str | None = Field(default=None, max_length=80)
+    birthday_day: int | None = Field(default=None, ge=1, le=31)
+    birthday_month: int | None = Field(default=None, ge=1, le=12)
 
 
 class RecoverIn(In):

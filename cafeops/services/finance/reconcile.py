@@ -291,7 +291,7 @@ def record_payout(
 
 
 def _till_cash(r: ResolvedDay | None) -> int | None:
-    """Till cash + own cash, TILL basis. None when neither was reported."""
+    """The day's cash (CASH + any legacy CASH_OFF_TILL), TILL basis. None if unreported."""
     if r is None:
         return None
     figs = [r.by_method.get(m) for m in (PaymentMethod.CASH, PaymentMethod.CASH_OFF_TILL)]

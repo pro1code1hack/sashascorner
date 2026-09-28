@@ -94,6 +94,34 @@ const year = new Date().getFullYear();
   </div>
 </footer>
 
+<script>
+  import { clock, WEEKDAYS } from '../lib/format';
+  import { foldHours, liveInfo } from '../lib/live-info';
+
+  // Hours are baked at build time and edited in the back office: follow /api/info.
+  const list = document.querySelector<HTMLElement>('.ftr__hours');
+  if (list) {
+    liveInfo().then((live) => {
+      if (!live?.hours.length) return;
+      const rows = foldHours(live.hours, (h) => (h.closed || !h.open || !h.close ? 'Closed' : `${clock(h.open)} – ${clock(h.close)}`));
+      // Clone a baked row so the component's scoped-style attributes come along.
+      const tpl = list.firstElementChild;
+      if (!tpl) return;
+      list.replaceChildren(
+        ...rows.map((r) => {
+          const div = tpl.cloneNode(true) as HTMLElement;
+          const from = r.days[0];
+          const to = r.days.at(-1)!;
+          div.querySelector('dt')!.textContent =
+            from === to ? WEEKDAYS[from] : `${WEEKDAYS[from].slice(0, 3)} – ${WEEKDAYS[to].slice(0, 3)}`;
+          div.querySelector('dd')!.textContent = r.text;
+          return div;
+        }),
+      );
+    });
+  }
+</script>
+
 <style>
   .ftr {
     background: var(--olive-900);

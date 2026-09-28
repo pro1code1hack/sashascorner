@@ -51,6 +51,9 @@ from cafeops.api.areas.members_schemas import (
     StaffOut,
     StaffPatchIn,
     StatsOut,
+    TargetOut,
+    TargetsIn,
+    TargetsOut,
     TemplateRefOut,
 )
 from cafeops.config import settings
@@ -78,8 +81,10 @@ from cafeops.services.loyalty import (
     retention,
     staff_auth,
 )
+from cafeops.services.loyalty import stats as stats_service
 from cafeops.services.loyalty.common import DEFAULT_PROGRAM_SLUG, default_program, now_utc
 from cafeops.services.loyalty.errors import LoyaltyError
+from cafeops.services.loyalty.export import member_export
 from cafeops.services.loyalty.messaging import Outgoing
 from cafeops.services.loyalty.stats import stats
 
@@ -262,13 +267,37 @@ def _program_full(session: Session, p: LoyaltyProgram) -> ProgramFullOut:
         ],
         cards=cards,
         kind_editable=earned == 0,
+        cooldown_max_stamps=p.cooldown_max_stamps,
+        cooldown_minutes=p.cooldown_minutes,
     )
+
+
+def _managers_exist(session: Session) -> bool:
+    """Is there anybody whose PIN could approve a rule change?"""
+    return (
+        session.scalar(
+            select(func.count(StaffUser.id)).where(
+                StaffUser.active.is_(True),
+                StaffUser.role.in_([StaffRole.MANAGER, StaffRole.OWNER]),
+            )
+        )
+        or 0
+    ) > 0
+
+
+def _approve_rules(session: Session, pin: str | None, ip: str) -> None:
+    """A manager's PIN, once there is a manager. Before the first one exists the back
+    office's own password is the only guard -- otherwise the rules could never be saved
+    on a fresh install, which is exactly where the owner found themselves."""
+    if pin or _managers_exist(session):
+        staff_auth.verify_manager_pin(session, pin, limiter_key=f"ip:{ip}")
 
 
 def programs_admin_view(session: Session) -> ProgramsAdminOut:
     return ProgramsAdminOut(
         programs=[_program_full(session, p) for p in programs.programs(session)],
         auto_stamp=settings.loyalty_auto_stamp,
+        pin_required=_managers_exist(session),
     )
 
 
@@ -291,6 +320,8 @@ def _change(body: ProgramEditIn) -> programs.ProgramChange:
         description=body.description,
         reward_ready_label=body.reward_ready_label,
         sort_order=body.sort_order,
+        cooldown_max_stamps=body.cooldown_max_stamps,
+        cooldown_minutes=body.cooldown_minutes,
         reward_options=(
             [
                 programs.OptionChange(
@@ -312,14 +343,14 @@ def _change(body: ProgramEditIn) -> programs.ProgramChange:
 def program_edit_view(
     session: Session, program_id: int, body: ProgramEditIn, ip: str
 ) -> ProgramFullOut:
-    staff_auth.verify_manager_pin(session, body.manager_pin, limiter_key=f"ip:{ip}")
+    _approve_rules(session, body.manager_pin, ip)
     program = programs.program_by_id(session, program_id)
     programs.apply_change(session, program, _change(body))
     return _program_full(session, program)
 
 
 def program_create_view(session: Session, body: ProgramCreateIn, ip: str) -> ProgramFullOut:
-    staff_auth.verify_manager_pin(session, body.manager_pin, limiter_key=f"ip:{ip}")
+    _approve_rules(session, body.manager_pin, ip)
     program = programs.create_program(session, slug=body.slug, change=_change(body))
     return _program_full(session, program)
 
@@ -537,3 +568,48 @@ def alerts_view(session: Session) -> AlertsOut:
             AlertOut(at=a.at, kind=a.kind, detail=a.detail) for a in alerts.list_alerts(session)
         ]
     )
+
+
+# --- 90-day targets --------------------------------------------------------------
+
+
+def _program_for(session: Session, slug: str | None) -> LoyaltyProgram:
+    return programs.program_by_slug(session, slug) if slug else default_program(session)
+
+
+def targets_view(session: Session, program: str | None, days: int = 90) -> TargetsOut:
+    p = _program_for(session, program)
+    s = stats(session, days=days, program_slug=p.slug)
+    return TargetsOut(
+        program_slug=p.slug,
+        days=days,
+        targets=[
+            TargetOut(
+                metric=r.metric.key,
+                label=r.metric.label,
+                unit=r.metric.unit,
+                target=r.target,
+                actual=r.actual,
+                progress=r.progress,
+                met=r.met,
+            )
+            for r in stats_service.target_rows(s, p.targets)
+        ],
+    )
+
+
+def targets_update_view(session: Session, body: TargetsIn) -> TargetsOut:
+    p = _program_for(session, body.program)
+    try:
+        p.targets = stats_service.set_targets(p.targets, body.targets) or None
+    except ValueError as exc:
+        raise LoyaltyError(422, "bad_target", str(exc)) from exc
+    session.flush()
+    return targets_view(session, p.slug)
+
+
+# --- subject access export -------------------------------------------------------
+
+
+def export_view(session: Session, member_id: int) -> dict[str, Any]:
+    return member_export(session, member_id)

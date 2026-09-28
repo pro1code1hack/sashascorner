@@ -2,8 +2,11 @@
 
 Contract: ``site/ADMIN.md``. Every route here sits under ``/api/admin``; every
 non-GET one needs ``X-Admin: 1`` (router-level ``require_csrf``), and every one
-but login/logout needs a session (``require_admin_session``). Every write is
-audited in ``site_admin_audit``.
+but login/logout needs ``require_admin_session`` -- in production that is the Café
+Ops back office's ``X-Site-Service-Key``, the only way in. Login and the password
+change answer 410 whenever a service key is configured (one password: the back
+office's); they work only as a dev fallback without one. Every write is audited in
+``site_admin_audit``.
 """
 
 from __future__ import annotations
@@ -62,6 +65,9 @@ def _notify_safely(text: str) -> None:
 
 @router.post("/login", response_model=OkOut, dependencies=[Depends(login_rate_limit)])
 def login(body: LoginIn, request: Request, response: Response) -> OkOut:
+    if not auth.cookie_login_enabled():
+        auth.audit("login.refused_back_office_only", request=request)
+        raise auth.back_office_only()
     try:
         source = auth.check_password(body.password)
     except auth.AdminDisabled as exc:
@@ -106,6 +112,8 @@ def me() -> MeOut:
 def change_password(
     body: PasswordChangeIn, request: Request, response: Response, tasks: BackgroundTasks
 ) -> OkOut:
+    if not auth.cookie_login_enabled():
+        raise auth.back_office_only()
     try:
         auth.check_password(body.current)
     except (PermissionError, auth.AdminDisabled) as exc:

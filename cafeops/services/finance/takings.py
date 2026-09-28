@@ -78,7 +78,10 @@ class ResolvedDay:
 
     @property
     def till_total_pence(self) -> int:
-        """Card + till cash + own cash (the Sales-tab total). Delivery apps excluded."""
+        """Card + cash (the Sales-tab total; cash includes any legacy CASH_OFF_TILL row).
+
+        Delivery apps excluded.
+        """
         return sum(
             self.gross(m) or 0
             for m in (PaymentMethod.CARD, PaymentMethod.CASH, PaymentMethod.CASH_OFF_TILL)

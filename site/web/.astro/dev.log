@@ -5295,3 +5295,91 @@
 {"message":"[200] / 4ms","label":null,"level":"info"}
 {"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
 {"message":"[200] /rewards 5ms","label":null,"level":"info"}
+{"message":"[200] /rewards 6ms","label":null,"level":"info"}
+{"message":"src/scripts/admin/mock.ts","label":"watch","level":"info"}
+{"message":"src/scripts/admin/state.ts","label":"watch","level":"info"}
+{"message":"src/scripts/admin/dom.ts","label":"watch","level":"info"}
+{"message":"src/scripts/admin/main.ts","label":"watch","level":"info"}
+{"message":"src/scripts/admin/menu-api.ts","label":"watch","level":"info"}
+{"message":"src/scripts/admin/menu.ts","label":"watch","level":"info"}
+{"message":"src/scripts/admin/api.ts","label":"watch","level":"info"}
+{"message":"src/scripts/admin/types.ts","label":"watch","level":"info"}
+{"message":"src/scripts/admin/menu-mock.ts","label":"watch","level":"info"}
+{"message":"src/scripts/admin/slots.ts","label":"watch","level":"info"}
+{"message":"src/scripts/admin/library.ts","label":"watch","level":"info"}
+{"message":"src/scripts/admin-core/mock.ts","label":"watch","level":"info"}
+{"message":"src/scripts/admin-core/api.ts","label":"watch","level":"info"}
+{"message":"src/scripts/admin-core/format.ts","label":"watch","level":"info"}
+{"message":"src/scripts/admin-core/session.ts","label":"watch","level":"info"}
+{"message":"src/scripts/admin-core/shell.ts","label":"watch","level":"info"}
+{"message":"src/scripts/admin-core/bookings.ts","label":"watch","level":"info"}
+{"message":"src/scripts/admin-core/ui.ts","label":"watch","level":"info"}
+{"message":"src/scripts/admin-core/index.ts","label":"watch","level":"info"}
+{"message":"src/layouts/Admin.astro","label":"watch","level":"info"}
+{"message":"/src/components/AdmSignIn.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"/src/components/AdmBookingStyles.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"src/pages/admin/index.astro","label":"watch","level":"info"}
+{"message":"src/pages/admin/bookings.astro","label":"watch","level":"info"}
+{"message":"src/pages/admin/messages.astro","label":"watch","level":"info"}
+{"message":"src/pages/admin/events.astro","label":"watch","level":"info"}
+{"message":"src/pages/admin/menu.astro","label":"watch","level":"info"}
+{"message":"src/pages/admin/photos.astro","label":"watch","level":"info"}
+{"message":"src/pages/admin/settings.astro","label":"watch","level":"info"}
+{"message":"[200] / 47ms","label":null,"level":"info"}
+{"message":"[200] /rewards 92ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"src/scripts/rewards/api.ts","label":"watch","level":"info"}
+{"message":"[200] /rewards 69ms","label":null,"level":"info"}
+{"message":"[200] / 91ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"src/scripts/rewards/join.ts","label":"watch","level":"info"}
+{"message":"src/scripts/rewards/card.ts","label":"watch","level":"info"}
+{"message":"[200] /rewards 43ms","label":null,"level":"info"}
+{"message":"[200] / 51ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"src/pages/rewards.astro","label":"watch","level":"info"}
+{"message":"[200] / 143ms","label":null,"level":"info"}
+{"message":"[200] /rewards 121ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"src/scripts/rewards/join.ts","label":"watch","level":"info"}
+{"message":"src/pages/rewards.astro","label":"watch","level":"info"}
+{"message":"[200] / 258ms","label":null,"level":"info"}
+{"message":"[200] /rewards 206ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"/src/pages/rewards.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"src/pages/c.astro","label":"watch","level":"info"}
+{"message":"[200] / 186ms","label":null,"level":"info"}
+{"message":"[200] /rewards 164ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"src/scripts/rewards/webcard.ts","label":"watch","level":"info"}
+{"message":"[200] /rewards 73ms","label":null,"level":"info"}
+{"message":"[200] / 104ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"src/scripts/rewards/webcard.ts","label":"watch","level":"info"}
+{"message":"[200] /rewards 57ms","label":null,"level":"info"}
+{"message":"[200] / 70ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"src/scripts/rewards/join.ts","label":"watch","level":"info"}
+{"message":"src/pages/rewards.astro","label":"watch","level":"info"}
+{"message":"[200] / 249ms","label":null,"level":"info"}
+{"message":"[200] /rewards 34ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"Configuration file updated. Restarting...","label":null,"level":"info"}
+[cafeops proxy] /api/loyalty, /api/staff, /wallet -> http://127.0.0.1:8001 (set CAFEOPS_API_URL to choose)
+{"message":"connected.","label":"vite","level":"info"}
+{"message":"connected.","label":"vite","level":"info"}
+{"message":"Re-optimizing dependencies because vite config has changed","label":"vite","level":"info"}
+{"message":"server restarted.","label":"vite","level":"info"}
+{"message":"Configuration file updated. Restarting...","label":null,"level":"info"}
+[cafeops proxy] /api/loyalty, /api/staff, /wallet -> http://127.0.0.1:8001 (set CAFEOPS_API_URL to choose)
+{"message":"connected.","label":"vite","level":"info"}
+{"message":"connected.","label":"vite","level":"info"}
+{"message":"server restarted.","label":"vite","level":"info"}
+{"message":"Configuration file updated. Restarting...","label":null,"level":"info"}
+[cafeops proxy] /api/loyalty, /api/staff, /wallet -> http://127.0.0.1:8001 (set CAFEOPS_API_URL to choose)
+{"message":"connected.","label":"vite","level":"info"}
+{"message":"connected.","label":"vite","level":"info"}
+{"message":"server restarted.","label":"vite","level":"info"}
+{"message":"[200] / 154ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /admin 9ms","label":null,"level":"info"}

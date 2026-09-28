@@ -173,7 +173,10 @@ async def join_program(
 @open_router.patch(
     "/card/{card_id}/preferences",
     response_model=CardState,
-    summary="Marketing consent on or off, from the web card. Recorded with time and source.",
+    summary=(
+        "The member's own settings from the web card: marketing consent (recorded with "
+        "time and source), first name, birthday. Any subset; omitted fields are kept."
+    ),
 )
 async def preferences(
     card_id: str,
@@ -183,9 +186,7 @@ async def preferences(
     t: TokenQuery = None,
 ) -> CardState:
     token = _token(x_card_token, t)
-    result = await in_session(
-        lambda s: views.preferences_view(s, card_id, token, marketing_opt_in=body.marketing_opt_in)
-    )
+    result = await in_session(lambda s: views.preferences_view(s, card_id, token, body))
     background.add_task(kick_wallets)
     return result
 

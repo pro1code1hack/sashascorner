@@ -175,7 +175,9 @@ def scan_view(
         stamps_required=view.stamps_required,
         rewards=view.rewards,
         stamps_last_10_min=net_purchase_stamps_since(
-            session, card.id, now - timedelta(minutes=COOLDOWN_MINUTES)
+            session,
+            card.id,
+            now - timedelta(minutes=card.program.cooldown_minutes or COOLDOWN_MINUTES),
         ),
         last_event=last_event,
         voided=view.voided,

@@ -1,5 +1,5 @@
 /**
- * Members › Campaigns: a lock-screen message to a segment of opted-in members
+ * Rewards › Campaigns (`#/rewards/campaigns`): a lock-screen message to a segment of opted-in members
  * (SPEC.md phase 2; CONTRACT §6).
  *
  * The rule on show: at most `promo_limit_per_month` promotional messages per
@@ -15,7 +15,7 @@ import { Button, Checkbox, ErrorBox, Field, Input, Loading, PageBody, PageHeader
 import { dayFull, stamp } from '../../lib/format'
 import { MEMBERS_KEY, membersApi, useCampaigns } from '../../lib/members-api'
 import type { Campaign, CampaignSegment } from '../../lib/types/members'
-import { CAMPAIGN_SEGMENT, MembersTabs, OutcomeLine, Panel, share, useWriteState } from './shared'
+import { CAMPAIGN_SEGMENT, OutcomeLine, Panel, share, useWriteState } from './shared'
 
 const MAX = 200
 
@@ -31,7 +31,7 @@ export function Campaigns() {
   const limit = data?.promo_limit_per_month ?? 2
   return (
     <>
-      <PageHeader title="Members" subtitle={<MembersTabs current="campaigns" />} saved={q.isFetching ? 'Loading…' : undefined} />
+      <PageHeader title="Campaigns" subtitle="Lock-screen messages to members who opted in. At most two promotions a person a month." saved={q.isFetching ? 'Loading…' : undefined} />
       <PageBody className="bg-canvas">
         {q.isError && <ErrorBox error={q.error} what="the campaigns" />}
         {q.isPending && <Loading what="Reading the campaigns" />}

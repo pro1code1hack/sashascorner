@@ -37,7 +37,55 @@ const lastmodFor = (url) => {
   return t ? new Date(t).toISOString() : undefined;
 };
 const NOT_IN_SITEMAP = [/\/book\/manage/, /\/admin/, /\/404$/, /\/c(\/|$)/, /\/staff(\/|$)/];
-const CAFEOPS_API = process.env.CAFEOPS_API_URL ?? 'http://127.0.0.1:8000';
+
+// ---- dev proxy to cafeops (Rewards, the staff scanner, Apple Wallet's web service) ----
+// CAFEOPS_API_URL wins. Without it, `astro dev` looks for a running cafeops API on the
+// ports it is usually started on and uses the first that answers its health check with
+// cafeops' own shape: port 8000 can be held by something else entirely (Docker Desktop
+// keeps a listener there that accepts and never replies), and a join form proxied to it
+// just spins. Nothing found: 8000, start.sh's port, which may simply not be up yet.
+const IS_DEV = process.argv.includes('dev');
+async function findCafeops() {
+  if (process.env.CAFEOPS_API_URL) return process.env.CAFEOPS_API_URL;
+  const fallback = 'http://127.0.0.1:8000';
+  if (!IS_DEV) return fallback;
+  const probe = async (base) => {
+    try {
+      const r = await fetch(`${base}/api/health`, { signal: AbortSignal.timeout(800) });
+      const body = await r.json();
+      return body && typeof body === 'object' && 'database_dialect' in body ? base : null;
+    } catch {
+      return null;
+    }
+  };
+  const bases = [8000, 8001, 8002].map((p) => `http://127.0.0.1:${p}`);
+  const found = (await Promise.all(bases.map(probe))).find(Boolean);
+  console.info(
+    found
+      ? `[cafeops proxy] /api/loyalty, /api/staff, /wallet -> ${found} (set CAFEOPS_API_URL to choose)`
+      : `[cafeops proxy] no cafeops API answering on ${bases.join(', ')}; using ${fallback}. Start it with \`uv run cafeops serve\` or set CAFEOPS_API_URL.`,
+  );
+  return found ?? fallback;
+}
+const CAFEOPS_API = await findCafeops();
+// A target that is down or never answers becomes a JSON 502 the pages can put into words
+// (scripts/rewards/api.ts `humanError`), and a line in this terminal saying which URL.
+const cafeopsProxy = () => ({
+  target: CAFEOPS_API,
+  proxyTimeout: 20_000,
+  configure(proxy) {
+    proxy.on('error', (err, req, res) => {
+      console.error(
+        `[cafeops proxy] ${req.method} ${req.url} -> ${CAFEOPS_API} failed (${err.code ?? err.message}). ` +
+          'Is the cafeops API running there? Set CAFEOPS_API_URL to point at it.',
+      );
+      if (res && typeof res.writeHead === 'function' && !res.headersSent && !res.writableEnded) {
+        res.writeHead(502, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'api_unreachable', detail: `The cafeops API at ${CAFEOPS_API} is not answering.` }));
+      }
+    });
+  },
+});
 
 export default defineConfig({
   // Canonical origin. Unconfirmed -- change once the domain is registered.
@@ -67,9 +115,9 @@ export default defineConfig({
       // (docs/loyalty/CONTRACT.md §8); everything else under /api is the site API.
       // Vite matches keys in order, so the specific prefixes come first.
       proxy: {
-        '/api/loyalty': CAFEOPS_API,
-        '/api/staff': CAFEOPS_API,
-        '/wallet': CAFEOPS_API,
+        '/api/loyalty': cafeopsProxy(),
+        '/api/staff': cafeopsProxy(),
+        '/wallet': cafeopsProxy(),
         '/api': process.env.SITE_API_URL ?? 'http://127.0.0.1:8100',
       },
     },

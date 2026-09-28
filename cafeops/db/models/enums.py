@@ -452,10 +452,11 @@ class PaymentMethod(enum.Enum):
     """How the money arrived. `OTHER` exists so an unmapped method is kept and
     labelled rather than dropped or silently folded into CARD."""
 
-    #: Cash rung on the till ("Till cash"; the workbook's "Square cash").
+    #: The day's cash ("Cash"; the workbook's "Square cash" plus its "Own cash"). One
+    #: cash figure per day, owner 2026-09-28 (DECISIONS 26).
     CASH = "CASH"
-    #: "Own cash": cash taken for sales that were NOT rung on the till. Kept apart from
-    #: CASH because the till cannot vouch for it, but the drawer count still includes it.
+    #: RETIRED, never written (DECISIONS 26). Was "Own cash" (sold without ringing).
+    #: Kept so old rows and migrations stay valid; every read folds it into CASH.
     CASH_OFF_TILL = "CASH_OFF_TILL"
     CARD = "CARD"
     VOUCHER = "VOUCHER"

@@ -1,6 +1,6 @@
 // /rewards: programme rules, the join form, recovery, and the wallet buttons after.
-import { api, lastCard, saveToken, CARD_ID_RE } from './api';
-import { esc, ordinal, PROGRAM_FALLBACK, type CardState, type JoinResult, type Program, type PublicProgram } from './card';
+import { api, humanError, lastCard, saveToken, CARD_ID_RE } from './api';
+import { esc, ordinal, pounds, PROGRAM_FALLBACK, type CardState, type JoinResult, type Program, type PublicProgram } from './card';
 import { walletHtml, wireWalletTracking } from './wallet';
 import { currentSrc, track } from '../track';
 
@@ -19,11 +19,33 @@ void api<Program>('GET', '/api/loyalty/program').then((r) => {
   if (!r.ok || !r.data) return;
   program = r.data;
   const set = (k: string, v: string) => $$(`[data-p="${k}"]`).forEach((el) => (el.textContent = v));
+  const reward = program.reward_text.replace(/\.$/, '');
+  set('name', program.name);
   set('stamps', String(program.stamps_required));
   set('ninth', ordinal(program.stamps_required + 1));
   set('per-scan', String(program.max_stamps_per_scan));
-  set('reward', program.reward_text.replace(/\.$/, ''));
+  set('reward', reward);
+  set('reward-lc', reward.charAt(0).toLowerCase() + reward.slice(1));
+  set('referral', `${program.referral_stamps} extra stamp${program.referral_stamps === 1 ? '' : 's'}`);
   $$('[data-p-birthday]').forEach((el) => (el.hidden = !program.birthday_reward));
+  $$('[data-p-referral]').forEach((el) => (el.hidden = program.referral_stamps <= 0));
+  $('[data-ref-note]').hidden = !(refId && program.referral_stamps > 0);
+  // "It can be any drink" is only true with no price cap and no catalogue.
+  const catalogue = program.catalogue ?? [];
+  const cap = program.reward_max_price_pence ?? null;
+  $$('[data-p-any]').forEach((el) => (el.hidden = cap !== null || catalogue.length > 0));
+  $$('[data-p-cap]').forEach((el) => {
+    el.hidden = cap === null;
+    el.textContent = cap === null ? '' : `The free drink is any drink up to ${pounds(cap)}.`;
+  });
+  const cat = $('[data-catalogue]');
+  cat.hidden = catalogue.length === 0;
+  $('[data-catalogue-list]').innerHTML = catalogue
+    .map((o) => {
+      const bits = [o.description, o.max_price_pence != null ? `up to ${pounds(o.max_price_pence)}` : null].filter(Boolean).join(', ');
+      return `<li><strong>${esc(o.name)}</strong>${bits ? ` <span>${esc(bits)}</span>` : ''}</li>`;
+    })
+    .join('');
 });
 
 // ---- phase 3: other programmes ------------------------------------------------------------
@@ -76,7 +98,7 @@ if (mine) {
       location.assign(r.data.web_card_url);
       return;
     }
-    msg.textContent = r.status === 0 ? "Couldn't add it: no connection. Try again in a moment." : (r.error?.detail ?? "Couldn't add the card. Please try again.");
+    msg.textContent = `Couldn't add the card. ${humanError(r)}`;
   });
 }
 
@@ -112,11 +134,6 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const phoneDigits = (s: string) => s.replace(/[^\d]/g, '');
 const looksLikePhone = (s: string) => /^\+?[\d\s()-]{7,20}$/.test(s.trim()) && phoneDigits(s).length >= 10 && phoneDigits(s).length <= 15;
 
-function commonError(status: number, detail?: string): string {
-  if (status === 0) return "Couldn't reach the café. Check your connection and try again.";
-  if (status === 429) return 'Too many tries from this connection. Please wait a few minutes and try again.';
-  return detail || 'Something went wrong on our side. Please try again, or ask at the till.';
-}
 
 // ---- join --------------------------------------------------------------------------------
 const form = panels.join;
@@ -204,11 +221,26 @@ form.addEventListener('submit', async (e) => {
       openRecover(String(body.email ?? body.phone), 'You already have a card with that ' + (body.email ? 'email address' : 'number') + '. We can send you a code to get it back on this phone.');
       return;
     }
-    if (r.status === 422) {
-      formError(form, r.error?.detail || 'Please check the form and try again.');
+    // The server's own checks, shown on the field they are about.
+    const onField: Record<string, string> = {
+      first_name_required: 'first_name',
+      first_name_too_long: 'first_name',
+      bad_email: 'contact',
+      bad_phone: 'contact',
+      contact_required: 'contact',
+      terms_required: 'terms',
+    };
+    const code = r.error?.error ?? '';
+    if (r.status === 422 && onField[code]) {
+      fieldError(form, onField[code], humanError(r));
+      form.querySelector<HTMLElement>(`[aria-describedby~="err-${onField[code]}"]`)?.focus();
       return;
     }
-    formError(form, commonError(r.status, r.error?.detail));
+    if (r.status === 422 && code === 'bad_birthday') {
+      $('[data-err="birthday"]', form).textContent = humanError(r);
+      return;
+    }
+    formError(form, humanError(r));
   } finally {
     btn.disabled = false;
     btn.classList.remove('is-busy');
@@ -306,7 +338,7 @@ stepContact.addEventListener('submit', async (e) => {
   try {
     const r = await api<{ delivery: 'email' | 'sms' | 'ask_staff' }>('POST', '/api/loyalty/recover', { body: { contact: c } });
     if (!r.ok || !r.data) {
-      formError(stepContact, commonError(r.status, r.error?.detail));
+      formError(stepContact, humanError(r));
       return;
     }
     pendingContact = c;
@@ -348,12 +380,12 @@ stepCode.addEventListener('submit', async (e) => {
       done(r.data, null, 'recover');
       return;
     }
-    if (r.status === 400) {
+    if (r.status === 400 && r.error?.error === 'bad_code') {
       fieldError(stepCode, 'code', "That code didn't work. It may have expired: codes last 10 minutes.");
       input.focus();
       return;
     }
-    formError(stepCode, commonError(r.status, r.error?.detail));
+    formError(stepCode, humanError(r));
   } finally {
     btn.disabled = false;
   }

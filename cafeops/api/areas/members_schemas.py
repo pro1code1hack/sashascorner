@@ -343,11 +343,18 @@ class ProgramFullOut(ProgramAdminOut):
     cards: int
     #: False once anybody has earned on it: the kind can no longer change.
     kind_editable: bool
+    #: Cooldown: more than this many purchase stamps on one card within
+    #: `cooldown_minutes` needs a manager's PIN at the scanner.
+    cooldown_max_stamps: int = 3
+    cooldown_minutes: int = 10
 
 
 class ProgramsAdminOut(Out):
     programs: list[ProgramFullOut]
     auto_stamp: bool
+    #: False while no active manager or owner has a PIN: changes then save behind the
+    #: back-office password alone (otherwise nobody could ever save the first rules).
+    pin_required: bool = True
 
 
 class ProgramEditIn(In):
@@ -369,7 +376,10 @@ class ProgramEditIn(In):
     sort_order: int | None = None
     eligibility: EligibilityIn | None = None
     reward_options: list[RewardOptionIn] | None = Field(default=None, max_length=12)
-    manager_pin: Pin = Field(max_length=12)
+    cooldown_max_stamps: int | None = None
+    cooldown_minutes: int | None = None
+    #: Required once a manager or owner exists (see `ProgramsAdminOut.pin_required`).
+    manager_pin: Pin | None = Field(default=None, max_length=12)
 
 
 class ProgramCreateIn(ProgramEditIn):
@@ -402,3 +412,29 @@ class PosCustomerAdminOut(Out):
 
 class PosCustomersAdminOut(Out):
     customers: list[PosCustomerAdminOut]
+
+
+# --- 90-day targets --------------------------------------------------------------
+
+
+class TargetOut(Out):
+    metric: str
+    label: str
+    unit: str = Field(description='"count" | "share" (0..1) | "rate"')
+    target: float | None = Field(description="Shares are 0..1. null = no target set.")
+    actual: float | None = Field(description="Over the last `days`; null = cannot be worked out.")
+    progress: float | None = Field(description="actual / target; null when either is missing.")
+    met: bool | None
+
+
+class TargetsOut(Out):
+    program_slug: str
+    days: int
+    targets: list[TargetOut]
+
+
+class TargetsIn(In):
+    """`{metric: number | null}`; null removes that target. Metrics not named stay."""
+
+    program: str | None = Field(default=None, max_length=40)
+    targets: dict[str, float | None] = Field(max_length=20)

@@ -3,9 +3,9 @@
  */
 import { useState } from 'react'
 import type { ReactNode } from 'react'
-import { Input, cx } from '../../components/ui'
-import type { WriteResult } from '../../lib/api'
+import { Button, Field, Input, cx } from '../../components/ui'
 import { href } from '../../lib/router'
+import type { WriteResult } from '../../lib/api'
 import type {
   CampaignSegment,
   MemberRow,
@@ -100,37 +100,6 @@ export function signed(n: number): string {
   return n > 0 ? `+${n}` : n < 0 ? `−${Math.abs(n)}` : '0'
 }
 
-/* ------------------------------------------------------------ the tabs --- */
-
-const TABS = [
-  { id: 'list', label: 'Members', path: '/members' },
-  { id: 'insights', label: 'Insights', path: '/members/insights' },
-  { id: 'campaigns', label: 'Campaigns', path: '/members/campaigns' },
-  { id: 'staff', label: 'Staff & devices', path: '/members/staff' },
-  { id: 'programme', label: 'Programme', path: '/members/programme' },
-] as const
-export type MembersTab = (typeof TABS)[number]['id']
-
-export function MembersTabs({ current }: { current: MembersTab }) {
-  return (
-    <span className="inline-flex flex-wrap items-center gap-1" role="navigation" aria-label="Members sections">
-      {TABS.map((t) => (
-        <a
-          key={t.id}
-          href={href(t.path)}
-          aria-current={t.id === current ? 'page' : undefined}
-          className={cx(
-            'inline-flex h-8 items-center whitespace-nowrap rounded-full px-3.5 text-base font-bold no-underline transition-colors',
-            t.id === current ? 'bg-brand-wash text-brand-ink' : 'text-ink-2 hover:bg-canvas hover:text-ink',
-          )}
-        >
-          {t.label}
-        </a>
-      ))}
-    </span>
-  )
-}
-
 /* ----------------------------------------------------------------- PINs --- */
 
 export const PIN_RE = /^\d{4,6}$/
@@ -162,6 +131,60 @@ export function PinInput({
       }}
       className={cx('fig', className)}
     />
+  )
+}
+
+/**
+ * The foot of a rules form: the manager PIN (only once a manager exists; before
+ * that the back-office password is the guard, or nothing could ever be saved on
+ * a fresh install), the change count and the save button.
+ */
+export function RulesSave({
+  pinRequired,
+  pin,
+  setPin,
+  changes,
+  canSave,
+  busy,
+  label,
+  outcome,
+}: {
+  pinRequired: boolean
+  pin: string
+  setPin: (v: string) => void
+  changes: number
+  canSave: boolean
+  busy: boolean
+  label: string
+  outcome: Outcome
+}) {
+  const count = changes === 0 ? 'Nothing changed yet.' : `${changes} ${changes === 1 ? 'change' : 'changes'} to save.`
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-end gap-3">
+        {pinRequired && (
+          <Field label="Manager PIN" hint="A manager or owner approves rule changes.">
+            <div className="w-36">
+              <PinInput value={pin} onChange={setPin} />
+            </div>
+          </Field>
+        )}
+        <Button type="submit" variant="primary" disabled={!canSave} pending={busy} pendingLabel="Saving…" className={pinRequired ? 'mb-5' : undefined}>
+          {label}
+        </Button>
+        <span className={cx('text-sm text-ink-2', pinRequired && 'mb-7')}>{count}</span>
+      </div>
+      {!pinRequired && (
+        <p className="text-sm text-ink-2">
+          No manager has a PIN yet, so changes save with the back-office password alone.{' '}
+          <a href={href('/rewards/staff')} className="font-bold text-brand-ink underline">
+            Add a manager
+          </a>{' '}
+          to have rule changes approved with a PIN.
+        </p>
+      )}
+      <OutcomeLine outcome={outcome} />
+    </div>
   )
 }
 

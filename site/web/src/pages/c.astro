@@ -4,6 +4,8 @@
 // token from the #t= fragment. Private to its holder: noindex, out of the sitemap.
 import Base from '../layouts/Base.astro';
 import '../scripts/rewards/card.css';
+
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 ---
 
 <Base title="Your Rewards card · Sasha's Corner" description="Your Sasha's Corner Rewards stamp card." noindex>
@@ -36,6 +38,20 @@ import '../scripts/rewards/card.css';
           <p class="cside__msg" data-join-msg role="status"></p>
         </section>
 
+        <!-- Referrals: shown only when the programme gives stamps for them. -->
+        <section class="cside" aria-labelledby="invite-title" data-invite hidden>
+          <h2 id="invite-title">Invite a friend</h2>
+          <p class="cside__lede">
+            Send a friend your link. When they join and have their first stamped drink, you get{' '}
+            <span data-invite-n>1 extra stamp</span>.
+          </p>
+          <div class="invite">
+            <input class="input invite__url" readonly data-invite-url aria-label="Your invite link" />
+            <button class="btn btn--caramel" type="button" data-invite-share>Share link</button>
+          </div>
+          <p class="cside__msg" data-invite-msg role="status"></p>
+        </section>
+
         <section class="cside" aria-labelledby="home-title" data-home hidden>
           <h2 id="home-title">Keep it one tap away</h2>
           <p data-home-ios hidden>
@@ -50,6 +66,39 @@ import '../scripts/rewards/card.css';
 
         <section class="cside" aria-labelledby="prefs-title">
           <h2 id="prefs-title">Your details</h2>
+          <form class="details" data-details novalidate>
+            <label class="field">
+              <span>First name</span>
+              <input class="input" name="first_name" autocomplete="given-name" autocapitalize="words" maxlength="40" required aria-describedby="err-dname" />
+              <small class="ferr" id="err-dname" data-err="first_name"></small>
+            </label>
+            <fieldset class="details__bday" data-bday hidden>
+              <legend>Birthday <em>(optional)</em></legend>
+              <div class="details__row">
+                <label class="field">
+                  <span>Day</span>
+                  <select class="input" name="birthday_day" aria-describedby="bday-note err-dbday">
+                    <option value="">Day</option>
+                    {Array.from({ length: 31 }, (_, i) => <option value={i + 1}>{i + 1}</option>)}
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Month</span>
+                  <select class="input" name="birthday_month" aria-describedby="bday-note err-dbday">
+                    <option value="">Month</option>
+                    {MONTHS.map((m, i) => <option value={i + 1}>{m}</option>)}
+                  </select>
+                </label>
+              </div>
+              <small class="fhint" id="bday-note" data-bday-note></small>
+              <small class="ferr" id="err-dbday" data-err="birthday"></small>
+            </fieldset>
+            <p class="fhint" data-contact hidden></p>
+            <div class="details__go">
+              <button class="btn btn--ghost" type="submit" data-details-save>Save details</button>
+            </div>
+            <p class="cside__msg" data-details-msg role="status"></p>
+          </form>
           <label class="switch">
             <input type="checkbox" role="switch" data-marketing />
             <span class="switch__track" aria-hidden="true"></span>
@@ -263,6 +312,72 @@ import '../scripts/rewards/card.css';
   }
   a:not(.btn) {
     color: var(--coffee);
+  }
+
+  /* details: name and birthday */
+  .details {
+    display: grid;
+    gap: 14px;
+    margin-top: 16px;
+    max-width: 30rem;
+  }
+  .details fieldset {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+  }
+  .details legend {
+    padding: 0;
+    font-weight: 500;
+  }
+  .details legend em {
+    font-style: normal;
+    color: var(--olive-700);
+  }
+  .details__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .fhint,
+  .ferr {
+    display: block;
+    margin-top: 6px;
+    font-size: var(--step--1);
+  }
+  .fhint {
+    color: var(--olive-700);
+  }
+  .fhint:empty,
+  .ferr:empty {
+    display: none;
+  }
+  .ferr {
+    color: var(--coffee-deep);
+    font-weight: 500;
+  }
+  .details__go {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  /* invite a friend */
+  .invite {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .invite__url {
+    flex: 1 1 14rem;
+    min-width: 0;
+    font-size: var(--step--1);
+  }
+  .invite .btn {
+    flex: none;
   }
 
   /* marketing switch */

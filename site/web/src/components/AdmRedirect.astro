@@ -1,0 +1,30 @@
+---
+// The website admin moved into the Café Ops back office (owner, 2026-09-28: one app,
+// one password). In production Caddy redirects /admin* before a page is served
+// (deploy/Caddyfile.site); this stub covers `astro dev` and any host without Caddy.
+// SITE_OPS_URL is the back office's origin, read at build time.
+interface Props {
+  /** The back office's hash route, e.g. `/website/bookings`. */
+  route: string;
+}
+const { route } = Astro.props;
+const fallback = import.meta.env.DEV ? 'http://localhost:5178' : 'https://ops.sashascorner.co.uk';
+const ops = (process.env.SITE_OPS_URL || fallback).replace(/\/+$/, '');
+const target = `${ops}/#${route}`;
+---
+
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta http-equiv="refresh" content={`0; url=${target}`} />
+    <link rel="canonical" href={target} />
+    <title>Website admin · moved to the back office</title>
+  </head>
+  <body style="font: 16px/1.5 system-ui, sans-serif; margin: 2rem 1rem">
+    <p>The website admin is in the back office now, behind its one password.</p>
+    <p><a href={target}>Open the back office</a></p>
+  </body>
+</html>

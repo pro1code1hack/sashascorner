@@ -53,7 +53,9 @@ followed by `up site-static`.
    SITE_DOMAIN=sashascorner.co.uk            # Caddy: which hostname the site block answers
    SITE_PUBLIC_URL=https://sashascorner.co.uk # build: canonical URLs, og:url, sitemap
    SITE_CORS_ORIGINS=https://sashascorner.co.uk
-   SITE_ADMIN_PASSWORD=<long random>          # /api/admin/*; unset -> 503 (fails closed)
+   SITE_SERVICE_KEY=<long random>             # the back office's key into /api/admin/*;
+                                              # set, it is the ONLY way in (one password)
+   SITE_OPS_URL=https://ops.sashascorner.co.uk # where /admin* on the site redirects
    # CAFEOPS_TELEGRAM_BOT_TOKEN / CAFEOPS_TELEGRAM_OWNER_CHAT_ID are already there for
    # the ops bot; the site reuses them for booking and contact-form notifications.
    ```

@@ -55,9 +55,7 @@ const description = [
       )
     }
   </p>
-  <Fragment set:html="<!-- OWNER TO CONFIRM: notice needed for whole cakes -->" />
-  {whole && <p class="kc-notice">Give us a few days' notice for a whole cake.</p>}
-  <Fragment set:html="<!-- /OWNER TO CONFIRM -->" />
+  <Fragment set:html="<!-- OWNER TO CONFIRM: how much notice a whole cake needs. Hidden from customers until confirmed; draft: 'Give us a few days' notice for a whole cake.' -->" />
   {
     whole && (
       <p class="kc-cta">

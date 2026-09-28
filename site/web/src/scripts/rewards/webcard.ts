@@ -6,12 +6,12 @@
 // Phase 3: the member's other cards (a matcha club, a points card) show as tabs above
 // the card -- each tab is that card's own link, token included -- and programmes they
 // have not joined are offered in "More cards", one tap, no form.
-import { api, CARD_ID_RE, forgetToken, isMock, loadToken, platform, saveToken } from './api';
+import { api, CARD_ID_RE, forgetToken, humanError, isMock, loadToken, platform, saveToken } from './api';
 import { cardHtml, esc, type CardState, type JoinResult } from './card';
 import { walletHtml, wireWalletTracking } from './wallet';
 
 const POLL_MS = 20_000;
-const $ = <T extends Element = HTMLElement>(sel: string) => document.querySelector<T>(sel)!;
+const $ = <T extends Element = HTMLElement>(sel: string, root: ParentNode = document) => root.querySelector<T>(sel)!;
 
 type State = 'loading' | 'card' | 'notoken' | 'notfound' | 'deleted' | 'error';
 const TITLES: Record<State, string> = {
@@ -75,6 +75,8 @@ function render(s: CardState) {
   const box = $<HTMLInputElement>('[data-marketing]');
   if (!box.disabled) box.checked = s.marketing_opt_in;
   renderCards(s);
+  renderInvite(s);
+  renderDetails(s);
   setState('card');
 }
 
@@ -125,8 +127,158 @@ $('[data-join-list]').addEventListener('click', async (e) => {
     location.assign(r.data.web_card_url);
     return;
   }
-  msg.textContent =
-    r.status === 0 ? "Couldn't add it: no connection. Try again in a moment." : (r.error?.detail ?? "Couldn't add the card. Please try again.");
+  msg.textContent = `Couldn't add the card. ${humanError(r)}`;
+});
+
+// ---- invite a friend -------------------------------------------------------------------------
+// The link carries this card's id; joining through it records the referrer, and the
+// referrer's main card gets the stamps when the friend's first drink is stamped
+// (services/loyalty/stamping.py). Shown only when the programme gives stamps for it.
+const invite = $('[data-invite]');
+const inviteUrl = $<HTMLInputElement>('[data-invite-url]');
+const inviteBtn = $<HTMLButtonElement>('[data-invite-share]');
+const inviteMsg = $('[data-invite-msg]');
+const canShare = typeof navigator.share === 'function';
+inviteBtn.textContent = canShare ? 'Share link' : 'Copy link';
+
+function renderInvite(s: CardState) {
+  const n = s.referral_stamps ?? 0;
+  invite.hidden = n <= 0;
+  if (n <= 0) return;
+  inviteUrl.value = `${location.origin}/rewards?ref=${encodeURIComponent(s.card_id)}`;
+  $('[data-invite-n]').textContent = `${n} extra stamp${n === 1 ? '' : 's'}`;
+}
+
+async function copy(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    inviteUrl.focus();
+    inviteUrl.select();
+    try {
+      return document.execCommand('copy');
+    } catch {
+      return false;
+    }
+  }
+}
+
+inviteBtn.addEventListener('click', async () => {
+  const url = inviteUrl.value;
+  if (!url) return;
+  inviteMsg.textContent = '';
+  if (canShare) {
+    try {
+      await navigator.share({
+        title: "Sasha's Corner Rewards",
+        text: 'Get a stamp card for Sasha\'s Corner on your phone. Every drink gets a stamp.',
+        url,
+      });
+      return;
+    } catch (e) {
+      if (e instanceof DOMException && e.name === 'AbortError') return; // closed the sheet
+      // Share failed for another reason: fall through to copying.
+    }
+  }
+  inviteMsg.textContent = (await copy(url))
+    ? 'Link copied. Send it to a friend.'
+    : 'Copy the link above and send it to a friend.';
+});
+inviteUrl.addEventListener('focus', () => inviteUrl.select());
+
+// ---- your details: name and birthday -----------------------------------------------------
+const details = $<HTMLFormElement>('[data-details]');
+const nameIn = $<HTMLInputElement>('input[name="first_name"]', details);
+const daySel = $<HTMLSelectElement>('select[name="birthday_day"]', details);
+const monthSel = $<HTMLSelectElement>('select[name="birthday_month"]', details);
+const detailsMsg = $('[data-details-msg]');
+const fmtBirthday = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+let detailsDirty = false;
+details.addEventListener('input', () => {
+  detailsDirty = true;
+  detailsMsg.textContent = '';
+});
+
+function bdayNote(s: CardState): string {
+  if (!s.birthday_day || !s.birthday_month) return 'Add it for a free drink around your birthday. Day and month only, no year.';
+  const from = s.birthday_counts_from ? new Date(`${s.birthday_counts_from}T12:00:00Z`) : null;
+  if (!from || Number.isNaN(from.getTime())) return '';
+  return `Your birthday drink: from 7 days before ${fmtBirthday.format(from)}. A birthday added or changed less than 30 days before the date counts from the following year.`;
+}
+
+function renderDetails(s: CardState) {
+  $('[data-bday]').hidden = !s.birthday_reward;
+  $('[data-bday-note]').textContent = bdayNote(s);
+  const contact = $('[data-contact]');
+  contact.hidden = !s.contact_masked;
+  contact.textContent = s.contact_masked
+    ? `Card recovery goes to ${s.contact_masked}. To change it, ask us at the till.`
+    : '';
+  // Never overwrite what the member is typing with a poll.
+  if (detailsDirty) return;
+  nameIn.value = s.first_name;
+  daySel.value = s.birthday_day ? String(s.birthday_day) : '';
+  monthSel.value = s.birthday_month ? String(s.birthday_month) : '';
+}
+
+function detailsError(name: 'first_name' | 'birthday', msg: string) {
+  $(`[data-err="${name}"]`, details).textContent = msg;
+  (name === 'first_name' ? nameIn : daySel).setAttribute('aria-invalid', msg ? 'true' : 'false');
+}
+
+details.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!token || !current) return;
+  detailsError('first_name', '');
+  detailsError('birthday', '');
+  detailsMsg.textContent = '';
+  const name = nameIn.value.trim();
+  const day = Number(daySel.value || 0);
+  const month = Number(monthSel.value || 0);
+  let ok = true;
+  if (!name) {
+    detailsError('first_name', 'Please add your first name.');
+    ok = false;
+  }
+  if ((day && !month) || (!day && month)) {
+    detailsError('birthday', 'Please pick both the day and the month, or leave both empty.');
+    ok = false;
+  } else if (day && month && day > new Date(Date.UTC(2024, month, 0)).getUTCDate()) {
+    detailsError('birthday', "That month doesn't have that many days.");
+    ok = false;
+  }
+  if (!ok) return;
+
+  const body: Record<string, unknown> = {};
+  if (name !== current.first_name) body.first_name = name;
+  const bdayChanged = (day || null) !== (current.birthday_day ?? null) || (month || null) !== (current.birthday_month ?? null);
+  if (current.birthday_reward && bdayChanged) {
+    body.birthday_day = day || null;
+    body.birthday_month = month || null;
+  }
+  if (Object.keys(body).length === 0) {
+    detailsDirty = false;
+    detailsMsg.textContent = 'Nothing to change.';
+    return;
+  }
+  const btn = $<HTMLButtonElement>('[data-details-save]');
+  btn.disabled = true;
+  detailsMsg.textContent = 'Saving…';
+  const r = await api<CardState>('PATCH', `/api/loyalty/card/${encodeURIComponent(id)}/preferences`, { token, body });
+  btn.disabled = false;
+  if (r.ok && r.data) {
+    detailsDirty = false;
+    current = null; // force a full render: the name is on the card
+    render(r.data);
+    detailsMsg.textContent = 'Saved.';
+    return;
+  }
+  detailsMsg.textContent = '';
+  const code = r.error?.error ?? '';
+  if (code.startsWith('first_name')) detailsError('first_name', humanError(r));
+  else if (code === 'bad_birthday') detailsError('birthday', humanError(r));
+  else detailsMsg.textContent = `Couldn't save your details. ${humanError(r)}`;
 });
 
 // ---- loading and polling -------------------------------------------------------------------
@@ -150,8 +302,7 @@ async function load(first = false) {
     }
     // A failed poll keeps the card on screen; only the first load shows the error.
     if (first || !current) {
-      $('[data-error-text]').textContent =
-        r.status === 0 ? "We couldn't reach the café just now. Check your connection." : 'Something went wrong on our side.';
+      $('[data-error-text]').textContent = humanError(r);
       setState('error');
     }
   } finally {
@@ -208,8 +359,7 @@ box.addEventListener('change', async () => {
     render(r.data);
   } else {
     box.checked = !want;
-    boxMsg.textContent =
-      r.status === 0 ? "Couldn't save: no connection. Try again in a moment." : "Couldn't save that. Please try again.";
+    boxMsg.textContent = `Couldn't save that. ${humanError(r)}`;
   }
 });
 
@@ -238,8 +388,7 @@ $<HTMLButtonElement>('[data-del-yes]').addEventListener('click', async (e) => {
     cardEl.innerHTML = '';
     setState('deleted');
   } else {
-    delMsg.textContent =
-      r.status === 0 ? "Couldn't delete: no connection. Try again in a moment." : "Couldn't delete the card. Please try again, or ask at the till.";
+    delMsg.textContent = `Couldn't delete the card. ${humanError(r)}`;
   }
 });
 

@@ -283,7 +283,7 @@ function noCosts(f: PeriodFigures): CellV | null {
 function rows(data: PLResponse): Row[] {
   const out: Row[] = [
     { key: 'card', label: 'Card sales', cell: (f) => money(f.card_pence, '') },
-    { key: 'cash', label: 'Cash sales', cell: (f) => money(f.cash_till_pence + f.cash_off_till_pence, '') },
+    { key: 'cash', label: 'Cash sales', cell: (f) => money(f.cash_pence, '') },
     {
       key: 'delivery',
       label: 'Delivery apps (gross)',

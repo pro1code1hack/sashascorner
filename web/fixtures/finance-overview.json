@@ -6,8 +6,7 @@
     "trading_days": 21,
     "expense_count": 0,
     "card_pence": 129305,
-    "cash_till_pence": 0,
-    "cash_off_till_pence": 0,
+    "cash_pence": 0,
     "delivery_gross_pence": null,
     "delivery_missing": [
       "Deliveroo: Apr 26",
@@ -46,8 +45,7 @@
     "trading_days": 31,
     "expense_count": 46,
     "card_pence": 240544,
-    "cash_till_pence": 0,
-    "cash_off_till_pence": 0,
+    "cash_pence": 0,
     "delivery_gross_pence": 3177,
     "delivery_missing": [
       "Deliveroo: Mar 26"

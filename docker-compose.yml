@@ -16,8 +16,10 @@
 #
 # An empty database still needs seeding once (no `uv run` inside the container -- the
 # image's PATH already points at the synced venv, see Dockerfile):
-#   docker compose run --rm -e CAFEOPS_FINANCE_WORKBOOK_PATH=/app/sashas_corner_finance__LEGACY_.xlsx \
-#       api cafeops seed --demo   # or import-legacy --commit, see README.md
+#   docker compose run --rm api cafeops import-legacy --commit   # see README.md
+#   docker compose run --rm api cafeops menu-import-board --commit --prices keep
+# Never `seed --demo` here: it fabricates 60 days of sales and counts, and refuses to
+# run without CAFEOPS_ALLOW_DEMO_SEED=1 (and on any database with real sales).
 # See README.md for the full first-run walkthrough and docs/OPERATIONS.md for the
 # nightly backup, restore drill and "what to check when a screen is blank".
 
@@ -171,8 +173,8 @@ services:
       target: caddy
       args:
         # The deployed app reads the LIVE database through this same Caddy rather
-        # than the recorded fixtures baked into the bundle. Blank it to ship a
-        # self-contained demo that needs no API and no password.
+        # than recorded fixtures. Fixtures are opt-in only (VITE_FIXTURES=1 with
+        # VITE_LIVE blank), for a dev build that needs no API.
         VITE_LIVE: "1"
     restart: unless-stopped
     env_file: .env

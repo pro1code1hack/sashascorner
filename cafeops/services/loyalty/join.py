@@ -24,24 +24,41 @@ from __future__ import annotations
 import secrets
 import uuid
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime, timedelta
 
 from sqlalchemy import or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from cafeops.config import settings
 from cafeops.db.models import LoyaltyCard, LoyaltyMember, LoyaltyProgram
-from cafeops.domain.loyalty import is_valid_birthday, normalise_email, normalise_phone
-from cafeops.services.loyalty.common import audit, default_program, now_utc
+from cafeops.domain.loyalty import (
+    BIRTHDAY_MIN_LEAD_DAYS,
+    BIRTHDAY_NOTICE_DAYS,
+    birthday_in_year,
+    is_valid_birthday,
+    normalise_email,
+    normalise_phone,
+)
+from cafeops.services.loyalty.common import (
+    audit,
+    default_program,
+    enqueue_wallet_update,
+    now_utc,
+    touch,
+)
 from cafeops.services.loyalty.errors import LoyaltyError
 
 __all__ = [
+    "DetailsChange",
     "JoinRequest",
     "Joined",
     "add_program_card",
+    "birthday_counts_from",
     "find_member_by_contact",
     "join",
     "new_card",
+    "update_details",
 ]
 
 _SRC_ALLOWED = set("abcdefghijklmnopqrstuvwxyz0123456789-_")
@@ -146,12 +163,24 @@ def find_member_by_contact(session: Session, contact: str) -> LoyaltyMember | No
     return session.scalar(select(LoyaltyMember).where(cond, LoyaltyMember.deleted_at.is_(None)))
 
 
-def join(session: Session, req: JoinRequest) -> Joined:
-    first_name = " ".join(req.first_name.split())
+def _clean_first_name(raw: str) -> str:
+    first_name = " ".join(raw.split())
     if not first_name:
         raise LoyaltyError(422, "first_name_required", "Tell us your first name.")
     if len(first_name) > 40:
         raise LoyaltyError(422, "first_name_too_long", "A first name of up to 40 letters, please.")
+    return first_name
+
+
+def _check_birthday(day: int | None, month: int | None) -> None:
+    if (day is None) != (month is None):
+        raise LoyaltyError(422, "bad_birthday", "Give both the day and the month, or neither.")
+    if day is not None and month is not None and not is_valid_birthday(day, month):
+        raise LoyaltyError(422, "bad_birthday", "That is not a real date.")
+
+
+def join(session: Session, req: JoinRequest) -> Joined:
+    first_name = _clean_first_name(req.first_name)
     if not req.terms:
         raise LoyaltyError(422, "terms_required", "Please accept the terms to get a card.")
 
@@ -170,10 +199,7 @@ def join(session: Session, req: JoinRequest) -> Joined:
         )
 
     day, month = req.birthday_day, req.birthday_month
-    if (day is None) != (month is None):
-        raise LoyaltyError(422, "bad_birthday", "Give both the day and the month, or neither.")
-    if day is not None and month is not None and not is_valid_birthday(day, month):
-        raise LoyaltyError(422, "bad_birthday", "That is not a real date.")
+    _check_birthday(day, month)
 
     clauses = []
     if email:
@@ -243,3 +269,85 @@ def join(session: Session, req: JoinRequest) -> Joined:
     return Joined(
         card_id=card.id, token=card.auth_token, member_id=member.id, extra_cards=tuple(extra)
     )
+
+
+# --------------------------------------------------------------------------
+# the member's own details, from the web card
+# --------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class DetailsChange:
+    """What the member changed. `None` leaves a field alone; `birthday` is only applied
+    when `set_birthday` is true, and `(None, None)` then removes it."""
+
+    first_name: str | None = None
+    set_birthday: bool = False
+    birthday: tuple[int | None, int | None] = (None, None)
+
+
+def update_details(session: Session, card: LoyaltyCard, change: DetailsChange) -> list[str]:
+    """Name and birthday, edited by the member. Returns what changed (for the audit).
+
+    The 30-day rule needs no check here: a new or changed birthday restarts
+    `birthday_set_at`, and the birthday job refuses any occurrence fewer than 30 days
+    after it (domain `birthday_decision`). So a birthday typed in for tomorrow brings
+    nothing this year, and once-a-year stays the reward's unique key.
+    """
+    member = card.member
+    if member.deleted_at is not None or card.voided_at is not None:
+        raise LoyaltyError(410, "card_deleted", "This card has been deleted.")
+    now = now_utc()
+    changed: list[str] = []
+    if change.first_name is not None:
+        name = _clean_first_name(change.first_name)
+        if name != member.first_name:
+            member.first_name = name
+            changed.append("first name")
+    if change.set_birthday:
+        day, month = change.birthday
+        _check_birthday(day, month)
+        if (day, month) != (member.birthday_day, member.birthday_month):
+            member.birthday_day, member.birthday_month = day, month
+            member.birthday_set_at = now if day is not None else None
+            changed.append("birthday removed" if day is None else "birthday")
+    if changed:
+        audit(
+            session,
+            "profile",
+            f"member changed {', '.join(changed)} from the web card",
+            card_id=card.id,
+            member_id=member.id,
+            at=now,
+        )
+        # The name is on the wallet pass: every card of this member needs a refresh.
+        for other in session.scalars(
+            select(LoyaltyCard).where(
+                LoyaltyCard.member_id == member.id, LoyaltyCard.voided_at.is_(None)
+            )
+        ):
+            touch(other, now)
+            enqueue_wallet_update(session, other.id, None)
+        member.last_activity_at = now
+    return changed
+
+
+def birthday_counts_from(member: LoyaltyMember, *, today: date | None = None) -> date | None:
+    """The first birthday that will bring a drink, given the 30-day rule. None: no birthday.
+
+    Mirrors domain `birthday_decision`: an occurrence counts when it was recorded at least
+    `BIRTHDAY_MIN_LEAD_DAYS` before the date, and it is still claimable until 7 days after.
+    """
+    if member.birthday_day is None or member.birthday_month is None:
+        return None
+    today = today or now_utc().astimezone(settings.tz).date()
+    set_on = (
+        member.birthday_set_at.astimezone(settings.tz).date() if member.birthday_set_at else None
+    )
+    for year in range(today.year - 1, today.year + 3):
+        occurrence = birthday_in_year(member.birthday_day, member.birthday_month, year)
+        if occurrence + timedelta(days=BIRTHDAY_NOTICE_DAYS) < today:
+            continue
+        if set_on is None or (occurrence - set_on).days >= BIRTHDAY_MIN_LEAD_DAYS:
+            return occurrence
+    return None

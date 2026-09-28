@@ -140,6 +140,18 @@ class LoyaltyProgram(Base):
     )
     #: Order on the join page, the scanner and the back office.
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    # --- back-office settings (b7c1e0a10004) --------------------------------------
+    #: Cooldown: more than this many purchase stamps on one card within
+    #: `cooldown_minutes` needs a manager's PIN (SPEC: >3 in 10 minutes).
+    cooldown_max_stamps: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=3, server_default="3"
+    )
+    cooldown_minutes: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=10, server_default="10"
+    )
+    #: The owner's 90-day targets, `{metric: number}` (SPEC "Exact targets are an open
+    #: question" -- so they are the owner's to set). Shares are 0..1. NULL = none set.
+    targets: Mapped[dict[str, Any] | None] = mapped_column(JSON)
 
     __table_args__ = (
         CheckConstraint("stamps_required >= 1", name="stamps_required_positive"),

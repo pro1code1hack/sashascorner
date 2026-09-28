@@ -1,13 +1,15 @@
 /**
- * Members (Sasha's Corner Rewards) data layer: docs/loyalty/CONTRACT.md §6.
+ * Rewards (Sasha's Corner Rewards) data layer: docs/loyalty/CONTRACT.md §6.
  *
- * Reads go through `request()` inside `useQuery`, so fixture mode answers them
- * from `web/fixtures/members-*.json`. Writes use `apiWrite` and return a
- * `WriteResult`; nothing is optimistic, and a refusal (a wrong manager PIN, a
- * too-short reason) is shown as the server wrote it.
+ * Reads are LIVE ONLY. Unlike the rest of the app, fixture mode does not answer
+ * them from recorded JSON: those recordings were demo members, and the owner
+ * asked for no fake data in Rewards. In fixture mode every read fails with a
+ * sentence saying so, and the screens show it in place of figures.
+ * Writes use `apiWrite` and return a `WriteResult`; nothing is optimistic, and a
+ * refusal (a wrong manager PIN, a too-short reason) is shown as the server wrote it.
  */
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { apiWrite, request, type WriteResult } from './api'
+import { API_BASE, LIVE, apiWrite, authHeaders, request as rawRequest, type WriteResult } from './api'
 import type {
   AdjustIn,
   AlertsResponse,
@@ -21,7 +23,6 @@ import type {
   Eligibility,
   EligibilityPreview,
   LinkIn,
-  LoyaltyProgram,
   MemberDetail,
   MenuFacets,
   PosCustomer,
@@ -33,14 +34,24 @@ import type {
   MemberSort,
   MembersResponse,
   MembersStats,
-  ProgramIn,
   StaffCreateIn,
   StaffPatchIn,
   StaffResponse,
   StaffRole,
+  TargetsIn,
+  TargetsResponse,
 } from './types/members'
 
 export const MEMBERS_KEY = ['members'] as const
+
+/** Shown wherever a Rewards figure would be, when the app is not talking to the server. */
+export const NOT_LIVE_MESSAGE =
+  'Rewards only shows live data from the server, never sample members. Start the back office against the API (VITE_LIVE=1) to see it.'
+
+function request<T>(path: string): Promise<T> {
+  if (!LIVE) return Promise.reject(new Error(NOT_LIVE_MESSAGE))
+  return rawRequest<T>(path)
+}
 
 export interface MembersQuery {
   q: string
@@ -84,13 +95,6 @@ export function useMembersStats(days = 90, program = '') {
     queryKey: [...MEMBERS_KEY, 'stats', days, program],
     queryFn: () => request<MembersStats>(`/api/members/stats?days=${days}${program ? `&program=${encodeURIComponent(program)}` : ''}`),
     staleTime: 5 * 60 * 1000,
-  })
-}
-
-export function useProgram() {
-  return useQuery({
-    queryKey: [...MEMBERS_KEY, 'program'],
-    queryFn: () => request<LoyaltyProgram>('/api/members/program'),
   })
 }
 
@@ -141,6 +145,14 @@ export function useCampaigns() {
   })
 }
 
+export function useTargets(program = '') {
+  return useQuery({
+    queryKey: [...MEMBERS_KEY, 'targets', program],
+    queryFn: () => request<TargetsResponse>(`/api/members/targets${program ? `?program=${encodeURIComponent(program)}` : ''}`),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
 export function useAlerts() {
   return useQuery({
     queryKey: [...MEMBERS_KEY, 'alerts'],
@@ -159,8 +171,6 @@ export const membersApi = {
   adjust: (id: number, body: AdjustIn): Promise<WriteResult<MemberDetail>> =>
     apiWrite<MemberDetail>(`/api/members/${id}/adjust`, body),
   erase: (id: number): Promise<WriteResult<null>> => apiWrite<null>(`/api/members/${id}`, undefined, 'DELETE'),
-  saveProgram: (body: ProgramIn): Promise<WriteResult<LoyaltyProgram>> =>
-    apiWrite<LoyaltyProgram>('/api/members/program', body, 'PUT'),
   addStaff: (body: StaffCreateIn): Promise<WriteResult<unknown>> => apiWrite<unknown>('/api/members/staff', body),
   patchStaff: (id: number, body: StaffPatchIn): Promise<WriteResult<unknown>> =>
     apiWrite<unknown>(`/api/members/staff/${id}`, body, 'PATCH'),
@@ -183,4 +193,41 @@ export const membersApi = {
     apiWrite<MemberDetail>(`/api/members/${id}/lightspeed`, body, 'PUT'),
   unlink: (id: number): Promise<WriteResult<MemberDetail>> =>
     apiWrite<MemberDetail>(`/api/members/${id}/lightspeed`, undefined, 'DELETE'),
+  saveTargets: (body: TargetsIn): Promise<WriteResult<TargetsResponse>> =>
+    apiWrite<TargetsResponse>('/api/members/targets', body, 'PUT'),
+}
+
+/**
+ * Download everything held about one member (a subject access request) as a
+ * JSON file. The endpoint needs the auth header, so it is fetched and handed to
+ * the browser as a blob rather than linked. Resolves to an error sentence, or null.
+ */
+export async function downloadMemberData(id: number, firstName: string): Promise<string | null> {
+  if (!LIVE) return NOT_LIVE_MESSAGE
+  try {
+    const res = await fetch(`${API_BASE}/api/members/${id}/export`, { headers: authHeaders() })
+    if (!res.ok) {
+      let detail = `The server answered ${res.status}.`
+      try {
+        const j = (await res.json()) as { detail?: unknown }
+        if (typeof j.detail === 'string') detail = j.detail
+      } catch {
+        /* not JSON */
+      }
+      return detail
+    }
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    const safe = firstName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'member'
+    a.href = url
+    a.download = `rewards-member-${id}-${safe}.json`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+    return null
+  } catch (e) {
+    return e instanceof Error ? e.message : String(e)
+  }
 }
