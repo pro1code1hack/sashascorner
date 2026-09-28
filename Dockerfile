@@ -50,6 +50,17 @@ RUN groupadd --system --gid 1000 cafeops \
 
 WORKDIR /app
 COPY --from=builder --chown=cafeops:cafeops /app /app
+# Sasha's Corner Rewards reads these at runtime: pass artwork and stickers (assets/pass,
+# served at /api/loyalty/pass-assets and drawn into every strip) and the café facts the
+# pass prints (site/web/src/data/info.json). A build without them would hand out passes
+# with no stamps, so fail here instead. Certificates are NOT in the image: they are
+# mounted from ./secrets/wallet (docker-compose.yml), and .dockerignore keeps them out.
+RUN for f in icon.png icon@2x.png logo.png logo@2x.png google-logo.png \
+        stickers/reward.svg stickers/slot-1.svg stickers/slot-8.svg; do \
+      test -s "/app/assets/pass/$f" || { echo "missing assets/pass/$f" >&2; exit 1; }; \
+    done \
+    && test -s /app/site/web/src/data/info.json \
+    && test ! -e /app/secrets
 
 ENV PATH="/app/.venv/bin:${PATH}"
 
@@ -104,6 +115,8 @@ ENV VITE_LIVE=$VITE_LIVE
 COPY web/package.json web/package-lock.json ./
 RUN npm ci
 COPY web/ ./
+# Members' card art is a copy of assets/pass/stickers (cafeops wallet assets).
+RUN test -s public/stickers/slot-1.svg && test -s public/stickers/reward.svg
 RUN npm run build
 
 

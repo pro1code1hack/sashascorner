@@ -56,6 +56,7 @@ from cafeops.api.areas.finance_schemas import (
     SalesDayIn,
     SalesDayOut,
     SalesDayPatch,
+    SalesInsightsOut,
     SalesResponse,
     TakingsLedgerResponse,
 )
@@ -124,6 +125,48 @@ async def alerts() -> FinanceAlertsOut:
 @router.get("/sales", response_model=SalesResponse, summary="One row per trading day.")
 async def sales(period: PeriodQ = None) -> SalesResponse:
     return await _run(lambda s: v.sales_view(s, period))
+
+
+@router.get(
+    "/sales/insights",
+    response_model=SalesInsightsOut,
+    summary="Till lines for the Sales dashboard: totals, time of day, products, channels.",
+)
+async def sales_insights(
+    since: Annotated[date | None, Query(alias="from")] = None,
+    until: Annotated[date | None, Query(alias="to")] = None,
+    channel: str | None = None,
+    category: str | None = None,
+    product: str | None = None,
+    size: str | None = None,
+    weekdays: Annotated[
+        str | None, Query(description="Comma list, 0 Monday .. 6 Sunday.", examples=["5,6"])
+    ] = None,
+    whole: Annotated[bool, Query(description="First sale to last; ignores from/to.")] = False,
+) -> SalesInsightsOut:
+    days = _weekdays(weekdays)
+    return await _run(
+        lambda s: v.sales_insights_view(
+            s,
+            since=since,
+            until=until,
+            channel=channel,
+            category=category,
+            product=product,
+            size=size,
+            weekdays=days,
+            whole=whole,
+        )
+    )
+
+
+def _weekdays(raw: str | None) -> frozenset[int] | None:
+    if raw is None or raw.strip() == "":
+        return None
+    try:
+        return frozenset(int(p) for p in raw.split(","))
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "weekdays: e.g. 5,6") from exc
 
 
 @router.post("/sales", response_model=SalesDayOut, status_code=201, summary="Add a day.")

@@ -1,0 +1,33 @@
+---
+// First run on a device: the 6-digit pairing code a manager made in the ops
+// dashboard, plus a name for the device. Wired in scripts/staff/main.ts.
+---
+
+<section class="st-view st-narrow" data-view="pair" aria-labelledby="st-pair-h" hidden>
+  <p class="label st-kicker">First time on this device</p>
+  <h2 id="st-pair-h" class="st-h" tabindex="-1">Pair this device</h2>
+  <p class="st-lede">
+    A manager makes a 6-digit pairing code in the ops dashboard, under Members. It works for 15 minutes.
+  </p>
+  <form class="st-form" data-pair-form novalidate>
+    <label class="field">
+      <span>Pairing code</span>
+      <input
+        class="input st-code num"
+        name="code"
+        inputmode="numeric"
+        autocomplete="one-time-code"
+        pattern="[0-9]{6}"
+        maxlength="6"
+        required
+        aria-describedby="st-pair-err"
+      />
+    </label>
+    <label class="field">
+      <span>Name for this device</span>
+      <input class="input" name="name" maxlength="80" autocomplete="off" placeholder="Till tablet" required />
+    </label>
+    <p class="st-err" id="st-pair-err" data-pair-err role="alert" hidden></p>
+    <button class="btn btn--caramel st-wide" type="submit" data-pair-submit>Pair device</button>
+  </form>
+</section>

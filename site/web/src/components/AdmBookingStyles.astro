@@ -29,7 +29,7 @@
     color: var(--ink-2);
   }
   .adm-kv dd {
-    font-weight: 600;
+    font-weight: 500;
     overflow-wrap: anywhere;
   }
 
@@ -55,7 +55,9 @@
   }
   .adm-tl-fig {
     text-align: right;
-    font-weight: 700;
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 650;
   }
   .adm-tl-fig--full {
     color: var(--alert);
@@ -64,12 +66,26 @@
     font-weight: 400;
     color: var(--ink-3);
   }
+  /* Rounded sage bars on an oat track; a full slot turns red (threshold crossed). */
   .adm-tl .adm-meter {
-    height: 8px;
-    border-color: var(--line);
+    height: 10px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--wash);
+  }
+  .adm-tl .adm-meter > span {
+    border-radius: 999px;
+    transform-origin: left;
+    animation: adm-bar-in 0.7s var(--ease-out) both;
+  }
+  @keyframes adm-bar-in {
+    from {
+      transform: scaleX(0);
+    }
   }
   .adm-tl-row--empty .adm-meter {
-    border-style: dashed;
+    background: none;
+    box-shadow: inset 0 0 0 1px var(--line-control);
   }
 
   /* Booking rows */
@@ -80,24 +96,28 @@
   }
   .adm-bk {
     display: grid;
-    grid-template-columns: 64px minmax(0, 1fr) auto;
+    grid-template-columns: 82px minmax(0, 1fr) auto;
     align-items: center;
     gap: 4px 12px;
-    padding: 8px 0;
+    padding: 10px 0;
     border-bottom: 1px solid var(--line);
     cursor: pointer;
+    transition: background 0.2s var(--ease-out);
   }
   .adm-bk:hover {
-    background: var(--canvas-2);
+    background: var(--surface);
   }
   .adm-bk-when {
     display: flex;
     flex-direction: column;
   }
   .adm-bk-time {
-    font-size: 16px;
-    font-weight: 800;
+    font-family: var(--font-display);
+    font-stretch: 90%;
+    font-size: 21px;
+    font-weight: 650;
     letter-spacing: -0.01em;
+    white-space: nowrap;
   }
   .adm-bk-date {
     font-size: 12px;
@@ -117,8 +137,8 @@
     border-radius: var(--r-control);
   }
   .adm-bk-name {
-    font-size: 15px;
-    font-weight: 700;
+    font-size: 16px;
+    font-weight: 550;
     color: var(--ink);
     overflow-wrap: anywhere;
   }

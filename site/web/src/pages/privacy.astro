@@ -1,0 +1,288 @@
+---
+// Privacy notice (UK GDPR and PECR). Written from what the code stores:
+// Rewards per docs/loyalty/CONTRACT.md §2 and §4; the contact form and bookings per
+// site/backend/sashasite/db.py (site_contact_message, site_booking) and notify.py.
+// Anything not known is marked OWNER TO CONFIRM rather than guessed.
+import Base from '../layouts/Base.astro';
+import { info } from '../lib/data';
+
+const phone = info?.phone ?? '';
+const tel = phone ? `+44${phone.replace(/\s+/g, '').replace(/^0/, '')}` : '';
+const UPDATED = '28 September 2026';
+
+const toc = [
+  ['who', 'Who we are'],
+  ['rewards', 'Sasha’s Corner Rewards'],
+  ['messages', 'News, offers and lock-screen messages'],
+  ['wallets', 'Apple Wallet and Google Wallet'],
+  ['keep', 'How long we keep it'],
+  ['delete', 'Deleting your card'],
+  ['forms', 'Bookings and the contact form'],
+  ['site', 'This website'],
+  ['rights', 'Your rights'],
+] as const;
+---
+
+<Base
+  title="Privacy notice · Sasha's Corner, Dundee"
+  description="What Sasha's Corner keeps about you for the Rewards card, bookings and the contact form, why, for how long, and how to have it deleted."
+>
+  <article class="priv wrap">
+    <header class="priv__head">
+      <p class="label">Privacy</p>
+      <h1>What we keep, <span class="soft">and why.</span></h1>
+      <p class="priv__lede">
+        The short version: for the Rewards card we keep your first name, one way to reach you, your birthday if you give it,
+        and your stamps. No payment details. News and offers only if you ask for them. Delete your card whenever you like.
+      </p>
+      <p class="priv__date">Last updated <time datetime="2026-09-28">{UPDATED}</time>.</p>
+      <nav class="priv__toc" aria-label="On this page">
+        <ol>
+          {toc.map(([id, t]) => <li><a href={`#${id}`}>{t}</a></li>)}
+        </ol>
+      </nav>
+    </header>
+
+    <div class="priv__body">
+      <section id="who" aria-labelledby="who-h">
+        <h2 id="who-h">Who we are</h2>
+        <!-- OWNER TO CONFIRM: the business's legal name (sole trader or limited company, and company number if any). Add it here as "Sasha's Corner is run by <legal name>". -->
+        <p>
+          Sasha's Corner, 23 Commercial Street, Dundee DD1 3DD, is the controller of the personal information described here.
+          That means we decide what is kept and why, and we are who you ask about it.
+        </p>
+        <p>
+          To ask a question or use any of your rights, ask at the till, use the <a href="/visit#contact">contact form</a>{
+            tel && (
+              <>
+                , or call <a href={`tel:${tel}`} class="num">{phone}</a>
+              </>
+            )
+          }.
+        </p>
+      </section>
+
+      <section id="rewards" aria-labelledby="rewards-h">
+        <h2 id="rewards-h">Sasha’s Corner Rewards</h2>
+        <p>When you join the <a href="/rewards">Rewards card</a>, we keep:</p>
+        <ul>
+          <li>your first name;</li>
+          <li>the email address or mobile number you gave us;</li>
+          <li>your birthday, day and month only, if you gave it (no year), and when you set it;</li>
+          <li>
+            your stamp history: when each stamp was added or taken off, which member of staff and which of our devices did it,
+            and when you had a free drink and which drink it was;
+          </li>
+          <li>when you agreed to the card rules, and whether, when and where you agreed to news and offers;</li>
+          <li>which of our QR codes you joined from (for example a table or a flyer), and who referred you, if anyone.</li>
+        </ul>
+        <p>We never take or keep payment details for the card. The card doesn't hold money.</p>
+        <h3>Why, and on what basis</h3>
+        <ul>
+          <li>
+            <strong>To run your card</strong> (count stamps, give free drinks, get the card back to you on a new phone). The basis
+            is the agreement between us when you join: without these details there is no card.
+          </li>
+          <li>
+            <strong>To stop misuse</strong>, such as stamps added that nobody paid for. We record who stamped a card and flag
+            unusual patterns. The basis is our legitimate interest in keeping the scheme fair.
+          </li>
+          <li>
+            <strong>News and offers</strong>, only if you ticked the box. The basis is your consent, which you can withdraw at any
+            time.
+          </li>
+          <li>
+            <strong>Your birthday drink</strong>, if you gave a birthday. We only use the day and month to put the drink on your
+            card.
+          </li>
+        </ul>
+        <p>
+          Codes for getting your card back are sent by email or text message. If we can't send one, we check it's you at the
+          till instead.
+        </p>
+        <!-- OWNER TO CONFIRM: the email and SMS providers used to send codes and offers (e.g. the SMTP host, Twilio), and where the server that holds this data is hosted. List them here as processors. -->
+      </section>
+
+      <section id="messages" aria-labelledby="messages-h">
+        <h2 id="messages-h">News, offers and lock-screen messages</h2>
+        <p>
+          The box for news and offers is separate from joining and is never ticked for you. If you tick it, we record when and
+          where. Every email or text we send you with news or an offer has a link to stop them, and you can switch them off on
+          your card at any time.
+        </p>
+        <p>
+          A card in Apple Wallet or Google Wallet can show a message on your lock screen. We use that for card updates (a new
+          stamp, a free drink ready, your birthday drink) and for no more than two news or offer messages a month.
+        </p>
+      </section>
+
+      <section id="wallets" aria-labelledby="wallets-h">
+        <h2 id="wallets-h">Apple Wallet and Google Wallet</h2>
+        <p>
+          Adding the card to a wallet is optional; it works in your browser too. If you add it to <strong>Apple Wallet</strong>,
+          your phone asks our server for updates. For that we keep an identifier for your device and a push token that Apple
+          issues. We do not see your Apple ID. If you add it to <strong>Google Wallet</strong>, Google keeps a copy of the card
+          in your Google account: your first name, your stamps and the card's code. Apple and Google handle their side under
+          their own privacy terms.
+        </p>
+        <p>
+          If you keep the card in your browser, a key that opens it is saved in that browser's storage on your device. It is
+          not a tracking cookie and is not sent anywhere except to show you your card.
+        </p>
+      </section>
+
+      <section id="keep" aria-labelledby="keep-h">
+        <h2 id="keep-h">How long we keep it</h2>
+        <p>
+          Your Rewards details are kept while you use the card. If a card has no activity for 24 months, we delete your details
+          automatically. After a deletion we keep only an anonymous count of the stamps and free drinks given, with no name or
+          contact details, for our accounts.
+        </p>
+      </section>
+
+      <section id="delete" aria-labelledby="delete-h">
+        <h2 id="delete-h">Deleting your card</h2>
+        <p>
+          Open your card and choose <strong>Delete my card</strong> at the bottom. You can also ask at the till or use the{' '}
+          <a href="/visit#contact">contact form</a>. We erase your name, contact details, birthday and marketing choice at once,
+          and the card stops working, including the copy in your wallet.
+        </p>
+      </section>
+
+      <section id="forms" aria-labelledby="forms-h">
+        <h2 id="forms-h">Bookings and the contact form</h2>
+        <p>
+          <strong>Booking a table.</strong> We keep your name, email address, phone number if you gave one, the number of people,
+          the date and time, and any note you added. We use them to hold your table and to contact you about the booking. The
+          basis is the arrangement you ask us to make.
+        </p>
+        <p>
+          <strong>The contact form.</strong> We keep your name, email address, the topic and your message, so we can reply. The
+          basis is our legitimate interest in answering you.
+        </p>
+        <p>
+          New bookings and messages are also sent to the café team through Telegram, so someone sees them quickly. We don't use
+          either for marketing.
+        </p>
+        <!-- OWNER TO CONFIRM: how long bookings and contact messages are kept (none is deleted automatically today). Suggest e.g. 12 months, then state it here. -->
+      </section>
+
+      <section id="site" aria-labelledby="site-h">
+        <h2 id="site-h">This website</h2>
+        <!-- OWNER TO CONFIRM: Swetrix only runs once PUBLIC_SWETRIX_PID is set at build time. If analytics is never switched on, drop the Swetrix sentence. -->
+        <p>
+          The website sets no advertising or tracking cookies. To count visits and a few actions, such as joining Rewards, we use
+          Swetrix, a cookieless analytics service that does not identify you or follow you to other sites. To stop abuse of the
+          forms, the server briefly holds your IP address in memory to limit repeated attempts; it isn't stored.
+        </p>
+      </section>
+
+      <section id="rights" aria-labelledby="rights-h">
+        <h2 id="rights-h">Your rights</h2>
+        <p>
+          You can ask us for a copy of what we hold about you, to correct it, to delete it, to limit how we use it, to object to
+          how we use it, or to have it in a form you can take elsewhere. Where we rely on your consent, you can withdraw it at
+          any time. Ask at the till or through the <a href="/visit#contact">contact form</a>. We will reply within one month.
+        </p>
+        <p>
+          If you are unhappy with how we have handled your information, you can complain to the Information Commissioner's
+          Office: <a href="https://ico.org.uk/make-a-complaint/" rel="noopener">ico.org.uk/make-a-complaint</a>, or call{' '}
+          <span class="num">0303 123 1113</span>. We would be grateful for the chance to put it right first.
+        </p>
+      </section>
+    </div>
+  </article>
+</Base>
+
+<style>
+  .label {
+    color: var(--coffee);
+  }
+  .soft {
+    font-family: var(--font-light);
+    font-weight: 200;
+    font-stretch: 100%;
+    letter-spacing: -0.03em;
+  }
+  .priv {
+    padding-block: clamp(48px, 7vw, 96px) clamp(64px, 9vw, 120px);
+  }
+  .priv__head h1 {
+    margin-top: 14px;
+    font-size: var(--step-5);
+    max-width: 14ch;
+  }
+  .priv__lede {
+    margin-top: 20px;
+    max-width: 52ch;
+    font-size: var(--step-1);
+    font-weight: 300;
+    color: var(--olive-900);
+  }
+  .priv__date {
+    margin-top: 14px;
+    font-size: var(--step--1);
+    color: var(--olive-700);
+  }
+  .priv__toc {
+    margin-top: clamp(28px, 4vw, 44px);
+    border-top: 1px solid var(--rule-strong);
+  }
+  .priv__toc ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    columns: 3 14rem;
+    column-gap: clamp(20px, 3vw, 48px);
+  }
+  .priv__toc li {
+    break-inside: avoid;
+    border-bottom: 1px solid var(--rule);
+  }
+  .priv__toc a {
+    display: block;
+    padding: 10px 0;
+    text-decoration: none;
+    color: var(--ink);
+  }
+  .priv__toc a:hover {
+    color: var(--coffee);
+  }
+  .priv__body {
+    margin-top: clamp(24px, 4vw, 48px);
+    max-width: 68ch;
+  }
+  .priv__body section {
+    padding-block: clamp(24px, 3vw, 36px);
+    border-top: 1px solid var(--rule-strong);
+    scroll-margin-top: 96px;
+  }
+  .priv__body h2 {
+    font-size: var(--step-2);
+    color: var(--olive-900);
+  }
+  .priv__body h3 {
+    margin-top: 22px;
+    font-size: var(--step-1);
+    color: var(--olive-900);
+  }
+  .priv__body p,
+  .priv__body ul {
+    margin-top: 12px;
+  }
+  .priv__body ul {
+    padding-left: 1.2em;
+  }
+  .priv__body li + li {
+    margin-top: 6px;
+  }
+  .priv__body li::marker {
+    color: var(--coffee);
+  }
+  .priv__body strong {
+    font-weight: 500;
+  }
+  .priv__body a {
+    color: var(--coffee);
+  }
+</style>

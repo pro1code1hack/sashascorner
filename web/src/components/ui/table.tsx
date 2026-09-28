@@ -50,8 +50,10 @@ export function Table({
   return (
     <TableCtx.Provider value={{ density, header, stickyHeader }}>
       <ScrollX>
+        {/* relative: the sr-only caption is absolutely placed; without a positioned
+            table it anchors to <body> and stretches the whole document. */}
         <table
-          className={cx('w-full border-collapse text-base', className)}
+          className={cx('relative w-full border-collapse text-base', className)}
           style={minWidth !== undefined ? { minWidth } : undefined}
         >
           {label && <caption className="sr-only">{label}</caption>}

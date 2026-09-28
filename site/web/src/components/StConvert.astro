@@ -1,0 +1,18 @@
+---
+// "Convert paper card": pick how many stickers the paper card has (1-7), then scan
+// the customer's new digital card. A full paper card (8) is a free drink now, not
+// a conversion, so it isn't offered.
+const N = [1, 2, 3, 4, 5, 6, 7];
+---
+
+<section class="st-view st-narrow" data-view="convert" aria-labelledby="st-convert-h" hidden>
+  <h2 id="st-convert-h" class="st-h" tabindex="-1">Convert a paper card</h2>
+  <p class="st-lede">
+    How many stickers are on the paper card? Then scan the customer's new card. If they haven't joined yet, they sign up at <strong>/rewards</strong> first.
+  </p>
+  <div class="st-stickers" role="radiogroup" aria-label="Stickers on the paper card" data-stickers>
+    {N.map((n) => <button type="button" class="st-sticker num" role="radio" aria-checked="false" data-n={n}>{n}</button>)}
+  </div>
+  <p class="st-note">A full paper card (8 stickers) is a free drink, not a conversion.</p>
+  <button type="button" class="btn btn--caramel st-wide" data-convert-go disabled>Scan the new card</button>
+</section>

@@ -1,0 +1,32 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "name": "Sasha",
+      "role": "OWNER",
+      "active": true,
+      "telegram_id": 512330871
+    },
+    {
+      "id": 2,
+      "name": "Kateryna",
+      "role": "MANAGER",
+      "active": true,
+      "telegram_id": null
+    },
+    {
+      "id": 3,
+      "name": "Jamie",
+      "role": "STAFF",
+      "active": true,
+      "telegram_id": null
+    },
+    {
+      "id": 4,
+      "name": "Ross",
+      "role": "STAFF",
+      "active": false,
+      "telegram_id": null
+    }
+  ]
+}

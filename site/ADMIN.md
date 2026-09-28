@@ -1,16 +1,25 @@
 # Website admin — contract (phase 3)
 
+> **Moved 2026-09-28.** The owner's screens for this API now live in the ops back office
+> (Website group, `web/src/screens/website/`, DECISIONS.md §25), which forwards to the
+> `/api/admin/*` routes below with `X-Site-Service-Key` instead of the `sc_admin` cookie.
+> The API contract below still holds; the Design and Pages sections describe the old
+> `/admin` pages on the site.
+
 The owner's admin for the public website, at `/admin/*`. It is separate from the ops
 back office in `../cafeops` (being redesigned by another session; do not touch
 `cafeops/` or `web/` at the repo root). Read `BRIEF.md` first for facts and rules.
 
 ## Design
 
-The admin follows the **owner's back-office design system**, not the public brand
-look. Read `../docs/design/specs/design-system.md` and `../docs/design/specs/DECISIONS.md`
-before you build, and view `../docs/design/Back Office Design.dc.html` in a browser (open
-the file with headless Chrome over CDP and screenshot it). This means a light theme,
-Nunito, and uppercase group/table labels as designed. Put the Sasha's Corner logo in the
+**Changed 2026-09-28 (owner's call): the admin wears the café's own brand**, not the
+back-office blue. Colours are the measured palette in `web/src/styles/global.css`
+(olive-900 sidebar and selected states, caramel for the one call to action and "you are
+here", paper ground, sage bars), headings and figures in Saira (condensed, 650), text in
+Jost. Tokens live in `layouts/Admin.astro` under the *old names* (`--brand`, `--ink-2`…)
+so page rules keep working; add `--accent*` / `--on-brand*` for the new roles. Every text
+pair there is checked to WCAG AA: keep it so. Layout and behaviour (drawers, 44px
+targets, chips, uppercase labels) still follow `../docs/design/specs/design-system.md`. Put the Sasha's Corner logo in the
 sidebar. Don't use a dashboard KPI-tile grid. Every screen has to work on a phone
 (375px): the owner will check bookings there.
 

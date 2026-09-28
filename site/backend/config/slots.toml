@@ -17,31 +17,31 @@
 # ---- Home (/) -------------------------------------------------------------------
 
 [[slot]]
-key = "home.signatures"
-label = "Home — signatures photo strip"
+key = "home.blue-matcha"
+label = "Home — blue matcha card"
 page = "/"
-aspect = "4/5"
-multiple = true
-max = 4
-hint = "One signature per frame — Raff coffee, iced honey blue matcha, honey vanilla latte, Kyiv cake slice — on a white table, from the side at cup height, window light"
+aspect = "4/3"
+multiple = false
+max = 1
+hint = "Blue matcha, iced, ideally next to a green one — from above or from the side, window light. Cropped wide and short on the card"
 
 [[slot]]
-key = "home.mood"
-label = "Home — the corner, four upright photos"
-page = "/"
-aspect = "2/3"
-multiple = true
-max = 4
-hint = "Four upright moments: a drink, a cake, the room, the window. Phone held upright, daylight, no flash"
-
-[[slot]]
-key = "home.room"
-label = "Home — the room, one wide photo"
+key = "home.bakes"
+label = "Home — cakes & bakes tile"
 page = "/"
 aspect = "16/9"
 multiple = false
 max = 1
-hint = "The whole room in one landscape frame: sage walls, dark panelling, white tables, strip lights on. From the counter end, late afternoon"
+hint = "Something from the cake counter on a white plate, a drink beside it. Landscape; the bottom fifth sits under a caption bar"
+
+[[slot]]
+key = "home.corner"
+label = "Home — the corner, three upright photos"
+page = "/"
+aspect = "2/3"
+multiple = true
+max = 3
+hint = "Three upright views of the room: the sage walls and panelling, a window table in sunlight, the front window from the street"
 
 # ---- Menu (/menu) — one small photo per category header -------------------------
 

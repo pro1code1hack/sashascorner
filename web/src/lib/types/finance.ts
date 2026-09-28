@@ -440,3 +440,73 @@ export interface TakingsFilters {
   page: number
   page_size: number
 }
+
+/* ------------------------------------------------ sales insights (till) --- */
+// GET /api/finance/sales/insights: Lightspeed till lines, sliced for the Sales
+// dashboard. A different ledger from the takings above; never added to them.
+
+/** A Decimal quantity as text (CLAUDE.md 10.10). */
+export type QtyStr = string
+
+export interface InsightTotals {
+  gross_pence: Pence
+  receipts: number
+  items: QtyStr
+  trading_days: number
+  refund_receipts: number
+  avg_basket_pence: Pence | null
+  items_per_basket: QtyStr | null
+  per_day_pence: Pence | null
+}
+
+export interface InsightShare {
+  /** Channel, category ('__none__' = none set) or size. */
+  key: string
+  gross_pence: Pence
+  qty: QtyStr
+  receipts: number
+}
+
+export interface SalesInsights {
+  since: ISODate
+  until: ISODate
+  prev_since: ISODate
+  prev_until: ISODate
+  first_sale_date: ISODate | null
+  last_sale_date: ISODate | null
+  months: Month[]
+  is_demo: boolean
+  totals: InsightTotals
+  previous: InsightTotals | null
+  /** gross null: nothing rung up that day (closed, or not synced). Never 0. */
+  by_day: { date: ISODate; gross_pence: Pence | null; receipts: number }[]
+  by_hour: { hour: number; gross_pence: Pence; receipts: number }[]
+  heat: { weekday: number; hour: number; receipts: number; gross_pence: Pence }[]
+  by_weekday: { weekday: number; gross_pence: Pence; receipts: number; trading_days: number }[]
+  by_channel: InsightShare[]
+  by_category: InsightShare[]
+  by_size: InsightShare[]
+  products: {
+    name: string
+    category: string | null
+    gross_pence: Pence
+    qty: QtyStr
+    receipts: number
+    sizes: Record<string, QtyStr>
+  }[]
+  baskets: { items: string; receipts: number }[]
+  options: { channels: string[]; categories: string[]; products: string[]; sizes: string[] }
+  caveats: string[]
+}
+
+export interface InsightFilters {
+  from?: ISODate
+  to?: ISODate
+  whole?: boolean
+  channel?: string
+  category?: string
+  product?: string
+  size?: string
+  /** Comma list, 0 Monday .. 6 Sunday. */
+  weekdays?: string
+}

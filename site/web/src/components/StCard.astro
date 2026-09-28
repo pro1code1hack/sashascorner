@@ -1,0 +1,85 @@
+---
+// The card after a scan: who, how many stamps (as the grid on the card), rewards
+// ready to redeem, and the +1 / +2 / +3 buttons. After an action the buttons give
+// way to a confirmation with Undo (live 2 minutes) and "Scan next customer".
+//
+// Phase 3: a member may hold several cards (the main card, a matcha club, a points
+// card). Scanning any one shows a tab per card above the pass; each card has its own
+// actions -- stamps, or a spend for a points card. Below: add a card in another
+// programme, and link the member to their Lightspeed till customer.
+---
+
+<section class="st-view st-cardview" data-view="card" aria-labelledby="st-card-name" hidden>
+  <div class="st-cardtabs" data-cardtabs role="tablist" aria-label="This member's cards" hidden></div>
+  <div class="st-cardgrid">
+    <article class="st-pass" data-pass>
+      <img class="st-prize" data-card-prize src="/stickers/reward.svg" alt="" width="64" height="64" decoding="async" hidden />
+      <p class="st-pass-prog" data-card-prog hidden></p>
+      <p class="st-pass-since" data-card-since></p>
+      <h2 class="st-pass-name" id="st-card-name" data-card-name tabindex="-1"></h2>
+      <p class="st-pass-count">
+        <span class="num st-pass-big" data-card-count></span>
+        <span data-card-left></span>
+      </p>
+      <ol class="st-stamps" data-stamps aria-hidden="true"></ol>
+      <p class="st-void" data-card-void hidden>
+        This card has been deleted by its owner. It can't take stamps or rewards. They can join again at /rewards.
+      </p>
+    </article>
+
+    <div class="st-side">
+      <p class="st-err" data-card-err role="alert" hidden></p>
+      <ul class="st-facts" data-card-facts></ul>
+
+      <div class="st-rewards" data-rewards-wrap hidden>
+        <p class="label st-kicker">Ready to redeem</p>
+        <ul class="st-rewardlist" data-rewards></ul>
+      </div>
+
+      <div class="st-actions" data-stamp-actions>
+        <p class="label st-kicker" id="st-add-h">Add stamps</p>
+        <div class="st-stampbtns" role="group" aria-labelledby="st-add-h">
+          <button type="button" class="st-plus st-plus--main num" data-stamp="1" aria-label="Add 1 stamp">+1</button>
+          <button type="button" class="st-plus num" data-stamp="2" aria-label="Add 2 stamps">+2</button>
+          <button type="button" class="st-plus num" data-stamp="3" aria-label="Add 3 stamps">+3</button>
+        </div>
+        <p class="st-note" data-stamp-note>One stamp per drink. +2 and +3 are for a group order paid by one person.</p>
+      </div>
+
+      <form class="st-actions" data-points-actions hidden novalidate>
+        <label class="label st-kicker" for="st-spend">What they paid</label>
+        <div class="st-spendrow">
+          <span class="st-pound" aria-hidden="true">£</span>
+          <input
+            class="input st-spend num"
+            id="st-spend"
+            name="spend"
+            inputmode="decimal"
+            autocomplete="off"
+            placeholder="0.00"
+            aria-describedby="st-spend-note"
+            data-spend
+          />
+          <button type="submit" class="btn btn--caramel st-spendgo" data-spend-go disabled>Add points</button>
+        </div>
+        <p class="st-note" id="st-spend-note" data-spend-note></p>
+      </form>
+
+      <div class="st-done" data-done hidden>
+        <p class="st-done-title" data-done-title></p>
+        <p class="st-done-sub" data-done-sub></p>
+        <div class="st-done-btns">
+          <button type="button" class="btn btn--caramel st-wide" data-next>Scan next customer</button>
+          <button type="button" class="btn btn--ghost st-wide" data-undo>Undo <span class="num" data-done-clock></span></button>
+        </div>
+      </div>
+
+      <div class="st-more" data-more hidden>
+        <p class="label st-kicker">More for this member</p>
+        <div class="st-morebtns" data-more-btns></div>
+      </div>
+
+      <button type="button" class="btn btn--ghost st-wide st-back" data-back>Back to scanning</button>
+    </div>
+  </div>
+</section>

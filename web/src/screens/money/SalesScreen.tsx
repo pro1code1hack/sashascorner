@@ -1,6 +1,15 @@
 /**
- * Money → Sales: profit by month (the retired Profit & loss screen, as charts:
- * ProfitSection), then one row per trading day, read-only.
+ * Money → Sales: the sales dashboard. One period bar and one filter row scope
+ * every section below them:
+ *
+ *   Till sales      what the till sold, when and through which channel
+ *                   (Lightspeed receipt lines: TillInsights)
+ *   Takings         how much money came in and how it was paid (daily
+ *                   takings: SalesDashboard), then profit by month
+ *   Day by day      one row per trading day, read-only
+ *
+ * The two ledgers are never added together. A filter that one of them cannot
+ * apply (a product means nothing to a card total) is named on that section.
  *
  * Card figures come from imports (Mettle via the workbook, Lightspeed/CSV
  * exports), never from typing. The one thing a person adds here is cash: till
@@ -38,8 +47,8 @@ import {
 import type { ActiveFilterChip } from '../../components/ui'
 import { poundsToPence, penceToPounds } from '../../components/confirm/numbers'
 import { useOperator } from '../../lib/operator'
-import { financeApi, financeWrite, useInvalidateFinance, useSales } from '../../lib/finance-api'
-import type { SalesDay, SalesDayIn } from '../../lib/types/finance'
+import { financeApi, financeWrite, useInvalidateFinance, useSales, useSalesInsights } from '../../lib/finance-api'
+import type { InsightFilters, SalesDay, SalesDayIn } from '../../lib/types/finance'
 import {
   AmountRange,
   Figures,
@@ -49,12 +58,15 @@ import {
   inPence,
   inRange,
   isWeekend,
+  lastDayOfMonth,
   matchesWeekday,
   shortDate,
 } from './filters'
 import type { DateRange, PenceRange } from './filters'
 import { ProfitSection } from './ProfitSection'
 import { SalesDashboard } from './SalesDashboard'
+import { CHANNEL_LABEL, SIZE_LABEL, SectionTitle, TillSection, categoryLabel } from './TillInsights'
+import type { Drill } from './TillInsights'
 import { addDays, fd, gbp, londonToday, mLabel, useFinancePeriod } from './shared'
 
 const PAID_OPTIONS = [
@@ -81,6 +93,14 @@ const METHOD_NAME: Record<string, string> = { CARD: 'Card', CASH: 'Till cash', C
 
 /** The server's long deposit caveat; the screen says it in one line instead. */
 const DEPOSIT_CAVEAT = 'Card figures up to March 2026'
+
+/** The weekday filter's value as the insights API's comma list. */
+function weekdaysParam(f: string): string | undefined {
+  if (f === 'all') return undefined
+  if (f === 'weekdays') return '0,1,2,3,4'
+  if (f === 'weekends') return '5,6'
+  return f
+}
 
 const hasCash = (d: SalesDay) => (d.cash_till_pence ?? 0) + (d.cash_off_till_pence ?? 0) > 0
 
@@ -133,6 +153,30 @@ function shiftMonth(month: string, by: number): string {
   return d.toISOString().slice(0, 7)
 }
 
+const SECTIONS = [
+  { id: 'till', label: 'Till sales' },
+  { id: 'takings', label: 'Takings' },
+  { id: 'profit', label: 'Profit by month' },
+  { id: 'days', label: 'Day by day' },
+] as const
+
+/**
+ * In-page jump without touching the hash (the hash is this app's router), and
+ * without scrollIntoView, which also scrolls overflow-hidden ancestors and
+ * slides the page header away. Only the nearest scrolling pane moves.
+ */
+const jump = (id: string) => (e: React.MouseEvent) => {
+  e.preventDefault()
+  const el = document.getElementById(id)
+  let pane = el?.parentElement ?? null
+  while (pane && !/(auto|scroll)/.test(getComputedStyle(pane).overflowY)) pane = pane.parentElement
+  if (!el || !pane) return
+  const nav = pane.querySelector('nav[aria-label="Sections"]')
+  const top = el.getBoundingClientRect().top - pane.getBoundingClientRect().top + pane.scrollTop - (nav?.clientHeight ?? 0) - 8
+  const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  pane.scrollTo({ top, behavior: smooth ? 'smooth' : 'auto' })
+}
+
 type DrawerState = { kind: 'add' } | { kind: 'day'; date: string } | null
 
 export function SalesScreen() {
@@ -143,7 +187,42 @@ export function SalesScreen() {
   const [paid, setPaid] = useState('all')
   const [orders, setOrders] = useState('all')
   const [amount, setAmount] = useState<PenceRange>({ min: null, max: null })
+  const [channel, setChannel] = useState('all')
+  const [category, setCategory] = useState('all')
+  const [product, setProduct] = useState('all')
+  const [size, setSize] = useState('all')
   const [drawer, setDrawer] = useState<DrawerState>(null)
+
+  // Till lines: the same period and weekday, plus the till-only filters.
+  const tillFilters: InsightFilters | null =
+    range === null && period === null
+      ? null
+      : {
+          ...(range
+            ? { from: range.from, to: range.to }
+            : period === 'all'
+              ? { whole: true }
+              : { from: `${period}-01`, to: lastDayOfMonth(period as string) }),
+          weekdays: weekdaysParam(weekday),
+          channel: channel === 'all' ? undefined : channel,
+          category: category === 'all' ? undefined : category,
+          product: product === 'all' ? undefined : product,
+          size: size === 'all' ? undefined : size,
+        }
+  const till = useSalesInsights(tillFilters)
+  const opts = till.data?.options
+  // Months with takings or till lines, so a till-only install still has a month bar.
+  const barMonths = useMemo(() => [...new Set([...months, ...(till.data?.months ?? [])])].sort(), [months, till.data?.months])
+  const tillOnly = channel !== 'all' || category !== 'all' || product !== 'all' || size !== 'all'
+  const takingsOnly = paid !== 'all' || orders !== 'all' || amount.min !== null || amount.max !== null
+  const drill = (kind: Drill, value: string) => {
+    const toggle = (cur: string, set: (v: string) => void) => set(cur === value ? 'all' : value)
+    if (kind === 'channel') toggle(channel, setChannel)
+    else if (kind === 'category') toggle(category, setCategory)
+    else if (kind === 'product') toggle(product, setProduct)
+    else if (kind === 'size') toggle(size, setSize)
+    else toggle(weekday, setWeekday)
+  }
   // The period before, for "vs last month" on the figures: the month before a
   // month, or the same number of days before a custom range.
   const prevMonth = !range && period && period !== 'all' ? shiftMonth(period, -1) : null
@@ -213,12 +292,21 @@ export function SalesScreen() {
       label: `Day total ${amount.min !== null ? gbp(amount.min) : '£0.00'} – ${amount.max !== null ? gbp(amount.max) : 'any'}`,
       onRemove: () => setAmount({ min: null, max: null }),
     })
+  const tillChip = (key: string, label: string, clear: () => void) => chips.push({ key, label, onRemove: clear })
+  if (channel !== 'all') tillChip('channel', CHANNEL_LABEL[channel] ?? channel, () => setChannel('all'))
+  if (category !== 'all') tillChip('category', categoryLabel(category), () => setCategory('all'))
+  if (product !== 'all') tillChip('product', product, () => setProduct('all'))
+  if (size !== 'all') tillChip('size', SIZE_LABEL[size] ?? size, () => setSize('all'))
   const clearAll = () => {
     setRange(null)
     setWeekday('all')
     setPaid('all')
     setOrders('all')
     setAmount({ min: null, max: null })
+    setChannel('all')
+    setCategory('all')
+    setProduct('all')
+    setSize('all')
   }
 
   const openDay = drawer?.kind === 'day' ? ((all ?? []).find((d) => d.date === drawer.date) ?? null) : null
@@ -227,17 +315,19 @@ export function SalesScreen() {
     <>
       <PageHeader
         title="Sales"
-        subtitle="how the takings are going, where they come from, day by day"
+        subtitle="what sold, when, and where the money came from"
         actions={
           <Button variant="primary" onClick={() => setDrawer({ kind: 'add' })}>
             + Add cash
           </Button>
         }
       />
-      <PeriodBar period={period} months={months} onPeriod={setPeriod} range={range} onRange={setRange} />
+      <PeriodBar period={period} months={barMonths} onPeriod={setPeriod} range={range} onRange={setRange} />
       <div className="flex flex-none flex-col gap-2 border-b border-line px-4 py-2.5 sm:px-5">
         <FilterBar
-          label="Filter days"
+          label="Filter sales"
+          fold
+          activeCount={chips.length}
           trailing={
             q.data && (
               <span className="fig text-base text-ink-2">
@@ -247,6 +337,33 @@ export function SalesScreen() {
           }
         >
           <FilterSelect label="Weekday" value={weekday} onChange={setWeekday} options={WEEKDAY_OPTIONS} />
+          <FilterSelect
+            label="Channel"
+            value={channel}
+            onChange={setChannel}
+            options={[{ value: 'all', label: 'Any channel' }, ...(opts?.channels ?? []).map((c) => ({ value: c, label: CHANNEL_LABEL[c] ?? c }))]}
+          />
+          <FilterSelect
+            label="Category"
+            value={category}
+            onChange={(v) => {
+              setCategory(v)
+              setProduct('all')
+            }}
+            options={[{ value: 'all', label: 'Any category' }, ...(opts?.categories ?? []).map((c) => ({ value: c, label: categoryLabel(c) }))]}
+          />
+          <FilterSelect
+            label="Product"
+            value={product}
+            onChange={setProduct}
+            options={[{ value: 'all', label: 'Any product' }, ...(opts?.products ?? []).map((p) => ({ value: p, label: p }))]}
+          />
+          <FilterSelect
+            label="Size"
+            value={size}
+            onChange={setSize}
+            options={[{ value: 'all', label: 'Any size' }, ...(opts?.sizes ?? []).map((z) => ({ value: z, label: SIZE_LABEL[z] ?? z }))]}
+          />
           <FilterSelect label="Paid by" value={paid} onChange={setPaid} options={PAID_OPTIONS} />
           <FilterSelect label="Orders" value={orders} onChange={setOrders} options={ORDERS_OPTIONS} />
           <AmountRange label="Day total" value={amount} onChange={setAmount} />
@@ -255,78 +372,129 @@ export function SalesScreen() {
       </div>
       <div className="flex min-h-0 flex-1">
         <PageBody flush>
-          {q.isError ? (
-            <ErrorBox error={q.error} what="sales" />
-          ) : !q.data ? (
-            <Loading what="Loading sales" />
-          ) : (
-            <div className="px-4 pb-8 sm:px-5 compact:px-6">
-              <Figures
-                items={[
-                  {
-                    label: 'Total',
-                    value: gbp(totals.total),
-                    strong: true,
-                    sub: (
-                      <>
-                        {count(totals.days)} {totals.days === 1 ? 'day' : 'days'}
-                        {prev && vs(totals.total, prev.s.total) ? <> · {vs(totals.total, prev.s.total)}</> : null}
-                      </>
-                    ),
-                  },
-                  { label: 'Card', value: gbp(totals.card), sub: vs(totals.card, prev?.s.card) },
-                  {
-                    label: 'Per trading day',
-                    value: totals.days ? gbp(Math.round(totals.total / totals.days)) : '—',
-                    sub: prev && prev.s.days ? vs(totals.total / Math.max(1, totals.days), prev.s.total / prev.s.days) : undefined,
-                  },
-                  {
-                    label: 'Cash',
-                    value: gbp(totals.till + totals.own),
-                    sub: totals.own > 0 ? `${gbp(totals.till)} till · ${gbp(totals.own)} own` : undefined,
-                  },
-                  { label: 'Orders', value: totals.orders > 0 ? count(totals.orders) : '—' },
-                  {
-                    label: 'Avg ticket',
-                    value: avg === null ? '—' : gbp(avg),
-                    sub: totals.orders > 0 && totals.totalWithOrders !== totals.total ? 'days with orders only' : undefined,
-                  },
-                ]}
+          <div className="px-4 pb-8 sm:px-5 compact:px-6">
+            <nav aria-label="Sections" className="sticky top-0 z-10 -mx-4 flex gap-1 overflow-x-auto border-b border-line bg-surface/95 px-4 py-2 backdrop-blur-[2px] sm:-mx-5 sm:px-5 compact:-mx-6 compact:px-6">
+              {SECTIONS.map((x) => (
+                <a key={x.id} href={`#${x.id}`} onClick={jump(x.id)} className="flex min-h-8 items-center whitespace-nowrap rounded-full px-3 text-base font-semibold text-ink-2 hover:bg-canvas hover:text-ink">
+                  {x.label}
+                </a>
+              ))}
+            </nav>
+
+            {till.isError ? (
+              <ErrorBox error={till.error} what="till sales" />
+            ) : !till.data ? (
+              <Loading what="Loading till sales" />
+            ) : (
+              <TillSection
+                data={till.data}
+                dimmed={till.isPlaceholderData}
+                onDrill={drill}
+                active={{ channel, category, product, size, weekday }}
+                note={takingsOnly ? 'Paid by, orders and day total apply to takings only, not to these till lines.' : undefined}
               />
-              {(hasDeposits || otherCaveats.length > 0) && (
-                <div className="flex flex-col gap-0.5 pt-2 text-sm text-ink-2">
-                  {hasDeposits && (
-                    <p>
-                      <span className="text-ink-3">†</span> Card to Mar 2026 is the Mettle deposit on the day it landed (about a day
-                      after the sale), not that day&rsquo;s till takings.
-                    </p>
-                  )}
-                  {otherCaveats.length > 0 && (
-                    <details>
-                      <summary className="cursor-pointer select-none">
-                        {otherCaveats.length} {otherCaveats.length === 1 ? 'note' : 'notes'} on these figures
-                      </summary>
-                      <ul className="mt-1 flex flex-col gap-0.5 pl-3">
-                        {otherCaveats.map((c) => (
-                          <li key={c}>{c}</li>
-                        ))}
-                      </ul>
-                    </details>
-                  )}
-                </div>
+            )}
+
+            <section id="takings" aria-labelledby="takings-title" className="scroll-mt-14 pt-12">
+              <SectionTitle id="takings-title" title="Takings" source="Card and cash, imported or added here" />
+              {tillOnly && (
+                <p className="mt-2 text-sm font-semibold text-ink-2">
+                  Channel, category, product and size apply to till sales only. Takings are whole-day totals.
+                </p>
               )}
-              <SalesDashboard rows={rows} />
+              {q.isError ? (
+                <ErrorBox error={q.error} what="sales" />
+              ) : !q.data ? (
+                <Loading what="Loading takings" />
+              ) : inWindow === 0 ? (
+                <div className="mt-4 rounded-card border border-dashed border-line-strong px-4 py-6 text-base text-ink-2">
+                  <p className="font-bold text-ink">No takings entered for this period.</p>
+                  <p className="mt-1">
+                    Card and cash totals come from the finance workbook or a payment export. Import them with{' '}
+                    <code className="rounded-xs bg-canvas px-1 py-0.5 font-mono text-sm text-ink">cafeops import-finance --commit</code>, or add a
+                    day&rsquo;s cash with <b>+ Add cash</b>.
+                  </p>
+                </div>
+              ) : (
+                <>
+                    <Figures
+                      items={[
+                        {
+                          label: 'Total',
+                          value: gbp(totals.total),
+                          strong: true,
+                          sub: (
+                            <>
+                              {count(totals.days)} {totals.days === 1 ? 'day' : 'days'}
+                              {prev && vs(totals.total, prev.s.total) ? <> · {vs(totals.total, prev.s.total)}</> : null}
+                            </>
+                          ),
+                        },
+                        { label: 'Card', value: gbp(totals.card), sub: vs(totals.card, prev?.s.card) },
+                        {
+                          label: 'Per trading day',
+                          value: totals.days ? gbp(Math.round(totals.total / totals.days)) : '—',
+                          sub: prev && prev.s.days ? vs(totals.total / Math.max(1, totals.days), prev.s.total / prev.s.days) : undefined,
+                        },
+                        {
+                          label: 'Cash',
+                          value: gbp(totals.till + totals.own),
+                          sub: totals.own > 0 ? `${gbp(totals.till)} till · ${gbp(totals.own)} own` : undefined,
+                        },
+                        { label: 'Orders', value: totals.orders > 0 ? count(totals.orders) : '—' },
+                        {
+                          label: 'Avg ticket',
+                          value: avg === null ? '—' : gbp(avg),
+                          sub: totals.orders > 0 && totals.totalWithOrders !== totals.total ? 'days with orders only' : undefined,
+                        },
+                      ]}
+                    />
+                    {(hasDeposits || otherCaveats.length > 0) && (
+                      <div className="flex flex-col gap-0.5 pt-2 text-sm text-ink-2">
+                        {hasDeposits && (
+                          <p>
+                            <span className="text-ink-3">†</span> Card to Mar 2026 is the Mettle deposit on the day it landed (about a day
+                            after the sale), not that day&rsquo;s till takings.
+                          </p>
+                        )}
+                        {otherCaveats.length > 0 && (
+                          <details>
+                            <summary className="cursor-pointer select-none">
+                              {otherCaveats.length} {otherCaveats.length === 1 ? 'note' : 'notes'} on these figures
+                            </summary>
+                            <ul className="mt-1 flex flex-col gap-0.5 pl-3">
+                              {otherCaveats.map((c) => (
+                                <li key={c}>{c}</li>
+                              ))}
+                            </ul>
+                          </details>
+                        )}
+                      </div>
+                    )}
+                  <SalesDashboard rows={rows} />
+                </>
+              )}
+            </section>
+
+            <section id="profit" className="scroll-mt-14 pt-12">
               <ProfitSection />
-              <h2 className="mt-6 text-xl font-extrabold tracking-[-.01em]">Day by day</h2>
-              <SalesTable
-                rows={rows}
-                multiMonth={multiMonth}
-                totals={totals}
-                selected={openDay?.date ?? null}
-                onOpen={(d) => setDrawer({ kind: 'day', date: d })}
-              />
-            </div>
-          )}
+            </section>
+
+            <section id="days" aria-labelledby="days-h" className="scroll-mt-14 pt-12">
+              <h2 id="days-h" className="border-b-2 border-ink pb-2 text-2xl font-extrabold tracking-[-.01em]">
+                Day by day
+              </h2>
+              {q.data && (
+                <SalesTable
+                  rows={rows}
+                  multiMonth={multiMonth}
+                  totals={totals}
+                  selected={openDay?.date ?? null}
+                  onOpen={(d) => setDrawer({ kind: 'day', date: d })}
+                />
+              )}
+            </section>
+          </div>
         </PageBody>
         {drawer?.kind === 'add' && <CashDrawer day={null} onClose={() => setDrawer(null)} />}
         {openDay && <CashDrawer key={openDay.date} day={openDay} onClose={() => setDrawer(null)} />}

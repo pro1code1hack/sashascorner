@@ -6,7 +6,9 @@ built before the session closes. No view computes a figure; the services do.
 
 from __future__ import annotations
 
+from dataclasses import fields, is_dataclass
 from datetime import date
+from decimal import Decimal
 
 from sqlalchemy.orm import Session
 
@@ -43,6 +45,7 @@ from cafeops.api.areas.finance_schemas import (
     SalesDayIn,
     SalesDayOut,
     SalesDayPatch,
+    SalesInsightsOut,
     SalesResponse,
     TakingsLedgerResponse,
 )
@@ -59,6 +62,7 @@ from cafeops.services.finance import (
     overview,
     periods,
     reconcile,
+    sales_insights,
     trading_days,
     transactions,
 )
@@ -418,6 +422,50 @@ def director_patch_view(
 
 def director_delete_view(session: Session, entry_id: int, operator: str | None) -> DeletedOut:
     return DeletedOut(deleted=str(director.delete_entry(session, entry_id, operator=operator)))
+
+
+# --------------------------------------------------------------------------
+# sales insights (read-only)
+# --------------------------------------------------------------------------
+
+
+def _wire(value: object) -> object:
+    """Dataclasses to plain data, with every Decimal quantity as text (10.10)."""
+    if isinstance(value, Decimal):
+        return format(value.normalize(), "f")
+    if is_dataclass(value) and not isinstance(value, type):
+        return {f.name: _wire(getattr(value, f.name)) for f in fields(value)}
+    if isinstance(value, dict):
+        return {k: _wire(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_wire(v) for v in value]
+    return value
+
+
+def sales_insights_view(
+    session: Session,
+    *,
+    since: date | None,
+    until: date | None,
+    channel: str | None,
+    category: str | None,
+    product: str | None,
+    size: str | None,
+    weekdays: frozenset[int] | None,
+    whole: bool,
+) -> SalesInsightsOut:
+    r = sales_insights.sales_insights(
+        session,
+        since=since,
+        until=until,
+        channel=channel,
+        category=category,
+        product=product,
+        size=size,
+        weekdays=weekdays,
+        whole=whole,
+    )
+    return SalesInsightsOut.model_validate(_wire(r))
 
 
 # --------------------------------------------------------------------------

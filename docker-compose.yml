@@ -8,17 +8,35 @@
 # from the host, only from inside the compose network, and `caddy` is the sole service
 # with a `ports:` entry, proxying to `api` alone.
 #
-# First run, once (no `uv run` needed inside the container -- the image's PATH already
-# points at the synced venv, see Dockerfile):
-#   docker compose build
-#   docker compose run --rm api alembic upgrade head
+# ONE file for everything: the ops app (api / bot / scheduler / backup), the public
+# website (site-api / site-static) and the Caddy in front of both. `./start.sh docker`
+# (or plain `docker compose up -d --build`) is the whole start, first run included:
+# the one-shot `migrate` and `site-migrate` services bring both Alembic histories to
+# head before anything that reads the database starts.
+#
+# An empty database still needs seeding once (no `uv run` inside the container -- the
+# image's PATH already points at the synced venv, see Dockerfile):
 #   docker compose run --rm -e CAFEOPS_FINANCE_WORKBOOK_PATH=/app/sashas_corner_finance__LEGACY_.xlsx \
 #       api cafeops seed --demo   # or import-legacy --commit, see README.md
-#   docker compose up -d
 # See README.md for the full first-run walkthrough and docs/OPERATIONS.md for the
 # nightly backup, restore drill and "what to check when a screen is blank".
 
 services:
+  # One-shot: ops migrations, then exits. Everything that touches the database waits
+  # for it, so a deploy can never start the app against a schema it does not expect.
+  migrate:
+    build:
+      context: .
+      target: runtime
+    image: cafeops:latest
+    command: ["alembic", "upgrade", "head"]
+    restart: "no"
+    env_file: .env
+    environment:
+      CAFEOPS_DATABASE_URL: sqlite+pysqlite:////data/cafeops.db
+    volumes:
+      - cafeops_data:/data
+
   api:
     build:
       context: .
@@ -35,9 +53,37 @@ services:
       CAFEOPS_DATABASE_URL: sqlite+pysqlite:////data/cafeops.db
       # Menu photo uploads. Caddy serves this same volume read-only at /media/*.
       CAFEOPS_MEDIA_DIR: /media
+      # The Website screens forward to the site API over this compose network
+      # (cafeops/api/areas/website.py). SITE_SERVICE_KEY in .env joins the two.
+      CAFEOPS_SITE_API_URL: http://site-api:8100
+      # Only Caddy can reach this container (no published port), so any private
+      # address is Caddy and its X-Forwarded-For is the real visitor. Without this every
+      # customer shares Caddy's IP, and the /rewards join and card-recovery rate limits
+      # (and the back-office login lockout) trip for everyone at once.
+      CAFEOPS_TRUSTED_PROXIES: ${CAFEOPS_TRUSTED_PROXIES:-127.0.0.1,::1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16}
+      # --- Sasha's Corner Rewards: everything derives from SITE_DOMAIN in .env --------
+      # Card, recovery and wallet URLs are the PUBLIC site's origin: SITE_PUBLIC_URL if
+      # set, else https://$SITE_DOMAIN. Set SITE_DOMAIN and leave these alone; an
+      # explicit value in .env still wins. (The wallet's own public URL defaults to this.)
+      CAFEOPS_LOYALTY_PUBLIC_URL: ${CAFEOPS_LOYALTY_PUBLIC_URL:-${SITE_PUBLIC_URL:-https://${SITE_DOMAIN:-sashascorner.co.uk}}}
+      CAFEOPS_SITE_PUBLIC_URL: ${SITE_PUBLIC_URL:-https://${SITE_DOMAIN:-sashascorner.co.uk}}
+      # Wallet files: drop them into ./secrets/wallet with these names and set only the
+      # ids in .env (docs/loyalty/GO-LIVE.md). A missing file is "not configured", and
+      # without CAFEOPS_WALLET_APPLE_PASS_TYPE_ID / _GOOGLE_ISSUER_ID nothing is offered.
+      CAFEOPS_WALLET_APPLE_CERT_PATH: ${CAFEOPS_WALLET_APPLE_CERT_PATH:-/secrets/wallet/pass.pem}
+      CAFEOPS_WALLET_APPLE_KEY_PATH: ${CAFEOPS_WALLET_APPLE_KEY_PATH:-/secrets/wallet/pass.key}
+      CAFEOPS_WALLET_APPLE_WWDR_PATH: ${CAFEOPS_WALLET_APPLE_WWDR_PATH:-/secrets/wallet/wwdr.pem}
+      CAFEOPS_WALLET_GOOGLE_SERVICE_ACCOUNT_PATH: ${CAFEOPS_WALLET_GOOGLE_SERVICE_ACCOUNT_PATH:-/secrets/wallet/google-sa.json}
     volumes:
       - cafeops_data:/data
+      # Wallet pass certificate, key and Google service account (docs/loyalty/WALLET-SETUP.md,
+      # GO-LIVE.md). Read-only; the app runs as uid 1000, so the files must be readable
+      # by it (`sudo chown -R 1000:1000 secrets/wallet; chmod 600 secrets/wallet/*`).
+      - ./secrets/wallet:/secrets/wallet:ro
       - cafeops_media:/media
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
     # No `ports:` here on purpose -- see the file header. Reachable only via `caddy`,
     # over this compose project's private network.
     healthcheck:
@@ -90,8 +136,25 @@ services:
     env_file: .env
     environment:
       CAFEOPS_DATABASE_URL: sqlite+pysqlite:////data/cafeops.db
+      # The scheduler retries wallet pushes (wallet_outbox, every minute) and sends
+      # campaigns, so it needs the same public URL and wallet files as the api.
+      # --- Sasha's Corner Rewards: everything derives from SITE_DOMAIN in .env --------
+      # Card, recovery and wallet URLs are the PUBLIC site's origin: SITE_PUBLIC_URL if
+      # set, else https://$SITE_DOMAIN. Set SITE_DOMAIN and leave these alone; an
+      # explicit value in .env still wins. (The wallet's own public URL defaults to this.)
+      CAFEOPS_LOYALTY_PUBLIC_URL: ${CAFEOPS_LOYALTY_PUBLIC_URL:-${SITE_PUBLIC_URL:-https://${SITE_DOMAIN:-sashascorner.co.uk}}}
+      CAFEOPS_SITE_PUBLIC_URL: ${SITE_PUBLIC_URL:-https://${SITE_DOMAIN:-sashascorner.co.uk}}
+      # Wallet files: drop them into ./secrets/wallet with these names and set only the
+      # ids in .env (docs/loyalty/GO-LIVE.md). A missing file is "not configured", and
+      # without CAFEOPS_WALLET_APPLE_PASS_TYPE_ID / _GOOGLE_ISSUER_ID nothing is offered.
+      CAFEOPS_WALLET_APPLE_CERT_PATH: ${CAFEOPS_WALLET_APPLE_CERT_PATH:-/secrets/wallet/pass.pem}
+      CAFEOPS_WALLET_APPLE_KEY_PATH: ${CAFEOPS_WALLET_APPLE_KEY_PATH:-/secrets/wallet/pass.key}
+      CAFEOPS_WALLET_APPLE_WWDR_PATH: ${CAFEOPS_WALLET_APPLE_WWDR_PATH:-/secrets/wallet/wwdr.pem}
+      CAFEOPS_WALLET_GOOGLE_SERVICE_ACCOUNT_PATH: ${CAFEOPS_WALLET_GOOGLE_SERVICE_ACCOUNT_PATH:-/secrets/wallet/google-sa.json}
     volumes:
       - cafeops_data:/data
+      # Same read-only wallet files as `api` (see there).
+      - ./secrets/wallet:/secrets/wallet:ro
     depends_on:
       api:
         condition: service_healthy
@@ -113,6 +176,12 @@ services:
         VITE_LIVE: "1"
     restart: unless-stopped
     env_file: .env
+    environment:
+      # Re-stated with compose's `:-` (empty counts as unset) because Caddy's own
+      # `{$VAR:default}` only covers UNSET: a blank `CAFEOPS_DOMAIN=` line in .env left
+      # Caddy with a site block that has no address, and it refused to start at all.
+      CAFEOPS_DOMAIN: ${CAFEOPS_DOMAIN:-http://:80}
+      SITE_DOMAIN: ${SITE_DOMAIN:-sashascorner.co.uk}
     ports:
       - "80:80"
       - "443:443"
@@ -126,9 +195,89 @@ services:
       # Menu photos only -- never the data volume: Caddy must not be able to serve the
       # database file.
       - cafeops_media:/srv/media:ro
+      # The public website's build + its Caddy block (imported by the Caddyfile's
+      # `import /srv/site/*.caddy`), copied in by `site-static`.
+      - site_static:/srv/site:ro
     depends_on:
       api:
         condition: service_healthy
+      site-static:
+        condition: service_completed_successfully
+      site-api:
+        condition: service_healthy
+
+  # --- the public website (site/) --------------------------------------------------
+  # Same SQLite file, its own Alembic history (site_alembic_version, site_* tables only).
+  # Runs after the ops migration so the two never hold the write lock at once.
+  site-migrate:
+    build:
+      context: ./site
+      dockerfile: Dockerfile
+      target: api
+    image: sashasite-api:latest
+    command: ["alembic", "upgrade", "head"]
+    restart: "no"
+    env_file: .env
+    environment:
+      SITE_DATABASE_URL: sqlite+pysqlite:////data/cafeops.db
+    volumes:
+      - cafeops_data:/data
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  site-api:
+    build:
+      context: ./site
+      dockerfile: Dockerfile
+      target: api
+    image: sashasite-api:latest
+    restart: unless-stopped
+    # Shared with ops for the Telegram vars (CAFEOPS_TELEGRAM_*) and SITE_* settings.
+    env_file: .env
+    environment:
+      SITE_DATABASE_URL: sqlite+pysqlite:////data/cafeops.db
+      # Caddy overwrites X-Forwarded-For with the real client IP, so the contact /
+      # booking rate limit can key on it. Without this every visitor shares Caddy's IP
+      # and one busy afternoon locks the form for everyone.
+      SITE_TRUST_PROXY: "1"
+      # Let uvicorn accept Caddy's forwarded headers. Safe: no published port.
+      FORWARDED_ALLOW_IPS: "*"
+      # The photo library (WebP variants), on a volume so uploads survive a redeploy.
+      SITE_MEDIA_DIR: /media
+      # Links the site API builds (booking manage links, emails) use the public origin.
+      SITE_PUBLIC_URL: ${SITE_PUBLIC_URL:-https://${SITE_DOMAIN:-sashascorner.co.uk}}
+    volumes:
+      - cafeops_data:/data
+      - site_media:/media
+    depends_on:
+      site-migrate:
+        condition: service_completed_successfully
+    # No `ports:` -- reachable only through caddy, like `api`.
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8100/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # One-shot: copies the built HTML + Caddyfile.site into `site_static`, then exits.
+  site-static:
+    build:
+      context: ./site
+      dockerfile: Dockerfile
+      target: static
+      args:
+        # Canonical origin baked into every page (canonical, og:url, sitemap). Derived
+        # from SITE_DOMAIN; build-time, so a change needs `docker compose build site-static`.
+        SITE_PUBLIC_URL: ${SITE_PUBLIC_URL:-https://${SITE_DOMAIN:-sashascorner.co.uk}}
+        # Swetrix analytics project id. Empty = no analytics script at all.
+        PUBLIC_SWETRIX_PID: ${PUBLIC_SWETRIX_PID:-}
+        PUBLIC_SWETRIX_API: ${PUBLIC_SWETRIX_API:-}
+    image: sashasite-static:latest
+    restart: "no"
+    volumes:
+      - site_static:/srv/site
 
   # Nightly off-box backup, containerised for parity with the Docker deployment path.
   # Reads the live database READ-ONLY (`:ro`) -- a backup process is never a writer.
@@ -167,3 +316,5 @@ volumes:
   cafeops_backups:
   caddy_data:
   caddy_config:
+  site_static:
+  site_media:

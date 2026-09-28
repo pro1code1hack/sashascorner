@@ -118,6 +118,7 @@ def run_doctor(session: Session, *, as_of: datetime | None = None) -> DoctorRepo
             "remaining checks",
             "skipped: there is no schema to inspect yet. Migrate, then run this again",
         )
+        _guarded(r, "integrations", _check_integrations, r)
         return r
 
     _guarded(r, "legacy import", _check_seed, session, r)
@@ -131,7 +132,18 @@ def run_doctor(session: Session, *, as_of: datetime | None = None) -> DoctorRepo
     _guarded(r, "takings", _check_takings, session, r)
     _guarded(r, "input trust", _check_trust_of_inputs, session, r)
     _guarded(r, "credentials", _check_credentials, session, r)
+    _guarded(r, "integrations", _check_integrations, r)
+    _guarded(r, "website", _check_website, r)
     return r
+
+
+def _check_integrations(r: DoctorReport) -> None:
+    """QR key, public URL, SMTP/Twilio, wallets, Telegram, Lightspeed, auto-stamp: each
+    configured / not configured / MISCONFIGURED. Settings and files only, no database, so
+    it also runs on an install that has not been migrated yet."""
+    from cafeops.services.doctor_integrations import check_integrations
+
+    check_integrations(r)
 
 
 # --------------------------------------------------------------------------
@@ -546,18 +558,24 @@ def _check_credentials(session: Session, r: DoctorReport) -> None:
         )
     else:
         r.add(Severity.OK, "api password", "set from CAFEOPS_API_PASSWORD, so the API will serve")
+    # Lightspeed, Telegram and the loyalty keys: `doctor_integrations`, which says
+    # configured / not configured / MISCONFIGURED for each rather than only "absent".
 
-    if not settings.lightspeed_configured:
+
+def _check_website(r: DoctorReport) -> None:
+    """The Website group forwards to the site API with a shared key (api/areas/website.py).
+
+    Configuration only: whether the site API is actually up is the Website screens' job
+    (`GET /api/website/connection`), not something a CLI run should wait on.
+    """
+    if settings.site_service_key:
+        r.add(Severity.OK, "website", f"connected to the site API at {settings.site_api_url}")
+    else:
         r.add(
             Severity.INFO,
-            "lightspeed",
-            "no credentials: running on fixtures. Sales are whatever was seeded or "
-            "imported by hand",
-        )
-    if not settings.telegram_bot_token:
-        r.add(
-            Severity.INFO,
-            "telegram",
-            "no bot token: the bot cannot start, and nothing has ever been sent. "
-            "`cafeops bot-preview` renders every flow locally",
+            "website",
+            "SITE_SERVICE_KEY is unset, so the Website screens (bookings, messages, events, "
+            "photos, café details) say the site isn't connected",
+            "set SITE_SERVICE_KEY in .env to one long random value (both apps read it) and "
+            "restart the back office and the site API",
         )

@@ -1,0 +1,91 @@
+---
+// Landing page for "Kyiv cake Dundee". Search engines read the phrase as "Dundee
+// cake" (docs/SEO-GEO.md), so the page pairs the two words plainly. Description and
+// prices from menu.json; the whole cake is ordered through the contact form
+// (topic "order"), exactly as on /order.
+import SeoLayout from '../components/SeoLayout.astro';
+import { category, inCategory, menuJsonLd, tidy } from '../components/seoData';
+import { gbp } from '../lib/format';
+
+const kyiv = inCategory('cakes').filter((i) => /kyiv/i.test(i.name));
+const slice = kyiv.find((i) => /slice/i.test(i.name));
+const whole = kyiv.find((i) => /whole/i.test(i.name));
+const one = (i: { sizes: { price_pence: number }[] }) => Math.min(...i.sizes.map((z) => z.price_pence));
+const cakes = category('cakes');
+const about = slice?.description ?? whole?.description ?? null;
+
+const sections = tidy([
+  { id: 'kyiv', title: 'Kyiv cake', blurb: null, items: kyiv },
+  { id: 'counter', title: 'Also on the cake counter', blurb: cakes?.blurb, items: inCategory('cakes') },
+]);
+
+const ORDER_URL = '/visit?topic=order#contact';
+const site = Astro.site!;
+const jsonLd = {
+  '@context': 'https://schema.org',
+  ...menuJsonLd(site, '/kyiv-cake', "Kyiv cake at Sasha's Corner, Dundee", sections),
+};
+const description = [
+  'Kyiv cake in Dundee',
+  slice ? `by the slice (${gbp(one(slice))})` : null,
+  whole ? `or whole (${gbp(one(whole))}) to order ahead` : null,
+].filter(Boolean).join(' ') + ". Collect from Sasha's Corner, 23 Commercial Street, Dundee city centre.";
+---
+
+<SeoLayout
+  title="Kyiv cake in Dundee, whole or by the slice · Sasha's Corner"
+  description={description}
+  jsonLd={jsonLd}
+  label="Kyiv cake"
+  photos={['order.kyiv']}
+  sections={sections}
+  visitTitle="Come in for a slice."
+  links={whole ? [{ href: ORDER_URL, label: 'Order a whole Kyiv cake', track: 'cake_enquiry' }] : []}
+>
+  <Fragment slot="title">Kyiv cake in Dundee, <span class="soft">by the slice or whole.</span></Fragment>
+  {about && <p>{about}</p>}
+  <p>
+    {slice && <>A slice is <span class="num">{gbp(one(slice))}</span> from the cake counter. </>}
+    {
+      whole && (
+        <>
+          A whole cake is <span class="num">{gbp(one(whole))}</span>, made to order: tell us the day you'd like to collect it
+          from Commercial Street.
+        </>
+      )
+    }
+  </p>
+  <Fragment set:html="<!-- OWNER TO CONFIRM: notice needed for whole cakes -->" />
+  {whole && <p class="kc-notice">Give us a few days' notice for a whole cake.</p>}
+  <Fragment set:html="<!-- /OWNER TO CONFIRM -->" />
+  {
+    whole && (
+      <p class="kc-cta">
+        <a class="btn btn--caramel" href={ORDER_URL} data-track="cake_enquiry" data-track-source="kyiv-cake">
+          Order a whole cake <span class="arrow" aria-hidden="true">→</span>
+        </a>
+        <a class="btn btn--ghost" href="/order#ahead">How ordering ahead works</a>
+      </p>
+    )
+  }
+  {cakes?.blurb && <p>{cakes.blurb} If you're coming in for a slice, it's worth a call first.</p>}
+</SeoLayout>
+
+<style>
+  .kc-notice {
+    font-size: var(--step--1);
+    color: var(--olive-700);
+  }
+  .kc-cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 6px;
+  }
+  .kc-cta .btn {
+    color: var(--fg);
+  }
+  .kc-cta .btn--ghost {
+    color: var(--olive-900);
+  }
+</style>

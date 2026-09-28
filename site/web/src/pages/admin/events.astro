@@ -1,0 +1,459 @@
+---
+// /admin/events: the owner's events. Add, edit, publish or unpublish, and see who
+// has replied. The public /events page shows published events that haven't ended.
+import Admin from '../../layouts/Admin.astro';
+---
+
+<Admin title="Events" active="events" subtitle="evenings at the café, on the website's Events page">
+  <button slot="actions" type="button" class="adm-btn" data-new>New event</button>
+  <div class="adm-chips evadm-tabs" role="tablist" aria-label="Events" data-tabs>
+    <button type="button" role="tab" class="adm-chip" data-tab="upcoming" id="tab-upcoming" aria-controls="ev-panel">Coming up <span class="adm-chip-count" data-count="upcoming"></span></button>
+    <button type="button" role="tab" class="adm-chip" data-tab="past" id="tab-past" aria-controls="ev-panel">Past <span class="adm-chip-count" data-count="past"></span></button>
+  </div>
+  <p class="adm-err" data-error role="alert" hidden></p>
+  <div id="ev-panel" role="tabpanel" aria-labelledby="tab-upcoming" data-panel aria-busy="true">
+    <ul class="evadm-list" data-list></ul>
+  </div>
+</Admin>
+
+<style is:global>
+  .evadm-tabs {
+    margin-bottom: 14px;
+  }
+  [data-panel][aria-busy='true'] {
+    opacity: 0.6;
+  }
+  .evadm-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--line);
+  }
+  .evadm-row {
+    display: grid;
+    grid-template-columns: 5.5rem minmax(0, 1fr) auto;
+    gap: 6px 16px;
+    align-items: center;
+    padding: 14px 4px;
+    border-bottom: 1px solid var(--line);
+  }
+  .evadm-date {
+    display: grid;
+    line-height: 1.1;
+  }
+  .evadm-day {
+    font-size: 15px;
+    font-weight: 700;
+  }
+  .evadm-time {
+    font-size: 13px;
+    color: var(--ink-2);
+    /* "6pm–7.30pm" broke after the dash at 375px; one line reads as one range. */
+    white-space: nowrap;
+  }
+  .evadm-main {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+  }
+  .evadm-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 10px;
+    font-size: 16px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+  }
+  .evadm-meta {
+    font-size: 13px;
+    color: var(--ink-2);
+  }
+  .evadm-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  @media (max-width: 620px) {
+    .evadm-row {
+      grid-template-columns: 5.25rem minmax(0, 1fr);
+    }
+    .evadm-actions {
+      grid-column: 1 / -1;
+      justify-content: flex-start;
+    }
+    .evadm-actions .adm-btn {
+      flex: 1 1 calc(50% - 4px);
+    }
+  }
+  .evadm-form {
+    display: grid;
+    gap: 14px;
+  }
+  /* Date on its own row, then starts/ends: the editor is a ~400px drawer at every width,
+     and three columns clipped the date to "10/10/20". */
+  .evadm-grid3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .evadm-grid3 > :first-child {
+    grid-column: 1 / -1;
+  }
+  .evadm-grid2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .evadm-rsvps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--line);
+  }
+  .evadm-rsvp {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 4px 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .evadm-rsvp--cancelled .evadm-who {
+    text-decoration: line-through;
+    color: var(--ink-2);
+  }
+  .evadm-who {
+    font-weight: 700;
+    overflow-wrap: anywhere;
+  }
+  .evadm-contact,
+  .evadm-note {
+    grid-column: 1 / -1;
+    font-size: 14px;
+    color: var(--ink-2);
+    overflow-wrap: anywhere;
+  }
+  .evadm-sum {
+    margin-bottom: 12px;
+    font-size: 15px;
+  }
+</style>
+
+<script>
+  import { api, ApiError, busy, clearFieldErrors, confirmTwice, errorText, fill, h, openDrawer, ready, showFieldErrors, toast, announce } from '../../scripts/admin-core';
+  import { ago, clock, longDate, plural, shortDate, stamp, todayISO } from '../../scripts/admin-core/format';
+
+  interface AdminEvent {
+    id: number;
+    slug: string;
+    title: string;
+    date: string;
+    start: string;
+    end: string | null;
+    starts_at: string;
+    ends_at: string | null;
+    description: string;
+    price_pence: number | null;
+    capacity: number | null;
+    image_media_id: number | null;
+    image: { src: string; alt: string } | null;
+    published: boolean;
+    past: boolean;
+    seats_taken: number;
+    rsvps: number;
+  }
+  interface Rsvp {
+    id: number;
+    name: string;
+    email: string | null;
+    phone: string | null;
+    party: number;
+    note: string | null;
+    created_at: string;
+    cancelled_at: string | null;
+  }
+  interface Media {
+    id: number;
+    original_name: string;
+    alt: string;
+  }
+  type Tab = 'upcoming' | 'past';
+
+  const $ = <T extends HTMLElement>(sel: string) => document.querySelector<T>(sel)!;
+  let all: AdminEvent[] = [];
+  let tab: Tab = new URLSearchParams(location.search).get('tab') === 'past' ? 'past' : 'upcoming';
+
+  // Money: pence in, text out, and back without floats.
+  const pounds = (p: number) => `£${Math.floor(p / 100)}.${String(p % 100).padStart(2, '0')}`;
+  function parsePence(s: string): number | null | 'bad' {
+    const t = s.trim().replace(/^£/, '');
+    if (!t) return null;
+    const m = t.match(/^(\d{1,4})(?:\.(\d{1,2}))?$/);
+    if (!m) return 'bad';
+    return Number(m[1]) * 100 + Number((m[2] ?? '0').padEnd(2, '0'));
+  }
+
+  async function load() {
+    const panel = $('[data-panel]');
+    panel.setAttribute('aria-busy', 'true');
+    try {
+      all = await api.get<AdminEvent[]>('/api/admin/events');
+      $('[data-error]').hidden = true;
+      render();
+    } catch (e) {
+      const el = $('[data-error]');
+      el.textContent = errorText(e);
+      el.hidden = false;
+    } finally {
+      panel.setAttribute('aria-busy', 'false');
+    }
+  }
+
+  function render() {
+    const upcoming = all.filter((e) => !e.past).sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+    const past = all.filter((e) => e.past).sort((a, b) => b.starts_at.localeCompare(a.starts_at));
+    $('[data-count="upcoming"]').textContent = upcoming.length ? String(upcoming.length) : '';
+    $('[data-count="past"]').textContent = past.length ? String(past.length) : '';
+    document.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach((t) => {
+      const on = t.dataset.tab === tab;
+      t.setAttribute('aria-selected', String(on));
+      t.tabIndex = on ? 0 : -1;
+    });
+    $('[data-panel]').setAttribute('aria-labelledby', `tab-${tab}`);
+    const list = tab === 'upcoming' ? upcoming : past;
+    const empty = tab === 'upcoming' ? 'Nothing coming up. Add an event and publish it to show it on the website.' : 'No past events yet.';
+    fill($('[data-list]'), list.length ? list.map(row) : h('li', { class: 'adm-empty' }, empty));
+  }
+
+  function seats(e: AdminEvent): string {
+    if (e.capacity !== null) return `${e.seats_taken} of ${e.capacity} places taken`;
+    return e.seats_taken ? `${plural(e.seats_taken, 'person', 'people')} coming` : 'No replies yet';
+  }
+
+  function row(e: AdminEvent): HTMLElement {
+    const status = e.past
+      ? h('span', { class: 'adm-pill adm-pill--muted' }, 'Past')
+      : e.published
+        ? h('span', { class: 'adm-pill adm-pill--ok' }, 'On the website')
+        : h('span', { class: 'adm-pill adm-pill--warn' }, 'Draft');
+    const full = !e.past && e.capacity !== null && e.seats_taken >= e.capacity ? h('span', { class: 'adm-pill adm-pill--brand' }, 'Full') : null;
+    const replies = h('button', { type: 'button', class: 'adm-btn adm-btn--secondary adm-btn--sm' }, `Replies (${e.rsvps})`);
+    replies.addEventListener('click', () => void openReplies(e));
+    const edit = h('button', { type: 'button', class: 'adm-btn adm-btn--secondary adm-btn--sm' }, 'Edit');
+    edit.addEventListener('click', () => void openForm(e));
+    return h(
+      'li',
+      { class: 'evadm-row', 'data-id': e.id },
+      h('div', { class: 'evadm-date' }, h('span', { class: 'evadm-day adm-fig' }, shortDate(e.date)), h('span', { class: 'evadm-time adm-fig' }, e.end ? `${clock(e.start)}–${clock(e.end)}` : clock(e.start))),
+      h(
+        'div',
+        { class: 'evadm-main' },
+        h('span', { class: 'evadm-title' }, e.title, status, full),
+        h('span', { class: 'evadm-meta' }, [seats(e), e.price_pence !== null ? pounds(e.price_pence) : null].filter(Boolean).join(' · ')),
+      ),
+      h('div', { class: 'evadm-actions' }, replies, edit),
+    );
+  }
+
+  // ---- form ---------------------------------------------------------------------------
+  function field(labelText: string, control: HTMLElement, hint?: string | null): HTMLElement {
+    if (!control.id) control.id = `f-${Math.random().toString(36).slice(2, 8)}`;
+    return h('div', { class: 'adm-field' }, h('label', { class: 'adm-label', for: control.id }, labelText), control, hint ? h('p', { class: 'adm-hint' }, hint) : null);
+  }
+
+  let media: Media[] | null = null;
+  async function mediaList(): Promise<Media[]> {
+    if (media) return media;
+    try {
+      media = await api.get<Media[]>('/api/admin/media');
+    } catch {
+      media = [];
+    }
+    return media;
+  }
+
+  async function openForm(e: AdminEvent | null) {
+    const photos = await mediaList();
+    const title = h('input', { class: 'adm-input', name: 'title', maxlength: 120, required: true, value: e?.title ?? '' });
+    const date = h('input', { class: 'adm-input', type: 'date', name: 'date', required: true, value: e?.date ?? '', min: e ? undefined : todayISO() });
+    const start = h('input', { class: 'adm-input', type: 'time', name: 'start', required: true, step: 300, value: e?.start ?? '18:00' });
+    const end = h('input', { class: 'adm-input', type: 'time', name: 'end', step: 300, value: e?.end ?? '' });
+    const desc = h('textarea', { class: 'adm-input', name: 'description', rows: 6, maxlength: 4000 });
+    desc.value = e?.description ?? '';
+    const price = h('input', { class: 'adm-input', name: 'price_pence', inputmode: 'decimal', placeholder: 'e.g. 12.50', value: e?.price_pence != null ? pounds(e.price_pence).slice(1) : '' });
+    const cap = h('input', { class: 'adm-input', type: 'number', name: 'capacity', min: 1, max: 500, inputmode: 'numeric', value: e?.capacity ?? '' });
+    const img = h('select', { class: 'adm-input', name: 'image_media_id' }, h('option', { value: '' }, 'No photo'), photos.map((m) => h('option', { value: m.id }, m.alt ? `${m.alt.slice(0, 60)}${m.alt.length > 60 ? '…' : ''}` : m.original_name)));
+    img.value = e?.image_media_id != null ? String(e.image_media_id) : '';
+    const slug = h('input', { class: 'adm-input', name: 'slug', maxlength: 80, pattern: '[a-z0-9]+(-[a-z0-9]+)*', value: e?.slug ?? '', placeholder: 'made from the title and date' });
+    const pubWrap = h('label', { class: 'adm-check' }, h('input', { type: 'checkbox', name: 'published' }), 'Show it on the website');
+    const pub = pubWrap.querySelector('input')!;
+    pub.checked = e?.published ?? false;
+    const formErr = h('p', { class: 'adm-err', role: 'alert', hidden: true });
+    const save = h('button', { type: 'submit', class: 'adm-btn' }, e ? 'Save changes' : 'Add event');
+
+    const form = h(
+      'form',
+      { class: 'evadm-form', novalidate: true },
+      field('Title', title),
+      h('div', { class: 'evadm-grid3' }, field('Date', date), field('Starts', start), field('Ends', end, 'Optional')),
+      field('What happens', desc, 'A few plain sentences. A blank line starts a new paragraph.'),
+      h('div', { class: 'evadm-grid2' }, field('Price (£)', price, 'Leave empty if there is no charge to show.'), field('Places', cap, 'People, not replies. Empty = no limit.')),
+      field('Photo', img, photos.length ? 'From the Photos library.' : 'Upload photos in Photos first.'),
+      field('Web address', slug, e ? `sashascorner.co.uk/events#${e.slug}. Changing it breaks links already shared.` : 'Optional.'),
+      pubWrap,
+      formErr,
+    );
+
+    const foot = h('div', { class: 'evadm-actions' }, save);
+    let del: HTMLButtonElement | null = null;
+    if (e) {
+      del = h('button', { type: 'button', class: 'adm-btn adm-btn--danger' }, 'Delete');
+      foot.prepend(del);
+    }
+    const drawer = openDrawer({ title: e ? 'Edit event' : 'New event', body: form, foot });
+    save.setAttribute('form', (form.id = `evf-${Math.random().toString(36).slice(2, 8)}`));
+
+    if (del && e) {
+      confirmTwice(del, 'Tap again to delete', async () => {
+        try {
+          await api.del(`/api/admin/events/${e.id}`);
+        } catch (err) {
+          if (err instanceof ApiError && err.status === 409) {
+            const n = (err.detail as { rsvps?: number })?.rsvps ?? 0;
+            if (!confirm(`${plural(n, 'reply', 'replies')} will be deleted with this event. Delete anyway?`)) return;
+            try {
+              await api.del(`/api/admin/events/${e.id}?force=1`);
+            } catch (err2) {
+              toast(errorText(err2), { tone: 'bad' });
+              return;
+            }
+          } else {
+            toast(errorText(err), { tone: 'bad' });
+            return;
+          }
+        }
+        all = all.filter((x) => x.id !== e.id);
+        drawer.close();
+        render();
+        toast('Event deleted.');
+      });
+    }
+
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      clearFieldErrors(form);
+      formErr.hidden = true;
+      const p = parsePence(price.value);
+      const local: Record<string, string> = {};
+      if (!title.value.trim()) local.title = 'Give it a name.';
+      if (!date.value) local.date = 'Pick a date.';
+      if (!start.value) local.start = 'Pick a start time.';
+      if (p === 'bad') local.price_pence = 'A price like 12 or 12.50.';
+      if (Object.keys(local).length) {
+        showFieldErrors(form, local);
+        return;
+      }
+      const body: Record<string, unknown> = {
+        title: title.value.trim(),
+        date: date.value,
+        start: start.value.slice(0, 5),
+        end: end.value ? end.value.slice(0, 5) : null,
+        description: desc.value.trim(),
+        price_pence: p,
+        capacity: cap.value ? Number(cap.value) : null,
+        image_media_id: img.value ? Number(img.value) : null,
+        published: pub.checked,
+      };
+      if (slug.value.trim() || e) body.slug = slug.value.trim() || e?.slug;
+      try {
+        const saved = await busy(save, 'Saving…', () =>
+          e ? api.patch<AdminEvent>(`/api/admin/events/${e.id}`, body) : api.post<AdminEvent>('/api/admin/events', body),
+        );
+        const i = all.findIndex((x) => x.id === saved.id);
+        if (i >= 0) all[i] = saved;
+        else all.push(saved);
+        tab = saved.past ? 'past' : 'upcoming';
+        drawer.close();
+        render();
+        toast(saved.published ? 'Saved. It is on the website.' : 'Saved as a draft: not on the website yet.');
+      } catch (err) {
+        if (err instanceof ApiError && Object.keys(err.fields).length && showFieldErrors(form, err.fields)) return;
+        formErr.textContent = errorText(err);
+        formErr.hidden = false;
+      }
+    });
+  }
+
+  // ---- replies ---------------------------------------------------------------------------
+  async function openReplies(e: AdminEvent) {
+    const listEl = h('ul', { class: 'evadm-rsvps' }, h('li', { class: 'adm-empty' }, 'Loading…'));
+    const sum = h('p', { class: 'evadm-sum' });
+    const body = h('div', {}, sum, listEl);
+    openDrawer({ title: e.title, body });
+    let rows: Rsvp[] = [];
+    const paint = () => {
+      const live = rows.filter((r) => !r.cancelled_at);
+      const people = live.reduce((n, r) => n + r.party, 0);
+      sum.textContent = `${longDate(e.date)}, ${clock(e.start)}. ${plural(live.length, 'reply', 'replies')}, ${plural(people, 'person', 'people')}${e.capacity !== null ? ` of ${e.capacity} places` : ''}.`;
+      fill(listEl, rows.length ? rows.map(item) : h('li', { class: 'adm-empty' }, 'No replies yet.'));
+    };
+    const item = (r: Rsvp): HTMLElement => {
+      const cancelled = !!r.cancelled_at;
+      const btn = h('button', { type: 'button', class: 'adm-btn adm-btn--secondary adm-btn--sm' }, cancelled ? 'Restore' : 'Cancel reply');
+      btn.addEventListener('click', async () => {
+        try {
+          const nr = await busy(btn, '…', () => api.patch<Rsvp>(`/api/admin/events/${e.id}/rsvps/${r.id}`, { cancelled: !cancelled }));
+          rows = rows.map((x) => (x.id === nr.id ? nr : x));
+          const delta = (nr.cancelled_at ? -1 : 1) * nr.party;
+          e.seats_taken += delta;
+          e.rsvps += nr.cancelled_at ? -1 : 1;
+          paint();
+          render();
+          announce(nr.cancelled_at ? `Cancelled ${r.name}'s reply.` : `Restored ${r.name}'s reply.`);
+        } catch (err) {
+          toast(errorText(err), { tone: 'bad' });
+        }
+      });
+      const contact = [
+        r.phone ? h('a', { href: `tel:${r.phone.replace(/[^\d+]/g, '')}` }, r.phone) : null,
+        r.email ? h('a', { href: `mailto:${r.email}?subject=${encodeURIComponent(e.title)}` }, r.email) : null,
+      ].filter((x): x is HTMLAnchorElement => !!x);
+      return h(
+        'li',
+        { class: `evadm-rsvp${cancelled ? ' evadm-rsvp--cancelled' : ''}` },
+        h('span', { class: 'evadm-who' }, `${r.name} · ${plural(r.party, 'person', 'people')}`),
+        btn,
+        h('span', { class: 'evadm-contact' }, ...contact.flatMap((a, i) => (i ? [' · ', a] : [a])), ` · replied ${ago(r.created_at)}`, cancelled ? ' · cancelled' : ''),
+        r.note ? h('span', { class: 'evadm-note', title: stamp(r.created_at) }, `“${r.note}”`) : null,
+      );
+    };
+    try {
+      rows = await api.get<Rsvp[]>(`/api/admin/events/${e.id}/rsvps`);
+      paint();
+    } catch (err) {
+      fill(listEl, h('li', { class: 'adm-err' }, errorText(err)));
+    }
+  }
+
+  // ---- tabs ------------------------------------------------------------------------------
+  function setTab(t: Tab, focus = false) {
+    tab = t;
+    const u = new URL(location.href);
+    if (t === 'upcoming') u.searchParams.delete('tab');
+    else u.searchParams.set('tab', t);
+    history.replaceState(null, '', u.pathname + u.search);
+    render();
+    if (focus) document.querySelector<HTMLElement>(`[data-tab="${t}"]`)?.focus();
+  }
+  document.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach((b) => b.addEventListener('click', () => setTab(b.dataset.tab as Tab)));
+  $('[data-tabs]').addEventListener('keydown', (e) => {
+    const k = (e as KeyboardEvent).key;
+    if (k !== 'ArrowLeft' && k !== 'ArrowRight') return;
+    e.preventDefault();
+    setTab(tab === 'upcoming' ? 'past' : 'upcoming', true);
+  });
+  $('[data-new]').addEventListener('click', () => void openForm(null));
+
+  ready().then(load);
+</script>

@@ -1,0 +1,16 @@
+---
+// PIN sign-in. The PIN alone identifies the member of staff (PINs are unique).
+import StKeypad from './StKeypad.astro';
+---
+
+<section class="st-view st-narrow st-pinview" data-view="pin" aria-labelledby="st-pin-h" hidden>
+  <h2 id="st-pin-h" class="st-h" tabindex="-1">Enter your PIN</h2>
+  <p class="st-note" data-pin-note hidden></p>
+  <StKeypad name="pin" label="PIN keypad" />
+  <p class="st-err" data-pin-err role="alert" hidden></p>
+  <button type="button" class="btn btn--caramel st-wide" data-pin-go disabled>Sign in</button>
+  <p class="st-device">
+    This device: <span data-device-name>not named</span>
+    <button type="button" class="st-link" data-repair>Pair again</button>
+  </p>
+</section>

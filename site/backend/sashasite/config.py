@@ -39,6 +39,11 @@ class Settings(BaseSettings):
     #: (site_admin_credential), which then takes precedence. With neither, the
     #: admin login answers 503: fail closed.
     admin_password: str | None = None
+    #: Shared secret the ops back office (cafeops) sends as ``X-Site-Service-Key``
+    #: when it forwards an admin call for someone already signed in there. The
+    #: website admin lives inside the back office now, behind its one password.
+    #: Unset: only a cookie session gets into /api/admin/*.
+    service_key: str | None = None
     #: Mark the admin cookie Secure even when the request looks like plain http
     #: (e.g. TLS terminated by a proxy without SITE_TRUST_PROXY).
     cookie_secure: bool = False

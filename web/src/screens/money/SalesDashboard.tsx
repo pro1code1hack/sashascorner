@@ -21,12 +21,12 @@
  * contrast, so every chart carries a legend with values and the day-by-day
  * table below is the table view.
  */
-import { useEffect, useMemo, useRef, useState } from 'react'
-import type { ReactNode } from 'react'
+import { useMemo, useState } from 'react'
 import { Segmented, cx } from '../../components/ui'
 import { usePL } from '../../lib/finance-api'
 import type { SalesDay } from '../../lib/types/finance'
 import { count, weekdayIndex } from './filters'
+import { Legend, Tip, axisMoney, barPath, niceMax, useWidth } from './chartKit'
 import { fd, gbp, mLabel } from './shared'
 
 export const SERIES = [
@@ -40,34 +40,6 @@ type Grain = 'day' | 'week' | 'month'
 
 const valueOf = (d: SalesDay, k: SeriesKey) =>
   k === 'card' ? (d.card_pence ?? 0) : k === 'till' ? (d.cash_till_pence ?? 0) : (d.cash_off_till_pence ?? 0)
-
-/** £ axis labels: whole pounds, "£1.2k" past a thousand. */
-function axisMoney(pence: number): string {
-  const pounds = pence / 100
-  if (pounds >= 1000) return `£${(pounds / 1000).toFixed(pounds >= 10000 ? 0 : 1)}k`
-  return `£${Math.round(pounds)}`
-}
-
-function niceMax(v: number): { max: number; step: number } {
-  if (v <= 0) return { max: 1000, step: 250 }
-  const raw = v / 4
-  const mag = 10 ** Math.floor(Math.log10(raw))
-  const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw) ?? raw
-  return { max: Math.ceil(v / step) * step, step }
-}
-
-function useWidth<T extends HTMLElement>(): [React.RefObject<T>, number] {
-  const ref = useRef<T>(null)
-  const [w, setW] = useState(0)
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const ro = new ResizeObserver(([e]) => e && setW(Math.floor(e.contentRect.width)))
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [])
-  return [ref, w]
-}
 
 function mondayOf(iso: string): string {
   const d = new Date(`${iso}T12:00:00Z`)
@@ -121,9 +93,9 @@ export function SalesDashboard({ rows }: { rows: SalesDay[] }) {
     <div className="mt-5 grid gap-x-8 gap-y-7 compact:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
       <section aria-labelledby="takings-h" className="min-w-0">
         <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-2">
-          <h2 id="takings-h" className="text-xl font-extrabold tracking-[-.01em]">
+          <h3 id="takings-h" className="text-xl font-extrabold tracking-[-.01em]">
             Takings over time
-          </h2>
+          </h3>
           <span className="flex-1" />
           <Segmented<Grain>
             label="Group by"
@@ -161,41 +133,6 @@ export function SalesDashboard({ rows }: { rows: SalesDay[] }) {
       <WeekdayChart rows={rows} />
       <BestDays rows={rows} />
     </div>
-  )
-}
-
-/* --------------------------------------------------------------- legend --- */
-
-function Legend({
-  items,
-  onToggle,
-}: {
-  items: { key: string; label: string; color: string; value: ReactNode; off?: boolean }[]
-  onToggle?: (key: string) => void
-}) {
-  return (
-    <ul className="mb-3 flex flex-wrap gap-x-4 gap-y-1" aria-label="Legend">
-      {items.map((it) => {
-        const body = (
-          <>
-            <span aria-hidden="true" className="size-3 flex-none rounded-[3px]" style={{ background: it.off ? 'transparent' : it.color, boxShadow: `inset 0 0 0 2px ${it.color}` }} />
-            <span className={cx('text-sm', it.off ? 'text-ink-3 line-through' : 'text-ink-2')}>{it.label}</span>
-            <span className={cx('fig text-sm font-bold', it.off ? 'text-ink-3' : 'text-ink')}>{it.value}</span>
-          </>
-        )
-        return (
-          <li key={it.key}>
-            {onToggle ? (
-              <button type="button" aria-pressed={!it.off} title={it.off ? 'Show' : 'Hide'} onClick={() => onToggle(it.key)} className="flex min-h-8 items-center gap-1.5 rounded-control px-1.5 hover:bg-canvas-2">
-                {body}
-              </button>
-            ) : (
-              <span className="flex min-h-8 items-center gap-1.5 px-1.5">{body}</span>
-            )}
-          </li>
-        )
-      })}
-    </ul>
   )
 }
 
@@ -247,10 +184,7 @@ function TakingsChart({ buckets, hidden, grain }: { buckets: Bucket[]; hidden: S
                   const top = j === segs.length - 1
                   // 2px surface gap between stacked segments; 4px rounded top on the last one.
                   const h = Math.max(0, y0 - y1 - (j > 0 ? 2 : 0))
-                  const r = top ? Math.min(4, barW / 2, h) : 0
-                  const yy = y1
-                  const d = `M${x},${yy + h} V${yy + r} Q${x},${yy} ${x + r},${yy} H${x + barW - r} Q${x + barW},${yy} ${x + barW},${yy + r} V${yy + h} Z`
-                  return <path key={g.s.key} d={d} fill={g.s.color} />
+                  return <path key={g.s.key} d={barPath(x, y1, barW, h, top ? 4 : 0)} fill={g.s.color} />
                 })}
               </g>
             )
@@ -310,15 +244,6 @@ function TakingsChart({ buckets, hidden, grain }: { buckets: Bucket[]; hidden: S
   )
 }
 
-function Tip({ x, width, children }: { x: number; width: number; children: ReactNode }) {
-  const w = 200
-  const left = Math.min(Math.max(0, x - w / 2), Math.max(0, width - w))
-  return (
-    <div role="tooltip" className="pointer-events-none absolute top-0 z-10 rounded-card border border-line bg-surface px-3 py-2 text-sm shadow-login" style={{ left, width: w }}>
-      {children}
-    </div>
-  )
-}
 
 /* ---------------------------------------------------------- channel mix --- */
 
@@ -339,9 +264,9 @@ function ChannelMix({ rows }: { rows: SalesDay[] }) {
 
   return (
     <section aria-labelledby="mix-h" className="min-w-0">
-      <h2 id="mix-h" className="mb-1 text-xl font-extrabold tracking-[-.01em]">
+      <h3 id="mix-h" className="mb-1 text-xl font-extrabold tracking-[-.01em]">
         Where it came from
-      </h2>
+      </h3>
       <p className="mb-3 text-sm text-ink-2">
         Till takings for the days in view; delivery apps from their monthly statements for {months.size === 1 ? 'that month' : `those ${months.size} months`}.
       </p>
@@ -404,9 +329,9 @@ function WeekdayChart({ rows }: { rows: SalesDay[] }) {
   const best = by.reduce((bi, b, i) => ((b.avg ?? -1) > (by[bi]?.avg ?? -1) ? i : bi), 0)
   return (
     <section aria-labelledby="wd-h" className="min-w-0">
-      <h2 id="wd-h" className="mb-1 text-xl font-extrabold tracking-[-.01em]">
+      <h3 id="wd-h" className="mb-1 text-xl font-extrabold tracking-[-.01em]">
         By weekday
-      </h2>
+      </h3>
       <p className="mb-3 text-sm text-ink-2">Average takings on each weekday in view.</p>
       <div className="flex h-44 items-end gap-2" onMouseLeave={() => setHover(null)}>
         {by.map((b, i) => (
@@ -445,9 +370,9 @@ function BestDays({ rows }: { rows: SalesDay[] }) {
   const max = top[0]?.total_pence ?? 1
   return (
     <section aria-labelledby="best-h" className="min-w-0">
-      <h2 id="best-h" className="mb-1 text-xl font-extrabold tracking-[-.01em]">
+      <h3 id="best-h" className="mb-1 text-xl font-extrabold tracking-[-.01em]">
         Best days
-      </h2>
+      </h3>
       <p className="mb-3 text-sm text-ink-2">The biggest days in view.</p>
       <ol>
         {top.map((d, i) => (

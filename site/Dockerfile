@@ -52,10 +52,22 @@ WORKDIR /site/web
 # Canonical origin baked into every <link rel=canonical>, og:url and the sitemap.
 # astro.config.mjs falls back to https://sashascorner.co.uk when this is empty.
 ARG SITE_PUBLIC_URL=""
+# Swetrix analytics (src/scripts/track.ts). Build-time only: Astro inlines PUBLIC_* into
+# the pages, so changing either needs `docker compose build site-static`. Empty = no
+# analytics at all (the script is never loaded). PUBLIC_SWETRIX_API only for self-hosted.
+ARG PUBLIC_SWETRIX_PID=""
+ARG PUBLIC_SWETRIX_API=""
+ENV PUBLIC_SWETRIX_PID=$PUBLIC_SWETRIX_PID \
+    PUBLIC_SWETRIX_API=$PUBLIC_SWETRIX_API
 COPY web/package.json web/package-lock.json ./
 RUN --mount=type=cache,target=/root/.npm npm ci
 COPY web/ ./
 COPY --from=data /out/menu.json /out/info.json ./src/data/
+# The stamp stickers are copies of assets/pass/stickers/ (outside this build context),
+# kept in sync by `cafeops wallet assets`. Fail the build rather than ship a web card
+# and scanner with missing stamps.
+RUN for n in 1 2 3 4 5 6 7 8; do test -s "public/stickers/slot-$n.svg" || { echo "missing public/stickers/slot-$n.svg: run cafeops wallet assets" >&2; exit 1; }; done \
+    && test -s public/stickers/reward.svg
 RUN if [ -n "$SITE_PUBLIC_URL" ]; then export SITE_PUBLIC_URL; else unset SITE_PUBLIC_URL; fi \
     && npm run build
 

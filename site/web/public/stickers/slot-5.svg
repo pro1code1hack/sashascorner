@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Sasha's Corner Rewards sticker, slot 5: a slice of Kyiv cake. Our own drawing.
+       CANONICAL: assets/pass/stickers/ in the repo. site/web/public/stickers/ and
+       web/public/stickers/ are copies written by `cafeops wallet assets`; edit here.
+       Layers: shadow, white die-cut, then the art in the logo's olive line. -->
+  <g transform="rotate(5 32 32)">
+    <g transform="translate(0.8 1.8)" fill="#474531" stroke="#474531" opacity="0.16">
+      <path d="M7 37L55 27V44C55 45 54.3 45.7 53.4 45.9L8.6 54.7C7.7 54.9 7 54.2 7 53.3Z" stroke-width="8"/>
+      <path d="M7 37L40 19C46 20.5 51 23 55 27Z" stroke-width="8"/>
+    </g>
+    <g fill="#ffffff" stroke="#ffffff">
+      <path d="M7 37L55 27V44C55 45 54.3 45.7 53.4 45.9L8.6 54.7C7.7 54.9 7 54.2 7 53.3Z" stroke-width="8"/>
+      <path d="M7 37L40 19C46 20.5 51 23 55 27Z" stroke-width="8"/>
+    </g>
+    <path d="M7 37L55 27V44C55 45 54.3 45.7 53.4 45.9L8.6 54.7C7.7 54.9 7 54.2 7 53.3Z" fill="#ebe6dd"/>
+    <path d="M7 41.8L55 31.8V35L7 45Z" fill="#d4884e"/>
+    <path d="M7 47.8L55 37.8V41L7 51Z" fill="#9b6038"/>
+    <path d="M7 37L55 27V44C55 45 54.3 45.7 53.4 45.9L8.6 54.7C7.7 54.9 7 54.2 7 53.3Z" stroke="#474531" stroke-width="1.8"/>
+    <path d="M7 37L40 19C46 20.5 51 23 55 27Z" fill="#f3f1eb" stroke="#474531" stroke-width="1.8"/>
+    <ellipse cx="44.2" cy="21.4" rx="3.4" ry="1.7" transform="rotate(-30 44.2 21.4)" fill="#899c6a" stroke="#474531" stroke-width="1"/>
+    <ellipse cx="33.6" cy="22.6" rx="3.2" ry="1.6" transform="rotate(25 33.6 22.6)" fill="#899c6a" stroke="#474531" stroke-width="1"/>
+    <circle cx="39" cy="24.4" r="3.6" fill="#e9dcd6" stroke="#474531" stroke-width="1.2"/>
+    <circle cx="39" cy="24.4" r="1.2" fill="#d4884e"/>
+    <circle cx="26" cy="28.8" r="1.1" fill="#9b6038"/>
+    <circle cx="20" cy="31.8" r="1.1" fill="#9b6038"/>
+  </g>
+</svg>

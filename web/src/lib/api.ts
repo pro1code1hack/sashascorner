@@ -243,7 +243,8 @@ export const api = {
  */
 export type WriteResult<T> =
   | { kind: 'ok'; data: T }
-  | { kind: 'refused'; message: string }
+  /** `status` is the HTTP status of the refusal (409, 422, 404) when there was one. */
+  | { kind: 'refused'; message: string; status?: number }
   | { kind: 'offline'; message: string }
   | { kind: 'failed'; status: number | null; message: string }
 
@@ -255,10 +256,11 @@ function refusalMessage(payload: unknown): string | null {
     const m = (detail as { message?: unknown }).message
     if (typeof m === 'string') return m
   }
-  // FastAPI's own validation errors arrive as a list of {loc, msg}.
+  // FastAPI's own validation errors arrive as a list of {loc, msg}; the website's
+  // API sometimes refuses with a list of plain sentences instead.
   if (Array.isArray(detail)) {
     const parts = detail
-      .map((d) => (d && typeof d === 'object' ? (d as { msg?: unknown }).msg : null))
+      .map((d) => (typeof d === 'string' ? d : d && typeof d === 'object' ? (d as { msg?: unknown }).msg : null))
       .filter((m): m is string => typeof m === 'string')
     if (parts.length) return parts.join('; ')
   }
@@ -295,7 +297,7 @@ async function write<T>(
       // backend declining for a reason the reader can act on, not a transport
       // failure. Rendering it as "the request did not land" would be wrong.
       if (msg !== null && (e.status === 422 || e.status === 404 || e.status === 409)) {
-        return { kind: 'refused', message: msg }
+        return { kind: 'refused', message: msg, status: e.status }
       }
       return { kind: 'failed', status: e.status, message: msg ?? e.message }
     }

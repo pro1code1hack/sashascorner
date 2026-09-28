@@ -23,7 +23,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-__all__ = ["EXAMPLES", "Example", "dump_examples"]
+__all__ = ["EXAMPLES", "Example", "dump_examples", "publish_examples"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -93,6 +93,12 @@ def _finance(path: str) -> Callable[[Mapping[str, Any]], tuple[str, dict[str, An
         return path, {"period": month or "all"}
 
     return derive
+
+
+def _member(seen: Mapping[str, Any]) -> tuple[str, dict[str, Any] | None] | None:
+    # The Members screen opens the most recent member's page from the list.
+    member_id = _first(seen.get("members-list"), "members", "member_id")
+    return None if member_id is None else (f"/api/members/{member_id}", None)
 
 
 #: One per endpoint, plus the variants that carry an invariant's edge shape. `params` is
@@ -249,6 +255,22 @@ EXAMPLES: tuple[Example, ...] = (
     Example("finance-sales", "GET", "", derive=_finance("/api/finance/sales")),
     Example("finance-expenses", "GET", "", derive=_finance("/api/finance/expenses")),
     Example("finance-reconcile", "GET", "", derive=_finance("/api/finance/reconcile")),
+    # ---- Members (Sasha's Corner Rewards, docs/loyalty/CONTRACT.md §6). Empty lists on a
+    # database nobody has joined yet; `cafeops loyalty seed-demo` on a COPY gives shapes.
+    Example("members-list", "GET", "/api/members", note="Members: the list, newest first."),
+    Example("members-list-reward-ready", "GET", "/api/members", params={"segment": "reward_ready"}),
+    Example("members-list-lapsed", "GET", "/api/members", params={"segment": "lapsed_30"}),
+    Example("members-list-opted-in", "GET", "/api/members", params={"segment": "opted_in"}),
+    Example("members-list-new", "GET", "/api/members", params={"segment": "new_30"}),
+    Example("members-list-stamps", "GET", "/api/members", params={"sort": "stamps"}),
+    Example("members-list-name", "GET", "/api/members", params={"sort": "name"}),
+    Example("members-detail", "GET", "", note="The first member's page.", derive=_member),
+    Example("members-stats", "GET", "/api/members/stats", params={"days": "90"}),
+    Example("members-program", "GET", "/api/members/program"),
+    Example("members-staff", "GET", "/api/members/staff"),
+    Example("members-devices", "GET", "/api/members/devices"),
+    Example("members-campaigns", "GET", "/api/members/campaigns"),
+    Example("members-alerts", "GET", "/api/members/alerts"),
 )
 
 
@@ -343,3 +365,64 @@ def dump_examples(out_dir: Path, *, password: str | None = None) -> list[tuple[s
         encoding="utf-8",
     )
     return written
+
+
+def _request_key(entry: Mapping[str, Any]) -> tuple[str, str, str]:
+    params = entry.get("params") or {}
+    return (
+        str(entry.get("method")),
+        str(entry.get("path")),
+        json.dumps(params, sort_keys=True),
+    )
+
+
+def publish_examples(staging: Path, out: Path) -> list[str]:
+    """Merge a finished dump in `staging` into `out`. Returns the names kept from before.
+
+    A MERGE, not a replacement. `out/index.json` can hold entries this module does not
+    generate -- recorded by hand while an endpoint had no example yet, or added by
+    somebody working on a screen -- and replacing the directory wholesale deleted those
+    files and their index rows. So: every staged file overwrites its namesake, and an
+    existing index entry survives unless a new one has its name or answers the very same
+    request (method, path, query), in which case the regenerated one wins -- two entries
+    for one request would leave the fixture resolver to pick by position.
+    """
+    out.mkdir(parents=True, exist_ok=True)
+    new_index = json.loads((staging / "index.json").read_text(encoding="utf-8"))
+    new_entries: list[dict[str, Any]] = list(new_index.get("examples") or [])
+
+    old_entries: list[dict[str, Any]] = []
+    old_path = out / "index.json"
+    if old_path.is_file():
+        try:
+            previous = json.loads(old_path.read_text(encoding="utf-8"))
+            old_entries = list(previous.get("examples") or [])
+        except (ValueError, AttributeError):
+            old_entries = []
+
+    for src in staging.iterdir():
+        if src.is_file() and src.name != "index.json":
+            (out / src.name).write_bytes(src.read_bytes())
+
+    by_name = {e["name"]: e for e in new_entries}
+    requests = {_request_key(e) for e in new_entries}
+    merged: list[dict[str, Any]] = []
+    kept: list[str] = []
+    placed: set[str] = set()
+    for entry in old_entries:
+        name = str(entry.get("name"))
+        if name in by_name:
+            if name not in placed:
+                merged.append(by_name[name])
+                placed.add(name)
+        elif _request_key(entry) in requests:
+            continue
+        else:
+            merged.append(entry)
+            kept.append(name)
+    merged.extend(e for e in new_entries if e["name"] not in placed)
+
+    new_index["examples"] = merged
+    text = json.dumps(new_index, indent=2, ensure_ascii=False) + "\n"
+    old_path.write_text(text, encoding="utf-8")
+    return kept

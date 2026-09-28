@@ -3,13 +3,18 @@
 # type yourself. Prefer reading README.md first; this exists so the common ones don't
 # have to be remembered or retyped.
 
-.PHONY: help sync migrate seed drift-backfill info \
+.PHONY: help dev start stop sync migrate seed drift-backfill info \
         lint fmt typecheck \
         build up down ps logs \
         migrate-docker seed-docker drift-backfill-docker \
         backup restore
 
 help:
+	@echo "Everything at once (see start.sh):"
+	@echo "  make dev                 all services locally with hot reload (./start.sh)"
+	@echo "  make start               the whole Docker stack (./start.sh docker)"
+	@echo "  make stop                stop the Docker stack"
+	@echo ""
 	@echo "Local (uv), no Docker:"
 	@echo "  make sync                installs cafeops + dependencies (uv sync)"
 	@echo "  make migrate             alembic upgrade head"
@@ -33,6 +38,17 @@ help:
 	@echo "Backup / restore (see docs/OPERATIONS.md before using restore for real):"
 	@echo "  make backup              deploy/backup.sh, using CAFEOPS_DB_PATH from .env"
 	@echo "  make restore FILE=...    deploy/restore.sh FILE"
+
+# --- everything at once -------------------------------------------------------
+
+dev:
+	./start.sh
+
+start:
+	./start.sh docker
+
+stop:
+	./start.sh docker-stop
 
 # --- local, no Docker -------------------------------------------------------
 

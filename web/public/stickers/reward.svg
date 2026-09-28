@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Sasha's Corner Rewards sticker, reward: the free drink, a rosette with a cup. Our own drawing.
+       CANONICAL: assets/pass/stickers/ in the repo. site/web/public/stickers/ and
+       web/public/stickers/ are copies written by `cafeops wallet assets`; edit here.
+       Layers: shadow, white die-cut, then the art in the logo's olive line. -->
+  <g transform="rotate(-3 32 32)">
+    <g transform="translate(0.8 1.8)" fill="#474531" stroke="#474531" opacity="0.16">
+      <path d="M25 40L19 57.5L23.2 55L26.5 59L31 44Z" stroke-width="8"/>
+      <path d="M39 40L45 57.5L40.8 55L37.5 59L33 44Z" stroke-width="8"/>
+      <path d="M32 8.5Q37.3 4.1 40.2 10.4Q47 8.7 46.9 15.7Q53.6 17.1 50.5 23.3Q56 27.5 50.5 31.7Q53.6 37.9 46.9 39.3Q47 46.3 40.2 44.6Q37.3 50.9 32 46.5Q26.7 50.9 23.8 44.6Q17 46.3 17.1 39.3Q10.4 37.9 13.5 31.7Q8 27.5 13.5 23.3Q10.4 17.1 17.1 15.7Q17 8.7 23.8 10.4Q26.7 4.1 32 8.5Z" stroke-width="8"/>
+    </g>
+    <g fill="#ffffff" stroke="#ffffff">
+      <path d="M25 40L19 57.5L23.2 55L26.5 59L31 44Z" stroke-width="8"/>
+      <path d="M39 40L45 57.5L40.8 55L37.5 59L33 44Z" stroke-width="8"/>
+      <path d="M32 8.5Q37.3 4.1 40.2 10.4Q47 8.7 46.9 15.7Q53.6 17.1 50.5 23.3Q56 27.5 50.5 31.7Q53.6 37.9 46.9 39.3Q47 46.3 40.2 44.6Q37.3 50.9 32 46.5Q26.7 50.9 23.8 44.6Q17 46.3 17.1 39.3Q10.4 37.9 13.5 31.7Q8 27.5 13.5 23.3Q10.4 17.1 17.1 15.7Q17 8.7 23.8 10.4Q26.7 4.1 32 8.5Z" stroke-width="8"/>
+    </g>
+    <path d="M25 40L19 57.5L23.2 55L26.5 59L31 44Z" fill="#899c6a" stroke="#474531" stroke-width="1.6"/>
+    <path d="M39 40L45 57.5L40.8 55L37.5 59L33 44Z" fill="#899c6a" stroke="#474531" stroke-width="1.6"/>
+    <path d="M32 8.5Q37.3 4.1 40.2 10.4Q47 8.7 46.9 15.7Q53.6 17.1 50.5 23.3Q56 27.5 50.5 31.7Q53.6 37.9 46.9 39.3Q47 46.3 40.2 44.6Q37.3 50.9 32 46.5Q26.7 50.9 23.8 44.6Q17 46.3 17.1 39.3Q10.4 37.9 13.5 31.7Q8 27.5 13.5 23.3Q10.4 17.1 17.1 15.7Q17 8.7 23.8 10.4Q26.7 4.1 32 8.5Z" fill="#d4884e" stroke="#474531" stroke-width="1.8"/>
+    <circle cx="32" cy="27.5" r="13.5" fill="#f3f1eb" stroke="#474531" stroke-width="1.6"/>
+    <path d="M36.8 27.8C41 27.2 41.2 33 36.2 32.6" stroke="#474531" stroke-width="1.8"/>
+    <path d="M23.8 26H37.6C37.6 32 34.6 35.8 30.7 35.8C26.8 35.8 23.8 32 23.8 26Z" fill="#9b6038" stroke="#474531" stroke-width="1.8"/>
+    <path d="M22 38.4H39.4" stroke="#474531" stroke-width="1.8"/>
+    <path d="M28.6 23C27.4 21.4 29.8 20.2 28.6 18.4M33 23C31.8 21.4 34.2 20.2 33 18.4" stroke="#474531" stroke-width="1.5"/>
+  </g>
+</svg>

@@ -443,7 +443,10 @@ class LightspeedClient:
         in the documented schema. A live sync that needs modifiers -- which it
         does, for oat milk -- cannot rely on this endpoint alone.
         """
-        async for page in self.paginate("/sales", params={"from": since, "to": until}):
+        # `include=consumer`: the customer attached to each check, the only way a receipt
+        # can earn loyalty stamps (docs/loyalty/CONTRACT.md "Phase 3", mapper.RawConsumer).
+        params = {"from": since, "to": until, "include": "consumer"}
+        async for page in self.paginate("/sales", params=params):
             yield page
 
     async def get_open_checks(self) -> AsyncIterator[dict[str, Any]]:

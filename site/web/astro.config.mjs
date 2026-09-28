@@ -25,17 +25,19 @@ const changedAt = (file) => {
     return modified; // no git (e.g. a tarball build): mtime is the best we have
   }
 };
-const MENU_PAGES = new Set(['/', '/menu', '/order', '/faq']);
+const MENU_PAGES = new Set(['/', '/menu', '/order', '/faq', '/matcha-dundee', '/bubble-tea-dundee', '/kyiv-cake']);
 const lastmodFor = (url) => {
   const path = new URL(url).pathname.replace(/\/$/, '') || '/';
   const page = path === '/' ? 'index' : path.slice(1);
   const files = [src(`pages/${page}.astro`), src(`pages/${page}/index.astro`), src('data/info.json')];
   if (MENU_PAGES.has(path)) files.push(src('data/menu.json'));
   if (path === '/faq') files.push(src('pages/_facts.ts'));
+  if (path === '/events') files.push(src('data/events.json'));
   const t = Math.max(...files.map(changedAt));
   return t ? new Date(t).toISOString() : undefined;
 };
-const NOT_IN_SITEMAP = [/\/book\/manage/, /\/admin/, /\/404$/];
+const NOT_IN_SITEMAP = [/\/book\/manage/, /\/admin/, /\/404$/, /\/c(\/|$)/, /\/staff(\/|$)/];
+const CAFEOPS_API = process.env.CAFEOPS_API_URL ?? 'http://127.0.0.1:8000';
 
 export default defineConfig({
   // Canonical origin. Unconfirmed -- change once the domain is registered.
@@ -61,7 +63,28 @@ export default defineConfig({
       ],
     },
     server: {
-      proxy: { '/api': process.env.SITE_API_URL ?? 'http://127.0.0.1:8100' },
+      // Rewards, the staff scanner and Apple Wallet's web service are cafeops routes
+      // (docs/loyalty/CONTRACT.md §8); everything else under /api is the site API.
+      // Vite matches keys in order, so the specific prefixes come first.
+      proxy: {
+        '/api/loyalty': CAFEOPS_API,
+        '/api/staff': CAFEOPS_API,
+        '/wallet': CAFEOPS_API,
+        '/api': process.env.SITE_API_URL ?? 'http://127.0.0.1:8100',
+      },
     },
+    // Dev twin of Caddy's `/c/* -> /c.html` rewrite: every web card is one static page.
+    plugins: [
+      {
+        name: 'sc-dev-rewrites',
+        apply: 'serve',
+        configureServer(server) {
+          server.middlewares.use((req, _res, next) => {
+            if (req.url && /^\/c\/[^/?#]+/.test(req.url)) req.url = '/c' + req.url.replace(/^\/c\/[^?#]*/, '');
+            next();
+          });
+        },
+      },
+    ],
   },
 });

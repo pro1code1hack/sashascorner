@@ -37,6 +37,21 @@ items = [
 ]
 
 [[category]]
+slug = "ube"
+name = "Ube"
+blurb = "Purple yam lattes, hot or over ice."
+# From the Lightspeed POS export of 2026-08-19 (LAT-UBE, LAT-UBEC, GMT-UBE, SPC-UBC)
+# and the summer TV slide; prices agree. The iced two come in the POS's Med and Lge
+# only, so they sit in the M and XL (Large) columns here.
+sizes = ["S", "M", "XL"]
+items = [
+  { n = "Pure ube latte", p = "3.90 4.00 4.40" },
+  { n = "Ube coconut cloud latte", p = "4.10 4.70 5.00" },
+  { n = "Iced ube matcha latte", p = "- 4.80 5.00" },
+  { n = "Iced ube coconut latte", p = "- 4.80 5.00" },
+]
+
+[[category]]
 slug = "hot-drinks"
 name = "Hot drinks"
 blurb = "The everyday list, in three sizes."

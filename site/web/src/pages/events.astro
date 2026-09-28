@@ -1,0 +1,470 @@
+---
+// /events: what's on at the café, with a reply form per event. Built from
+// src/data/events.json (`sashasite events-export`) so the events are in the HTML a
+// crawler reads, then brought up to date from /api/events in the browser. No event
+// is ever invented here: with nothing scheduled, the page says so.
+import Base from '../layouts/Base.astro';
+import { info } from '../lib/data';
+import { renderEvents, fingerprint, type EventsData } from '../components/evRender';
+
+const files = import.meta.glob<{ default: unknown }>('../data/events.json', { eager: true });
+const data: EventsData = (files['../data/events.json']?.default as EventsData | undefined) ?? {
+  generated_at: '',
+  max_party: 6,
+  events: [],
+};
+const instagram = info?.socials.instagram ?? '';
+const site = Astro.site!;
+const abs = (p: string) => new URL(p, site).href;
+
+const place = info && {
+  '@type': 'Place',
+  '@id': abs('/#cafe'),
+  name: info.name,
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: info.address.line1,
+    addressLocality: info.address.city,
+    addressRegion: 'Scotland',
+    postalCode: info.address.postcode,
+    addressCountry: info.address.country,
+  },
+  geo: { '@type': 'GeoCoordinates', latitude: info.geo.lat, longitude: info.geo.lng },
+};
+
+const jsonLd =
+  data.events.length && place
+    ? {
+        '@context': 'https://schema.org',
+        '@graph': data.events.map((e) => ({
+          '@type': 'Event',
+          '@id': abs(`/events#${e.slug}`),
+          name: e.title,
+          url: abs(`/events#${e.slug}`),
+          startDate: e.starts_at,
+          ...(e.ends_at ? { endDate: e.ends_at } : {}),
+          eventStatus: 'https://schema.org/EventScheduled',
+          eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+          location: place,
+          organizer: { '@type': 'Organization', '@id': abs('/#cafe'), name: info!.name, url: site.href },
+          ...(e.description ? { description: e.description.replace(/\s+/g, ' ').trim() } : {}),
+          ...(e.image ? { image: [abs(e.image.src)] } : {}),
+          ...(e.capacity !== null ? { maximumAttendeeCapacity: e.capacity } : {}),
+          ...(e.price_pence !== null
+            ? {
+                offers: {
+                  '@type': 'Offer',
+                  price: (e.price_pence / 100).toFixed(2),
+                  priceCurrency: 'GBP',
+                  availability: e.full ? 'https://schema.org/SoldOut' : 'https://schema.org/InStock',
+                  url: abs(`/events#${e.slug}`),
+                },
+              }
+            : {}),
+        })),
+      }
+    : undefined;
+---
+
+<Base
+  title="Events at Sasha's Corner, Dundee"
+  description="What's on at Sasha's Corner, 23 Commercial Street, Dundee: upcoming evenings at the café, with a quick form to say you're coming."
+  extraJsonLd={jsonLd}
+>
+  <div class="evp">
+    <header class="evp__head wrap">
+      <p class="label">Events</p>
+      <h1>What's on at <span class="soft">Sasha's Corner.</span></h1>
+      <p class="evp__lede">
+        Evenings at the café on Commercial Street. Reply to say you're coming, so we know how many to expect.
+      </p>
+    </header>
+
+    <div class="wrap evp__list" data-events data-fp={fingerprint(data)} data-instagram={instagram} set:html={renderEvents(data, { instagram })} />
+  </div>
+</Base>
+
+<script>
+  import { renderEvents, fingerprint, partyMax, longDate, type EventsData } from '../components/evRender';
+  import { clock } from '../lib/format';
+  import { track } from '../scripts/ev-track';
+
+  const list = document.querySelector<HTMLElement>('[data-events]')!;
+  const instagram = list.dataset.instagram ?? '';
+  let current: EventsData | null = null;
+
+  // ---- reply forms -----------------------------------------------------------------
+  function setErr(form: HTMLFormElement, field: string, text: string) {
+    const el = form.querySelector<HTMLElement>(`[data-err="${field}"]`);
+    const input = form.querySelector<HTMLElement>(`[name="${field}"]`);
+    if (el) el.textContent = text;
+    if (input) input.setAttribute('aria-invalid', text ? 'true' : 'false');
+  }
+  function clearErrs(form: HTMLFormElement) {
+    for (const f of ['name', 'contact', 'party']) setErr(form, f, '');
+    form.querySelector<HTMLElement>('[data-error]')!.hidden = true;
+  }
+  function showError(form: HTMLFormElement, text: string) {
+    const box = form.querySelector<HTMLElement>('[data-error]')!;
+    box.textContent = text;
+    box.hidden = false;
+  }
+  function split(contact: string): { email: string | null; phone: string | null } {
+    const c = contact.trim();
+    return c.includes('@') ? { email: c, phone: null } : { email: null, phone: c };
+  }
+  function check(form: HTMLFormElement): Record<string, string> {
+    const f = new FormData(form);
+    const e: Record<string, string> = {};
+    const name = String(f.get('name') ?? '').trim();
+    const contact = String(f.get('contact') ?? '').trim();
+    if (!name) e.name = 'Please tell us your name.';
+    if (!contact) e.contact = 'An email address or a phone number, please.';
+    else if (contact.includes('@') && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact)) e.contact = 'That email address looks incomplete.';
+    else if (!contact.includes('@') && !/^\+?[\d\s()-]{7,20}$/.test(contact)) e.contact = 'Please enter a phone number, e.g. 07123 456789, or an email.';
+    return e;
+  }
+
+  async function submit(form: HTMLFormElement) {
+    clearErrs(form);
+    const errs = check(form);
+    if (Object.keys(errs).length) {
+      for (const [k, v] of Object.entries(errs)) setErr(form, k, v);
+      form.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+      return;
+    }
+    const slug = form.dataset.rsvp!;
+    const f = new FormData(form);
+    const name = String(f.get('name')).trim();
+    const payload = {
+      name,
+      ...split(String(f.get('contact'))),
+      party: Number(f.get('party') ?? 1),
+      note: String(f.get('note') ?? '').trim() || null,
+      website: String(f.get('website') ?? ''),
+    };
+    const btn = form.querySelector<HTMLButtonElement>('[data-submit]')!;
+    btn.disabled = true;
+    try {
+      const r = await fetch(`/api/events/${encodeURIComponent(slug)}/rsvp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const body = await r.json().catch(() => ({}));
+      if (r.status === 201) {
+        track('event_rsvp', { event: slug, party: String(payload.party) });
+        const ev = current?.events.find((e) => e.slug === slug);
+        const done = form.parentElement!.querySelector<HTMLElement>('[data-done]')!;
+        const when = ev ? ` See you on ${longDate(ev.date)} at ${clock(ev.start)}.` : '';
+        done.textContent = `You're on the list, ${name}.${when}`;
+        form.hidden = true;
+        done.hidden = false;
+        done.focus();
+        const left = form.closest('.ev')?.querySelector('[data-left]');
+        if (left && typeof body.places_left === 'number') left.textContent = String(body.places_left);
+        return;
+      }
+      if (r.status === 409) {
+        const d = body.detail ?? {};
+        showError(form, typeof d.message === 'string' ? d.message : 'Sorry, this event is full.');
+        if (typeof d.places_left === 'number') narrowParty(form, d.places_left);
+      } else if (r.status === 404) {
+        showError(form, typeof body.detail === 'string' ? body.detail : "This event isn't taking replies any more.");
+      } else if (r.status === 429) {
+        showError(form, 'Too many replies from this connection. Please try again later.');
+      } else if (r.status === 422 && Array.isArray(body.detail)) {
+        let placed = false;
+        for (const d of body.detail as { loc?: unknown[]; msg?: string }[]) {
+          const last = String(d.loc?.[d.loc.length - 1] ?? '');
+          const field = last === 'email' || last === 'phone' || last === 'body' ? 'contact' : last;
+          if (['name', 'contact', 'party'].includes(field)) {
+            setErr(form, field, (d.msg ?? 'Please check this.').replace(/^Value error, /, ''));
+            placed = true;
+          }
+        }
+        if (!placed) showError(form, 'Something in the form needs another look.');
+        form.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+      } else {
+        showError(form, 'Something went wrong. Please try again.');
+      }
+    } catch {
+      showError(form, 'Could not reach the café. Check your connection and try again.');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function narrowParty(form: HTMLFormElement, left: number) {
+    const sel = form.querySelector<HTMLSelectElement>('select[name="party"]');
+    if (!sel || left < 1) return;
+    [...sel.options].forEach((o) => {
+      if (Number(o.value) > left) o.remove();
+    });
+  }
+
+  function wire() {
+    list.querySelectorAll<HTMLFormElement>('form[data-rsvp]').forEach((form) => {
+      if (form.dataset.wired) return;
+      form.dataset.wired = '1';
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        void submit(form);
+      });
+      form.addEventListener('focusout', (e) => {
+        const t = e.target as HTMLInputElement;
+        if (!t.name || t.name === 'website' || !t.value) return;
+        const errs = check(form);
+        if (t.name in errs || t.getAttribute('aria-invalid') === 'true') setErr(form, t.name, errs[t.name] ?? '');
+      });
+      // The contact field is either; switch the keyboard hint once it's clearly a phone.
+      const contact = form.querySelector<HTMLInputElement>('input[name="contact"]')!;
+      contact.addEventListener('input', () => {
+        const phone = /^[+\d(]/.test(contact.value) && !contact.value.includes('@');
+        contact.setAttribute('autocomplete', phone ? 'tel' : 'email');
+      });
+    });
+  }
+
+  // ---- live refresh ------------------------------------------------------------------
+  function busy() {
+    return !!list.querySelector('details[open]') || list.contains(document.activeElement);
+  }
+
+  async function refresh() {
+    try {
+      const r = await fetch('/api/events', { cache: 'no-store' });
+      if (!r.ok) return;
+      const data = (await r.json()) as EventsData;
+      if (!Array.isArray(data.events)) return;
+      current = data;
+      if (fingerprint(data) === list.dataset.fp || busy()) {
+        updateParty(data);
+        return;
+      }
+      list.innerHTML = renderEvents(data, { instagram });
+      list.dataset.fp = fingerprint(data);
+      wire();
+      if (location.hash) document.getElementById(location.hash.slice(1))?.scrollIntoView();
+    } catch {
+      /* keep the built page */
+    }
+  }
+
+  /** Without redrawing: keep each form's party options within the places left. */
+  function updateParty(data: EventsData) {
+    for (const e of data.events) {
+      const form = list.querySelector<HTMLFormElement>(`form[data-rsvp="${CSS.escape(e.slug)}"]`);
+      if (form) narrowParty(form, partyMax(e, data.max_party));
+    }
+  }
+
+  wire();
+  void refresh();
+</script>
+
+<style is:global>
+  .evp .label {
+    color: var(--coffee);
+  }
+  .evp .soft {
+    font-family: var(--font-light);
+    font-weight: 200;
+    font-stretch: 100%;
+    letter-spacing: -0.03em;
+  }
+  .evp__head {
+    padding-block: clamp(48px, 7vw, 96px) clamp(24px, 4vw, 48px);
+  }
+  .evp__head h1 {
+    font-size: var(--step-5);
+    margin-top: 14px;
+    max-width: 14ch;
+  }
+  .evp__lede {
+    margin-top: 18px;
+    max-width: 48ch;
+    font-size: var(--step-1);
+    font-weight: 300;
+    color: var(--olive-900);
+  }
+  .evp__list {
+    padding-bottom: clamp(64px, 9vw, 120px);
+  }
+  .evp a:not(.btn) {
+    color: var(--coffee);
+  }
+
+  /* one event: a date column and the body, ruled like the menu */
+  .ev {
+    display: grid;
+    grid-template-columns: 7.5rem minmax(0, 1fr);
+    gap: clamp(16px, 4vw, 48px);
+    padding-block: clamp(28px, 4vw, 44px);
+    border-top: 1px solid var(--rule-strong);
+    scroll-margin-top: 24px;
+  }
+  .ev:last-child {
+    border-bottom: 1px solid var(--rule-strong);
+  }
+  .ev__when time {
+    display: grid;
+    line-height: 1;
+  }
+  .ev__day {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-stretch: 88%;
+    font-size: var(--step-5);
+    color: var(--olive-900);
+  }
+  .ev__mon {
+    margin-top: 6px;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-stretch: 88%;
+    font-size: var(--step-2);
+  }
+  .ev__wd {
+    margin-top: 8px;
+    font-size: var(--step--1);
+    color: var(--olive-700);
+  }
+  .ev__body {
+    display: grid;
+    gap: 14px;
+    max-width: 62ch;
+  }
+  .ev__title {
+    font-size: var(--step-3);
+  }
+  .ev__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    color: var(--olive-900);
+  }
+  .ev__dot {
+    color: var(--olive-700);
+  }
+  .ev__full {
+    font-weight: 500;
+    color: var(--coffee-deep);
+  }
+  .ev__img {
+    width: 100%;
+    max-width: 420px;
+    height: auto;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: var(--radius-s);
+    background-size: cover;
+  }
+  .ev__desc {
+    display: grid;
+    gap: 10px;
+    color: var(--ink-soft);
+  }
+  .ev__rsvp summary {
+    display: inline-flex;
+    list-style: none;
+    cursor: pointer;
+  }
+  .ev__rsvp summary::-webkit-details-marker {
+    display: none;
+  }
+  .ev__rsvp[open] summary {
+    --bg: var(--oat);
+    --fg: var(--olive-900);
+  }
+  .ev__form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 18px;
+    padding: clamp(16px, 3vw, 28px);
+    background: var(--oat);
+    border-radius: var(--radius-m);
+  }
+  .ev__wide {
+    grid-column: 1 / -1;
+  }
+  .ev__party {
+    max-width: 12rem;
+  }
+  .ev__opt,
+  .ev__hint {
+    color: var(--olive-700);
+    font-weight: 300;
+  }
+  .ev__hint,
+  .ev__ferr {
+    font-size: var(--step--1);
+  }
+  .ev__ferr {
+    color: var(--coffee-deep);
+  }
+  .ev__ferr:empty {
+    display: none;
+  }
+  .ev__err {
+    padding: 10px 12px;
+    border-radius: var(--radius-s);
+    background: color-mix(in oklab, var(--caramel) 25%, transparent);
+    font-size: var(--step--1);
+  }
+  .ev__form select.input {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23474531' stroke-width='1.5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 40px;
+  }
+  .ev__done {
+    margin-top: 14px;
+    padding: 16px 18px;
+    border-radius: var(--radius-m);
+    background: var(--oat);
+    font-weight: 500;
+    outline: none;
+  }
+  .ev__fullnote {
+    color: var(--olive-900);
+  }
+  @media (max-width: 640px) {
+    .ev {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    .ev__when time {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+    .ev__day {
+      font-size: var(--step-4);
+    }
+    .ev__mon,
+    .ev__wd {
+      margin-top: 0;
+    }
+    .ev__form {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* nothing scheduled */
+  .ev-empty {
+    padding-block: clamp(28px, 4vw, 44px);
+    border-top: 1px solid var(--rule-strong);
+    display: grid;
+    gap: 12px;
+    max-width: 56ch;
+  }
+  .ev-empty h2 {
+    font-size: var(--step-3);
+  }
+  .ev-empty p {
+    color: var(--olive-900);
+  }
+</style>

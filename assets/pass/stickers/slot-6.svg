@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Sasha's Corner Rewards sticker, slot 6: a chess knight (the chess set in the café). Our own drawing.
+       CANONICAL: assets/pass/stickers/ in the repo. site/web/public/stickers/ and
+       web/public/stickers/ are copies written by `cafeops wallet assets`; edit here.
+       Layers: shadow, white die-cut, then the art in the logo's olive line. -->
+  <g transform="rotate(-5 32 32)">
+    <g transform="translate(0.8 1.8)" fill="#474531" stroke="#474531" opacity="0.16">
+      <path d="M22 45.5C22.5 39 25.5 34.5 29 31C27 30 24.5 30.3 22.5 31.7L18.8 34.2C16.5 35.6 13.8 34.5 13.5 31.8C13.2 29.8 14 28.2 15.2 26.6L21.5 17.5C23 15.3 25 13.6 27.3 12.7L28.3 7.5L31.5 11.6C38.5 12.8 43.5 18.5 44 26.5C44.5 33 42.5 39.5 42.5 45.5Z" stroke-width="8"/>
+      <rect x="19.5" y="44.5" width="25" height="5.5" rx="1.6" stroke-width="8"/>
+      <rect x="16" y="49.5" width="32" height="6.5" rx="2" stroke-width="8"/>
+    </g>
+    <g fill="#ffffff" stroke="#ffffff">
+      <path d="M22 45.5C22.5 39 25.5 34.5 29 31C27 30 24.5 30.3 22.5 31.7L18.8 34.2C16.5 35.6 13.8 34.5 13.5 31.8C13.2 29.8 14 28.2 15.2 26.6L21.5 17.5C23 15.3 25 13.6 27.3 12.7L28.3 7.5L31.5 11.6C38.5 12.8 43.5 18.5 44 26.5C44.5 33 42.5 39.5 42.5 45.5Z" stroke-width="8"/>
+      <rect x="19.5" y="44.5" width="25" height="5.5" rx="1.6" stroke-width="8"/>
+      <rect x="16" y="49.5" width="32" height="6.5" rx="2" stroke-width="8"/>
+    </g>
+    <path d="M22 45.5C22.5 39 25.5 34.5 29 31C27 30 24.5 30.3 22.5 31.7L18.8 34.2C16.5 35.6 13.8 34.5 13.5 31.8C13.2 29.8 14 28.2 15.2 26.6L21.5 17.5C23 15.3 25 13.6 27.3 12.7L28.3 7.5L31.5 11.6C38.5 12.8 43.5 18.5 44 26.5C44.5 33 42.5 39.5 42.5 45.5Z" fill="#9b6038" stroke="#474531" stroke-width="1.8"/>
+    <path d="M35 14.8C39 18 41.2 22.5 41.2 28.5M20 24L24.5 17.6" stroke="#d4884e" stroke-width="1.8"/>
+    <ellipse cx="25" cy="20.6" rx="1.8" ry="1.4" fill="#0d0d0b"/>
+    <circle cx="16" cy="30.8" r="0.9" fill="#0d0d0b"/>
+    <rect x="19.5" y="44.5" width="25" height="5.5" rx="1.6" fill="#9b6038" stroke="#474531" stroke-width="1.8"/>
+    <rect x="16" y="49.5" width="32" height="6.5" rx="2" fill="#9b6038" stroke="#474531" stroke-width="1.8"/>
+    <path d="M19.5 52.8H44.5" stroke="#d4884e" stroke-width="1.4"/>
+  </g>
+</svg>

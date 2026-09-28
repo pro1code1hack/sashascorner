@@ -1,0 +1,132 @@
+---
+// Shared frame for the search landing pages (/matcha-dundee, /bubble-tea-dundee,
+// /kyiv-cake): header with the one H1, the page's own copy, real photos (only slots
+// the owner has filled; an empty slot is left out rather than shown as a
+// placeholder), the menu slices, then address, hours and links.
+//
+// Slots: `title` (the H1's content), default (copy under the H1), `after` (anything
+// between the menu and the visit block).
+import Base from '../layouts/Base.astro';
+import Slot from './Slot.astro';
+import SeoMenuSection from './SeoMenuSection.astro';
+import SeoVisit from './SeoVisit.astro';
+import { slotItem } from './slotData';
+import type { Section } from './seoData';
+
+interface Props {
+  title: string;
+  description: string;
+  jsonLd: Record<string, unknown>;
+  label: string;
+  /** Slot keys to show beside the copy, in order; empty ones are skipped. */
+  photos?: string[];
+  sections: Section[];
+  visitTitle: string;
+  links?: Array<{ href: string; label: string; track?: string }>;
+}
+const { title, description, jsonLd, label, photos = [], sections, visitTitle, links } = Astro.props;
+const shown = photos.filter((k) => slotItem(k)).slice(0, 2);
+---
+
+<Base title={title} description={description} extraJsonLd={jsonLd}>
+  <header class="shead wrap">
+    <p class="label">{label}</p>
+    <div class:list={['shead__grid', { 'shead__grid--photo': shown.length > 0 }]}>
+      <div class="shead__copy">
+        <h1><slot name="title" /></h1>
+        <div class="shead__lede"><slot /></div>
+      </div>
+      {
+        shown.length > 0 && (
+          <div class:list={['shead__photos', `shead__photos--${shown.length}`]}>
+            {shown.map((k, n) => (
+              <Slot key={k} eager={n === 0} sizes="(max-width: 860px) 90vw, 30vw" class="shead__photo" />
+            ))}
+          </div>
+        )
+      }
+    </div>
+  </header>
+
+  <div class="wrap sbody">
+    {sections.map((s) => <SeoMenuSection section={s} />)}
+  </div>
+
+  <slot name="after" />
+
+  <SeoVisit title={visitTitle} links={links} />
+</Base>
+
+<style>
+  .label {
+    color: var(--coffee);
+  }
+  .shead {
+    padding-block: clamp(48px, 7vw, 96px) clamp(32px, 5vw, 64px);
+  }
+  .shead__grid {
+    display: grid;
+    gap: clamp(28px, 5vw, 72px);
+    align-items: end;
+  }
+  .shead__grid--photo {
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  }
+  .shead h1 {
+    font-size: var(--step-5);
+    margin-top: 14px;
+    max-width: 15ch;
+  }
+  .shead h1 :global(.soft) {
+    font-family: var(--font-light);
+    font-weight: 200;
+    font-stretch: 100%;
+    letter-spacing: -0.03em;
+  }
+  .shead__lede {
+    margin-top: 20px;
+    max-width: 54ch;
+    display: grid;
+    gap: 14px;
+    color: var(--olive-900);
+  }
+  .shead__lede :global(p:first-child) {
+    font-size: var(--step-1);
+    font-weight: 300;
+  }
+  .shead__lede :global(a) {
+    color: var(--coffee);
+  }
+  .shead__photos {
+    display: grid;
+    gap: 12px;
+  }
+  .shead__photos--2 {
+    grid-template-columns: 1fr 1fr;
+    align-items: end;
+  }
+  .shead__photos--2 :global(.shead__photo:nth-child(2)) {
+    margin-bottom: 18%;
+  }
+  @media (max-width: 860px) {
+    .shead__grid--photo {
+      grid-template-columns: 1fr;
+    }
+    .shead__photos {
+      max-width: 520px;
+    }
+  }
+  .sbody {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: clamp(32px, 6vw, 88px);
+    row-gap: clamp(40px, 6vw, 64px);
+    align-items: start;
+    padding-block: clamp(16px, 3vw, 32px) clamp(64px, 9vw, 112px);
+  }
+  @media (max-width: 900px) {
+    .sbody {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

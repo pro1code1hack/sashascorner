@@ -68,6 +68,27 @@ from cafeops.db.models.finance import (
     TradingDay,
 )
 from cafeops.db.models.ingredient import Ingredient, IngredientPrice, IngredientTierChange
+from cafeops.db.models.loyalty import (
+    CampaignSegment,
+    LoyaltyAudit,
+    LoyaltyCampaign,
+    LoyaltyCampaignDelivery,
+    LoyaltyCard,
+    LoyaltyMember,
+    LoyaltyOtp,
+    LoyaltyPosAward,
+    LoyaltyPosReceipt,
+    LoyaltyProgram,
+    LoyaltyReward,
+    LoyaltyRewardOption,
+    LoyaltyStampEvent,
+    OtpChannel,
+    PosAwardStatus,
+    ProgramKind,
+    RewardKind,
+    StampReason,
+    WalletPushOutbox,
+)
 from cafeops.db.models.media import MediaAsset
 from cafeops.db.models.menu import (
     ManualRecipeLine,
@@ -80,6 +101,7 @@ from cafeops.db.models.par import ParLevel
 from cafeops.db.models.payment import PaymentDay
 from cafeops.db.models.purchase_order import ChecklistResponse, POLine, PurchaseOrder
 from cafeops.db.models.sale import Sale
+from cafeops.db.models.staff import StaffDevice, StaffRole, StaffSession, StaffUser
 from cafeops.db.models.stock import DriftObservation, StockCount, StockMovement
 from cafeops.db.models.supplier import Supplier, SupplierProduct
 from cafeops.db.models.sync_run import SyncRun
@@ -93,6 +115,7 @@ __all__ = [
     "AuthEvent",
     "AuthSession",
     "Base",
+    "CampaignSegment",
     "CardPayout",
     "CashCount",
     "ChannelItemMetric",
@@ -118,6 +141,18 @@ __all__ = [
     "IngredientPrice",
     "IngredientTierChange",
     "LegacyStagedRecipe",
+    "LoyaltyAudit",
+    "LoyaltyCampaign",
+    "LoyaltyCampaignDelivery",
+    "LoyaltyCard",
+    "LoyaltyMember",
+    "LoyaltyOtp",
+    "LoyaltyPosAward",
+    "LoyaltyPosReceipt",
+    "LoyaltyProgram",
+    "LoyaltyReward",
+    "LoyaltyRewardOption",
+    "LoyaltyStampEvent",
     "ManualRecipeLine",
     "MediaAsset",
     "MenuCategory",
@@ -131,23 +166,32 @@ __all__ = [
     "ModifierVersion",
     "MovementType",
     "OrderChannel",
+    "OtpChannel",
     "POLine",
     "POStatus",
     "ParLevel",
     "PaymentBasis",
     "PaymentDay",
+    "PosAwardStatus",
     "PriceSource",
+    "ProgramKind",
     "ProposalConfidence",
     "ProposalKind",
     "ProposalStatus",
     "PurchaseOrder",
     "RecipeChange",
+    "RewardKind",
     "Sale",
     "SaleChannel",
     "SalesChannelName",
     "Season",
     "SizeCode",
     "SizeProfile",
+    "StaffDevice",
+    "StaffRole",
+    "StaffSession",
+    "StaffUser",
+    "StampReason",
     "StockBatch",
     "StockCount",
     "StockMovement",
@@ -165,5 +209,11 @@ __all__ = [
     "Unit",
     "VariantAxis",
     "VariantOption",
+    "WalletPushOutbox",
     "WriteOffReason",
 ]
+
+# Wallet tables (loyalty Agent B), appended so parallel edits above do not collide.
+from cafeops.db.models.wallet import WalletAppleRegistration, WalletGoogleObject
+
+__all__ += ["WalletAppleRegistration", "WalletGoogleObject"]

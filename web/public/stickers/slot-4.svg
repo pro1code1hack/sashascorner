@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Sasha's Corner Rewards sticker, slot 4: a bubble tea. Our own drawing.
+       CANONICAL: assets/pass/stickers/ in the repo. site/web/public/stickers/ and
+       web/public/stickers/ are copies written by `cafeops wallet assets`; edit here.
+       Layers: shadow, white die-cut, then the art in the logo's olive line. -->
+  <g transform="rotate(-5 32 32)">
+    <g transform="translate(0.8 1.8)" fill="#474531" stroke="#474531" opacity="0.16">
+      <path d="M36 18L41.5 3.5" stroke-width="13.4"/>
+      <path d="M17.5 23H46.5L43.2 53.5C43 55.3 41.8 56.5 40 56.5H24C22.2 56.5 21 55.3 20.8 53.5Z" stroke-width="8"/>
+      <path d="M16.5 23C16.5 15 23.5 11 32 11C40.5 11 47.5 15 47.5 23Z" stroke-width="8"/>
+      <rect x="15" y="21.5" width="34" height="3.6" rx="1.6" stroke-width="8"/>
+    </g>
+    <g fill="#ffffff" stroke="#ffffff">
+      <path d="M36 18L41.5 3.5" stroke-width="13.4"/>
+      <path d="M17.5 23H46.5L43.2 53.5C43 55.3 41.8 56.5 40 56.5H24C22.2 56.5 21 55.3 20.8 53.5Z" stroke-width="8"/>
+      <path d="M16.5 23C16.5 15 23.5 11 32 11C40.5 11 47.5 15 47.5 23Z" stroke-width="8"/>
+      <rect x="15" y="21.5" width="34" height="3.6" rx="1.6" stroke-width="8"/>
+    </g>
+    <path d="M36 18L41.5 3.5" stroke="#474531" stroke-width="5.4"/>
+    <path d="M36 18L41.5 3.5" stroke="#899c6a" stroke-width="2.4"/>
+    <path d="M17.5 23H46.5L43.2 53.5C43 55.3 41.8 56.5 40 56.5H24C22.2 56.5 21 55.3 20.8 53.5Z" fill="#f3f1eb"/>
+    <path d="M18.3 30H45.7L43.2 53.5C43 55.3 41.8 56.5 40 56.5H24C22.2 56.5 21 55.3 20.8 53.5Z" fill="#d4884e"/>
+    <circle cx="25" cy="51.8" r="2.4" fill="#0d0d0b"/>
+    <circle cx="30.5" cy="52.8" r="2.4" fill="#0d0d0b"/>
+    <circle cx="36" cy="52.3" r="2.4" fill="#0d0d0b"/>
+    <circle cx="40.3" cy="50.6" r="2.4" fill="#0d0d0b"/>
+    <circle cx="27.6" cy="47.3" r="2.4" fill="#0d0d0b"/>
+    <circle cx="33.2" cy="47.9" r="2.4" fill="#0d0d0b"/>
+    <circle cx="38.6" cy="46.4" r="2.4" fill="#0d0d0b"/>
+    <circle cx="23.5" cy="46.8" r="2.4" fill="#0d0d0b"/>
+    <path d="M17.5 23H46.5L43.2 53.5C43 55.3 41.8 56.5 40 56.5H24C22.2 56.5 21 55.3 20.8 53.5Z" stroke="#474531" stroke-width="1.8"/>
+    <path d="M18.3 30H45.7" stroke="#474531" stroke-width="1.2"/>
+    <path d="M16.5 23C16.5 15 23.5 11 32 11C40.5 11 47.5 15 47.5 23Z" fill="#f3f1eb" stroke="#474531" stroke-width="1.8"/>
+    <path d="M21.5 19C22 16.5 24 14.7 26.8 14" stroke="#ffffff" stroke-width="1.8"/>
+    <rect x="15" y="21.5" width="34" height="3.6" rx="1.6" fill="#ebe6dd" stroke="#474531" stroke-width="1.8"/>
+  </g>
+</svg>

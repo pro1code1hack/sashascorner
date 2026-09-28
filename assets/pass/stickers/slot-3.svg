@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Sasha's Corner Rewards sticker, slot 3: a matcha bowl and whisk (matcha made in front of you). Our own drawing.
+       CANONICAL: assets/pass/stickers/ in the repo. site/web/public/stickers/ and
+       web/public/stickers/ are copies written by `cafeops wallet assets`; edit here.
+       Layers: shadow, white die-cut, then the art in the logo's olive line. -->
+  <g transform="rotate(6 32 32)">
+    <g transform="translate(0.8 1.8)" fill="#474531" stroke="#474531" opacity="0.16">
+      <rect x="39.5" y="5" width="6" height="14.5" rx="1.6" stroke-width="8"/>
+      <path d="M39 19H46L52.5 29.5H32.5Z" stroke-width="8"/>
+      <path d="M9 30C9 43 19 51.5 32 51.5C45 51.5 55 43 55 30Z" stroke-width="8"/>
+      <path d="M24.5 50.5L25.5 55H38.5L39.5 50.5Z" stroke-width="8"/>
+      <ellipse cx="32" cy="30" rx="23" ry="4.8" stroke-width="8"/>
+    </g>
+    <g fill="#ffffff" stroke="#ffffff">
+      <rect x="39.5" y="5" width="6" height="14.5" rx="1.6" stroke-width="8"/>
+      <path d="M39 19H46L52.5 29.5H32.5Z" stroke-width="8"/>
+      <path d="M9 30C9 43 19 51.5 32 51.5C45 51.5 55 43 55 30Z" stroke-width="8"/>
+      <path d="M24.5 50.5L25.5 55H38.5L39.5 50.5Z" stroke-width="8"/>
+      <ellipse cx="32" cy="30" rx="23" ry="4.8" stroke-width="8"/>
+    </g>
+    <rect x="39.5" y="5" width="6" height="14.5" rx="1.6" fill="#ebe6dd" stroke="#474531" stroke-width="1.8"/>
+    <path d="M39 19H46L52.5 29.5H32.5Z" fill="#ebe6dd" stroke="#474531" stroke-width="1.8"/>
+    <path d="M40.5 21L37 28.5M42.5 21L42 28.5M44.5 21L47.5 28.5" stroke="#9b6038" stroke-width="1.1"/>
+    <path d="M24.5 50.5L25.5 55H38.5L39.5 50.5Z" fill="#9b6038" stroke="#474531" stroke-width="1.8"/>
+    <path d="M9 30C9 43 19 51.5 32 51.5C45 51.5 55 43 55 30Z" fill="#9b6038" stroke="#474531" stroke-width="1.8"/>
+    <path d="M12.5 37.5C17 40.5 21 36.5 26 39C31 41.5 35 37 40 39.5C45 42 48.5 37.5 51.5 38.5" stroke="#d4884e" stroke-width="2.2"/>
+    <ellipse cx="32" cy="30" rx="23" ry="4.8" fill="#899c6a" stroke="#474531" stroke-width="1.8"/>
+    <path d="M22 30.2C24.5 31.8 28 32 31 31.2M35.5 28.6C38 28 41 28.4 43 29.4" stroke="#f3f1eb" stroke-width="1.4"/>
+  </g>
+</svg>

@@ -93,6 +93,10 @@ docker compose up -d
 curl -s http://localhost/api/health
 ```
 
+Going live with the public site and Sasha's Corner Rewards (which `.env` keys, the
+wallet files in `secrets/wallet/`, staff and till pairing, QR posters, checks on real
+phones): [`docs/loyalty/GO-LIVE.md`](docs/loyalty/GO-LIVE.md).
+
 Four services from one image (`api`, `bot`, `scheduler`, `backup`) plus `caddy`. Only
 `caddy` publishes a host port; `api`, `bot`, `scheduler` and `backup` have **no**
 `ports:` entry in `docker-compose.yml` at all, so there is no way to reach the bot or

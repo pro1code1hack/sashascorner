@@ -1,0 +1,12 @@
+{
+  "id": 1,
+  "slug": "stamp",
+  "name": "Sasha's Corner Rewards",
+  "stamps_required": 8,
+  "max_stamps_per_scan": 3,
+  "reward_text": "Any drink, on us",
+  "reward_max_price_pence": null,
+  "birthday_reward": true,
+  "referral_stamps": 1,
+  "active": true
+}

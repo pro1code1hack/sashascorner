@@ -27,17 +27,17 @@ const spots = [
 <section class="hero on-dark" aria-labelledby="hero-title">
   <div class="hero__grid wrap">
     <div class="hero__copy">
-      <p class="label hero__kicker"><span>Independent café</span><span class="hero__sep"> · </span><span>Commercial Street</span></p>
+      <p class="label hero__kicker"><span>Independent café</span><span class="hero__sep"> · </span><span><span class="hero__street">Commercial Street,&nbsp;</span>Dundee</span></p>
       <h1 id="hero-title" class="hero__title">
-        A warm corner <span class="hero__soft">for coffee</span> in Dundee.
+        Blue matcha, Raff coffee <span class="hero__soft">&amp; Kyiv cake.</span>
       </h1>
       <p class="hero__lede">
-        More than a hundred drinks on the board — matcha whisked in front of you, Raff coffee, bubble tea —
-        plus waffles, soup and homemade cake.
+        The drinks you won't find on every high street — and a counter full of waffles, soup and homemade cake
+        to go with them.
       </p>
       <div class="hero__cta">
-        <a class="btn btn--caramel" href="/book">Book a table <span class="arrow" aria-hidden="true">→</span></a>
-        <a class="btn btn--ghost" href="/menu">See the menu</a>
+        <a class="btn btn--caramel" href="/menu">Explore the menu <span class="arrow" aria-hidden="true">→</span></a>
+        <a class="btn btn--ghost" href="/book">Book a table</a>
       </div>
       <OpenNow tone="dark" />
     </div>
@@ -136,9 +136,7 @@ const spots = [
 
 <style>
   .hero {
-    background:
-      radial-gradient(70% 60% at 72% 42%, color-mix(in oklab, var(--olive-700) 70%, transparent), transparent 70%),
-      var(--olive-900);
+    background: var(--olive-900);
     color: var(--on-dark);
     overflow: hidden;
   }
@@ -165,14 +163,12 @@ const spots = [
   }
   /* Phones: the kicker stacks on two lines rather than leaving the dot dangling. */
   @media (max-width: 520px) {
-    .hero__kicker span:not(.hero__sep) {
-      display: block;
-    }
-    .hero__kicker .hero__sep {
-      display: none;
+    .hero__street {
+      display: none !important;
     }
   }
   .hero__title {
+    font-weight: 700;
     font-size: var(--step-5);
     line-height: 0.9;
     letter-spacing: -0.02em;
@@ -206,10 +202,11 @@ const spots = [
   }
   /* 320px: the pair can't share a row, so each takes the full width rather than
      stacking as two ragged pills. */
-  @media (max-width: 359px) {
+  @media (max-width: 520px) {
     .hero__cta .btn {
       flex: 1 1 100%;
       justify-content: center;
+      min-height: 52px;
     }
   }
 
@@ -219,15 +216,16 @@ const spots = [
      as its width -- a 1280x720 screen gets a 72px headline, not 96px. */
   @media (min-width: 901px) {
     .hero__grid {
-      grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-      min-height: min(calc(100svh - 84px), 900px);
+      grid-template-columns: minmax(0, 4.6fr) minmax(0, 7.4fr);
+      min-height: min(calc(100svh - 84px), 780px);
       padding-block: clamp(16px, 4svh, 48px) clamp(24px, 5svh, 64px);
     }
     .hero__kicker {
       margin-bottom: clamp(12px, 2.4svh, 22px);
     }
     .hero__title {
-      font-size: min(var(--step-5), 11svh, 5.6vw);
+      /* 92px ceiling: the design's size, three lines in the copy column */
+      font-size: min(var(--step-5), 11svh, 6.4vw, 5.75rem);
     }
     .hero__lede {
       margin-top: clamp(14px, 2.8svh, 26px);

@@ -4612,3 +4612,686 @@
 {"message":"[200] /about 273ms","label":null,"level":"info"}
 {"message":"[200] /book 6ms","label":null,"level":"info"}
 {"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] / 27ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 9ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /menu 16ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /order 12ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /about 11ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /order 4ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /about 6ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /about 236ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"src/data/slots.json","label":"watch","level":"info"}
+{"message":"[200] /about 35ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"src/components/Hero.astro","label":"watch","level":"info"}
+{"message":"[200] /about 98ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 31ms","label":null,"level":"info"}
+{"message":"src/components/Hero.astro","label":"watch","level":"info"}
+{"message":"[200] /about 18ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"src/pages/index.astro","label":"watch","level":"info"}
+{"message":"[200] /about 15ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 0ms","label":null,"level":"info"}
+{"message":"[200] / 24ms","label":null,"level":"info"}
+{"message":"[200] / 3ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"/src/components/Hero.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"[200] / 36ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"src/components/Hero.astro","label":"watch","level":"info"}
+{"message":"[200] /about 21ms","label":null,"level":"info"}
+{"message":"[200] / 24ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"/src/pages/index.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"src/pages/index.astro","label":"watch","level":"info"}
+{"message":"[200] /about 31ms","label":null,"level":"info"}
+{"message":"[200] / 23ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"/src/pages/index.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"/src/pages/index.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"[200] / 31ms","label":null,"level":"info"}
+{"message":"[200] / 7ms","label":null,"level":"info"}
+{"message":"[200] / 7ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"/src/pages/index.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"src/pages/index.astro","label":"watch","level":"info"}
+{"message":"[200] /about 23ms","label":null,"level":"info"}
+{"message":"[200] / 26ms","label":null,"level":"info"}
+{"message":"[200] / 26ms","label":null,"level":"info"}
+{"message":"[200] / 5ms","label":null,"level":"info"}
+{"message":"[200] / 6ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] / 5ms","label":null,"level":"info"}
+{"message":"[200] / 4ms","label":null,"level":"info"}
+{"message":"[200] / 3ms","label":null,"level":"info"}
+{"message":"[200] / 13ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /menu 20ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] / 4ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /book 19ms","label":null,"level":"info"}
+{"message":"[200] /visit 15ms","label":null,"level":"info"}
+{"message":"[200] /about 9ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /about 4ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /order 15ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /menu 5ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] / 5ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] / 5ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"src/pages/index.astro","label":"watch","level":"info"}
+{"message":"[200] / 36ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /about 14ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /admin 12ms","label":null,"level":"info"}
+{"message":"/src/pages/index.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"[200] / 25ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"/src/pages/index.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"[200] / 25ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"src/data/menu.json","label":"watch","level":"info"}
+{"message":"[200] /admin 31ms","label":null,"level":"info"}
+{"message":"[200] /about 16ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"src/pages/index.astro","label":"watch","level":"info"}
+{"message":"[200] /admin 19ms","label":null,"level":"info"}
+{"message":"[200] /about 12ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"[200] /admin 1ms","label":null,"level":"info"}
+{"message":"[200] /admin 1ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 24ms","label":null,"level":"info"}
+{"message":"[200] /admin/messages 17ms","label":null,"level":"info"}
+{"message":"[200] /admin/messages 1ms","label":null,"level":"info"}
+{"message":"[200] /admin/menu 15ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 1ms","label":null,"level":"info"}
+{"message":"[200] /admin 1ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/messages 1ms","label":null,"level":"info"}
+{"message":"[200] /admin/messages 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/menu 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/settings 13ms","label":null,"level":"info"}
+{"message":"[200] /admin/photos 17ms","label":null,"level":"info"}
+{"message":"[200] /admin/photos 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/messages 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/menu 3ms","label":null,"level":"info"}
+{"message":"[200] /admin/menu 2ms","label":null,"level":"info"}
+{"message":"[200] / 21ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] / 4ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /admin 8ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 5ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"[200] /admin 1ms","label":null,"level":"info"}
+{"message":"[200] /admin 4ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 5ms","label":null,"level":"info"}
+{"message":"[200] /admin/messages 5ms","label":null,"level":"info"}
+{"message":"[200] /admin/menu 3ms","label":null,"level":"info"}
+{"message":"[200] /admin/photos 3ms","label":null,"level":"info"}
+{"message":"[200] /admin/settings 2ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"[200] /admin 1ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 3ms","label":null,"level":"info"}
+{"message":"[200] /admin/messages 1ms","label":null,"level":"info"}
+{"message":"[200] /admin/menu 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/photos 4ms","label":null,"level":"info"}
+{"message":"[200] /admin/settings 1ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 3ms","label":null,"level":"info"}
+{"message":"src/scripts/admin-core/ui.ts","label":"watch","level":"info"}
+{"message":"/src/layouts/Admin.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"/src/pages/admin/menu.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"[200] /about 24ms","label":null,"level":"info"}
+{"message":"[200] /admin 39ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 67ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 10ms","label":null,"level":"info"}
+{"message":"src/scripts/admin-core/api.ts","label":"watch","level":"info"}
+{"message":"[200] /admin 5ms","label":null,"level":"info"}
+{"message":"[200] /about 9ms","label":null,"level":"info"}
+{"message":"[200] /admin 5ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 8ms","label":null,"level":"info"}
+{"message":"src/scripts/admin/main.ts","label":"watch","level":"info"}
+{"message":"src/pages/admin/settings.astro","label":"watch","level":"info"}
+{"message":"[200] /admin 17ms","label":null,"level":"info"}
+{"message":"[200] /about 31ms","label":null,"level":"info"}
+{"message":"[200] /admin 3ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"src/pages/admin/settings.astro","label":"watch","level":"info"}
+{"message":"[200] /admin 23ms","label":null,"level":"info"}
+{"message":"[200] /about 37ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"src/pages/admin/index.astro","label":"watch","level":"info"}
+{"message":"[200] /about 21ms","label":null,"level":"info"}
+{"message":"[200] /admin 16ms","label":null,"level":"info"}
+{"message":"[200] /admin 1ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"src/pages/admin/index.astro","label":"watch","level":"info"}
+{"message":"[200] /about 28ms","label":null,"level":"info"}
+{"message":"[200] /admin 15ms","label":null,"level":"info"}
+{"message":"[200] /admin 3ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"src/scripts/admin/main.ts","label":"watch","level":"info"}
+{"message":"[200] /admin 8ms","label":null,"level":"info"}
+{"message":"[200] /about 13ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"src/scripts/admin-core/ui.ts","label":"watch","level":"info"}
+{"message":"[200] /admin 6ms","label":null,"level":"info"}
+{"message":"[200] /about 9ms","label":null,"level":"info"}
+{"message":"[200] /admin 5ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 4ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 12ms","label":null,"level":"info"}
+{"message":"[200] /admin 1ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 1ms","label":null,"level":"info"}
+{"message":"[200] /admin/messages 9ms","label":null,"level":"info"}
+{"message":"[200] /admin/menu 13ms","label":null,"level":"info"}
+{"message":"[200] /admin/settings 12ms","label":null,"level":"info"}
+{"message":"[200] /admin 1ms","label":null,"level":"info"}
+{"message":"[200] /admin 1ms","label":null,"level":"info"}
+{"message":"[200] /admin/settings 1ms","label":null,"level":"info"}
+{"message":"[200] / 24ms","label":null,"level":"info"}
+{"message":"Configuration file updated. Restarting...","label":null,"level":"info"}
+{"message":"connected.","label":"vite","level":"info"}
+{"message":"connected.","label":"vite","level":"info"}
+{"message":"Re-optimizing dependencies because lockfile has changed","label":"vite","level":"info"}
+{"message":"server restarted.","label":"vite","level":"info"}
+{"message":"[200] /book 30ms","label":null,"level":"info"}
+{"message":"[200] /admin 25ms","label":null,"level":"info"}
+{"message":"src/pages/admin/index.astro","label":"watch","level":"info"}
+{"message":"[200] /admin 23ms","label":null,"level":"info"}
+{"message":"[200] /admin 19ms","label":null,"level":"info"}
+{"message":"/src/pages/admin/index.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"/src/components/AdmBookingStyles.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"/src/layouts/Admin.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"[200] /admin 18ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 21ms","label":null,"level":"info"}
+{"message":"[200] /admin/menu 17ms","label":null,"level":"info"}
+{"message":"src/pages/admin/bookings.astro","label":"watch","level":"info"}
+{"message":"[200] /admin/menu 46ms","label":null,"level":"info"}
+{"message":"src/pages/admin/bookings.astro","label":"watch","level":"info"}
+{"message":"[200] /admin/menu 17ms","label":null,"level":"info"}
+{"message":"[200] /admin/photos 52ms","label":null,"level":"info"}
+{"message":"[200] /about 33ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 8ms","label":null,"level":"info"}
+{"message":"[200] / 41ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"/src/pages/admin/photos.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"/src/pages/admin/menu.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"[200] /admin/settings 277ms","label":null,"level":"info"}
+{"message":"[200] /admin/messages 96ms","label":null,"level":"info"}
+{"message":"/src/pages/admin/messages.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"Configuration file updated. Restarting...","label":null,"level":"info"}
+{"message":"connected.","label":"vite","level":"info"}
+{"message":"connected.","label":"vite","level":"info"}
+{"message":"Re-optimizing dependencies because lockfile has changed","label":"vite","level":"info"}
+{"message":"server restarted.","label":"vite","level":"info"}
+{"message":"Configuration file updated. Restarting...","label":null,"level":"info"}
+[astro] Unable to load your Astro config
+
+{"message":"CAFEOPS_API is not defined\n  Stack trace:\n    at eval (/Users/yehordremliuha/startups/sashascorner_automation/site/web/astro.config.mjs:68:25)\n    [...] See full stack trace in the browser, or rerun with --verbose.\n","label":"config","level":"error"}
+{"message":"Continuing with previous valid configuration\n","label":null,"level":"error"}
+{"message":"Configuration file updated. Restarting...","label":null,"level":"info"}
+{"message":"connected.","label":"vite","level":"info"}
+{"message":"connected.","label":"vite","level":"info"}
+{"message":"Re-optimizing dependencies because vite config has changed","label":"vite","level":"info"}
+{"message":"server restarted.","label":"vite","level":"info"}
+{"message":"[200] /admin 104ms","label":null,"level":"info"}
+{"message":"[200] /admin 5ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 15ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/messages 12ms","label":null,"level":"info"}
+{"message":"[200] /admin/messages 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/menu 25ms","label":null,"level":"info"}
+{"message":"[200] /admin/menu 5ms","label":null,"level":"info"}
+{"message":"[200] /admin/photos 18ms","label":null,"level":"info"}
+{"message":"[200] /admin/photos 1ms","label":null,"level":"info"}
+{"message":"[200] /admin/settings 13ms","label":null,"level":"info"}
+{"message":"[200] /admin/settings 2ms","label":null,"level":"info"}
+{"message":"[200] /admin 3ms","label":null,"level":"info"}
+{"message":"[200] /admin 7ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 3ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/messages 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/messages 1ms","label":null,"level":"info"}
+{"message":"[200] /admin/menu 1ms","label":null,"level":"info"}
+{"message":"[200] /admin/menu 15ms","label":null,"level":"info"}
+{"message":"[200] /admin/photos 5ms","label":null,"level":"info"}
+{"message":"[200] /admin/photos 4ms","label":null,"level":"info"}
+{"message":"[200] /admin/settings 6ms","label":null,"level":"info"}
+{"message":"[200] /admin/settings 5ms","label":null,"level":"info"}
+{"message":"[200] /rewards 50ms","label":null,"level":"info"}
+{"message":"[200] /c 16ms","label":null,"level":"info"}
+{"message":"[200] /c 2ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/messages 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/messages 1ms","label":null,"level":"info"}
+{"message":"[200] /admin/menu 5ms","label":null,"level":"info"}
+{"message":"[200] /admin/menu 1ms","label":null,"level":"info"}
+{"message":"[200] /admin/photos 7ms","label":null,"level":"info"}
+{"message":"[200] /admin/photos 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/settings 4ms","label":null,"level":"info"}
+{"message":"[200] /rewards 15ms","label":null,"level":"info"}
+{"message":"[200] /admin/settings 1ms","label":null,"level":"info"}
+{"message":"[200] /rewards 4ms","label":null,"level":"info"}
+{"message":"[200] /admin 4ms","label":null,"level":"info"}
+{"message":"[200] /admin 1ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 1ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 1ms","label":null,"level":"info"}
+{"message":"/src/pages/rewards.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"[200] /admin/messages 12ms","label":null,"level":"info"}
+{"message":"[200] /admin/messages 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/menu 15ms","label":null,"level":"info"}
+{"message":"[200] /admin/menu 1ms","label":null,"level":"info"}
+{"message":"[200] /admin/photos 17ms","label":null,"level":"info"}
+{"message":"[200] /admin/photos 1ms","label":null,"level":"info"}
+{"message":"[200] /admin/settings 11ms","label":null,"level":"info"}
+{"message":"[200] /rewards 25ms","label":null,"level":"info"}
+{"message":"[200] /admin/settings 2ms","label":null,"level":"info"}
+{"message":"[200] /rewards 5ms","label":null,"level":"info"}
+{"message":"[200] /rewards 4ms","label":null,"level":"info"}
+{"message":"src/layouts/Admin.astro","label":"watch","level":"info"}
+{"message":"[200] /rewards 34ms","label":null,"level":"info"}
+{"message":"[200] /rewards 6ms","label":null,"level":"info"}
+{"message":"[200] /admin 37ms","label":null,"level":"info"}
+{"message":"[200] /rewards 5ms","label":null,"level":"info"}
+{"message":"/src/pages/rewards.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"[200] /admin 23ms","label":null,"level":"info"}
+{"message":"/src/pages/rewards.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"[200] /rewards 48ms","label":null,"level":"info"}
+{"message":"[200] /rewards 5ms","label":null,"level":"info"}
+{"message":"[200] /rewards 5ms","label":null,"level":"info"}
+{"message":"/src/pages/admin/menu.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"[200] /rewards 32ms","label":null,"level":"info"}
+{"message":"[200] /admin 13ms","label":null,"level":"info"}
+{"message":"src/scripts/rewards/join.ts","label":"watch","level":"info"}
+{"message":"/src/pages/rewards.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"[200] /admin 18ms","label":null,"level":"info"}
+{"message":"[200] /admin 18ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 13ms","label":null,"level":"info"}
+{"message":"[200] /c 41ms","label":null,"level":"info"}
+{"message":"[200] /c 3ms","label":null,"level":"info"}
+{"message":"[200] /c 2ms","label":null,"level":"info"}
+{"message":"[200] /c 2ms","label":null,"level":"info"}
+{"message":"[200] /c 1ms","label":null,"level":"info"}
+{"message":"[200] /c 3ms","label":null,"level":"info"}
+{"message":"/src/layouts/Admin.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"[200] /c 17ms","label":null,"level":"info"}
+{"message":"[Unhandled rejection] TypeError: mock: network down\n > mockApi src/scripts/rewards/mock.ts:28:27\n    26 |    const f = new Set(mock.split(','));\n    27 |    await wait(f.has('slow') ? 1600 : 350);\n    28 |    if (f.has('down')) throw new TypeError('mock: network down');\n       |                             ^\n    29 |    const wallets = !f.has('nowallet');\n    30 |    const join = (id = ID): JoinResult => ({\n > api src/scripts/rewards/api.ts:30:14\n > load src/scripts/rewards/webcard.ts:84:14\n","label":"vite","level":"error"}
+{"message":"[200] /c 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/events 11ms","label":null,"level":"info"}
+{"message":"src/data/events.json","label":"watch","level":"info"}
+{"message":"[200] /admin/events 7ms","label":null,"level":"info"}
+{"message":"[200] /admin 28ms","label":null,"level":"info"}
+{"message":"src/scripts/rewards/api.ts","label":"watch","level":"info"}
+{"message":"[200] /admin 5ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 15ms","label":null,"level":"info"}
+{"message":"[200] /privacy 75ms","label":null,"level":"info"}
+{"message":"[200] /rewards 48ms","label":null,"level":"info"}
+{"message":"[200] /c 2ms","label":null,"level":"info"}
+{"message":"Configuration file updated. Restarting...","label":null,"level":"info"}
+{"message":"/src/components/Footer.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"src/layouts/Base.astro","label":"watch","level":"info"}
+{"message":"connected.","label":"vite","level":"info"}
+{"message":"Failed to update routes via HMR:\n Error: transport was disconnected, cannot call \"fetchModule\"","label":"router","level":"error"}
+{"message":"connected.","label":"vite","level":"info"}
+{"message":"Re-optimizing dependencies because vite config has changed","label":"vite","level":"info"}
+{"message":"server restarted.","label":"vite","level":"info"}
+{"message":"[200] / 143ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] / 27ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"Configuration file updated. Restarting...","label":null,"level":"info"}
+{"message":"src/layouts/Base.astro","label":"watch","level":"info"}
+{"message":"/src/components/Footer.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"connected.","label":"vite","level":"info"}
+{"message":"Failed to update routes via HMR:\n Error: transport was disconnected, cannot call \"fetchModule\"","label":"router","level":"error"}
+{"message":"connected.","label":"vite","level":"info"}
+{"message":"Re-optimizing dependencies because vite config has changed","label":"vite","level":"info"}
+{"message":"server restarted.","label":"vite","level":"info"}
+{"message":"[200] / 45ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /rewards 28ms","label":null,"level":"info"}
+{"message":"[200] /rewards 8ms","label":null,"level":"info"}
+{"message":"[200] /admin 20ms","label":null,"level":"info"}
+{"message":"[200] /admin 3ms","label":null,"level":"info"}
+{"message":"[200] /admin/messages 13ms","label":null,"level":"info"}
+{"message":"[200] /admin/bookings 15ms","label":null,"level":"info"}
+{"message":"[200] /admin/menu 21ms","label":null,"level":"info"}
+{"message":"[200] /admin/settings 29ms","label":null,"level":"info"}
+{"message":"[200] /admin/photos 19ms","label":null,"level":"info"}
+{"message":"[200] /admin/menu 2ms","label":null,"level":"info"}
+{"message":"src/scripts/rewards/card.ts","label":"watch","level":"info"}
+{"message":"[200] /admin/menu 5ms","label":null,"level":"info"}
+{"message":"[200] / 8ms","label":null,"level":"info"}
+{"message":"[200] /rewards 23ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /admin/bookings 1ms","label":null,"level":"info"}
+{"message":"[200] /admin 1ms","label":null,"level":"info"}
+{"message":"[200] /admin/photos 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/settings 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/photos 1ms","label":null,"level":"info"}
+{"message":"[200] /admin/menu 2ms","label":null,"level":"info"}
+{"message":"/src/scripts/rewards/card.css","label":"watch","level":"info"}
+{"message":"[200] / 22ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"src/scripts/rewards/card.ts","label":"watch","level":"info"}
+{"message":"[200] / 7ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] / 3ms","label":null,"level":"info"}
+{"message":"[200] /admin/menu 22ms","label":null,"level":"info"}
+{"message":"[200] /rewards 17ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /rewards 7ms","label":null,"level":"info"}
+{"message":"[200] /c 19ms","label":null,"level":"info"}
+{"message":"[200] /c 5ms","label":null,"level":"info"}
+{"message":"[200] /c 2ms","label":null,"level":"info"}
+{"message":"[200] /c 1ms","label":null,"level":"info"}
+{"message":"[200] /rewards 6ms","label":null,"level":"info"}
+{"message":"[200] / 5ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /rewards 5ms","label":null,"level":"info"}
+{"message":"[200] /staff 12ms","label":null,"level":"info"}
+{"message":"[200] /staff 1ms","label":null,"level":"info"}
+{"message":"[200] /staff 2ms","label":null,"level":"info"}
+{"message":"[200] /staff 1ms","label":null,"level":"info"}
+{"message":"[200] /rewards 3ms","label":null,"level":"info"}
+{"message":"[200] /rewards 4ms","label":null,"level":"info"}
+{"message":"src/scripts/staff/main.ts","label":"watch","level":"info"}
+{"message":"/src/pages/staff.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"[200] /staff 14ms","label":null,"level":"info"}
+{"message":"[200] /staff 1ms","label":null,"level":"info"}
+{"message":"[200] /admin/menu 59ms","label":null,"level":"info"}
+{"message":"[200] / 90ms","label":null,"level":"info"}
+{"message":"[200] /rewards 126ms","label":null,"level":"info"}
+{"message":"[200] / 15ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /staff 3ms","label":null,"level":"info"}
+{"message":"[200] /staff 2ms","label":null,"level":"info"}
+{"message":"[200] / 99ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /order 22ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 2ms","label":null,"level":"info"}
+{"message":"[200] /about 17ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /rewards 6ms","label":null,"level":"info"}
+{"message":"[200] / 6ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /c 22ms","label":null,"level":"info"}
+{"message":"[200] /c 4ms","label":null,"level":"info"}
+{"message":"[200] / 6ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] / 6ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] / 18ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /admin 46ms","label":null,"level":"info"}
+{"message":"[200] /admin 4ms","label":null,"level":"info"}
+{"message":"[200] /admin/menu 3ms","label":null,"level":"info"}
+{"message":"[200] /admin/events 18ms","label":null,"level":"info"}
+{"message":"[200] /admin/photos 18ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"[200] /admin 13ms","label":null,"level":"info"}
+{"message":"[200] /admin 6ms","label":null,"level":"info"}
+{"message":"src/components/Header.astro","label":"watch","level":"info"}
+{"message":"[200] / 74ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] / 11ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"src/components/Header.astro","label":"watch","level":"info"}
+{"message":"[200] / 110ms","label":null,"level":"info"}
+{"message":"[200] / 5ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"/src/components/Header.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"/src/components/Header.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"/src/components/Footer.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"[200] / 24ms","label":null,"level":"info"}
+{"message":"RwCta is not defined\n  Stack trace:\n    at /Users/yehordremliuha/startups/sashascorner_automation/site/web/src/components/Footer.astro:13:1\n    [...] See full stack trace in the browser, or rerun with --verbose.","label":null,"level":"error"}
+{"message":"[200] / 7ms","label":null,"level":"info"}
+{"message":"RwCta is not defined\n  Stack trace:\n    at /Users/yehordremliuha/startups/sashascorner_automation/site/web/src/components/Footer.astro:13:1\n    [...] See full stack trace in the browser, or rerun with --verbose.","label":null,"level":"error"}
+{"message":"RwCta is not defined\n  Stack trace:\n    at /Users/yehordremliuha/startups/sashascorner_automation/site/web/src/components/Footer.astro:13:1\n    [...] See full stack trace in the browser, or rerun with --verbose.","label":null,"level":"error"}
+{"message":"/src/components/Footer.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"[200] / 31ms","label":null,"level":"info"}
+{"message":"[200] / 4ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"/src/components/Footer.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"src/pages/index.astro","label":"watch","level":"info"}
+{"message":"[200] / 29ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] / 5ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"src/pages/index.astro","label":"watch","level":"info"}
+{"message":"[200] / 178ms","label":null,"level":"info"}
+{"message":"[200] / 11ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"/src/pages/order.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"[200] / 43ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] / 73ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"/src/pages/order.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"[200] / 155ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] / 16ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"/src/pages/order.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"[200] / 204ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] / 7ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"/src/components/Footer.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"/src/pages/order.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"[200] / 66ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] / 17ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"/src/components/RwCta.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"src/components/RwCta.astro","label":"watch","level":"info"}
+{"message":"[200] / 50ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] / 11ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"/src/components/Footer.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"/src/components/RwCta.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"[200] /admin/events 17ms","label":null,"level":"info"}
+{"message":"[200] /admin/events 4ms","label":null,"level":"info"}
+{"message":"[200] /admin 17ms","label":null,"level":"info"}
+{"message":"[200] /admin/events 2ms","label":null,"level":"info"}
+{"message":"[200] /admin 3ms","label":null,"level":"info"}
+{"message":"[200] /admin/events 2ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/events 1ms","label":null,"level":"info"}
+{"message":"[200] /admin 1ms","label":null,"level":"info"}
+{"message":"[200] /admin/events 2ms","label":null,"level":"info"}
+{"message":"[200] /admin 3ms","label":null,"level":"info"}
+{"message":"[200] /admin/events 1ms","label":null,"level":"info"}
+{"message":"[200] /admin/events 4ms","label":null,"level":"info"}
+{"message":"[200] /admin 4ms","label":null,"level":"info"}
+{"message":"[200] /admin/events 3ms","label":null,"level":"info"}
+{"message":"/src/pages/admin/events.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"/src/pages/admin/events.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"/src/pages/admin/events.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"[200] /admin/events 19ms","label":null,"level":"info"}
+{"message":"[200] /admin 18ms","label":null,"level":"info"}
+{"message":"[200] /admin/events 1ms","label":null,"level":"info"}
+{"message":"[200] /admin/events 2ms","label":null,"level":"info"}
+{"message":"[200] /admin 2ms","label":null,"level":"info"}
+{"message":"[200] /admin/events 1ms","label":null,"level":"info"}
+{"message":"[200] / 46ms","label":null,"level":"info"}
+{"message":"[200] / 8ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"src/scripts/staff/main.ts","label":"watch","level":"info"}
+{"message":"[200] / 13ms","label":null,"level":"info"}
+{"message":"[200] / 4ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"src/scripts/staff/mock.ts","label":"watch","level":"info"}
+{"message":"[200] / 15ms","label":null,"level":"info"}
+{"message":"[200] / 5ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"src/scripts/staff/main.ts","label":"watch","level":"info"}
+{"message":"src/pages/staff.astro","label":"watch","level":"info"}
+{"message":"[200] / 24ms","label":null,"level":"info"}
+{"message":"[200] / 4ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"src/pages/staff.astro","label":"watch","level":"info"}
+{"message":"[200] / 23ms","label":null,"level":"info"}
+{"message":"[200] / 5ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"src/scripts/rewards/card.ts","label":"watch","level":"info"}
+{"message":"/src/scripts/rewards/card.css","label":"watch","level":"info"}
+{"message":"[200] / 43ms","label":null,"level":"info"}
+{"message":"[200] / 4ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"src/scripts/rewards/webcard.ts","label":"watch","level":"info"}
+{"message":"src/pages/c.astro","label":"watch","level":"info"}
+{"message":"[200] / 27ms","label":null,"level":"info"}
+{"message":"[200] / 3ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"src/scripts/rewards/webcard.ts","label":"watch","level":"info"}
+{"message":"[200] / 15ms","label":null,"level":"info"}
+{"message":"[200] / 4ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"src/scripts/rewards/mock.ts","label":"watch","level":"info"}
+{"message":"[200] / 8ms","label":null,"level":"info"}
+{"message":"[200] / 4ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"src/scripts/rewards/join.ts","label":"watch","level":"info"}
+{"message":"src/pages/rewards.astro","label":"watch","level":"info"}
+{"message":"[200] / 24ms","label":null,"level":"info"}
+{"message":"[200] / 7ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /staff 19ms","label":null,"level":"info"}
+{"message":"[200] /staff 2ms","label":null,"level":"info"}
+{"message":"[200] /staff 2ms","label":null,"level":"info"}
+{"message":"[200] /staff 2ms","label":null,"level":"info"}
+{"message":"src/scripts/staff/main.ts","label":"watch","level":"info"}
+{"message":"/src/pages/staff.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"[200] / 27ms","label":null,"level":"info"}
+{"message":"[200] / 4ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /staff 31ms","label":null,"level":"info"}
+{"message":"[200] /staff 1ms","label":null,"level":"info"}
+{"message":"[200] /staff 2ms","label":null,"level":"info"}
+{"message":"[200] /staff 1ms","label":null,"level":"info"}
+{"message":"[200] /staff 2ms","label":null,"level":"info"}
+{"message":"[200] /staff 2ms","label":null,"level":"info"}
+{"message":"[200] /staff 2ms","label":null,"level":"info"}
+{"message":"[200] /staff 1ms","label":null,"level":"info"}
+{"message":"[200] /staff 1ms","label":null,"level":"info"}
+{"message":"[200] /staff 2ms","label":null,"level":"info"}
+{"message":"[200] /staff 2ms","label":null,"level":"info"}
+{"message":"[200] /staff 1ms","label":null,"level":"info"}
+{"message":"[200] /staff 2ms","label":null,"level":"info"}
+{"message":"[200] /staff 1ms","label":null,"level":"info"}
+{"message":"[200] /staff 2ms","label":null,"level":"info"}
+{"message":"[200] /staff 1ms","label":null,"level":"info"}
+{"message":"src/scripts/staff/main.ts","label":"watch","level":"info"}
+{"message":"src/scripts/staff/mock.ts","label":"watch","level":"info"}
+{"message":"[200] / 7ms","label":null,"level":"info"}
+{"message":"[200] / 6ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /staff 3ms","label":null,"level":"info"}
+{"message":"[200] /staff 1ms","label":null,"level":"info"}
+{"message":"[200] /staff 2ms","label":null,"level":"info"}
+{"message":"[200] /staff 2ms","label":null,"level":"info"}
+{"message":"[200] /staff 1ms","label":null,"level":"info"}
+{"message":"[200] /staff 1ms","label":null,"level":"info"}
+{"message":"[200] /staff 1ms","label":null,"level":"info"}
+{"message":"[200] /staff 1ms","label":null,"level":"info"}
+{"message":"[200] /staff 2ms","label":null,"level":"info"}
+{"message":"[200] /staff 1ms","label":null,"level":"info"}
+{"message":"[200] /staff 2ms","label":null,"level":"info"}
+{"message":"[200] /staff 1ms","label":null,"level":"info"}
+{"message":"src/scripts/staff/main.ts","label":"watch","level":"info"}
+{"message":"/src/pages/staff.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"[200] / 23ms","label":null,"level":"info"}
+{"message":"[200] / 15ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /staff 124ms","label":null,"level":"info"}
+{"message":"[200] /staff 2ms","label":null,"level":"info"}
+{"message":"[200] /staff 1ms","label":null,"level":"info"}
+{"message":"[200] /staff 1ms","label":null,"level":"info"}
+{"message":"[200] /c 15ms","label":null,"level":"info"}
+{"message":"[200] /c 2ms","label":null,"level":"info"}
+{"message":"[200] /c 2ms","label":null,"level":"info"}
+{"message":"[200] /c 2ms","label":null,"level":"info"}
+{"message":"[200] /rewards 27ms","label":null,"level":"info"}
+{"message":"[200] /rewards 3ms","label":null,"level":"info"}
+{"message":"/src/pages/c.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"/src/pages/rewards.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"[200] /c 29ms","label":null,"level":"info"}
+{"message":"[200] /c 2ms","label":null,"level":"info"}
+{"message":"[200] /c 2ms","label":null,"level":"info"}
+{"message":"[200] /c 1ms","label":null,"level":"info"}
+{"message":"[200] /rewards 17ms","label":null,"level":"info"}
+{"message":"[200] /rewards 3ms","label":null,"level":"info"}
+{"message":"[200] /rewards 4ms","label":null,"level":"info"}
+{"message":"/src/pages/rewards.astro?astro&type=style&index=0&lang.css","label":"watch","level":"info"}
+{"message":"[200] /rewards 23ms","label":null,"level":"info"}
+{"message":"[200] /rewards 3ms","label":null,"level":"info"}
+{"message":"[200] / 518ms","label":null,"level":"info"}
+{"message":"[200] / 23ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] / 49ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /rewards 54ms","label":null,"level":"info"}
+{"message":"[200] /rewards 44ms","label":null,"level":"info"}
+{"message":"[200] / 55ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /order 105ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 63ms","label":null,"level":"info"}
+{"message":"[200] /about 149ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 11ms","label":null,"level":"info"}
+{"message":"[200] /visit 206ms","label":null,"level":"info"}
+{"message":"[200] /rewards 9ms","label":null,"level":"info"}
+{"message":"[200] /book 32ms","label":null,"level":"info"}
+{"message":"[200] /rewards 3ms","label":null,"level":"info"}
+{"message":"[200] / 23ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /order 6ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 8ms","label":null,"level":"info"}
+{"message":"[200] /about 6ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /rewards 5ms","label":null,"level":"info"}
+{"message":"[200] /rewards 3ms","label":null,"level":"info"}
+{"message":"[200] /book 2ms","label":null,"level":"info"}
+{"message":"[200] /menu 19ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /order 3ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] /about 5ms","label":null,"level":"info"}
+{"message":"[200] /slot-line.svg 1ms","label":null,"level":"info"}
+{"message":"[200] / 4ms","label":null,"level":"info"}
+{"message":"Assets in public directory cannot be imported from JavaScript.\nIf you intend to import that asset, put the file in the src directory, and use /src/brand/logo.svg?raw instead of /public/brand/logo.svg?raw.\nIf you intend to use the URL of that asset, use /brand/logo.svg?url&raw.","label":"vite","level":"warn"}
+{"message":"[200] /rewards 5ms","label":null,"level":"info"}

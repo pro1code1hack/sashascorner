@@ -1,0 +1,245 @@
+"""Joining: one form, one member, one card (SPEC user flow 1).
+
+Rules enforced here:
+
+- **Terms are required, marketing is separate and unticked.** Marketing consent is
+  recorded with when and where (`opt_in_at`, `opt_in_source = "join:<src>"`), PECR.
+- **One card per email or phone.** Normalised first, so `07700 900123` and
+  `+447700900123` are the same person; the UNIQUE columns are the real guard, this
+  lookup just turns the collision into a helpful 409 (`already_member`) that the page
+  answers with "recover your card".
+- **A birthday is day and month only**, and its entry time is kept for the 30-day rule.
+- **`ref`** is the referrer's card id. It is only recorded here; the referrer is credited
+  when this member's card gets its first purchase stamp (`stamping`), so a referral
+  that never walks through the door earns nothing.
+
+Phase 3: joining always gives the default stamp card; `also_join` adds cards in other
+active programmes in the same step, and `add_program_card` adds one later (from the web
+card, /rewards on a device that holds a card, or the scanner). A card per programme,
+never two -- the unique key on `loyalty_card` backs the check.
+"""
+
+from __future__ import annotations
+
+import secrets
+import uuid
+from dataclasses import dataclass
+from datetime import datetime
+
+from sqlalchemy import or_, select
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+
+from cafeops.db.models import LoyaltyCard, LoyaltyMember, LoyaltyProgram
+from cafeops.domain.loyalty import is_valid_birthday, normalise_email, normalise_phone
+from cafeops.services.loyalty.common import audit, default_program, now_utc
+from cafeops.services.loyalty.errors import LoyaltyError
+
+__all__ = [
+    "JoinRequest",
+    "Joined",
+    "add_program_card",
+    "find_member_by_contact",
+    "join",
+    "new_card",
+]
+
+_SRC_ALLOWED = set("abcdefghijklmnopqrstuvwxyz0123456789-_")
+
+
+@dataclass(frozen=True, slots=True)
+class JoinRequest:
+    first_name: str
+    email: str | None
+    phone: str | None
+    birthday_day: int | None
+    birthday_month: int | None
+    terms: bool
+    marketing_opt_in: bool
+    src: str | None
+    ref: str | None
+    #: Phase 3: slugs of other active programmes to join at the same time.
+    also_join: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class Joined:
+    card_id: str
+    token: str
+    member_id: int
+    #: Phase 3: (slug, card_id, token) of every extra card made in the same step.
+    extra_cards: tuple[tuple[str, str, str], ...] = ()
+
+
+def new_card(
+    session: Session, member: LoyaltyMember, program: LoyaltyProgram, now: datetime
+) -> LoyaltyCard:
+    token = secrets.token_urlsafe(32)
+    card = LoyaltyCard(
+        id=str(uuid.uuid4()),
+        member_id=member.id,
+        program_id=program.id,
+        stamps_current=0,
+        cycles_completed=0,
+        reward_available=False,
+        auth_token=token,
+        qr_secret=secrets.token_hex(16),
+        created_at=now,
+        updated_at=now,
+    )
+    session.add(card)
+    session.flush()
+    return card
+
+
+def add_program_card(
+    session: Session, member: LoyaltyMember, slug: str, *, source: str
+) -> LoyaltyCard:
+    """Another programme's card for an existing member. 409 if they have one already."""
+    from cafeops.services.loyalty.programs import program_by_slug
+
+    if member.deleted_at is not None:
+        raise LoyaltyError(409, "card_voided", "This member's card has been deleted.")
+    program = program_by_slug(session, slug)
+    if not program.active:
+        raise LoyaltyError(409, "program_closed", f"{program.name} is not open to new members.")
+    existing = session.scalar(
+        select(LoyaltyCard).where(
+            LoyaltyCard.member_id == member.id, LoyaltyCard.program_id == program.id
+        )
+    )
+    if existing is not None:
+        raise LoyaltyError(
+            409,
+            "already_in_program",
+            f"There is already a {program.name} card for this member.",
+        )
+    now = now_utc()
+    card = new_card(session, member, program, now)
+    audit(
+        session,
+        "program_joined",
+        f"joined {program.name} ({source})",
+        card_id=card.id,
+        member_id=member.id,
+        at=now,
+    )
+    member.last_activity_at = now
+    return card
+
+
+def _clean_src(src: str | None) -> str | None:
+    """`?src=` is attribution, not free text: lower-case slug characters, 40 max."""
+    if not src:
+        return None
+    value = "".join(ch for ch in src.strip().lower() if ch in _SRC_ALLOWED)[:40]
+    return value or None
+
+
+def find_member_by_contact(session: Session, contact: str) -> LoyaltyMember | None:
+    """A live member by email or phone, normalised. None for a deleted or unknown one."""
+    email = normalise_email(contact) if "@" in contact else None
+    phone = None if email else normalise_phone(contact)
+    if email is None and phone is None:
+        return None
+    cond = LoyaltyMember.email == email if email else LoyaltyMember.phone == phone
+    return session.scalar(select(LoyaltyMember).where(cond, LoyaltyMember.deleted_at.is_(None)))
+
+
+def join(session: Session, req: JoinRequest) -> Joined:
+    first_name = " ".join(req.first_name.split())
+    if not first_name:
+        raise LoyaltyError(422, "first_name_required", "Tell us your first name.")
+    if len(first_name) > 40:
+        raise LoyaltyError(422, "first_name_too_long", "A first name of up to 40 letters, please.")
+    if not req.terms:
+        raise LoyaltyError(422, "terms_required", "Please accept the terms to get a card.")
+
+    email = phone = None
+    if req.email and req.email.strip():
+        email = normalise_email(req.email)
+        if email is None:
+            raise LoyaltyError(422, "bad_email", "That email address does not look right.")
+    if req.phone and req.phone.strip():
+        phone = normalise_phone(req.phone)
+        if phone is None:
+            raise LoyaltyError(422, "bad_phone", "That phone number does not look right.")
+    if email is None and phone is None:
+        raise LoyaltyError(
+            422, "contact_required", "Add an email or a phone number so we can find your card."
+        )
+
+    day, month = req.birthday_day, req.birthday_month
+    if (day is None) != (month is None):
+        raise LoyaltyError(422, "bad_birthday", "Give both the day and the month, or neither.")
+    if day is not None and month is not None and not is_valid_birthday(day, month):
+        raise LoyaltyError(422, "bad_birthday", "That is not a real date.")
+
+    clauses = []
+    if email:
+        clauses.append(LoyaltyMember.email == email)
+    if phone:
+        clauses.append(LoyaltyMember.phone == phone)
+    if session.scalar(select(LoyaltyMember.id).where(or_(*clauses))) is not None:
+        raise LoyaltyError(
+            409,
+            "already_member",
+            "You already have a card with that email or phone. We can send it to you again.",
+        )
+
+    program = default_program(session)
+    if not program.active:
+        raise LoyaltyError(503, "program_closed", "The rewards card is not open to new members.")
+
+    referrer_id: int | None = None
+    if req.ref:
+        ref_card = session.get(LoyaltyCard, req.ref.strip())
+        if ref_card is not None and ref_card.voided_at is None:
+            referrer_id = ref_card.member_id
+
+    now = now_utc()
+    src = _clean_src(req.src)
+    member = LoyaltyMember(
+        first_name=first_name,
+        email=email,
+        phone=phone,
+        birthday_day=day,
+        birthday_month=month,
+        birthday_set_at=now if day is not None else None,
+        marketing_opt_in=req.marketing_opt_in,
+        opt_in_at=now if req.marketing_opt_in else None,
+        opt_in_source=f"join:{src or 'web'}" if req.marketing_opt_in else None,
+        source=src,
+        referred_by_member_id=referrer_id,
+        terms_accepted_at=now,
+        created_at=now,
+        last_activity_at=now,
+    )
+    session.add(member)
+    try:
+        session.flush()
+    except IntegrityError:
+        # Two submissions of the same form racing past the lookup above.
+        raise LoyaltyError(
+            409, "already_member", "You already have a card with that email or phone."
+        ) from None
+
+    card = new_card(session, member, program, now)
+    extra: list[tuple[str, str, str]] = []
+    for slug in dict.fromkeys(s.strip() for s in req.also_join if s.strip()):
+        if slug == program.slug:
+            continue
+        other = add_program_card(session, member, slug, source=f"join:{src or 'web'}")
+        extra.append((slug, other.id, other.auth_token))
+    if req.marketing_opt_in:
+        audit(
+            session,
+            "consent",
+            f"marketing opt-in at join (src={src or 'web'})",
+            member_id=member.id,
+            at=now,
+        )
+    session.flush()
+    return Joined(
+        card_id=card.id, token=card.auth_token, member_id=member.id, extra_cards=tuple(extra)
+    )

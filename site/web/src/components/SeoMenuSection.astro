@@ -1,0 +1,157 @@
+---
+// One slice of the menu on a landing page: a heading, the category's own blurb, and
+// each item with its prices in size columns, as on /menu. Data from menu.json only.
+import { gbp } from '../lib/format';
+import type { Section } from './seoData';
+
+interface Props {
+  section: Section;
+  /** Heading level: h2 on the page, h3 inside a grouped block. */
+  level?: 'h2' | 'h3';
+}
+const { section, level = 'h2' } = Astro.props;
+const H = level;
+
+const ORDER = ['S', 'M', 'XL', 'One'];
+const HEAD: Record<string, string> = { S: 'Small', M: 'Medium', XL: 'Large', One: '' };
+const codes = ORDER.filter((code) => section.items.some((i) => i.sizes.some((z) => z.code === code)));
+---
+
+<section class="smenu" id={section.id} aria-labelledby={`sm-${section.id}`}>
+  <header class="smenu__head">
+    <div>
+      <H id={`sm-${section.id}`} class="smenu__title">{section.title}</H>
+      {section.blurb && <p class="smenu__blurb">{section.blurb}</p>}
+    </div>
+    {
+      codes.length > 1 && (
+        <div class="smenu__cols" aria-hidden="true" style={`--n:${codes.length}`}>
+          {codes.map((c) => (
+            <span>{HEAD[c]}</span>
+          ))}
+        </div>
+      )
+    }
+  </header>
+  <ul class="smenu__list">
+    {
+      section.items.map((i) => (
+        <li class="smenu__item">
+          <div class="smenu__name">
+            <span class="smenu__itemname">
+              {i.name}
+              {i.seasonal && <span class="smenu__tag">{i.seasonal.name}</span>}
+            </span>
+            {(i.description || i.note) && <span class="smenu__desc">{i.description ?? i.note}</span>}
+          </div>
+          <div class="smenu__prices num" style={`--n:${codes.length}`}>
+            {codes.map((code) => {
+              const z = i.sizes.find((s) => s.code === code);
+              return z ? (
+                <span>
+                  <span class="sr-only">{z.code === 'One' ? '' : `${z.label} `}</span>
+                  {gbp(z.price_pence)}
+                </span>
+              ) : (
+                <span aria-hidden="true" class="smenu__na">
+                  —
+                </span>
+              );
+            })}
+          </div>
+        </li>
+      ))
+    }
+  </ul>
+</section>
+
+<style>
+  .smenu {
+    scroll-margin-top: 24px;
+  }
+  .smenu__head {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--rule-strong);
+  }
+  .smenu__title {
+    font-size: var(--step-2);
+  }
+  .smenu__blurb {
+    margin-top: 6px;
+    color: var(--olive-700);
+    font-size: var(--step--1);
+  }
+  .smenu__cols,
+  .smenu__prices {
+    display: grid;
+    grid-template-columns: repeat(var(--n), 4.2em);
+    justify-items: end;
+    flex: none;
+  }
+  .smenu__cols {
+    font-size: 0.875rem;
+    color: var(--olive-700);
+  }
+  .smenu__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .smenu__item {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+    padding-block: 12px;
+    border-bottom: 1px dotted var(--rule);
+  }
+  .smenu__name {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+  .smenu__itemname {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 10px;
+  }
+  .smenu__desc {
+    font-size: var(--step--1);
+    color: var(--olive-700);
+    font-weight: 300;
+  }
+  .smenu__tag {
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: var(--oat);
+    color: var(--coffee-deep);
+  }
+  .smenu__na {
+    color: var(--paper-dim);
+  }
+  @media (max-width: 420px) {
+    .smenu__cols,
+    .smenu__prices {
+      grid-template-columns: repeat(var(--n), 3.6em);
+      font-size: 0.92rem;
+    }
+  }
+  @media (max-width: 600px) {
+    .smenu__head {
+      flex-wrap: wrap;
+      row-gap: 10px;
+    }
+    .smenu__cols {
+      margin-left: auto;
+    }
+  }
+</style>

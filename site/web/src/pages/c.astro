@@ -1,0 +1,394 @@
+---
+// The web card, /c/<card_id>. One static page: Caddy rewrites every /c/* here
+// (site/deploy/Caddyfile.site) and the script reads the id from the path and the
+// token from the #t= fragment. Private to its holder: noindex, out of the sitemap.
+import Base from '../layouts/Base.astro';
+import '../scripts/rewards/card.css';
+---
+
+<Base title="Your Rewards card · Sasha's Corner" description="Your Sasha's Corner Rewards stamp card." noindex>
+  <div class="cpage wrap">
+    <header class="cpage__head">
+      <p class="label">Sasha's Corner Rewards</p>
+      <h1 data-title tabindex="-1">Your card</h1>
+    </header>
+
+    <p class="cpage__loading" data-state="loading" role="status">Opening your card…</p>
+
+    <div class="cpage__grid" data-state="card" hidden>
+      <div class="cpage__cardcol">
+        <nav class="ccards" data-cards aria-label="Your cards" hidden></nav>
+        <div class="cpage__card" data-card></div>
+      </div>
+      <p class="sr-only" aria-live="polite" data-announce></p>
+
+      <div class="cpage__side">
+        <section class="cside" aria-labelledby="save-title" data-wallet-section>
+          <h2 id="save-title">Save it to your phone</h2>
+          <p class="cside__lede">The card in your wallet updates itself when we stamp it.</p>
+          <div data-wallet-root></div>
+        </section>
+
+        <section class="cside" aria-labelledby="more-title" data-join-section hidden>
+          <h2 id="more-title">More cards</h2>
+          <p class="cside__lede">Each club is its own card, counted alongside this one. Same details, nothing to fill in.</p>
+          <ul class="cjoin" data-join-list></ul>
+          <p class="cside__msg" data-join-msg role="status"></p>
+        </section>
+
+        <section class="cside" aria-labelledby="home-title" data-home hidden>
+          <h2 id="home-title">Keep it one tap away</h2>
+          <p data-home-ios hidden>
+            Add this page to your Home Screen: tap the Share button <span class="kbd" aria-hidden="true">&#x2191;</span> at the
+            bottom of Safari, then <strong>Add to Home Screen</strong>.
+          </p>
+          <p data-home-android hidden>
+            Add this page to your home screen: open the browser menu <span class="kbd" aria-hidden="true">&#8942;</span>, then
+            <strong>Add to Home screen</strong>.
+          </p>
+        </section>
+
+        <section class="cside" aria-labelledby="prefs-title">
+          <h2 id="prefs-title">Your details</h2>
+          <label class="switch">
+            <input type="checkbox" role="switch" data-marketing />
+            <span class="switch__track" aria-hidden="true"></span>
+            <span class="switch__text">
+              Send me news and offers
+              <small>No more than two a month. Card updates always come through.</small>
+            </span>
+          </label>
+          <p class="cside__msg" data-marketing-msg role="status"></p>
+
+          <div class="del">
+            <button class="linkbtn" type="button" data-del-open aria-expanded="false" aria-controls="del-confirm">Delete my card</button>
+            <div class="del__confirm" id="del-confirm" data-del-confirm hidden>
+              <p>
+                <strong>Delete your card?</strong> This erases your name, contact details, birthday and stamps, and the card stops
+                working in your wallet too. It can't be undone.
+              </p>
+              <div class="del__actions">
+                <button class="btn del__yes" type="button" data-del-yes>Yes, delete my card</button>
+                <button class="btn btn--ghost" type="button" data-del-no>Keep my card</button>
+              </div>
+              <p class="cside__msg" data-del-msg role="alert"></p>
+            </div>
+          </div>
+          <p class="cside__small">
+            How we use your details: <a href="/privacy">privacy notice</a>. Card rules: <a href="/rewards#rules">rewards page</a>.
+          </p>
+        </section>
+      </div>
+    </div>
+
+    <div class="cstate" data-state="notoken" hidden>
+      <p>
+        This link opens a card, but the key that proves it's yours isn't saved on this device. That happens when a card was
+        added on another phone or browser, or the browser cleared its storage.
+      </p>
+      <p>You can get it back with the email or mobile number you joined with. Your stamps are safe.</p>
+      <div class="cstate__cta">
+        <a class="btn btn--caramel" href="/rewards#recover">Get my card back</a>
+        <a class="btn btn--ghost" href="/rewards">About Rewards</a>
+      </div>
+    </div>
+
+    <div class="cstate" data-state="notfound" hidden>
+      <p>This card has been deleted, or the link isn't complete. Check you copied all of it.</p>
+      <div class="cstate__cta">
+        <a class="btn btn--caramel" href="/rewards#recover">Find my card</a>
+        <a class="btn btn--ghost" href="/rewards#join">Get a new card</a>
+      </div>
+    </div>
+
+    <div class="cstate" data-state="deleted" hidden>
+      <p>
+        We've erased your details and stamps. If the card is in Apple Wallet or Google Wallet, it now says it has been deleted
+        and you can remove it from there.
+      </p>
+      <div class="cstate__cta">
+        <a class="btn btn--ghost" href="/">Back to the café</a>
+      </div>
+    </div>
+
+    <div class="cstate" data-state="error" hidden>
+      <p data-error-text>We couldn't reach the café just now. Check your connection.</p>
+      <div class="cstate__cta">
+        <button class="btn btn--caramel" type="button" data-retry>Try again</button>
+      </div>
+    </div>
+  </div>
+</Base>
+
+<script>
+  import '../scripts/rewards/webcard';
+</script>
+
+<style>
+  /* States are switched with `hidden`; display rules on them must not undo it. */
+  .cpage [hidden] {
+    display: none !important;
+  }
+  .cpage {
+    padding-block: clamp(28px, 5vw, 64px) clamp(56px, 8vw, 104px);
+  }
+  .label {
+    color: var(--coffee);
+  }
+  .cpage__head h1 {
+    margin-top: 10px;
+    font-size: var(--step-3);
+    outline: none;
+    max-width: 22ch;
+  }
+  .cpage__loading {
+    margin-top: 24px;
+    color: var(--olive-700);
+  }
+  /* Phase 3: a member's cards, as tabs above the card. */
+  .cpage__cardcol {
+    display: grid;
+    gap: 14px;
+    align-content: start;
+    min-width: 0;
+  }
+  .ccards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .ccards :global(a) {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--rule-strong);
+    background: var(--paper-bright);
+    color: var(--olive-900);
+    font-weight: 500;
+    text-decoration: none;
+  }
+  .ccards :global(a[aria-current='page']) {
+    background: var(--olive-900);
+    border-color: var(--olive-900);
+    color: var(--paper);
+  }
+  .ccards :global(.num) {
+    font-size: 0.9rem;
+    opacity: 0.8;
+  }
+  .ccards :global(.ccards__dot) {
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: var(--caramel);
+    color: var(--ink);
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .cjoin {
+    list-style: none;
+    margin: 12px 0 0;
+    padding: 0;
+    display: grid;
+    gap: 10px;
+  }
+  .cjoin :global(li) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-m);
+    background: var(--paper-bright);
+  }
+  .cjoin :global(strong) {
+    display: block;
+  }
+  .cjoin :global(small) {
+    display: block;
+    color: var(--olive-700);
+  }
+  .cjoin :global(.btn) {
+    flex: none;
+  }
+  .cpage__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 400px) minmax(0, 1fr);
+    gap: clamp(28px, 6vw, 88px);
+    align-items: start;
+    margin-top: clamp(20px, 3vw, 32px);
+  }
+  @media (max-width: 820px) {
+    .cpage__grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .cpage__card {
+      display: grid;
+      justify-items: center;
+    }
+  }
+  .cpage__side {
+    display: grid;
+    gap: clamp(28px, 4vw, 40px);
+  }
+  .cside h2 {
+    font-size: var(--step-2);
+  }
+  .cside > p,
+  .cside__lede {
+    margin-top: 10px;
+    max-width: 48ch;
+    color: var(--olive-900);
+  }
+  .cside [data-wallet-root] {
+    margin-top: 18px;
+  }
+  .cside strong {
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .kbd {
+    display: inline-grid;
+    place-items: center;
+    min-width: 1.6em;
+    height: 1.6em;
+    padding: 0 0.3em;
+    border: 1px solid var(--rule-strong);
+    border-radius: 5px;
+    font-size: 0.9em;
+    line-height: 1;
+  }
+  a:not(.btn) {
+    color: var(--coffee);
+  }
+
+  /* marketing switch */
+  .switch {
+    position: relative;
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr);
+    gap: 14px;
+    align-items: start;
+    margin-top: 16px;
+    cursor: pointer;
+  }
+  .switch input {
+    position: absolute;
+    width: 48px;
+    height: 28px;
+    margin: 0;
+    opacity: 0;
+    cursor: inherit;
+  }
+  .switch__track {
+    position: relative;
+    width: 48px;
+    height: 28px;
+    border-radius: 999px;
+    background: var(--paper-dim);
+    border: 1px solid var(--rule-strong);
+    transition: background-color 0.2s;
+  }
+  .switch__track::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--paper-bright);
+    box-shadow: 0 1px 2px var(--shadow-ink);
+    transition: transform 0.2s var(--ease-out);
+  }
+  .switch input:checked + .switch__track {
+    background: var(--olive-900);
+  }
+  .switch input:checked + .switch__track::after {
+    transform: translateX(20px);
+  }
+  .switch input:focus-visible + .switch__track {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px var(--focus-halo);
+  }
+  .switch input:disabled + .switch__track {
+    opacity: 0.5;
+  }
+  .switch__text small {
+    display: block;
+    font-size: var(--step--1);
+    color: var(--olive-700);
+  }
+  .cside__msg {
+    margin-top: 8px;
+    font-size: var(--step--1);
+    color: var(--olive-700);
+  }
+  .cside__msg:empty {
+    display: none;
+  }
+
+  /* delete: a quiet link that opens an inline confirm, never a dialog */
+  .del {
+    margin-top: 26px;
+    padding-top: 18px;
+    border-top: 1px solid var(--rule);
+  }
+  .linkbtn {
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--coffee-deep);
+    font: inherit;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+    cursor: pointer;
+  }
+  .del__confirm {
+    margin-top: 8px;
+    padding: 16px;
+    border: 1px solid var(--coffee);
+    border-radius: var(--radius-m);
+    background: var(--oat);
+  }
+  .del__confirm p {
+    max-width: 52ch;
+  }
+  .del__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .del__yes {
+    --bg: var(--coffee-deep);
+    --fg: var(--paper);
+  }
+  .cside__small {
+    margin-top: 22px;
+    font-size: var(--step--1);
+    color: var(--olive-700);
+  }
+
+  .cstate {
+    margin-top: 18px;
+    display: grid;
+    gap: 12px;
+    max-width: 56ch;
+    font-size: var(--step-1);
+    font-weight: 300;
+    color: var(--olive-900);
+  }
+  .cstate__cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 12px;
+  }
+</style>

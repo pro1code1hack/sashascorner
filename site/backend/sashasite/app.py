@@ -29,6 +29,8 @@ from sashasite.admin_api import router as admin_router
 from sashasite.auth import audit, require_admin_session
 from sashasite.config import CafeFacts, get_cafe_file, get_settings, warn_unconfirmed
 from sashasite.db import SiteBooking, SiteContactMessage, session_scope, utcnow
+from sashasite.events_api import admin_router as events_admin_router
+from sashasite.events_api import public_router as events_router
 from sashasite.mediaserve import BodyLimit, VariantFiles
 from sashasite.menu import load_board
 from sashasite.menu_admin import router as menu_admin_router
@@ -97,6 +99,8 @@ def create_app() -> FastAPI:
     register(app)
     app.include_router(menu_admin_router)
     app.include_router(admin_router)
+    app.include_router(events_router)
+    app.include_router(events_admin_router)
     media_dir = md.media_dir()
     # Same files twice: /media is canonical (Caddy in prod), /api/media-files is
     # for the Astro dev server, which proxies only /api.

@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from pydantic import Field
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -110,6 +111,72 @@ class Settings(BaseSettings):
     drift_auto_order_max_pct: float = 10.0
     drift_warn_max_pct: float = 15.0
     drift_consecutive_counts_required: int = 2
+
+    # --- Sasha's Corner Rewards (docs/loyalty/CONTRACT.md §7) ---------------
+    #: The public site's origin. Recovery links, unsubscribe links and the web card URL
+    #: staff show as a QR are built on it. No trailing slash.
+    loyalty_public_url: str = "https://sashascorner.co.uk"
+    #: HMAC key for the pass QR (`SC1:<card>:<hmac8>`), recovery codes and unsubscribe
+    #: links. Unset derives a stable DEV key from the database URL and `cafeops doctor`
+    #: warns: every printed QR is signed with it, so it must be set, and never changed,
+    #: before the first real customer joins.
+    loyalty_qr_key: str | None = None
+    #: Outbound mail for recovery codes and campaign emails. Unset is supported: recovery
+    #: then answers `ask_staff` and campaigns go to wallets only.
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_user: str | None = None
+    smtp_password: str | None = None
+    smtp_from: str | None = None
+    #: SMS for recovery codes. Unset is supported, as above.
+    twilio_account_sid: str | None = None
+    twilio_auth_token: str | None = None
+    twilio_from_number: str | None = None
+    #: Phase 3: stamp (or add points to) a member's cards from Lightspeed receipts that
+    #: name their till customer, during `cafeops sync` / the daily sync and
+    #: `cafeops loyalty pos-sync`. Off by default: until the till attaches customers to
+    #: sales, staff scans are the only stamps (docs/loyalty/CONTRACT.md "Phase 3").
+    loyalty_auto_stamp: bool = False
+    #: A staff PURCHASE stamp on the same card within this many minutes either side of
+    #: the receipt's close time means the visit was already stamped: the receipt earns
+    #: nothing, so one coffee is never two stamps.
+    loyalty_pos_dedupe_minutes: int = 30
+
+    # --- the public website's admin (Website group in the back office) ------
+    #: The site API (site/backend, `sashasite`). The back office forwards
+    #: `/api/website/*` there after its own sign-in. In docker: http://site-api:8100.
+    site_api_url: str = "http://127.0.0.1:8100"
+    #: Shared secret sent as X-Site-Service-Key; the site accepts it in place of its
+    #: own cookie session. One value in .env serves both apps (SITE_SERVICE_KEY).
+    #: Unset: the Website screens say so and nothing is forwarded.
+    site_service_key: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("CAFEOPS_SITE_SERVICE_KEY", "SITE_SERVICE_KEY"),
+    )
+    #: The site's public origin, for "open the live page" links. Shared with the site.
+    site_public_url: str = Field(
+        default="https://sashascorner.co.uk",
+        validation_alias=AliasChoices("CAFEOPS_SITE_PUBLIC_URL", "SITE_PUBLIC_URL"),
+    )
+
+    @property
+    def loyalty_key(self) -> bytes:
+        """The QR/HMAC key. A derived dev key when unset -- see `loyalty_qr_key`."""
+        if self.loyalty_qr_key:
+            return self.loyalty_qr_key.encode("utf-8")
+        return hashlib.sha256(f"cafeops-loyalty-dev:{self.database_url}".encode()).digest()
+
+    @property
+    def loyalty_key_is_dev(self) -> bool:
+        return not self.loyalty_qr_key
+
+    @property
+    def smtp_configured(self) -> bool:
+        return bool(self.smtp_host and self.smtp_from)
+
+    @property
+    def twilio_configured(self) -> bool:
+        return bool(self.twilio_account_sid and self.twilio_auth_token and self.twilio_from_number)
 
     @property
     def tz(self) -> ZoneInfo:

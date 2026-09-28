@@ -78,6 +78,8 @@ export function friendlyMessage(status: number, detail: unknown): string {
   switch (status) {
     case 0:
       return "Couldn't reach the server. Check the connection and try again.";
+    case 408:
+      return 'The server took too long to answer. Check the connection and try again: nothing was lost.';
     case 401:
       return 'You have been signed out. Sign in again.';
     case 403:
@@ -113,7 +115,12 @@ export interface RequestOptions {
   /** Don't redirect on 401; throw an ApiError(401) instead. */
   quiet401?: boolean;
   signal?: AbortSignal;
+  /** Give up after this many ms (default 20s), so a dropped connection can't leave a
+   *  button on "Saving…" for ever. The caller's own `signal` still aborts silently. */
+  timeoutMs?: number;
 }
+
+const DEFAULT_TIMEOUT_MS = 20_000;
 
 type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
@@ -127,22 +134,32 @@ export async function request<T>(method: Method, path: string, body?: unknown, o
     data = r.body;
   } else {
     const isForm = typeof FormData !== 'undefined' && body instanceof FormData;
+    const timer = new AbortController();
+    const timeout = window.setTimeout(() => timer.abort(), opts.timeoutMs ?? DEFAULT_TIMEOUT_MS);
+    opts.signal?.addEventListener('abort', () => timer.abort(), { once: true });
     const init: RequestInit = {
       method,
       credentials: 'same-origin',
       headers: method === 'GET' ? { Accept: 'application/json' } : adminHeaders(!isForm && body !== undefined),
-      signal: opts.signal,
+      signal: timer.signal,
     };
     if (body !== undefined) init.body = isForm ? (body as FormData) : JSON.stringify(body);
     let res: Response;
+    let text: string;
     try {
       res = await fetch(path, init);
+      text = await res.text();
     } catch (e) {
-      if ((e as Error)?.name === 'AbortError') throw e;
+      if ((e as Error)?.name === 'AbortError') {
+        // The caller cancelled (a newer request superseded this one): stay silent.
+        if (opts.signal?.aborted) throw e;
+        throw new ApiError(408, friendlyMessage(408, null), null);
+      }
       throw new ApiError(0, friendlyMessage(0, null), null);
+    } finally {
+      window.clearTimeout(timeout);
     }
     status = res.status;
-    const text = await res.text();
     if (text) {
       try {
         data = JSON.parse(text);

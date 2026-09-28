@@ -166,7 +166,7 @@ export function openDrawer(opts: { title: string; body: Node; foot?: Node; onClo
     opts.foot ? h('div', { class: 'adm-drawer-foot' }, opts.foot) : null,
   );
   const scrim = h('div', { class: 'adm-scrim', 'aria-hidden': 'true' });
-  Object.assign(scrim.style, { position: 'fixed', inset: '0', zIndex: '45', background: 'rgb(31 38 51 / .18)' });
+  Object.assign(scrim.style, { position: 'fixed', inset: '0', zIndex: '45', background: 'var(--scrim)' });
   const onKey = (e: KeyboardEvent) => {
     if (e.key === 'Escape') {
       e.preventDefault();
@@ -196,7 +196,9 @@ export function openDrawer(opts: { title: string; body: Node; foot?: Node; onClo
     scrim.remove();
     document.documentElement.style.overflow = '';
     opts.onClose?.();
-    if (opener && document.contains(opener)) opener.focus();
+    // Opened from a link (?add=1) there is no opener: land on the page, not <body>.
+    if (opener && opener !== document.body && document.contains(opener)) opener.focus();
+    else document.getElementById('adm-main')?.focus();
   }
   closeBtn.addEventListener('click', close);
   scrim.addEventListener('click', close);

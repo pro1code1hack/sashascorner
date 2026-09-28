@@ -1,0 +1,23 @@
+---
+// Numeric keypad for PINs: 3 x 4 grid, big targets, plus the dots that show how
+// many digits are in. Wired by pinPad() in scripts/staff/ui.ts via data-keypad.
+interface Props {
+  /** data-keypad / data-dots value, e.g. "pin" or "manager". */
+  name: string;
+  label: string;
+}
+const { name, label } = Astro.props;
+const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+---
+
+<div class="st-dots" data-dots={name} role="img" aria-label="No digits entered">
+  <span></span><span></span><span></span><span></span><span></span><span></span>
+</div>
+<div class="st-keypad" data-keypad={name} role="group" aria-label={label}>
+  {KEYS.map((k) => <button type="button" class="st-key num" data-key={k}>{k}</button>)}
+  <button type="button" class="st-key st-key--word" data-key="clear">Clear</button>
+  <button type="button" class="st-key num" data-key="0">0</button>
+  <button type="button" class="st-key st-key--word" data-key="back" aria-label="Delete last digit">
+    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5h11v14H9l-6-7z" /><path d="m12.5 9.5 5 5m0-5-5 5" /></svg>
+  </button>
+</div>

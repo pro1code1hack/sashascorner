@@ -3,6 +3,7 @@ import Base from '../layouts/Base.astro';
 import OpenNow from '../components/OpenNow.astro';
 import Icon from '../components/Icon.astro';
 import Slot from '../components/Slot.astro';
+import RwCta from '../components/RwCta.astro';
 import { menu } from '../lib/data';
 import { gbp } from '../lib/format';
 
@@ -186,6 +187,13 @@ const jsonLd = {
             See the full menu <Icon name="arrow" />
           </a>
         </div>
+        <!-- Stamps are scanned at the till, so the prompt sits with takeaway, not delivery. -->
+        <RwCta
+          variant="compact"
+          src="site-order"
+          text="Takeaway drinks collect stamps too: show your card at the till."
+          class="take__rw"
+        />
       </div>
     </div>
   </section>
@@ -490,6 +498,11 @@ const jsonLd = {
   }
   .take__menu:hover {
     text-decoration: underline;
+  }
+  .take__copy :global(.take__rw) {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--rule);
   }
   @media (max-width: 860px) {
     .take__grid {

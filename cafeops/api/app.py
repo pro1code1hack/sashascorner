@@ -22,20 +22,31 @@ domain errors have a right HTTP answer and it is not 500:
 
 from __future__ import annotations
 
+import importlib
+import logging
 from collections.abc import Awaitable, Callable
 
 from fastapi import FastAPI, Request, status
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from cafeops.api import areas
+from cafeops.api.areas.loyalty_edge import (
+    loyalty_error_handler,
+    validation_error_handler,
+    wallet_not_configured_response,
+)
 from cafeops.api.errors import ComponentSupersededError
 from cafeops.api.routers import open_router, router
 from cafeops.db.repositories.par import AutoOrderGrantRefused
 from cafeops.domain.types import SubstitutionError
 from cafeops.services.edit_composition import RetroactiveEditError
+from cafeops.services.loyalty.errors import LoyaltyError
 
 __all__ = ["create_app"]
+
+log = logging.getLogger("cafeops.api")
 
 #: Starlette renamed `HTTP_422_UNPROCESSABLE_ENTITY` to `..._CONTENT` and deprecated the
 #: old name. The number is the stable thing; spelling it avoids a warning on one version
@@ -128,9 +139,42 @@ def create_app() -> FastAPI:
     # /media/<sha>.<ext>: menu photos. Caddy serves the files directly in production;
     # this route is the dev/fallback path.
     app.include_router(areas.menu.open_router)
-    for area in (areas.shell, areas.stock, areas.menu, areas.finance):
+    for area in (areas.shell, areas.stock, areas.menu, areas.finance, areas.website):
         app.include_router(area.router)
+    app.include_router(areas.website.open_router)
+    _include_loyalty(app)
     return app
+
+
+def _include_loyalty(app: FastAPI) -> None:
+    """Sasha's Corner Rewards (docs/loyalty/CONTRACT.md): three routers of ours, two of the
+    wallet module's.
+
+    `LoyaltyError` renders as `{"error", "detail"}` with its own status. Pydantic's 422 is
+    re-shaped the same way for loyalty paths only (the handler defers to FastAPI's default
+    everywhere else, so no existing screen sees a change).
+
+    The wallet routers (Apple's web service, the public strip images) are included only if
+    their modules import: the wallet package is optional -- no certificate is the normal
+    state -- and the app must start whatever state it is in.
+    """
+    app.add_exception_handler(LoyaltyError, loyalty_error_handler)
+    app.add_exception_handler(RequestValidationError, validation_error_handler)
+    app.include_router(areas.loyalty.open_router)
+    app.include_router(areas.staff.open_router)
+    app.include_router(areas.members.router)
+
+    try:
+        config = importlib.import_module("cafeops.integrations.wallet.config")
+        app.add_exception_handler(config.WalletNotConfigured, wallet_not_configured_response)
+    except Exception as exc:
+        log.info("wallet config unavailable (%s); wallet 503s come from the routes", exc)
+    for name in ("apple_webservice", "public_routes"):
+        try:
+            module = importlib.import_module(f"cafeops.integrations.wallet.{name}")
+            app.include_router(module.router)
+        except Exception as exc:
+            log.warning("wallet router %s not mounted: %s", name, exc)
 
 
 app = create_app()

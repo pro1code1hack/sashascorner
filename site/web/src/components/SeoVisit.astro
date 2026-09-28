@@ -1,0 +1,154 @@
+---
+// "Where and when" block for the landing pages: address, hours and phone as plain
+// text (from info.json, never typed in), links onward, and the delivery apps.
+import OpenNow from './OpenNow.astro';
+import Icon from './Icon.astro';
+import { address, hoursText, phone } from '../pages/_facts';
+import { DELIVEROO, JUST_EAT } from './seoData';
+
+interface Props {
+  /** Heading, e.g. "Come in for a matcha". */
+  title: string;
+  /** Extra links shown first, e.g. the whole-cake order. */
+  links?: Array<{ href: string; label: string; track?: string }>;
+  delivery?: boolean;
+}
+const { title, links = [], delivery = true } = Astro.props;
+const tel = phone ? `+44${phone.replace(/\s+/g, '').replace(/^0/, '')}` : '';
+const onward = [
+  ...links,
+  { href: '/menu', label: 'The full menu, with prices' },
+  { href: '/visit', label: 'Directions and opening hours' },
+  { href: '/book', label: 'Book a table' },
+  { href: '/rewards', label: "Rewards: collect stamps, the ninth drink's on us" },
+];
+---
+
+<section class="svisit on-dark" aria-labelledby="svisit-title">
+  <div class="wrap svisit__grid">
+    <div class="svisit__where">
+      <h2 id="svisit-title">{title}</h2>
+      <p class="svisit__addr">{address}</p>
+      <p class="svisit__hours">Open {hoursText}.</p>
+      <OpenNow tone="dark" />
+      {
+        tel && (
+          <p class="svisit__phone">
+            Phone <a href={`tel:${tel}`} class="num">{phone}</a>
+          </p>
+        )
+      }
+    </div>
+    <div class="svisit__next">
+      <ul class="svisit__links">
+        {
+          onward.map((l) => (
+            <li>
+              <a href={l.href} data-track={l.track}>
+                {l.label} <Icon name="arrow" />
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+      {
+        delivery && (
+          <p class="svisit__deliv">
+            Or have it delivered:{' '}
+            <a href={DELIVEROO} target="_blank" rel="noopener" data-track="delivery_click" data-track-platform="deliveroo">
+              Deliveroo<span class="sr-only"> (opens in a new tab)</span>
+            </a>{' '}
+            or{' '}
+            <a href={JUST_EAT} target="_blank" rel="noopener" data-track="delivery_click" data-track-platform="just_eat">
+              Just Eat<span class="sr-only"> (opens in a new tab)</span>
+            </a>
+            .
+          </p>
+        )
+      }
+    </div>
+  </div>
+</section>
+
+<script>
+  import { trackLinks } from '../scripts/ev-track';
+  trackLinks(document);
+</script>
+
+<style>
+  .svisit {
+    background: var(--olive-900);
+    color: var(--on-dark);
+    padding-block: clamp(56px, 8vw, 104px);
+  }
+  .svisit__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: clamp(36px, 6vw, 96px);
+    align-items: start;
+  }
+  .svisit h2 {
+    font-size: var(--step-3);
+    color: var(--paper);
+  }
+  .svisit__addr {
+    margin-top: 18px;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-stretch: 88%;
+    font-size: var(--step-2);
+    line-height: 1.15;
+  }
+  .svisit__hours {
+    margin-block: 10px 6px;
+    font-weight: 300;
+    max-width: 44ch;
+  }
+  .svisit__phone {
+    margin-top: 10px;
+    font-weight: 300;
+  }
+  .svisit a {
+    color: var(--paper);
+  }
+  .svisit__links {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid color-mix(in oklab, var(--paper) 22%, transparent);
+  }
+  .svisit__links li {
+    border-bottom: 1px solid color-mix(in oklab, var(--paper) 22%, transparent);
+  }
+  .svisit__links a {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    min-height: 52px;
+    padding-block: 10px;
+    text-decoration: none;
+    font-size: var(--step-1);
+    font-weight: 300;
+  }
+  .svisit__links a:hover {
+    color: var(--caramel-on-dark);
+  }
+  .svisit__links a :global(svg) {
+    flex: none;
+  }
+  .svisit__deliv {
+    margin-top: 18px;
+    font-weight: 300;
+    color: var(--on-dark-soft);
+  }
+  .svisit__deliv a {
+    display: inline-block;
+    padding-block: 10px;
+  }
+  @media (max-width: 800px) {
+    .svisit__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

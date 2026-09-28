@@ -6,7 +6,7 @@
  * `cafeops api-fixtures` recorded (lib/fixtures) -- real imported numbers, never
  * the design's demo figures -- and anything unrecorded says so.
  */
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
 import { apiWrite, request } from './api'
 import type { WriteResult } from './api'
 import type {
@@ -33,6 +33,8 @@ import type {
   ReconcileResponse,
   SalesDay,
   SalesDayIn,
+  InsightFilters,
+  SalesInsights,
   SalesResponse,
   TakingsFilters,
   TakingsLedgerResponse,
@@ -62,6 +64,7 @@ export const financeApi = {
   overview: (period: Period) => read<FinanceOverview>(`/api/finance/overview${qs({ period })}`),
   pl: () => read<PLResponse>('/api/finance/pl'),
   sales: (period: Period) => read<SalesResponse>(`/api/finance/sales${qs({ period })}`),
+  insights: (f: InsightFilters) => read<SalesInsights>(`/api/finance/sales/insights${qs({ ...f })}`),
   expenses: (period: Period, f: ExpenseFilters) =>
     read<ExpensesResponse>(
       `/api/finance/expenses${qs({
@@ -104,6 +107,15 @@ export const useSales = (period: Period | null) =>
     queryKey: [...FINANCE_KEY, 'sales', period],
     queryFn: () => financeApi.sales(period as Period),
     enabled: period !== null,
+  })
+/** Till lines for the Sales dashboard. Keeps the last answer on screen while a
+ *  filter change refetches, so the charts dim instead of flashing empty. */
+export const useSalesInsights = (f: InsightFilters | null) =>
+  useQuery({
+    queryKey: [...FINANCE_KEY, 'insights', f],
+    queryFn: () => financeApi.insights(f as InsightFilters),
+    enabled: f !== null,
+    placeholderData: keepPreviousData,
   })
 export const useExpenses = (period: Period | null, f: ExpenseFilters) =>
   useQuery({

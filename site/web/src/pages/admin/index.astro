@@ -50,7 +50,11 @@ import AdmBookingStyles from '../../components/AdmBookingStyles.astro';
       </section>
     </aside>
   </div>
-  <p class="adm-err" data-dash-error role="alert" hidden></p>
+  <div class="dash-fail adm-banner adm-banner--alert" data-dash-error role="alert" hidden>
+    <span class="adm-dot" aria-hidden="true"></span>
+    <span class="dash-fail-text" data-dash-error-text></span>
+    <button type="button" class="adm-btn adm-btn--secondary adm-btn--sm" data-dash-retry>Try again</button>
+  </div>
 </Admin>
 
 <style is:global>
@@ -60,8 +64,35 @@ import AdmBookingStyles from '../../components/AdmBookingStyles.astro';
     gap: 32px;
     align-items: start;
   }
-  .dash[aria-busy='true'] {
-    opacity: 0.6;
+  /* Nothing shows until the first load lands (the shell's progress line covers
+     the wait), then the two columns ease in once. Later reloads just dim. */
+  .dash:not(.is-ready) {
+    visibility: hidden;
+  }
+  .dash.is-ready > * {
+    animation: dash-in 0.55s var(--ease-out) both;
+  }
+  .dash.is-ready > :nth-child(2) {
+    animation-delay: 0.08s;
+  }
+  @keyframes dash-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+  }
+  .dash.is-ready[aria-busy='true'] {
+    opacity: 0.75;
+    transition: opacity 0.2s;
+  }
+  .dash-fail-text {
+    flex: 1;
+    min-width: 0;
+  }
+  @media (max-width: 759.98px) {
+    .dash-fail {
+      flex-wrap: wrap;
+    }
   }
   .dash-sechead {
     display: flex;
@@ -70,17 +101,65 @@ import AdmBookingStyles from '../../components/AdmBookingStyles.astro';
     flex-wrap: wrap;
   }
   .dash-sechead .adm-section-head {
-    font-size: 18px;
+    font-size: 28px;
   }
   .dash-open {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 28px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: var(--wash);
     color: var(--ink-2);
+    font-size: 14px;
+  }
+  .dash-open:empty {
+    display: none;
   }
   .dash-open strong {
     color: var(--ink);
+    font-weight: 550;
+  }
+  .dash-open::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--ink-3);
+  }
+  .dash-open[data-open='yes'] {
+    background: var(--ok-wash);
+    color: var(--ok-ink);
+  }
+  .dash-open[data-open='yes'] strong {
+    color: var(--ok-ink);
+  }
+  .dash-open[data-open='yes']::before {
+    background: var(--ok-ink);
+    animation: dash-pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes dash-pulse {
+    50% {
+      box-shadow: 0 0 0 5px rgb(63 82 38 / 0.15);
+    }
   }
   .dash-sum {
-    margin: 4px 0 12px;
-    font-size: 15px;
+    margin: 14px 0 18px;
+    font-size: 18px;
+    font-weight: 350;
+    line-height: 1.3;
+  }
+  .dash-big {
+    font-size: 44px;
+    font-weight: 650;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    vertical-align: -0.08em;
+  }
+  .dash-sum-tail {
+    color: var(--ink-2);
+    white-space: nowrap;
   }
   .dash-more {
     margin-top: 10px;
@@ -127,43 +206,56 @@ import AdmBookingStyles from '../../components/AdmBookingStyles.astro';
     flex-direction: column;
     align-items: center;
     gap: 2px;
-    padding: 8px 2px;
-    min-height: 64px;
+    padding: 10px 2px 8px;
+    min-height: 76px;
     border-radius: var(--r-button);
-    background: var(--canvas);
+    background: var(--surface);
+    box-shadow: inset 0 0 0 1px var(--line);
     text-decoration: none;
     color: var(--ink);
+    transition: box-shadow 0.2s var(--ease-out), transform 0.2s var(--ease-out);
   }
   .adm .dash-week a {
     color: var(--ink);
   }
   .dash-week a:hover {
-    background: var(--wash);
+    box-shadow: inset 0 0 0 1px var(--brand);
+    transform: translateY(-2px);
   }
   .dash-week .wd {
     font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
+    font-weight: 500;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--ink-2);
   }
   .dash-week .n {
-    font-size: 18px;
-    font-weight: 800;
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 650;
+    line-height: 1.05;
   }
   .dash-week .c {
     font-size: 12px;
     color: var(--ink-2);
   }
   .dash-week .is-closed .n {
+    font-family: var(--font-text);
     font-size: 12px;
-    font-weight: 600;
+    font-weight: 400;
     color: var(--ink-3);
-    padding-top: 5px;
+    padding-top: 9px;
   }
-  .dash-week .is-today {
-    background: var(--brand-wash);
-    box-shadow: inset 0 0 0 1px var(--brand-line);
+  .adm .dash-week .is-today {
+    background: var(--brand);
+    box-shadow: none;
+    color: var(--on-brand);
+  }
+  .dash-week .is-today .wd {
+    color: var(--on-brand-accent);
+  }
+  .dash-week .is-today .c {
+    color: var(--on-brand-2);
   }
   .dash-notes {
     display: flex;
@@ -195,8 +287,10 @@ import AdmBookingStyles from '../../components/AdmBookingStyles.astro';
     color: var(--ink-3);
   }
   .dash-note .num {
-    font-weight: 800;
-  }
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 650;
+}
   .dash-note .num--alert {
     color: var(--alert);
   }
@@ -217,7 +311,7 @@ import AdmBookingStyles from '../../components/AdmBookingStyles.astro';
 </style>
 
 <script>
-  import { api, errorText, ready, setUnread, h, fill } from '../../scripts/admin-core';
+  import { api, busy, errorText, ready, setUnread, h, fill } from '../../scripts/admin-core';
   import { clock, longDate, plural, todayISO, weekday, weekdayShort, nowMinutes, toMinutes } from '../../scripts/admin-core/format';
   import { bookingRow, getDay, holds, openBookingPanel, settings, timeline } from '../../scripts/admin-core/bookings';
   import type { Booking, BookingDay, Settings, Summary } from '../../scripts/admin-core/types';
@@ -235,11 +329,15 @@ import AdmBookingStyles from '../../components/AdmBookingStyles.astro';
       const today = todayISO();
       [summary, day, cafe] = await Promise.all([api.get<Summary>('/api/admin/summary'), getDay(today), settings(true)]);
       $('[data-dash-error]').hidden = true;
+      root.hidden = false;
       render();
+      root.classList.add('is-ready');
     } catch (e) {
-      const el = $('[data-dash-error]');
-      el.textContent = errorText(e);
-      el.hidden = false;
+      // Hide the page's placeholder text ("Messages ›", "Today") so it can't be
+      // read as real, and say what went wrong with a way to try again.
+      if (!summary) root.hidden = true;
+      $('[data-dash-error-text]').textContent = `Today's bookings didn't load. ${errorText(e)}`;
+      $('[data-dash-error]').hidden = false;
     } finally {
       root.setAttribute('aria-busy', 'false');
     }
@@ -248,29 +346,46 @@ import AdmBookingStyles from '../../components/AdmBookingStyles.astro';
   function render() {
     if (!summary || !day || !cafe) return;
     const today = summary.today.date || day.date;
-    $('[data-today-title]').textContent = `Today · ${longDate(today)}`;
+    $('[data-today-title]').textContent = longDate(today);
 
     // Open / closed
     const hours = cafe.cafe.hours.find((x) => x.weekday === weekday(today));
     const closure = cafe.closures.find((c) => c.date === today);
     const openEl = $('[data-today-open]');
     if (summary.today.closed || day.closed) {
+      openEl.dataset.open = 'no';
       openEl.textContent = closure ? `Closed: ${closure.note || 'special closure'}` : day.reason ? `Closed today. ${day.reason}` : 'Closed today';
     } else if (hours && hours.open && hours.close) {
       const now = nowMinutes();
       const isOpen = now >= toMinutes(hours.open) && now < toMinutes(hours.close);
-      fill(openEl, h('strong', {}, isOpen ? 'Open now' : 'Closed now'), `, ${clock(hours.open)} to ${clock(hours.close)}`);
-    } else openEl.textContent = '';
+      openEl.dataset.open = isOpen ? 'yes' : 'no';
+      fill(openEl, h('strong', {}, isOpen ? 'Open now' : 'Closed now'), ` · ${clock(hours.open)} to ${clock(hours.close)}`);
+    } else {
+      delete openEl.dataset.open;
+      openEl.textContent = '';
+    }
 
     // Bookings (everything on today's sheet; cancelled ones at the end)
     const live = day.bookings.filter(holds);
     const covers = live.reduce((a, b) => a + b.party, 0);
     const waiting = day.bookings.filter((b) => b.status === 'confirmed').length;
-    $('[data-today-sum]').textContent = live.length
-      ? `${plural(live.length, 'booking')}, ${plural(covers, 'guest')}. ${waiting ? `${waiting} still to arrive.` : 'Everyone booked has arrived.'}`
-      : day.closed
-        ? 'No bookings.'
-        : 'No bookings yet today.';
+    // One sentence, its figures set large: the day at a glance without KPI tiles.
+    const big = (n: number) => h('span', { class: 'dash-big adm-fig' }, String(n));
+    const word = (n: number, one: string, many: string) => (n === 1 ? one : many);
+    fill(
+      $('[data-today-sum]'),
+      live.length
+        ? [
+            big(covers),
+            ` ${word(covers, 'guest', 'guests')} in `,
+            big(live.length),
+            ` ${word(live.length, 'booking', 'bookings')}. `,
+            h('span', { class: 'dash-sum-tail' }, waiting ? `${waiting} still to arrive.` : 'Everyone booked has arrived.'),
+          ]
+        : day.closed
+          ? 'No bookings.'
+          : 'No bookings yet today.',
+    );
     const list = $('[data-today-list]');
     const sorted = [...day.bookings].sort((a, b) => Number(a.status === 'cancelled') - Number(b.status === 'cancelled') || a.time.localeCompare(b.time));
     const shown = sorted.filter((b) => b.status !== 'cancelled');
@@ -340,5 +455,6 @@ import AdmBookingStyles from '../../components/AdmBookingStyles.astro';
 
   // On a phone the per-slot bars start folded so the week and messages stay near the top.
   if (window.matchMedia('(max-width: 759.98px)').matches) $<HTMLDetailsElement>('[data-slots-wrap]').open = false;
+  $<HTMLButtonElement>('[data-dash-retry]').addEventListener('click', (e) => void busy(e.currentTarget as HTMLButtonElement, 'Loading…', load));
   ready().then(load);
 </script>

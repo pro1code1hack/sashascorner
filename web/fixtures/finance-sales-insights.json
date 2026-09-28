@@ -1,0 +1,919 @@
+{
+  "since": "2026-07-25",
+  "until": "2026-09-22",
+  "prev_since": "2026-05-26",
+  "prev_until": "2026-07-24",
+  "first_sale_date": "2026-07-25",
+  "last_sale_date": "2026-09-22",
+  "months": [
+    "2026-07",
+    "2026-08",
+    "2026-09"
+  ],
+  "is_demo": true,
+  "totals": {
+    "gross_pence": 1073020,
+    "receipts": 1925,
+    "items": "2776",
+    "trading_days": 60,
+    "refund_receipts": 0,
+    "avg_basket_pence": 557,
+    "items_per_basket": "1.44",
+    "per_day_pence": 17884
+  },
+  "previous": null,
+  "by_day": [
+    {
+      "date": "2026-07-25",
+      "gross_pence": 26550,
+      "receipts": 48
+    },
+    {
+      "date": "2026-07-26",
+      "gross_pence": 15580,
+      "receipts": 26
+    },
+    {
+      "date": "2026-07-27",
+      "gross_pence": 14360,
+      "receipts": 27
+    },
+    {
+      "date": "2026-07-28",
+      "gross_pence": 17620,
+      "receipts": 30
+    },
+    {
+      "date": "2026-07-29",
+      "gross_pence": 17900,
+      "receipts": 32
+    },
+    {
+      "date": "2026-07-30",
+      "gross_pence": 17560,
+      "receipts": 29
+    },
+    {
+      "date": "2026-07-31",
+      "gross_pence": 24320,
+      "receipts": 45
+    },
+    {
+      "date": "2026-08-01",
+      "gross_pence": 23280,
+      "receipts": 44
+    },
+    {
+      "date": "2026-08-02",
+      "gross_pence": 14470,
+      "receipts": 28
+    },
+    {
+      "date": "2026-08-03",
+      "gross_pence": 12660,
+      "receipts": 22
+    },
+    {
+      "date": "2026-08-04",
+      "gross_pence": 14590,
+      "receipts": 28
+    },
+    {
+      "date": "2026-08-05",
+      "gross_pence": 18400,
+      "receipts": 33
+    },
+    {
+      "date": "2026-08-06",
+      "gross_pence": 18150,
+      "receipts": 30
+    },
+    {
+      "date": "2026-08-07",
+      "gross_pence": 18670,
+      "receipts": 36
+    },
+    {
+      "date": "2026-08-08",
+      "gross_pence": 23350,
+      "receipts": 42
+    },
+    {
+      "date": "2026-08-09",
+      "gross_pence": 12690,
+      "receipts": 25
+    },
+    {
+      "date": "2026-08-10",
+      "gross_pence": 10900,
+      "receipts": 22
+    },
+    {
+      "date": "2026-08-11",
+      "gross_pence": 12300,
+      "receipts": 26
+    },
+    {
+      "date": "2026-08-12",
+      "gross_pence": 18990,
+      "receipts": 32
+    },
+    {
+      "date": "2026-08-13",
+      "gross_pence": 15260,
+      "receipts": 32
+    },
+    {
+      "date": "2026-08-14",
+      "gross_pence": 19030,
+      "receipts": 34
+    },
+    {
+      "date": "2026-08-15",
+      "gross_pence": 24630,
+      "receipts": 46
+    },
+    {
+      "date": "2026-08-16",
+      "gross_pence": 14600,
+      "receipts": 28
+    },
+    {
+      "date": "2026-08-17",
+      "gross_pence": 12440,
+      "receipts": 20
+    },
+    {
+      "date": "2026-08-18",
+      "gross_pence": 15690,
+      "receipts": 28
+    },
+    {
+      "date": "2026-08-19",
+      "gross_pence": 16300,
+      "receipts": 31
+    },
+    {
+      "date": "2026-08-20",
+      "gross_pence": 21220,
+      "receipts": 37
+    },
+    {
+      "date": "2026-08-21",
+      "gross_pence": 19950,
+      "receipts": 34
+    },
+    {
+      "date": "2026-08-22",
+      "gross_pence": 26380,
+      "receipts": 47
+    },
+    {
+      "date": "2026-08-23",
+      "gross_pence": 13440,
+      "receipts": 27
+    },
+    {
+      "date": "2026-08-24",
+      "gross_pence": 12350,
+      "receipts": 24
+    },
+    {
+      "date": "2026-08-25",
+      "gross_pence": 14420,
+      "receipts": 29
+    },
+    {
+      "date": "2026-08-26",
+      "gross_pence": 15870,
+      "receipts": 26
+    },
+    {
+      "date": "2026-08-27",
+      "gross_pence": 16410,
+      "receipts": 30
+    },
+    {
+      "date": "2026-08-28",
+      "gross_pence": 20120,
+      "receipts": 36
+    },
+    {
+      "date": "2026-08-29",
+      "gross_pence": 31510,
+      "receipts": 53
+    },
+    {
+      "date": "2026-08-30",
+      "gross_pence": 16240,
+      "receipts": 25
+    },
+    {
+      "date": "2026-08-31",
+      "gross_pence": 15710,
+      "receipts": 25
+    },
+    {
+      "date": "2026-09-01",
+      "gross_pence": 15000,
+      "receipts": 30
+    },
+    {
+      "date": "2026-09-02",
+      "gross_pence": 16560,
+      "receipts": 31
+    },
+    {
+      "date": "2026-09-03",
+      "gross_pence": 13680,
+      "receipts": 29
+    },
+    {
+      "date": "2026-09-04",
+      "gross_pence": 21140,
+      "receipts": 36
+    },
+    {
+      "date": "2026-09-05",
+      "gross_pence": 22990,
+      "receipts": 41
+    },
+    {
+      "date": "2026-09-06",
+      "gross_pence": 14380,
+      "receipts": 26
+    },
+    {
+      "date": "2026-09-07",
+      "gross_pence": 12330,
+      "receipts": 24
+    },
+    {
+      "date": "2026-09-08",
+      "gross_pence": 11650,
+      "receipts": 23
+    },
+    {
+      "date": "2026-09-09",
+      "gross_pence": 14320,
+      "receipts": 29
+    },
+    {
+      "date": "2026-09-10",
+      "gross_pence": 24150,
+      "receipts": 37
+    },
+    {
+      "date": "2026-09-11",
+      "gross_pence": 20080,
+      "receipts": 35
+    },
+    {
+      "date": "2026-09-12",
+      "gross_pence": 31310,
+      "receipts": 49
+    },
+    {
+      "date": "2026-09-13",
+      "gross_pence": 19240,
+      "receipts": 31
+    },
+    {
+      "date": "2026-09-14",
+      "gross_pence": 10990,
+      "receipts": 21
+    },
+    {
+      "date": "2026-09-15",
+      "gross_pence": 14920,
+      "receipts": 24
+    },
+    {
+      "date": "2026-09-16",
+      "gross_pence": 17420,
+      "receipts": 31
+    },
+    {
+      "date": "2026-09-17",
+      "gross_pence": 17680,
+      "receipts": 31
+    },
+    {
+      "date": "2026-09-18",
+      "gross_pence": 23230,
+      "receipts": 43
+    },
+    {
+      "date": "2026-09-19",
+      "gross_pence": 27330,
+      "receipts": 48
+    },
+    {
+      "date": "2026-09-20",
+      "gross_pence": 18520,
+      "receipts": 32
+    },
+    {
+      "date": "2026-09-21",
+      "gross_pence": 13980,
+      "receipts": 26
+    },
+    {
+      "date": "2026-09-22",
+      "gross_pence": 18210,
+      "receipts": 31
+    }
+  ],
+  "by_hour": [
+    {
+      "hour": 8,
+      "gross_pence": 162240,
+      "receipts": 287
+    },
+    {
+      "hour": 9,
+      "gross_pence": 185120,
+      "receipts": 331
+    },
+    {
+      "hour": 10,
+      "gross_pence": 160450,
+      "receipts": 290
+    },
+    {
+      "hour": 11,
+      "gross_pence": 121120,
+      "receipts": 220
+    },
+    {
+      "hour": 12,
+      "gross_pence": 124370,
+      "receipts": 224
+    },
+    {
+      "hour": 13,
+      "gross_pence": 124550,
+      "receipts": 216
+    },
+    {
+      "hour": 14,
+      "gross_pence": 75330,
+      "receipts": 147
+    },
+    {
+      "hour": 15,
+      "gross_pence": 69560,
+      "receipts": 121
+    },
+    {
+      "hour": 16,
+      "gross_pence": 50280,
+      "receipts": 89
+    }
+  ],
+  "heat": [
+    {
+      "weekday": 0,
+      "hour": 8,
+      "receipts": 29,
+      "gross_pence": 16110
+    },
+    {
+      "weekday": 0,
+      "hour": 9,
+      "receipts": 43,
+      "gross_pence": 22050
+    },
+    {
+      "weekday": 0,
+      "hour": 10,
+      "receipts": 32,
+      "gross_pence": 16740
+    },
+    {
+      "weekday": 0,
+      "hour": 11,
+      "receipts": 17,
+      "gross_pence": 8050
+    },
+    {
+      "weekday": 0,
+      "hour": 12,
+      "receipts": 24,
+      "gross_pence": 13610
+    },
+    {
+      "weekday": 0,
+      "hour": 13,
+      "receipts": 20,
+      "gross_pence": 11070
+    },
+    {
+      "weekday": 0,
+      "hour": 14,
+      "receipts": 19,
+      "gross_pence": 9980
+    },
+    {
+      "weekday": 0,
+      "hour": 15,
+      "receipts": 15,
+      "gross_pence": 9570
+    },
+    {
+      "weekday": 0,
+      "hour": 16,
+      "receipts": 12,
+      "gross_pence": 8540
+    },
+    {
+      "weekday": 1,
+      "hour": 8,
+      "receipts": 31,
+      "gross_pence": 16140
+    },
+    {
+      "weekday": 1,
+      "hour": 9,
+      "receipts": 41,
+      "gross_pence": 22130
+    },
+    {
+      "weekday": 1,
+      "hour": 10,
+      "receipts": 38,
+      "gross_pence": 20330
+    },
+    {
+      "weekday": 1,
+      "hour": 11,
+      "receipts": 32,
+      "gross_pence": 15630
+    },
+    {
+      "weekday": 1,
+      "hour": 12,
+      "receipts": 28,
+      "gross_pence": 16610
+    },
+    {
+      "weekday": 1,
+      "hour": 13,
+      "receipts": 31,
+      "gross_pence": 17290
+    },
+    {
+      "weekday": 1,
+      "hour": 14,
+      "receipts": 22,
+      "gross_pence": 11990
+    },
+    {
+      "weekday": 1,
+      "hour": 15,
+      "receipts": 15,
+      "gross_pence": 9260
+    },
+    {
+      "weekday": 1,
+      "hour": 16,
+      "receipts": 11,
+      "gross_pence": 5020
+    },
+    {
+      "weekday": 2,
+      "hour": 8,
+      "receipts": 31,
+      "gross_pence": 15970
+    },
+    {
+      "weekday": 2,
+      "hour": 9,
+      "receipts": 46,
+      "gross_pence": 28650
+    },
+    {
+      "weekday": 2,
+      "hour": 10,
+      "receipts": 30,
+      "gross_pence": 18200
+    },
+    {
+      "weekday": 2,
+      "hour": 11,
+      "receipts": 24,
+      "gross_pence": 11930
+    },
+    {
+      "weekday": 2,
+      "hour": 12,
+      "receipts": 27,
+      "gross_pence": 13360
+    },
+    {
+      "weekday": 2,
+      "hour": 13,
+      "receipts": 31,
+      "gross_pence": 16930
+    },
+    {
+      "weekday": 2,
+      "hour": 14,
+      "receipts": 18,
+      "gross_pence": 8340
+    },
+    {
+      "weekday": 2,
+      "hour": 15,
+      "receipts": 24,
+      "gross_pence": 13020
+    },
+    {
+      "weekday": 2,
+      "hour": 16,
+      "receipts": 14,
+      "gross_pence": 9360
+    },
+    {
+      "weekday": 3,
+      "hour": 8,
+      "receipts": 37,
+      "gross_pence": 23190
+    },
+    {
+      "weekday": 3,
+      "hour": 9,
+      "receipts": 45,
+      "gross_pence": 24180
+    },
+    {
+      "weekday": 3,
+      "hour": 10,
+      "receipts": 39,
+      "gross_pence": 23990
+    },
+    {
+      "weekday": 3,
+      "hour": 11,
+      "receipts": 33,
+      "gross_pence": 19640
+    },
+    {
+      "weekday": 3,
+      "hour": 12,
+      "receipts": 29,
+      "gross_pence": 16350
+    },
+    {
+      "weekday": 3,
+      "hour": 13,
+      "receipts": 28,
+      "gross_pence": 16300
+    },
+    {
+      "weekday": 3,
+      "hour": 14,
+      "receipts": 21,
+      "gross_pence": 9570
+    },
+    {
+      "weekday": 3,
+      "hour": 15,
+      "receipts": 15,
+      "gross_pence": 7140
+    },
+    {
+      "weekday": 3,
+      "hour": 16,
+      "receipts": 8,
+      "gross_pence": 3750
+    },
+    {
+      "weekday": 4,
+      "hour": 8,
+      "receipts": 47,
+      "gross_pence": 27780
+    },
+    {
+      "weekday": 4,
+      "hour": 9,
+      "receipts": 46,
+      "gross_pence": 25230
+    },
+    {
+      "weekday": 4,
+      "hour": 10,
+      "receipts": 49,
+      "gross_pence": 27240
+    },
+    {
+      "weekday": 4,
+      "hour": 11,
+      "receipts": 36,
+      "gross_pence": 21610
+    },
+    {
+      "weekday": 4,
+      "hour": 12,
+      "receipts": 33,
+      "gross_pence": 18080
+    },
+    {
+      "weekday": 4,
+      "hour": 13,
+      "receipts": 37,
+      "gross_pence": 21290
+    },
+    {
+      "weekday": 4,
+      "hour": 14,
+      "receipts": 20,
+      "gross_pence": 9200
+    },
+    {
+      "weekday": 4,
+      "hour": 15,
+      "receipts": 12,
+      "gross_pence": 6250
+    },
+    {
+      "weekday": 4,
+      "hour": 16,
+      "receipts": 19,
+      "gross_pence": 9860
+    },
+    {
+      "weekday": 5,
+      "hour": 8,
+      "receipts": 69,
+      "gross_pence": 38310
+    },
+    {
+      "weekday": 5,
+      "hour": 9,
+      "receipts": 72,
+      "gross_pence": 43600
+    },
+    {
+      "weekday": 5,
+      "hour": 10,
+      "receipts": 66,
+      "gross_pence": 34380
+    },
+    {
+      "weekday": 5,
+      "hour": 11,
+      "receipts": 50,
+      "gross_pence": 28010
+    },
+    {
+      "weekday": 5,
+      "hour": 12,
+      "receipts": 50,
+      "gross_pence": 28780
+    },
+    {
+      "weekday": 5,
+      "hour": 13,
+      "receipts": 42,
+      "gross_pence": 26130
+    },
+    {
+      "weekday": 5,
+      "hour": 14,
+      "receipts": 33,
+      "gross_pence": 18480
+    },
+    {
+      "weekday": 5,
+      "hour": 15,
+      "receipts": 18,
+      "gross_pence": 10850
+    },
+    {
+      "weekday": 5,
+      "hour": 16,
+      "receipts": 18,
+      "gross_pence": 8790
+    },
+    {
+      "weekday": 6,
+      "hour": 8,
+      "receipts": 43,
+      "gross_pence": 24740
+    },
+    {
+      "weekday": 6,
+      "hour": 9,
+      "receipts": 38,
+      "gross_pence": 19280
+    },
+    {
+      "weekday": 6,
+      "hour": 10,
+      "receipts": 36,
+      "gross_pence": 19570
+    },
+    {
+      "weekday": 6,
+      "hour": 11,
+      "receipts": 28,
+      "gross_pence": 16250
+    },
+    {
+      "weekday": 6,
+      "hour": 12,
+      "receipts": 33,
+      "gross_pence": 17580
+    },
+    {
+      "weekday": 6,
+      "hour": 13,
+      "receipts": 27,
+      "gross_pence": 15540
+    },
+    {
+      "weekday": 6,
+      "hour": 14,
+      "receipts": 14,
+      "gross_pence": 7770
+    },
+    {
+      "weekday": 6,
+      "hour": 15,
+      "receipts": 22,
+      "gross_pence": 13470
+    },
+    {
+      "weekday": 6,
+      "hour": 16,
+      "receipts": 7,
+      "gross_pence": 4960
+    }
+  ],
+  "by_weekday": [
+    {
+      "weekday": 0,
+      "gross_pence": 115720,
+      "receipts": 211,
+      "trading_days": 9
+    },
+    {
+      "weekday": 1,
+      "gross_pence": 134400,
+      "receipts": 249,
+      "trading_days": 9
+    },
+    {
+      "weekday": 2,
+      "gross_pence": 135760,
+      "receipts": 245,
+      "trading_days": 8
+    },
+    {
+      "weekday": 3,
+      "gross_pence": 144110,
+      "receipts": 255,
+      "trading_days": 8
+    },
+    {
+      "weekday": 4,
+      "gross_pence": 166540,
+      "receipts": 299,
+      "trading_days": 8
+    },
+    {
+      "weekday": 5,
+      "gross_pence": 237330,
+      "receipts": 418,
+      "trading_days": 9
+    },
+    {
+      "weekday": 6,
+      "gross_pence": 139160,
+      "receipts": 248,
+      "trading_days": 9
+    }
+  ],
+  "by_channel": [
+    {
+      "key": "EPOS",
+      "gross_pence": 1073020,
+      "qty": "2776",
+      "receipts": 1925
+    }
+  ],
+  "by_category": [
+    {
+      "key": "Latte / flavoured latte",
+      "gross_pence": 689090,
+      "qty": "1859",
+      "receipts": 1459
+    },
+    {
+      "key": "Spring saesonal drinks",
+      "gross_pence": 383930,
+      "qty": "917",
+      "receipts": 836
+    }
+  ],
+  "by_size": [
+    {
+      "key": "S",
+      "gross_pence": 268170,
+      "qty": "770",
+      "receipts": 683
+    },
+    {
+      "key": "M",
+      "gross_pence": 477910,
+      "qty": "1238",
+      "receipts": 1069
+    },
+    {
+      "key": "XL",
+      "gross_pence": 326940,
+      "qty": "768",
+      "receipts": 695
+    }
+  ],
+  "products": [
+    {
+      "name": "Pistachio Latte",
+      "category": "Spring saesonal drinks",
+      "gross_pence": 383930,
+      "qty": "917",
+      "receipts": 836,
+      "sizes": {
+        "S": "223",
+        "M": "431",
+        "XL": "263"
+      }
+    },
+    {
+      "name": "Vanilla Latte",
+      "category": "Latte / flavoured latte",
+      "gross_pence": 346920,
+      "qty": "934",
+      "receipts": 827,
+      "sizes": {
+        "S": "259",
+        "M": "415",
+        "XL": "260"
+      }
+    },
+    {
+      "name": "Caramel Latte",
+      "category": "Latte / flavoured latte",
+      "gross_pence": 342170,
+      "qty": "925",
+      "receipts": 816,
+      "sizes": {
+        "S": "288",
+        "M": "392",
+        "XL": "245"
+      }
+    }
+  ],
+  "baskets": [
+    {
+      "items": "1",
+      "receipts": 1208
+    },
+    {
+      "items": "2",
+      "receipts": 583
+    },
+    {
+      "items": "3",
+      "receipts": 134
+    },
+    {
+      "items": "4+",
+      "receipts": 0
+    }
+  ],
+  "options": {
+    "channels": [
+      "EPOS"
+    ],
+    "categories": [
+      "Latte / flavoured latte",
+      "Spring saesonal drinks"
+    ],
+    "products": [
+      "Caramel Latte",
+      "Pistachio Latte",
+      "Vanilla Latte"
+    ],
+    "sizes": [
+      "S",
+      "M",
+      "XL"
+    ]
+  },
+  "caveats": [
+    "These till lines are the demo seed, not real Lightspeed sales. Connect Lightspeed (or run `cafeops sync`) to replace them.",
+    "Only in-store till sales in this window. Deliveroo and Just Eat orders reach the till only once the apps are linked to Lightspeed; their monthly statements are under Takings."
+  ]
+}

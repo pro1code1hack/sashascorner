@@ -1,0 +1,297 @@
+/*
+ * The Rewards card. Pass colours are fixed by the spec (CONTRACT §9): blush ground
+ * #E9DCD6, label #9B6038, foreground #474531. The blush is used for the card only.
+ * Small label text uses the label hue deepened toward ink (#865431, 4.7:1 on blush):
+ * the spec's #9B6038 is 3.8:1 there, under AA for text that size. Large type and the
+ * stamps keep the exact #9B6038.
+ */
+.rwcard {
+  --rw-bg: #e9dcd6;
+  --rw-label: #9b6038;
+  --rw-label-text: #865431;
+  --rw-fg: #474531;
+  --rw-rule: color-mix(in oklab, var(--rw-fg) 20%, transparent);
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  padding: clamp(18px, 5vw, 26px);
+  border-radius: 18px;
+  background: var(--rw-bg);
+  color: var(--rw-fg);
+  box-shadow:
+    0 1px 0 color-mix(in oklab, var(--rw-fg) 10%, transparent),
+    0 22px 48px -24px color-mix(in srgb, var(--ink) 45%, transparent);
+  font-family: var(--font-text);
+}
+.rwcard__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.rwcard__logo {
+  display: block;
+  width: 78px;
+  aspect-ratio: 683.5 / 411.6;
+  background: var(--rw-fg);
+  -webkit-mask: url('/brand/lineart.svg') center / contain no-repeat;
+  mask: url('/brand/lineart.svg') center / contain no-repeat;
+}
+.rwcard__lbl {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--rw-label-text);
+}
+.rwcard__count {
+  text-align: right;
+  line-height: 1.1;
+}
+.rwcard__count .num {
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: var(--rw-fg);
+}
+/* Phase 3: a club or points card names itself under the logo row. */
+.rwcard__prog {
+  margin-top: 14px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-stretch: 88%;
+  font-size: 1.05rem;
+  letter-spacing: 0.02em;
+  color: var(--rw-label-text);
+}
+.rwcard__prog + .rwcard__head,
+.rwcard__prog + .rwcard__ready {
+  margin-top: 6px;
+}
+.rwcard__stamps.is-points .rwcard__slot:not(.is-on) {
+  border-style: solid;
+}
+.rwcard__head {
+  margin-top: 18px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-stretch: 88%;
+  font-size: clamp(1.6rem, 1.3rem + 1.4vw, 2rem);
+  line-height: 1;
+  color: var(--rw-fg);
+}
+.rwcard.is-ready .rwcard__head {
+  color: var(--rw-label);
+}
+.rwcard__reward {
+  margin-top: 6px;
+  font-size: 0.95rem;
+}
+/* Free drink ready: the reward sticker beside the headline. */
+.rwcard__ready {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 18px;
+}
+.rwcard__ready .rwcard__head {
+  margin-top: 0;
+}
+.rwcard__prize {
+  flex: none;
+  width: clamp(72px, 22vw, 92px);
+  height: auto;
+  margin: -6px -6px -6px 0;
+  user-select: none;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .rwcard__prize {
+    animation: rw-stamp 0.8s 0.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+/* Stamps: numbered empty rings; an earned slot is its sticker (a different one per
+   slot, fixed order: see card.ts). The sticker's white die-cut is its own edge, so an
+   earned slot drops the ring and lets the art sit a little larger than the cell. */
+.rwcard__stamps {
+  --cols: 4;
+  list-style: none;
+  margin: 18px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  gap: clamp(8px, 2.6vw, 14px);
+}
+.rwcard__slot {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1.5px dashed color-mix(in oklab, var(--rw-fg) 38%, transparent);
+  color: color-mix(in oklab, var(--rw-fg) 55%, transparent);
+}
+.rwcard__slot.is-on {
+  border-color: transparent;
+}
+.rwcard__sticker {
+  display: block;
+  width: 122%;
+  max-width: none;
+  height: auto;
+  user-select: none;
+  pointer-events: none;
+}
+.rwcard__n {
+  font-size: 0.9rem;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .rwcard__slot.is-new {
+    animation: rw-stamp 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .rwcard__slot.is-new .rwcard__sticker {
+    animation: rw-ink 0.9s 0.15s ease-out both;
+  }
+}
+@keyframes rw-stamp {
+  0% {
+    transform: scale(1.35) rotate(-8deg);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(0.94) rotate(2deg);
+    opacity: 1;
+  }
+  100% {
+    transform: none;
+  }
+}
+@keyframes rw-ink {
+  from {
+    opacity: 0.2;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.rwcard__vouchers {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.rwcard__voucher {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1.5px dashed var(--rw-label);
+  border-radius: 10px;
+}
+.rwcard__vcup {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  color: var(--rw-label);
+}
+.rwcard__voucher strong {
+  display: block;
+  font-weight: 500;
+}
+.rwcard__voucher small {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--rw-label-text);
+}
+
+.rwcard__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 28px;
+  margin: 18px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--rw-rule);
+}
+.rwcard__meta dd {
+  margin: 2px 0 0;
+  font-size: 1.05rem;
+  overflow-wrap: anywhere;
+}
+
+.rwcard__qr {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  margin-top: 18px;
+  padding: 14px 14px 10px;
+  border-radius: 12px;
+  background: #fff;
+}
+.rwcard__qr svg {
+  width: min(190px, 62vw);
+  height: auto;
+}
+.rwcard__qr p {
+  font-size: 0.875rem;
+  color: var(--rw-fg);
+}
+.rwcard.is-sample .rwcard__qr svg {
+  width: min(130px, 40vw);
+  opacity: 0.55;
+}
+
+/* ---- wallet buttons (scripts/rewards/wallet.ts), on /rewards and /c ------------- */
+.rw-wbtns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.rw-wbtn {
+  justify-content: center;
+}
+@media (max-width: 520px) {
+  .rw-wbtns {
+    flex-direction: column;
+  }
+  .rw-wbtn {
+    width: 100%;
+  }
+}
+.rw-wnote {
+  margin-bottom: 16px;
+  max-width: 52ch;
+  color: var(--olive-900);
+}
+.rw-wextra {
+  margin-top: 14px;
+  font-size: var(--step--1);
+}
+.rw-wextra a {
+  color: var(--coffee-deep);
+}
+.rw-phone {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 26px;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule);
+}
+.rw-phone svg {
+  flex: none;
+  width: 132px;
+  height: auto;
+  border-radius: 6px;
+}
+.rw-phone p {
+  max-width: 34ch;
+  font-size: var(--step--1);
+  color: var(--olive-900);
+}
+.rw-phone strong {
+  font-weight: 500;
+  color: var(--ink);
+}

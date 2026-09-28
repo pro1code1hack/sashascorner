@@ -30,7 +30,15 @@
           "isRefund": false,
           "modifiers": []
         }
-      ]
+      ],
+      "consumer": {
+        "id": "C-1001",
+        "customerId": "LSK-CUST-1001",
+        "firstName": "Anna",
+        "lastName": "Demo",
+        "email": "anna.demo@example.com",
+        "phoneNumber1": null
+      }
     },
     {
       "id": "LSK-R2002",
@@ -49,10 +57,21 @@
           "voidReason": null,
           "isRefund": false,
           "modifiers": [
-            {"name": "Oat milk", "quantity": 1}
+            {
+              "name": "Oat milk",
+              "quantity": 1
+            }
           ]
         }
-      ]
+      ],
+      "consumer": {
+        "id": "C-1002",
+        "customerId": "LSK-CUST-1002",
+        "firstName": "Ben",
+        "lastName": "Demo",
+        "email": null,
+        "phoneNumber1": "07700 900001"
+      }
     },
     {
       "id": "LSK-R2003",
@@ -111,10 +130,21 @@
           "voidReason": null,
           "isRefund": false,
           "modifiers": [
-            {"name": "Extra shot", "quantity": 1}
+            {
+              "name": "Extra shot",
+              "quantity": 1
+            }
           ]
         }
-      ]
+      ],
+      "consumer": {
+        "id": "C-9001",
+        "customerId": "LSK-CUST-9001",
+        "firstName": "Morven",
+        "lastName": "Example",
+        "email": "morven@example.com",
+        "phoneNumber1": null
+      }
     }
   ]
 }

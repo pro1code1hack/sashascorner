@@ -1,0 +1,66 @@
+---
+// Landing page for "matcha Dundee". Every drink and price is read from menu.json:
+// when the board changes, this page changes with it. Nothing here states a grade,
+// origin or supplier (site/BRIEF.md, "Not known").
+import SeoLayout from '../components/SeoLayout.astro';
+import { category, inCategory, items, lowest, matching, menuJsonLd, tidy } from '../components/seoData';
+import { gbp } from '../lib/format';
+import { menu } from '../lib/data';
+
+const isBlue = (n: string) => /blue/i.test(n) && /matcha/i.test(n);
+const blue = matching(/matcha/i).filter((i) => isBlue(i.name));
+const green = matching(/matcha/i).filter((i) => !isBlue(i.name) && !['cakes'].includes(i.cat));
+const hojicha = matching(/hojicha/i);
+
+const sections = tidy([
+  { id: 'hot', title: category('hot-matcha')?.name ?? 'Hot matcha', blurb: category('hot-matcha')?.blurb, items: inCategory('hot-matcha') },
+  { id: 'iced', title: category('iced-matcha')?.name ?? 'Iced green matcha', blurb: null, items: inCategory('iced-matcha') },
+  { id: 'blue', title: 'Blue matcha', blurb: 'Hot and iced.', items: blue },
+  { id: 'more', title: 'More with matcha', blurb: null, items: [...green, ...items.filter((i) => i.cat === 'cakes' && /matcha/i.test(i.name))] },
+  { id: 'hojicha', title: 'Hojicha', blurb: 'Roasted green tea, on the seasonal board.', items: hojicha },
+]);
+
+const drinkCount = green.length + blue.length;
+const fromGreen = lowest(green);
+const fromBlue = lowest(blue);
+const milks = (menu.extras?.items ?? []).filter((e) => /milk/i.test(e.name));
+
+const site = Astro.site!;
+const jsonLd = {
+  '@context': 'https://schema.org',
+  ...menuJsonLd(site, '/matcha-dundee', "Matcha at Sasha's Corner, Dundee", sections),
+};
+const description = `${drinkCount} matcha drinks in Dundee city centre, green and blue, hot and iced${
+  fromGreen !== null ? `, from ${gbp(fromGreen)}` : ''
+}. Whisked to order at 23 Commercial Street.`;
+---
+
+<SeoLayout
+  title="Matcha in Dundee: green and blue · Sasha's Corner"
+  description={description}
+  jsonLd={jsonLd}
+  label="Matcha"
+  photos={['menu.iced-matcha', 'menu.seasonal-iced']}
+  sections={sections}
+  visitTitle="Come in for a matcha."
+>
+  <Fragment slot="title">Matcha in Dundee, <span class="soft">whisked in front of you.</span></Fragment>
+  <p>
+    There are <span class="num">{green.length}</span> green matcha drinks on our board
+    {fromGreen !== null && <> from <span class="num">{gbp(fromGreen)}</span></>}, and{' '}
+    <span class="num">{blue.length}</span> blue ones{fromBlue !== null && <> from <span class="num">{gbp(fromBlue)}</span></>}.
+    Hot or iced, plain or with fruit, lavender, rose, honey or vanilla.
+  </p>
+  <p>
+    Reviewers often point it out: the matcha is made fresh, in front of you, at the counter on Commercial Street.
+    {
+      milks.length > 0 && (
+        <>
+          {' '}
+          Milks: {milks.map((m, n) => `${n ? m.name.toLowerCase() : m.name} ${/free/i.test(m.price_text) ? 'at no extra charge' : m.price_text}`).join('; ')}.
+        </>
+      )
+    }
+  </p>
+  <p>Every price below is from the <a href="/menu#hot-matcha">menu</a>.</p>
+</SeoLayout>

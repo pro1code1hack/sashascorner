@@ -1,0 +1,29 @@
+---
+// "Find member": for a customer who lost their phone or can't open their card and
+// has no email/SMS code. Search, pick, and show a QR of their card link for them
+// to scan with their own phone. The QR is the card's key, so it hides itself.
+---
+
+<section class="st-view st-narrow" data-view="find" aria-labelledby="st-find-h" hidden>
+  <h2 id="st-find-h" class="st-h" tabindex="-1">Find a member</h2>
+  <p class="st-lede" data-find-lede>
+    For a customer who can't open their card. Check it's really them, then show them the code to scan with their phone.
+  </p>
+  <div data-find-search>
+    <label class="field">
+      <span>Phone, email or first name</span>
+      <input class="input" type="search" data-find-q autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" />
+    </label>
+    <p class="st-note" data-find-status role="status"></p>
+    <ul class="st-results" data-find-results></ul>
+  </div>
+  <div class="st-recovery" data-recovery hidden>
+    <p class="st-recovery-for">Card for <strong data-recovery-name></strong></p>
+    <div class="st-qr" data-qr></div>
+    <p class="st-recovery-help">
+      Ask them to point their phone camera at this code. It opens their card, and from there they can add it to their wallet again.
+    </p>
+    <p class="st-note">Hides in <span class="num" data-recovery-clock>2:00</span></p>
+    <button type="button" class="btn btn--caramel st-wide" data-recovery-done>Done</button>
+  </div>
+</section>

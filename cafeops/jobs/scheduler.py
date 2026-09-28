@@ -308,7 +308,68 @@ def build_scheduler(
         id="drift_report",
         name="drift_report",
     )
+    _add_loyalty_jobs(scheduler, factory=factory, notifier=notifier)
     return scheduler
+
+
+def _add_loyalty_jobs(
+    scheduler: AsyncIOScheduler,
+    *,
+    factory: sessionmaker[Session] | None,
+    notifier: Notifier | None,
+) -> None:
+    """Sasha's Corner Rewards (docs/loyalty/CONTRACT.md §7). Keys: `jobs/loyalty_jobs.py`.
+
+    The minute-level ones get a short grace time: a wallet refresh or a scheduled campaign
+    that is six hours late is a different message, and the next tick covers a missed one.
+    """
+    from apscheduler.triggers.interval import IntervalTrigger
+
+    from cafeops.jobs import loyalty_jobs as lj
+
+    tz = settings.tz
+    scheduler.add_job(
+        lj.job_wallet_outbox,
+        IntervalTrigger(minutes=1, timezone=tz),
+        kwargs={"factory": factory},
+        id="wallet_outbox",
+        name="wallet_outbox",
+        misfire_grace_time=60,
+    )
+    scheduler.add_job(
+        lj.job_loyalty_campaigns,
+        IntervalTrigger(minutes=5, timezone=tz),
+        kwargs={"factory": factory, "notifier": notifier},
+        id="loyalty_campaigns",
+        name="loyalty_campaigns",
+        misfire_grace_time=300,
+    )
+    scheduler.add_job(
+        lj.job_loyalty_birthdays,
+        CronTrigger(hour=LOYALTY_BIRTHDAYS_AT[0], minute=LOYALTY_BIRTHDAYS_AT[1], timezone=tz),
+        kwargs={"factory": factory},
+        id="loyalty_birthdays",
+        name="loyalty_birthdays",
+    )
+    scheduler.add_job(
+        lj.job_loyalty_daily_summary,
+        CronTrigger(hour=LOYALTY_SUMMARY_AT[0], minute=LOYALTY_SUMMARY_AT[1], timezone=tz),
+        kwargs={"factory": factory, "notifier": notifier},
+        id="loyalty_daily_summary",
+        name="loyalty_daily_summary",
+    )
+    scheduler.add_job(
+        lj.job_loyalty_retention,
+        CronTrigger(day_of_week="sun", hour=4, minute=0, timezone=tz),
+        kwargs={"factory": factory},
+        id="loyalty_retention",
+        name="loyalty_retention",
+    )
+
+
+#: Local times (CONTRACT §7): birthday rewards before opening, the summary after close.
+LOYALTY_BIRTHDAYS_AT = (6, 0)
+LOYALTY_SUMMARY_AT = (19, 30)
 
 
 def _read_schedules(factory: sessionmaker[Session] | None) -> list[Any]:
@@ -360,6 +421,13 @@ def describe_schedule(
         f"drift_report       {names[times.drift_weekday - 1]} "
         f"{times.drift_hour:02d}:{times.drift_minute:02d}"
         "        (idempotent: only counts with no observation)",
+        "wallet_outbox      every minute   (idempotent on wallet_push_outbox.done_at)",
+        "loyalty_campaigns  every 5 min    (sent_at; returned_at; alert notified_at)",
+        f"loyalty_birthdays  every day {LOYALTY_BIRTHDAYS_AT[0]:02d}:{LOYALTY_BIRTHDAYS_AT[1]:02d}"
+        "   (unique card+kind+birthday_year)",
+        f"loyalty_summary    every day {LOYALTY_SUMMARY_AT[0]:02d}:{LOYALTY_SUMMARY_AT[1]:02d}"
+        "   (read-only)",
+        "loyalty_retention  Sun 04:00      (idempotent on loyalty_member.deleted_at)",
         "",
         f"missed runs fire once, up to {MISFIRE_GRACE_SECONDS // 3600}h late "
         "(coalesce=True). Safe because every key above is in the data.",
@@ -457,3 +525,20 @@ JOBS: dict[str, Callable[..., Awaitable[None]]] = {
     "drift_report": job_drift_report,
     "channel_sync": job_channel_sync,
 }
+
+
+def _register_loyalty_jobs() -> None:
+    from cafeops.jobs import loyalty_jobs as lj
+
+    JOBS.update(
+        {
+            "wallet_outbox": lj.job_wallet_outbox,
+            "loyalty_campaigns": lj.job_loyalty_campaigns,
+            "loyalty_birthdays": lj.job_loyalty_birthdays,
+            "loyalty_daily_summary": lj.job_loyalty_daily_summary,
+            "loyalty_retention": lj.job_loyalty_retention,
+        }
+    )
+
+
+_register_loyalty_jobs()

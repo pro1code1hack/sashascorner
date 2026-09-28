@@ -69,6 +69,18 @@
   --color-chart-own: #eb6834;
   --color-chart-delivery: #8a4fc8;
   --color-chart-costs: #b87a1f;
+  /* Sales channels, validated as adjacent pairs in this order (all checks pass). */
+  --color-chart-instore: #4a6fd1;
+  --color-chart-deliveroo: #eb6834;
+  --color-chart-justeat: #8a4fc8;
+  --color-chart-other: #b7bdc8;
+  /* One-hue sequential ramp (heatmap bins; S -> M -> XL sizes use 2, 3, 5).
+   * Validated as an ordinal ramp: monotone lightness, visible steps. */
+  --color-seq-1: #dfe6f8;
+  --color-seq-2: #9db2ea;
+  --color-seq-3: #6f8fdf;
+  --color-seq-4: #4a6fd1;
+  --color-seq-5: #2f4fa8;
 
   /* (proposed) the scrim behind the off-canvas sidebar */
   --color-scrim: rgb(31 38 51 / 0.24);

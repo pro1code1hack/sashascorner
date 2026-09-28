@@ -3,6 +3,7 @@ import Base from '../layouts/Base.astro';
 import { menu } from '../lib/data';
 import { gbp } from '../lib/format';
 import Slot from '../components/Slot.astro';
+import RwCta from '../components/RwCta.astro';
 import { slotDef } from '../components/slotData';
 
 // Size columns per category, in board order: S M XL / S M / One.
@@ -18,6 +19,12 @@ const groups = [
   { title: 'Food', cats: cats.filter((c) => DRINKS.has(c.slug)) },
 ];
 const site = Astro.site!;
+// Each landing page is linked from the menu section it belongs to.
+const GUIDES: Record<string, { href: string; text: string }> = {
+  'hot-matcha': { href: '/matcha-dundee', text: 'All our matcha, green and blue' },
+  'bubble-tea': { href: '/bubble-tea-dundee', text: 'More on our bubble tea' },
+  cakes: { href: '/kyiv-cake', text: 'Kyiv cake, and ordering a whole one' },
+};
 
 // schema.org Menu -- lets search engines show dishes and prices.
 const jsonLd = {
@@ -56,6 +63,7 @@ const jsonLd = {
     <p class="mhead__lede">
       Order at the counter. Milks and syrups at the bottom; ask about allergens — we're happy to help.
     </p>
+    <RwCta variant="inline" src="site-menu" class="mhead__rw" />
   </header>
 
   <nav class="mnav" aria-label="Menu sections">
@@ -91,6 +99,11 @@ const jsonLd = {
                     {c.items[0]?.seasonal && <span class="tag">{c.items[0].seasonal.name}</span>}
                   </h3>
                   <p class="mcat__blurb">{c.blurb}</p>
+                  {GUIDES[c.slug] && (
+                    <a class="mcat__guide" href={GUIDES[c.slug].href}>
+                      {GUIDES[c.slug].text}
+                    </a>
+                  )}
                 </div>
                 {c.codes.length > 1 && (
                   <div class="cols" aria-hidden="true" style={`--n:${c.codes.length}`}>
@@ -192,6 +205,11 @@ const jsonLd = {
   const ORDER = ['S', 'M', 'XL', 'One'];
   const HEAD: Record<string, string> = { S: 'Small', M: 'Medium', XL: 'Large', One: '' };
   const FOOD = new Set(['breakfast', 'lunch', 'waffles', 'cakes']);
+  const GUIDES: Record<string, { href: string; text: string }> = {
+    'hot-matcha': { href: '/matcha-dundee', text: 'All our matcha, green and blue' },
+    'bubble-tea': { href: '/bubble-tea-dundee', text: 'More on our bubble tea' },
+    cakes: { href: '/kyiv-cake', text: 'Kyiv cake, and ordering a whole one' },
+  };
 
   const body = document.querySelector<HTMLElement>('.mbody');
   const navList = document.querySelector<HTMLElement>('.mnav__list');
@@ -237,7 +255,8 @@ const jsonLd = {
     const codes = ORDER.filter((code) => c.items.some((i) => i.sizes.some((z) => z.code === code)));
     const seasonal = c.items[0]?.seasonal;
     const h3 = el('h3', { id: `h-${c.slug}` }, c.name, seasonal ? el('span', { class: 'tag' }, seasonal.name) : null);
-    const title = el('div', { class: 'mcat__title' }, h3, el('p', { class: 'mcat__blurb' }, c.blurb ?? ''));
+    const guide = GUIDES[c.slug];
+    const title = el('div', { class: 'mcat__title' }, h3, el('p', { class: 'mcat__blurb' }, c.blurb ?? ''), guide ? el('a', { class: 'mcat__guide', href: guide.href }, guide.text) : null);
     const head = el('header', { class: 'mcat__head' }, title);
     if (codes.length > 1) {
       head.append(el('div', { class: 'cols', 'aria-hidden': 'true', style: `--n:${codes.length}` }, ...codes.map((code) => el('span', {}, HEAD[code]))));
@@ -352,6 +371,10 @@ const jsonLd = {
     font-weight: 300;
     font-size: var(--step-1);
   }
+  .mhead :global(.mhead__rw) {
+    margin-top: 24px;
+    max-width: 880px;
+  }
 
   .mnav {
     position: sticky;
@@ -462,6 +485,13 @@ const jsonLd = {
     margin-top: 6px;
     color: var(--olive-700);
     font-size: var(--step--1);
+  }
+  .mcat__guide {
+    display: inline-block;
+    margin-top: 4px;
+    padding-block: 6px;
+    font-size: var(--step--1);
+    color: var(--coffee);
   }
   .tag {
     font-family: var(--font-text);

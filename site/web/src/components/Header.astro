@@ -4,11 +4,13 @@ interface Props {
 }
 const { tone } = Astro.props;
 const path = Astro.url.pathname.replace(/\.html$/, '');
-const links = [
+const links: { href: string; label: string; sticker?: string }[] = [
   { href: '/menu', label: 'Menu' },
   { href: '/order', label: 'Cakes & delivery' },
   { href: '/about', label: 'About' },
   { href: '/visit', label: 'Visit' },
+  // The loyalty card: a gentle highlight (its first stamp sticker), never louder than Book a table.
+  { href: '/rewards', label: 'Rewards', sticker: '/stickers/slot-1.svg' },
 ];
 ---
 
@@ -31,7 +33,12 @@ const links = [
         {
           links.map((l) => (
             <li>
-              <a href={l.href} aria-current={path.startsWith(l.href) ? 'page' : undefined}>
+              <a
+                href={l.href}
+                class:list={{ hdr__rw: !!l.sticker }}
+                aria-current={path.startsWith(l.href) ? 'page' : undefined}
+              >
+                {l.sticker && <img class="hdr__sticker" src={l.sticker} alt="" width="22" height="22" />}
                 {l.label}
               </a>
             </li>
@@ -147,6 +154,19 @@ const links = [
   .hdr__nav a[aria-current='page']::after {
     transform: scaleX(1);
   }
+  /* Rewards: the card's first sticker beside the word. Same type and weight as the
+     other links, so Book a table stays the only button in the bar. */
+  .hdr__nav a.hdr__rw {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .hdr__sticker {
+    flex: none;
+    width: 22px;
+    height: 22px;
+    margin-block: -4px;
+  }
   .hdr__book {
     flex: none;
     min-height: 44px;
@@ -252,6 +272,14 @@ const links = [
     }
     .hdr__nav a::after {
       display: none;
+    }
+    .hdr__nav a.hdr__rw {
+      gap: 10px;
+    }
+    .hdr__sticker {
+      width: 30px;
+      height: 30px;
+      margin-block: -6px;
     }
     .hdr__nav a[aria-current='page'] {
       text-decoration: underline;

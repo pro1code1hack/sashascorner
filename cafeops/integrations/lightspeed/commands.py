@@ -130,6 +130,9 @@ _SCENARIO_NOTES: dict[str, str] = {
     "quantity-changed": "the shipped window with one line's qty raised 1 -> 2; re-sync after "
     "`expand` must emit an ADJUSTMENT, never mutate",
     "double-count": "an oat milk arriving BOTH as a modifier and as an upcharge line",
+    "loyalty-refund": "the shipped window re-read on 09-20 (--to 2026-09-20): Ben's receipt "
+    "voided, Anna refunds her americano on a later receipt, a matcha, a non-member's second "
+    "visit -- the loyalty auto-stamper reverses and re-awards (CAFEOPS_LOYALTY_AUTO_STAMP)",
 }
 
 

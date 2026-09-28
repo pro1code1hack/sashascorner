@@ -1,12 +1,12 @@
 {
   "slots": {
-    "home.signatures": {
-      "label": "Home — signatures photo strip",
+    "home.blue-matcha": {
+      "label": "Home — blue matcha card",
       "page": "/",
-      "aspect": "4/5",
-      "multiple": true,
-      "max": 4,
-      "hint": "One signature per frame — Raff coffee, iced honey blue matcha, honey vanilla latte, Kyiv cake slice — on a white table, from the side at cup height, window light",
+      "aspect": "4/3",
+      "multiple": false,
+      "max": 1,
+      "hint": "Blue matcha, iced, ideally next to a green one — from above or from the side, window light. Cropped wide and short on the card",
       "items": [
         {
           "media_id": 6,
@@ -20,43 +20,17 @@
             "y": 0.55
           },
           "blur": "data:image/webp;base64,UklGRpQAAABXRUJQVlA4IIgAAABQBQCdASoYACAAPtFYpUyoJSOiKA1RABoJQBdgB5oZ4waTkERAxRXF5jrASR1XdJdRiAAA/vOCq7//fvvXvTRmoOeO0WpuKZGBhwe1QN+gU461oG63XcVTLDEx5CYm9Fu2rW7EtMTAIT74mwaN9U76izZUgdU3nbXVL/ZZJm7WERnzUP6F6AAA"
-        },
-        {
-          "media_id": 8,
-          "src": "/api/media-files/8-960.webp",
-          "srcset": "/api/media-files/8-480.webp 480w, /api/media-files/8-960.webp 960w, /api/media-files/8-1399.webp 1399w",
-          "width": 1399,
-          "height": 1400,
-          "alt": "Two lattes in glass mugs, one with leaf latte art, a knitted-hat snowman ornament, a chocolate-topped crispy square and a slice of frosted chocolate cake",
-          "focal": {
-            "x": 0.3,
-            "y": 0.5
-          },
-          "blur": "data:image/webp;base64,UklGRq4AAABXRUJQVlA4IKIAAACQBQCdASoYABgAPtFkqU+oJaOiKAgBABoJQBOmYTg0iP6sIVTIh5r6fIEiPZ7nBrO6T/lFAAD+7uYy2hUtwGYAuMszF2iShgbzbWvhAYVGGfZbjtt43v14Z4Xc14cexI0laL+ZCx8Vd2ZZXAMRsjeg1Omo0CQst4Fd/F+vMZzzAD3Ni2NMfx/Ptphvejt2oltgeFY7GcUnBSHTT5yhn/JgAAA="
         }
       ]
     },
-    "home.mood": {
-      "label": "Home — the corner, four upright photos",
+    "home.bakes": {
+      "label": "Home — cakes & bakes tile",
       "page": "/",
-      "aspect": "2/3",
-      "multiple": true,
-      "max": 4,
-      "hint": "Four upright moments: a drink, a cake, the room, the window. Phone held upright, daylight, no flash",
+      "aspect": "16/9",
+      "multiple": false,
+      "max": 1,
+      "hint": "Something from the cake counter on a white plate, a drink beside it. Landscape; the bottom fifth sits under a caption bar",
       "items": [
-        {
-          "media_id": 5,
-          "src": "/api/media-files/5-960.webp",
-          "srcset": "/api/media-files/5-480.webp 480w, /api/media-files/5-960.webp 960w, /api/media-files/5-1050.webp 1050w",
-          "width": 1050,
-          "height": 1400,
-          "alt": "An iced matcha latte and an iced blue matcha in Sasha's Corner cups, on a white table by the front window",
-          "focal": {
-            "x": 0.4,
-            "y": 0.6
-          },
-          "blur": "data:image/webp;base64,UklGRqIAAABXRUJQVlA4IJYAAACwBQCdASoYACAAPsFKoEunpCMht/qoAPAYCWMAnTOhwiBzXB4MdLq62hrHa2T68c2U/I07UAAAxz69T8HN4GQLJwPZV5nHGF5OvvtxEeE8ehKBdnInGw2zaYxZ0iMsbkctXlY4PCLcQoENOJLU2NZVDpSJXwTYG5T0t0MqeS6/VYQvOSVGsge2InXD66Q6qgh1aFAoAAA="
-        },
         {
           "media_id": 7,
           "src": "/api/media-files/7-960.webp",
@@ -66,10 +40,20 @@
           "alt": "A muffin on a white plate with a fork, beside a latte in a glass topped with dried rosebuds, on a white table near the window",
           "focal": {
             "x": 0.5,
-            "y": 0.6
+            "y": 0.5
           },
           "blur": "data:image/webp;base64,UklGRqYAAABXRUJQVlA4IJoAAABQBQCdASoYACAAPtFepkwoJaOiMAgBABoJZQCo9BQcAtWDfUMpj5/pQIErd5cIRXMW3gAA/q0z9slbT9drz8ECxixBG7n6PPl+kgXlA5ej/uuD+vTdTApNF4FDYURhlCLyPW9avSl8GudP6/DkpxsV4s7xjiXi4hTG0KyePhGgDVfKAjYMQIue812dV/ZG0tqgbZvBjC8/YAAA"
-        },
+        }
+      ]
+    },
+    "home.corner": {
+      "label": "Home — the corner, three upright photos",
+      "page": "/",
+      "aspect": "2/3",
+      "multiple": true,
+      "max": 3,
+      "hint": "Three upright views of the room: the sage walls and panelling, a window table in sunlight, the front window from the street",
+      "items": [
         {
           "media_id": 2,
           "src": "/api/media-files/2-960.webp",
@@ -79,9 +63,22 @@
           "alt": "Inside the café: sage-green walls over dark wood panelling, white tables and chairs on a grey marble-look floor, and a shelf of board games with a chess board",
           "focal": {
             "x": 0.5,
-            "y": 0.55
+            "y": 0.5
           },
           "blur": "data:image/webp;base64,UklGRogAAABXRUJQVlA4IHwAAAAQBQCdASoYACAAPtFeqU6oJSQiKAqpABoJYwDH5GlYd6Bus6/KrxByeMMeruOZkwfgAP7Jw3yEG4EA/nJuFPz2gXxAD8Lw/Z95JkHfN+9UavW31oa2gBi0oWnTGvGmaC6b52c+pFLNT5JNxjAwqAmZkVZHJ+TRZ5yTYAAA"
+        },
+        {
+          "media_id": 3,
+          "src": "/api/media-files/3-960.webp",
+          "srcset": "/api/media-files/3-480.webp 480w, /api/media-files/3-960.webp 960w, /api/media-files/3-1050.webp 1050w",
+          "width": 1050,
+          "height": 1400,
+          "alt": "A white table by the front window in sunlight, with a green woven placemat, a cup of sugar sachets and stirrers, and the café's illustrated window drawings behind",
+          "focal": {
+            "x": 0.5,
+            "y": 0.5
+          },
+          "blur": "data:image/webp;base64,UklGRo4AAABXRUJQVlA4IIIAAACwBQCdASoYACAAPtFQpkuoJCOhsBgMAQAaCWcAxNgxWvEOcX/uumzzEBor9LvQbTQhsX10jjAA/vQyySt1ADeOQSDeA7Dj7ho/wytebaoBkd/FLo+fO15IRXA3kJjutIK1tS1y1RDMq6diieGsHB/Fk1ALYeWD3CQp32ElkcQOAAAA"
         },
         {
           "media_id": 1,
@@ -91,21 +88,12 @@
           "height": 1400,
           "alt": "The front window from the street, with the Sasha's Corner logo and its line-drawn cup on the glass, pink balloons above, and two customers with takeaway cups at a white table inside",
           "focal": {
-            "x": 0.45,
-            "y": 0.45
+            "x": 0.5,
+            "y": 0.5
           },
           "blur": "data:image/webp;base64,UklGRp4AAABXRUJQVlA4IJIAAABQBgCdASoYACQAPtFgpU+oJSMiJWzJABoJZQDFC75BEvxHleGGaJbUGv20N2kA+Hxqh8z1MBbV8qQeAAD+0DAwUt18KX46hrE/QNJVjoWIEJyfIIQ0ygNiZCRWcrXr0tFL0/z7dZ6g+9LfbcrbTJXEj9v1c3ZOAyRyTlgkz0s5xbYlbv+vY3pnbSO2oKkMBdKAAA=="
         }
       ]
-    },
-    "home.room": {
-      "label": "Home — the room, one wide photo",
-      "page": "/",
-      "aspect": "16/9",
-      "multiple": false,
-      "max": 1,
-      "hint": "The whole room in one landscape frame: sage walls, dark panelling, white tables, strip lights on. From the counter end, late afternoon",
-      "items": []
     },
     "menu.autumn": {
       "label": "Menu — Autumn specials",

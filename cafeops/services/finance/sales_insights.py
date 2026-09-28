@@ -44,7 +44,7 @@ __all__ = [
 ]
 
 DEFAULT_WINDOW_DAYS = 30
-MAX_WINDOW_DAYS = 800
+MAX_WINDOW_DAYS = 3660
 #: The category filter value for products with no category set.
 UNCATEGORISED = "__none__"
 #: Receipt ids the demo seed writes. Real Lightspeed ids never start with this.
@@ -197,7 +197,7 @@ def _keep(
     category: str | None,
     product: str | None,
     size: str | None,
-    weekday: int | None,
+    weekdays: frozenset[int] | None,
 ) -> bool:
     if channel is not None and line.channel != channel:
         return False
@@ -211,13 +211,12 @@ def _keep(
         return False
     if size is not None and line.size != size:
         return False
-    return weekday is None or line.at.weekday() == weekday
+    return weekdays is None or line.at.weekday() in weekdays
 
 
 def _half_up(num: int, den: int) -> int:
     """Integer division rounding half away from zero, for money."""
-    q, r = divmod(abs(num) * 2 + den, den * 2)
-    del r
+    q = (abs(num) * 2 + den) // (den * 2)
     return q if num >= 0 else -q
 
 
@@ -273,8 +272,10 @@ def sales_insights(
     category: str | None = None,
     product: str | None = None,
     size: str | None = None,
-    weekday: int | None = None,
+    weekdays: frozenset[int] | None = None,
+    whole: bool = False,
 ) -> SalesInsights:
+    """Default window: the 30 days up to the last sale. `whole`: first sale to last."""
     if channel is not None:
         try:
             channel = SaleChannel[channel.upper()].value
@@ -283,8 +284,8 @@ def sales_insights(
     if size is not None and size.upper() not in _SIZE_ORDER:
         raise FinanceRefused("size: S, M, XL or ONE")
     size = size.upper() if size is not None else None
-    if weekday is not None and not 0 <= weekday <= 6:
-        raise FinanceRefused("weekday: 0 (Monday) to 6 (Sunday)")
+    if weekdays is not None and not weekdays <= frozenset(range(7)):
+        raise FinanceRefused("weekdays: 0 (Monday) to 6 (Sunday)")
 
     tz = settings.tz
     first_at, last_at = session.execute(
@@ -293,6 +294,8 @@ def sales_insights(
     first = first_at.astimezone(tz).date() if first_at is not None else None
     last = last_at.astimezone(tz).date() if last_at is not None else None
 
+    if whole and first is not None and last is not None:
+        since, until = first, last
     # Default: the 30 days up to the last sale, so a quiet week still shows data.
     if until is None:
         until = last if last is not None else datetime.now(tz).date()
@@ -308,9 +311,14 @@ def sales_insights(
 
     both = _load(session, prev_since, until)
     window_all = [ln for ln in both if ln.at.date() >= since]
-    flt = {"channel": channel, "category": category, "product": product, "size": size, "weekday": weekday}
-    now = [ln for ln in window_all if _keep(ln, **flt)]
-    before = [ln for ln in both if ln.at.date() < since and _keep(ln, **flt)]
+
+    def keep(ln: _Line) -> bool:
+        return _keep(
+            ln, channel=channel, category=category, product=product, size=size, weekdays=weekdays
+        )
+
+    now = [ln for ln in window_all if keep(ln)]
+    before = [ln for ln in both if ln.at.date() < since and keep(ln)]
 
     # by day: every date in the window, None where nothing was rung up
     day_gross: dict[date, int] = defaultdict(int)
@@ -367,7 +375,12 @@ def sales_insights(
         for (w, h) in sorted(heat_r)
     ]
     by_weekday = [
-        WeekdayPoint(weekday=w, gross_pence=wd_g.get(w, 0), receipts=wd_r.get(w, 0), trading_days=wd_days.get(w, 0))
+        WeekdayPoint(
+            weekday=w,
+            gross_pence=wd_g.get(w, 0),
+            receipts=wd_r.get(w, 0),
+            trading_days=wd_days.get(w, 0),
+        )
         for w in range(7)
     ]
 
@@ -400,7 +413,7 @@ def sales_insights(
                 gross_pence=prod_g[n],
                 qty=prod_q[n],
                 receipts=len(prod_r[n]),
-                sizes={s: q for s, q in sorted(prod_s[n].items(), key=lambda kv: _SIZE_ORDER.index(kv[0]))},
+                sizes=dict(sorted(prod_s[n].items(), key=lambda kv: _SIZE_ORDER.index(kv[0]))),
             )
             for n in prod_g
         ),
@@ -416,13 +429,7 @@ def sales_insights(
         sizes=[s for s in _SIZE_ORDER if any(ln.size == s for ln in window_all)],
     )
 
-    months = [
-        m
-        for (m,) in session.execute(
-            select(func.distinct(func.strftime("%Y-%m", Sale.sold_at))).where(Sale.voided.is_(False))
-        )
-        if m
-    ] if False else _months(first, last)
+    months = _months(first, last)
 
     caveats: list[str] = []
     is_demo = bool(window_all) and all(ln.receipt.startswith(DEMO_PREFIX) for ln in window_all)
@@ -435,8 +442,9 @@ def sales_insights(
         caveats.append("No till lines in this window.")
     if options.channels == ["EPOS"]:
         caveats.append(
-            "Only in-store till sales in this window. Deliveroo and Just Eat orders reach the till "
-            "only once the apps are linked to Lightspeed; their monthly statements are under Takings."
+            "Only in-store till sales in this window. Deliveroo and Just Eat orders reach the "
+            "till only once the apps are linked to Lightspeed; their monthly statements are "
+            "under Takings."
         )
 
     return SalesInsights(

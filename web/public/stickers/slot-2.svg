@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Sasha's Corner Rewards sticker, slot 2: a seal (a nod to the paper card, drawn our way). Our own drawing.
+       CANONICAL: assets/pass/stickers/ in the repo. site/web/public/stickers/ and
+       web/public/stickers/ are copies written by `cafeops wallet assets`; edit here.
+       Layers: shadow, white die-cut, then the art in the logo's olive line. -->
+  <g transform="rotate(6 32 32)">
+    <g transform="translate(0.8 1.8)" fill="#474531" stroke="#474531" opacity="0.16">
+      <path d="M9.5 27C9.5 20.5 14.5 16 20.5 16C26.5 16 30.5 20 31 25.5C33.5 30 40 34.5 46.5 37.5L52.5 33C54.5 31.8 56.5 33.5 55.5 35.5L52.5 41L57 43.5C58.5 44.5 57.8 47 55.5 46.8L47 46C40 49.5 28 50.5 21.5 48.5C15.5 46.5 12.5 41 12.5 36C11 33.5 9.5 30.5 9.5 27Z" stroke-width="8"/>
+      <path d="M25 41C26.5 45.5 25 49 21 50.5C22.5 47 22 44 21.5 41.5Z" stroke-width="8"/>
+    </g>
+    <g fill="#ffffff" stroke="#ffffff">
+      <path d="M9.5 27C9.5 20.5 14.5 16 20.5 16C26.5 16 30.5 20 31 25.5C33.5 30 40 34.5 46.5 37.5L52.5 33C54.5 31.8 56.5 33.5 55.5 35.5L52.5 41L57 43.5C58.5 44.5 57.8 47 55.5 46.8L47 46C40 49.5 28 50.5 21.5 48.5C15.5 46.5 12.5 41 12.5 36C11 33.5 9.5 30.5 9.5 27Z" stroke-width="8"/>
+      <path d="M25 41C26.5 45.5 25 49 21 50.5C22.5 47 22 44 21.5 41.5Z" stroke-width="8"/>
+    </g>
+    <path d="M9.5 27C9.5 20.5 14.5 16 20.5 16C26.5 16 30.5 20 31 25.5C33.5 30 40 34.5 46.5 37.5L52.5 33C54.5 31.8 56.5 33.5 55.5 35.5L52.5 41L57 43.5C58.5 44.5 57.8 47 55.5 46.8L47 46C40 49.5 28 50.5 21.5 48.5C15.5 46.5 12.5 41 12.5 36C11 33.5 9.5 30.5 9.5 27Z" fill="#666749" stroke="#474531" stroke-width="1.8"/>
+    <path d="M14 38C16 45 24 48.5 34 48C26 46 20 42 17.5 36Z" fill="#ebe6dd"/>
+    <path d="M25 41C26.5 45.5 25 49 21 50.5C22.5 47 22 44 21.5 41.5Z" fill="#474531" stroke="#474531" stroke-width="1.6"/>
+    <path d="M33 29.5C35 31.5 37.5 33 40 34.2" stroke="#899c6a" stroke-width="1.6"/>
+    <ellipse cx="14.2" cy="29.2" rx="4.6" ry="3.4" fill="#ebe6dd"/>
+    <ellipse cx="11.9" cy="27.6" rx="1.7" ry="1.3" fill="#0d0d0b"/>
+    <circle cx="20.3" cy="23.8" r="2.5" fill="#0d0d0b"/>
+    <circle cx="21" cy="23" r="0.8" fill="#ffffff"/>
+    <path d="M13.5 30.6L6.8 31.2M14 32L7.8 34.6" stroke="#474531" stroke-width="1.3"/>
+  </g>
+</svg>

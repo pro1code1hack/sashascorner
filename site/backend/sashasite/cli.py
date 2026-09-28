@@ -190,6 +190,11 @@ def slots_export(
         typer.echo(f"  {key:<28} {len(s.items)}/{s.max}")
 
 
+from sashasite.events_cli import register as _register_events  # noqa: E402
+
+_register_events(app)  # events, events-export, events-seed-demo
+
+
 @app.command()
 def doctor(
     full: bool = typer.Option(False, "--full", help="Print every drift row, not the first 15"),

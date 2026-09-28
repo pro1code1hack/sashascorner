@@ -18,7 +18,7 @@ import asyncio
 import json
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, time
 from decimal import Decimal
 from pathlib import Path
 
@@ -42,6 +42,7 @@ from cafeops.integrations.lightspeed.mapper import (
     match_menu_items,
 )
 from cafeops.services.ingest_sales import IngestReport, ingest_sale_lines
+from cafeops.services.loyalty.pos import PosReport, ReceiptCustomer, pos_pass
 
 __all__ = ["SyncResult", "sync_window"]
 
@@ -72,6 +73,9 @@ class SyncResult:
     partial_reason: str | None = None
     match: MatchOutcome | None = None
     ingest: IngestReport | None = None
+    #: Loyalty (phase 3): receipts that named a customer, links, auto-stamps.
+    loyalty: PosReport | None = None
+    loyalty_error: str | None = None
 
     def lines(self) -> list[str]:
         mode = "fixtures" if self.fixtures else "live"
@@ -114,6 +118,10 @@ class SyncResult:
             out.extend(f"  DUPLICATE LINE: {m}" for m in self.ingest.duplicate_line_ids)
             out.extend(f"  SUBSTITUTION ERROR: {m}" for m in self.ingest.substitution_errors)
         out.extend(f"  DOUBLE-COUNT RISK: {m}" for m in self.double_count_risks)
+        if self.loyalty is not None:
+            out.extend(self.loyalty.lines())
+        if self.loyalty_error:
+            out.append(f"  LOYALTY PASS FAILED (sales were still ingested): {self.loyalty_error}")
         return out
 
 
@@ -165,7 +173,45 @@ def sync_window(
     mapped = map_receipt_lines(windowed, item_lookup=item_lookup, modifier_lookup=modifier_lookup)
     result.double_count_risks = _double_count_risks(session, mapped)
     result.ingest = ingest_sale_lines(session, mapped, now=now)
+    _loyalty_pass(session, windowed, since=since, now=now, result=result)
     return result
+
+
+def _loyalty_pass(
+    session: Session,
+    receipts: Sequence[RawReceipt],
+    *,
+    since: date,
+    now: datetime,
+    result: SyncResult,
+) -> None:
+    """Record receipt customers, link members, and (if enabled) auto-stamp.
+
+    In a SAVEPOINT: a loyalty fault must not cost the night's sales, which are the stock
+    ledger's input. The failure is reported instead, and the next sync retries (every
+    step is idempotent).
+    """
+    customers = [
+        ReceiptCustomer(
+            receipt_id=r.id,
+            customer_id=r.consumer.key,
+            closed_at=r.closed_at,
+            email=r.consumer.email,
+            phone=r.consumer.phone,
+            first_name=r.consumer.first_name,
+            last_name=r.consumer.last_name,
+            total_pence=r.total_pence,
+        )
+        for r in receipts
+        if r.consumer is not None and r.consumer.key
+    ]
+    start = datetime.combine(since, time.min, tzinfo=settings.tz).astimezone(UTC)
+    try:
+        with session.begin_nested():
+            result.loyalty = pos_pass(session, customers, since=start, now=now)
+    except Exception as exc:
+        result.loyalty = None
+        result.loyalty_error = f"{type(exc).__name__}: {exc}"
 
 
 def _double_count_risks(session: Session, lines: Sequence[MappedSaleLine]) -> tuple[str, ...]:

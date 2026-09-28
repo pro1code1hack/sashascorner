@@ -248,10 +248,29 @@ def _unauthorised() -> HTTPException:
     return HTTPException(401, detail="Not signed in.")
 
 
+SERVICE_KEY_HEADER = "X-Site-Service-Key"
+
+
+def _service_key_ok(request: Request) -> bool:
+    """True when the ops back office forwarded this call with the shared secret.
+
+    The back office checked its own sign-in before forwarding, so the key stands in
+    for a cookie session. No key configured means this path is closed."""
+    expected = get_settings().service_key
+    presented = request.headers.get(SERVICE_KEY_HEADER)
+    if not expected or not presented:
+        return False
+    return hmac.compare_digest(presented.encode("utf-8"), expected.encode("utf-8"))
+
+
 def require_admin_session(request: Request, response: Response) -> None:
     """FastAPI dependency for every admin route: CSRF header on writes, then a
-    live session cookie. Extends the session (and re-issues the cookie) on use."""
+    live session cookie (or the back office's service key). Extends the session
+    (and re-issues the cookie) on use."""
     require_csrf(request)
+    if _service_key_ok(request):
+        request.state.admin_session_id = None
+        return
     token = request.cookies.get(COOKIE_NAME)
     if not token:
         raise _unauthorised()

@@ -1,0 +1,182 @@
+{
+  "member": {
+    "member_id": 1,
+    "card_id": "892f902b-d23f-4824-928b-2f330c5c7fd0",
+    "first_name": "Aileen",
+    "email": "aileen.r1@example.com",
+    "phone": null,
+    "source": "till",
+    "created_at": "2026-07-04T15:00:00Z",
+    "last_activity_at": "2026-09-28T12:00:00Z",
+    "stamps_current": 5,
+    "stamps_required": 8,
+    "cycles_completed": 2,
+    "rewards_redeemed": 2,
+    "reward_available": false,
+    "marketing_opt_in": false,
+    "wallet": "google",
+    "birthday": "04-09",
+    "opt_in_at": null,
+    "opt_in_source": null,
+    "referred_by": null
+  },
+  "events": [
+    {
+      "id": 1013,
+      "delta": -1,
+      "reason": "UNDO",
+      "note": "Scanned twice",
+      "staff_name": "Jamie",
+      "device_name": "Till tablet",
+      "created_at": "2026-09-28T12:00:00Z"
+    },
+    {
+      "id": 1012,
+      "delta": 1,
+      "reason": "PURCHASE",
+      "note": null,
+      "staff_name": "Jamie",
+      "device_name": "Till tablet",
+      "created_at": "2026-09-28T11:59:00Z"
+    },
+    {
+      "id": 1014,
+      "delta": 1,
+      "reason": "MANUAL_FIX",
+      "note": "Missed a stamp on Saturday, till was busy",
+      "staff_name": "Sasha",
+      "device_name": null,
+      "created_at": "2026-09-26T15:00:00Z"
+    },
+    {
+      "id": 1011,
+      "delta": 2,
+      "reason": "PURCHASE",
+      "note": null,
+      "staff_name": "Kateryna",
+      "device_name": "Till tablet",
+      "created_at": "2026-08-16T13:31:00Z"
+    },
+    {
+      "id": 1010,
+      "delta": 1,
+      "reason": "PURCHASE",
+      "note": null,
+      "staff_name": "Sasha",
+      "device_name": "Till tablet",
+      "created_at": "2026-08-12T15:50:10Z"
+    },
+    {
+      "id": 1009,
+      "delta": 2,
+      "reason": "PURCHASE",
+      "note": null,
+      "staff_name": "Sasha",
+      "device_name": "Sasha's phone",
+      "created_at": "2026-08-08T18:09:21Z"
+    },
+    {
+      "id": 1008,
+      "delta": 1,
+      "reason": "PURCHASE",
+      "note": null,
+      "staff_name": "Sasha",
+      "device_name": "Till tablet",
+      "created_at": "2026-08-04T20:28:32Z"
+    },
+    {
+      "id": 1007,
+      "delta": 2,
+      "reason": "PURCHASE",
+      "note": null,
+      "staff_name": "Sasha",
+      "device_name": "Sasha's phone",
+      "created_at": "2026-07-31T22:47:43Z"
+    },
+    {
+      "id": 1006,
+      "delta": 2,
+      "reason": "PURCHASE",
+      "note": null,
+      "staff_name": "Sasha",
+      "device_name": "Till tablet",
+      "created_at": "2026-07-28T01:06:54Z"
+    },
+    {
+      "id": 1005,
+      "delta": 2,
+      "reason": "PURCHASE",
+      "note": null,
+      "staff_name": "Kateryna",
+      "device_name": "Till tablet",
+      "created_at": "2026-07-24T03:26:05Z"
+    },
+    {
+      "id": 1004,
+      "delta": 1,
+      "reason": "PURCHASE",
+      "note": null,
+      "staff_name": "Sasha",
+      "device_name": "Till tablet",
+      "created_at": "2026-07-20T05:45:16Z"
+    },
+    {
+      "id": 1003,
+      "delta": 1,
+      "reason": "PURCHASE",
+      "note": null,
+      "staff_name": "Kateryna",
+      "device_name": "Sasha's phone",
+      "created_at": "2026-07-16T08:04:27Z"
+    },
+    {
+      "id": 1002,
+      "delta": 2,
+      "reason": "PURCHASE",
+      "note": null,
+      "staff_name": "Sasha",
+      "device_name": "Till tablet",
+      "created_at": "2026-07-12T10:23:38Z"
+    },
+    {
+      "id": 1001,
+      "delta": 1,
+      "reason": "PURCHASE",
+      "note": null,
+      "staff_name": "Kateryna",
+      "device_name": "Till tablet",
+      "created_at": "2026-07-08T12:42:49Z"
+    },
+    {
+      "id": 1000,
+      "delta": 4,
+      "reason": "PAPER_MIGRATION",
+      "note": "Paper card, 4 stickers",
+      "staff_name": "Kateryna",
+      "device_name": "Till tablet",
+      "created_at": "2026-07-04T15:02:00Z"
+    }
+  ],
+  "rewards": [
+    {
+      "id": 101,
+      "kind": "STAMP_CARD",
+      "issued_at": "2026-09-05T01:55:05Z",
+      "expires_at": null,
+      "redeemed_at": "2026-09-10T01:55:05Z",
+      "redeemed_item": "Oat latte",
+      "staff_name": "Kateryna",
+      "voided_at": null
+    },
+    {
+      "id": 100,
+      "kind": "STAMP_CARD",
+      "issued_at": "2026-08-04T20:28:32Z",
+      "expires_at": null,
+      "redeemed_at": "2026-08-04T20:28:32Z",
+      "redeemed_item": null,
+      "staff_name": "Jamie",
+      "voided_at": null
+    }
+  ]
+}

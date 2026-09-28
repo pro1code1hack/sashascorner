@@ -30,6 +30,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from datetime import date, datetime
 from decimal import Decimal
+from typing import TYPE_CHECKING
 from zoneinfo import ZoneInfo
 
 from cafeops.bot.viewmodels import (
@@ -73,6 +74,13 @@ from cafeops.domain.types import (
 )
 from cafeops.services.record_checklist import ChecklistOrderRequest
 
+if TYPE_CHECKING:
+    # Type-only: the loyalty services import the bot's notifier, so a runtime import
+    # here would make `formatters` and `services.loyalty` import each other.
+    from cafeops.services.loyalty.admin import MemberBrief
+    from cafeops.services.loyalty.alerts import AlertView
+    from cafeops.services.loyalty.stats import DailySummary
+
 __all__ = [
     "BTN_CHECKLIST_LOW",
     "BTN_CHECKLIST_NO_ORDER",
@@ -90,6 +98,7 @@ __all__ = [
     "adhoc_not_found",
     "adhoc_qty_prompt",
     "adhoc_usage",
+    "alerts",
     "checklist_done",
     "checklist_intro",
     "checklist_order_prompt",
@@ -102,6 +111,7 @@ __all__ = [
     "count_nothing_due",
     "count_prompt",
     "count_result",
+    "daily_summary",
     "delivery_expiry_prompt",
     "delivery_intro",
     "delivery_nothing_expected",
@@ -118,6 +128,9 @@ __all__ = [
     "job_drift_report",
     "job_new_drafts",
     "job_nothing_to_report",
+    "member_brief",
+    "member_not_found",
+    "member_usage",
     "order_card",
     "order_confirmed",
     "order_dispatched",
@@ -1749,4 +1762,60 @@ def password_changed(at: datetime, actor: str | None, revoked: int) -> str:
         f"Пароль веб-панели изменён в {local:%H:%M}, {_d(local)}{who}. "
         f"Завершено {revoked} {sessions} на других устройствах. "
         "Если это были не вы — сбросьте пароль на сервере: cafeops password reset."
+    )
+
+
+# ==========================================================================
+# Карта лояльности (Sasha's Corner Rewards, docs/loyalty/CONTRACT.md §7):
+# `/member`, сводка в 19:30, предупреждения о подозрительных штампах.
+# ==========================================================================
+
+_LOYALTY_ALERT_KINDS = {"stamp_rate": "много штампов за час"}
+_LOYALTY_REWARDS = {"STAMP_CARD": "бесплатный напиток", "BIRTHDAY": "напиток на день рождения"}
+
+
+def _loyalty_local(at: datetime) -> str:
+    return at.astimezone(settings.tz).strftime("%d.%m %H:%M")
+
+
+def alerts(rows: Sequence[AlertView]) -> str:
+    lines = ["Карта лояльности: подозрительная активность"]
+    for row in rows:
+        kind = _LOYALTY_ALERT_KINDS.get(row.kind, row.kind)
+        lines.append(f"- {_loyalty_local(row.at)} {kind}: {row.detail}")
+    lines.append("Подробности: Members > Alerts в бэк-офисе.")
+    return "\n".join(lines)
+
+
+def daily_summary(s: DailySummary) -> str:
+    return "\n".join(
+        [
+            f"Карта лояльности, {s.day.strftime('%d.%m.%Y')}",
+            f"Новых участников: {s.new_members} (всего {s.members_total})",
+            f"Визитов со штампом: {s.visits}, штампов: {s.stamps}",
+            f"Выдано наград: {s.rewards_issued}, использовано: {s.redemptions}",
+            *([f"Предупреждений: {s.alerts}"] if s.alerts else []),
+        ]
+    )
+
+
+def member_usage() -> str:
+    return "Напишите: /member <телефон или email>"
+
+
+def member_not_found() -> str:
+    return "Участник с таким телефоном или email не найден."
+
+
+def member_brief(m: MemberBrief) -> str:
+    rewards = ", ".join(_LOYALTY_REWARDS.get(k, k) for k in m.rewards) if m.rewards else "нет"
+    last = _loyalty_local(m.last_visit) if m.last_visit else "ещё не было"
+    return "\n".join(
+        [
+            f"{m.first_name} ({m.contact_masked})",
+            f"Штампы: {m.stamps_current} из {m.stamps_required}",
+            f"Награды: {rewards}",
+            f"Последний визит: {last}",
+            f"Участник с {m.member_since.strftime('%d.%m.%Y')}",
+        ]
     )

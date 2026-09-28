@@ -2940,6 +2940,19 @@ app.add_typer(_pos_app, name="pos")
 # The missing half of Money & P&L: what the cafe actually took (ARCHITECTURE 8T).
 app.add_typer(_payments_app, name="payments")
 
+# Sasha's Corner Rewards (docs/loyalty/CONTRACT.md §7). The wallet group is agent B's and
+# optional: a checkout without the wallet package still has a working CLI.
+from cafeops.services.loyalty.commands import loyalty_app as _loyalty_app  # noqa: E402
+
+app.add_typer(_loyalty_app, name="loyalty")
+_loyalty_app.command(name="qr-posters")(__import__("cafeops.cli_posters").cli_posters.qr_posters)
+try:
+    from cafeops.integrations.wallet.cli import wallet_app as _wallet_app
+
+    app.add_typer(_wallet_app, name="wallet")
+except Exception:  # pragma: no cover - the wallet package is optional
+    pass
+
 
 # --------------------------------------------------------------------------
 # emergency-report  --  the panic-buy log (spec 4.4)
@@ -3164,9 +3177,13 @@ def api_fixtures(
         )
         raise typer.Exit(1)
 
-    if out.exists():
-        shutil.rmtree(out)
-    staging.rename(out)
+    # Merge rather than replace: index.json may hold entries this command does not
+    # generate (recorded by hand for a screen whose endpoint had no example yet), and a
+    # wholesale replace deleted them. See `publish_examples`.
+    from cafeops.api.examples import publish_examples
+
+    kept = publish_examples(staging, out)
+    shutil.rmtree(staging)
     table = Table(title=f"{len(written)} fixture(s) -> {out}", title_style="bold")
     table.add_column("Endpoint", no_wrap=True)
     table.add_column("Status", justify="right")
@@ -3178,6 +3195,11 @@ def api_fixtures(
     bad = [name for name, status, _ in written if status != 200]
     if bad:
         console.print(f"[red]{len(bad)} endpoint(s) did not return 200: {', '.join(bad)}[/red]")
+    if kept:
+        console.print(
+            f"[dim]Kept {len(kept)} existing entr{'y' if len(kept) == 1 else 'ies'} this "
+            f"command does not generate: {', '.join(kept)}[/dim]"
+        )
     console.print("[dim]index.json lists every file with the query behind it.[/dim]")
 
 
@@ -3419,16 +3441,18 @@ def bot_preview_cmd(
             console.print()
 
 
+# The --run help is generated from the scheduler's JOBS table, so a job registered there
+# (the loyalty ones were missing from a hand-written list) is always offered here too.
+from cafeops.jobs.scheduler import JOBS as _SCHEDULED_JOBS  # noqa: E402
+
+
 @app.command(name="jobs")
 def jobs_cmd(
     run: Annotated[
         str | None,
         typer.Option(
             "--run",
-            help=(
-                "Fire one job by hand: daily_sync, nightly_expand, expiry_sweep, "
-                "pre_delivery_orders, digest, drift_report."
-            ),
+            help="Fire one job by hand: " + ", ".join(_SCHEDULED_JOBS) + ".",
         ),
     ] = None,
     force: Annotated[

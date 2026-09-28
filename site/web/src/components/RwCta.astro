@@ -1,0 +1,311 @@
+---
+// Sasha's Corner Rewards call to action, for the rest of the site.
+//
+//   <RwCta variant="section" src="site-home" />     home page: headline, sentence, sample card
+//   <RwCta variant="inline"  src="site-menu" />     a bordered band inside page content
+//   <RwCta variant="compact" src="site-visit" />    one line
+//
+// `src` becomes /rewards?src=<src> (QR attribution, docs/loyalty/SPEC.md) and the
+// `placement` of the `rewards_cta_click` event. If this device already holds a card
+// (scripts/rewards/api.ts lastCard()), every CTA on the page turns into "Open my card"
+// and links to that card instead.
+//
+// Renders nothing on the Rewards pages themselves, the web card, /staff and /admin.
+import { cardHtml, ordinal, PROGRAM_FALLBACK as P } from '../scripts/rewards/card';
+import { stickerSrc } from '../scripts/rewards/stickers';
+import '../scripts/rewards/card.css';
+
+interface Props {
+  variant: 'section' | 'inline' | 'compact';
+  /** Attribution for /rewards?src=, e.g. site-home. Lowercase, a-z 0-9 - _. */
+  src: string;
+  /** Ground the CTA sits on. `dark` is for olive grounds (footer). */
+  tone?: 'light' | 'dark';
+  /** Replaces the default line of copy for inline/compact. */
+  text?: string;
+  /** Replaces the default link label ("Get your card"). */
+  label?: string;
+  class?: string;
+}
+const { variant, src, tone = 'light', text, label = 'Get your card', class: cls } = Astro.props;
+
+const path = Astro.url.pathname.replace(/\.html$/, '');
+const hidden = /^\/(rewards|c|staff|admin)(\/|$)/.test(path);
+
+const n = P.stamps_required;
+const ninth = ordinal(n + 1);
+const href = `/rewards?src=${encodeURIComponent(src)}`;
+const placement = src.replace(/^site-/, '');
+
+// The home section shows the real card renderer: a sample halfway to a free drink.
+// Its QR and member rows are hidden here; the card is decoration beside the copy.
+const sample =
+  variant === 'section'
+    ? cardHtml(
+        {
+          card_id: 'sample',
+          first_name: 'You',
+          member_since: '',
+          program_name: P.name,
+          stamps_required: n,
+          stamps_current: 5,
+          reward_text: P.reward_text,
+          rewards: [],
+          qr_payload: '',
+          marketing_opt_in: false,
+          updated_at: '',
+          wallets: { apple_pass_url: null, google_save_url: null },
+        },
+        { qr: '/rewards', qrLabel: 'Sample code', sample: true },
+      )
+    : '';
+
+const line = text ?? `Collect a stamp with every drink. After ${n}, the next one is on us.`;
+const stickers = [0, 1, 2, 3];
+---
+
+{
+  !hidden && variant === 'section' && (
+    <section class:list={['rwsec', cls]} aria-labelledby={`rw-${placement}-title`}>
+      <div class="wrap rwsec__grid">
+        <div class="rwsec__copy" data-reveal>
+          <p class="rw-label">{P.name}</p>
+          <h2 id={`rw-${placement}-title`} class="rwsec__title">
+            Your {ninth} drink <span class="rw-soft">is on us.</span>
+          </h2>
+          <p class="rwsec__text">
+            One stamp for every drink, hot or cold, on a card that lives in Apple Wallet or Google Wallet. No app to
+            install.
+          </p>
+          <a class="btn btn--caramel" href={href} data-rw-go data-rw-placement={placement}>
+            <span data-rw-label>{label}</span> <span class="arrow" aria-hidden="true">→</span>
+          </a>
+        </div>
+        <div class="rwsec__card" aria-hidden="true" data-reveal>
+          <Fragment set:html={sample} />
+        </div>
+      </div>
+    </section>
+  )
+}
+
+{
+  !hidden && variant === 'inline' && (
+    <aside class:list={['rwi', `rw--${tone}`, cls]} aria-label={P.name}>
+      <span class="rw-stickers" aria-hidden="true">
+        {stickers.map((i) => (
+          <img src={stickerSrc(i)} alt="" width="36" height="36" loading="lazy" decoding="async" />
+        ))}
+      </span>
+      <p class="rwi__text">{line}</p>
+      <a class="rw-go" href={href} data-rw-go data-rw-placement={placement}>
+        <span data-rw-label>{label}</span> <span class="arrow" aria-hidden="true">→</span>
+      </a>
+    </aside>
+  )
+}
+
+{
+  !hidden && variant === 'compact' && (
+    <p class:list={['rwc', `rw--${tone}`, cls]}>
+      <img class="rwc__sticker" src={stickerSrc(0)} alt="" width="28" height="28" loading="lazy" decoding="async" />
+      <span class="rwc__body">
+        {line}{' '}
+        <a class="rw-go" href={href} data-rw-go data-rw-placement={placement}>
+          <span data-rw-label>{label}</span> <span class="arrow" aria-hidden="true">→</span>
+        </a>
+      </span>
+    </p>
+  )
+}
+
+<script>
+  import { CARD_ID_RE, lastCard } from '../scripts/rewards/api';
+  import { track } from '../scripts/track';
+
+  // A card already on this device: open it rather than asking to join again.
+  const card = lastCard();
+  const hasCard = !!card && CARD_ID_RE.test(card.id);
+  document.querySelectorAll<HTMLAnchorElement>('a[data-rw-go]').forEach((a) => {
+    if (hasCard) {
+      a.href = `/c/${card!.id}`;
+      const lbl = a.querySelector('[data-rw-label]');
+      if (lbl) lbl.textContent = 'Open my card';
+    }
+    a.addEventListener('click', () =>
+      track('rewards_cta_click', { placement: a.dataset.rwPlacement ?? 'unknown', state: hasCard ? 'open' : 'join' }),
+    );
+  });
+</script>
+
+<style>
+  /* ---- shared ---------------------------------------------------------------- */
+  .rw-label {
+    font-size: 0.875rem;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--coffee-deep);
+  }
+  .rw-soft {
+    font-family: var(--font-light);
+    font-weight: 200;
+    font-stretch: 100%;
+    letter-spacing: -0.03em;
+  }
+  .rw-go {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    min-height: 44px;
+    font-weight: 500;
+    color: var(--coffee-deep);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .rw-go [data-rw-label] {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+    text-decoration-color: color-mix(in oklab, currentColor 40%, transparent);
+  }
+  .rw-go:hover [data-rw-label] {
+    text-decoration-color: currentColor;
+  }
+  .rw-go .arrow {
+    transition: transform 0.35s var(--ease-out);
+  }
+  .rw-go:hover .arrow {
+    transform: translateX(3px);
+  }
+  .rw--dark .rw-go {
+    color: var(--caramel-on-dark);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .rw-go:hover .arrow {
+      transform: none;
+    }
+  }
+
+  /* A short overlapping run of the card's own stickers. */
+  .rw-stickers {
+    display: flex;
+    flex: none;
+  }
+  .rw-stickers img {
+    width: 36px;
+    height: 36px;
+  }
+  .rw-stickers img + img {
+    margin-left: -10px;
+  }
+
+  /* ---- section (home) ---------------------------------------------------------- */
+  .rwsec {
+    padding-block: clamp(64px, 9vw, 130px);
+    background: var(--paper);
+    overflow: hidden;
+  }
+  .rwsec__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: clamp(40px, 6vw, 96px);
+    align-items: center;
+  }
+  .rwsec__copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+  }
+  .rwsec__title {
+    font-weight: 700;
+    font-size: clamp(2.6rem, 1.9rem + 2.6vw, 4.5rem);
+    line-height: 0.95;
+    color: var(--olive-900);
+  }
+  .rwsec__text {
+    max-width: 34ch;
+    font-weight: 300;
+    font-size: var(--step-1);
+    line-height: 1.55;
+    color: var(--ink-soft);
+  }
+  .rwsec__copy .btn {
+    margin-top: 8px;
+  }
+  .rwsec__card {
+    display: flex;
+    justify-content: center;
+  }
+  .rwsec__card :global(.rwcard) {
+    max-width: 360px;
+    rotate: -3deg;
+  }
+  .rwsec__card :global(.rwcard__qr),
+  .rwsec__card :global(.rwcard__meta) {
+    display: none;
+  }
+  @media (max-width: 860px) {
+    .rwsec__grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .rwsec__card {
+      justify-content: flex-start;
+      padding-inline: 4px;
+    }
+    .rwsec__card :global(.rwcard) {
+      max-width: 340px;
+      rotate: -2deg;
+    }
+  }
+
+  /* ---- inline band ------------------------------------------------------------- */
+  .rwi {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    padding: 12px 18px;
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-m);
+    background: var(--oat);
+  }
+  .rwi__text {
+    flex: 1 1 22ch;
+    color: var(--ink-soft);
+  }
+  @media (max-width: 520px) {
+    .rwi {
+      padding: 14px 16px 6px;
+    }
+    .rwi__text {
+      flex-basis: calc(100% - 120px);
+    }
+  }
+
+  /* ---- compact line ------------------------------------------------------------ */
+  /* Sticker, then the line with its link flowing after the words (wrapping as text). */
+  .rwc {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    color: var(--ink-soft);
+  }
+  .rwc__sticker {
+    flex: none;
+    width: 28px;
+    height: 28px;
+    margin-top: 1px;
+  }
+  .rwc__body {
+    min-width: 0;
+    line-height: 1.5;
+  }
+  .rwc .rw-go {
+    vertical-align: middle;
+    margin-block: -8px;
+  }
+  .rw--dark {
+    color: var(--on-dark-soft);
+  }
+</style>

@@ -3,8 +3,10 @@ import Base from '../layouts/Base.astro';
 import OpenNow from '../components/OpenNow.astro';
 import Icon from '../components/Icon.astro';
 import Slot from '../components/Slot.astro';
+import RwCta from '../components/RwCta.astro';
 import { info } from '../lib/data';
 import { clock, WEEKDAYS } from '../lib/format';
+import { faqs, plain } from './_facts';
 
 const mapsUrl =
   'https://www.google.com/maps/search/?api=1&query=Sasha%27s+Corner%2C+23+Commercial+Street%2C+Dundee+DD1+3DD';
@@ -19,11 +21,34 @@ const topics = [
   ['press', 'Press'],
   ['jobs', 'Jobs'],
 ] as const;
+
+// FAQPage: only the questions this page itself answers in visible text (where, hours,
+// booking, delivery, contact). Answers come from ./_facts.ts, as on /faq.
+const site = Astro.site!;
+const pageUrl = new URL('/visit', site).href;
+const VISIT_FAQ = ['where', 'hours', 'book', 'takeaway-delivery', 'contact'];
+const faqJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  '@id': `${pageUrl}#faq`,
+  url: pageUrl,
+  inLanguage: 'en-GB',
+  about: { '@id': new URL('/#cafe', site).href },
+  mainEntity: faqs
+    .filter((f) => VISIT_FAQ.includes(f.id) && !f.pageOnly)
+    .map((f) => ({
+      '@type': 'Question',
+      name: f.q,
+      url: new URL(`/faq#${f.id}`, site).href,
+      acceptedAnswer: { '@type': 'Answer', text: plain(f.html) },
+    })),
+};
 ---
 
 <Base
   title="Opening hours & directions · Sasha's Corner, Dundee"
   description="23 Commercial Street, Dundee DD1 3DD, a 10-minute walk from the station. Open Mon–Sat 9am–7pm, Sun 9am–5pm. Directions, phone number and contact form."
+  extraJsonLd={faqJsonLd}
 >
   <!-- Header ------------------------------------------------------------- -->
   <section class="vhead wrap" aria-labelledby="visit-title">
@@ -59,6 +84,7 @@ const topics = [
         </a>
         <a class="btn btn--ghost" href="#contact">Send a message</a>
       </div>
+      <RwCta variant="compact" src="site-visit" text="Coming in? Collect a stamp with every drink." class="vhead__rw" />
     </div>
 
     <figure class="loc">
@@ -401,6 +427,9 @@ const topics = [
     flex-wrap: wrap;
     gap: 12px;
     margin-top: 26px;
+  }
+  .vhead__copy :global(.vhead__rw) {
+    margin-top: 20px;
   }
   @media (max-width: 900px) {
     .vhead {

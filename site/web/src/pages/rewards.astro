@@ -1,0 +1,887 @@
+---
+// Sasha's Corner Rewards: what the card is, the join form, getting a card back, the
+// rules and the FAQ. The rules are read from GET /api/loyalty/program at runtime; the
+// numbers baked in here are the programme defaults (docs/loyalty/CONTRACT.md §0), so
+// the page reads correctly with the API down and for crawlers.
+import Base from '../layouts/Base.astro';
+import { cardHtml, PROGRAM_FALLBACK as P, ordinal } from '../scripts/rewards/card';
+import '../scripts/rewards/card.css';
+
+const site = Astro.site!;
+const url = new URL('/rewards', site).href;
+const ninth = ordinal(P.stamps_required + 1);
+
+// The sample card's QR opens this page: a real-looking card must never carry a code the
+// scanner would try to read as somebody's card.
+const sample = cardHtml(
+  {
+    card_id: 'sample',
+    first_name: 'You',
+    member_since: '',
+    program_name: P.name,
+    stamps_required: P.stamps_required,
+    stamps_current: 5,
+    reward_text: P.reward_text,
+    rewards: [],
+    qr_payload: '',
+    marketing_opt_in: false,
+    updated_at: '',
+    wallets: { apple_pass_url: null, google_save_url: null },
+  },
+  { qr: url, qrLabel: 'Sample code. It links to this page.', sample: true },
+);
+
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+// FAQ: one source for the page and the FAQPage JSON-LD.
+const faqs: { id: string; q: string; a: string }[] = [
+  {
+    id: 'how',
+    q: 'How does the card work?',
+    a: `You get one stamp for every drink, hot or cold. Show the code on your card at the till and we scan it; the stamp appears on your phone a few seconds later. After ${P.stamps_required} stamps your next drink is free, and it can be any drink. Buying for friends? We can add up to ${P.max_stamps_per_scan} stamps in one scan.`,
+  },
+  {
+    id: 'app',
+    q: 'Do I need to download an app?',
+    a: 'No. The card goes into Apple Wallet on an iPhone or Google Wallet on Android, which your phone already has. If you would rather not use either, keep the card in your browser instead.',
+  },
+  {
+    id: 'paper',
+    q: 'I have a paper stamp card. Can I move it over?',
+    a: 'Yes. Join here, then show your paper card and your new card at the till. We add your stickers to the digital card, so you carry on where you left off.',
+  },
+  {
+    id: 'lost',
+    q: 'I lost my phone or got a new one. Are my stamps gone?',
+    a: 'No. Come back to this page, choose "Already have a card?" and enter the email or mobile number you joined with. You get the same card back with the same stamps.',
+  },
+  {
+    id: 'birthday',
+    q: 'How does the birthday drink work?',
+    a: 'If you tell us your birthday (just the day and month, no year), a free drink appears on your card from 7 days before your birthday until 7 days after. It is separate from your stamps and comes once a year. A birthday added or changed less than 30 days before the date starts counting the following year.',
+  },
+  {
+    id: 'data',
+    q: 'What do you keep about me?',
+    a: 'Your first name, the email or mobile number you gave, your birthday if you gave it, and your stamp history. No payment details. We only send you news and offers if you tick the box for them. If a card is not used for 24 months, we delete it. The privacy notice has the details.',
+  },
+  {
+    id: 'delete',
+    q: 'How do I delete my card?',
+    a: 'Open your card and choose "Delete my card" at the bottom. You can also ask at the till or send us a message. Your details are erased and the card stops working, including the copy in your wallet.',
+  },
+];
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  '@id': `${url}#faq`,
+  url,
+  inLanguage: 'en-GB',
+  about: { '@id': new URL('/#cafe', site).href },
+  isPartOf: { '@id': new URL('/#website', site).href },
+  mainEntity: faqs.map((f) => ({
+    '@type': 'Question',
+    name: f.q,
+    url: `${url}#${f.id}`,
+    acceptedAnswer: { '@type': 'Answer', text: f.a },
+  })),
+};
+---
+
+<Base
+  title="Sasha's Corner Rewards: a digital stamp card for our café in Dundee"
+  description={`Collect ${P.stamps_required} stamps and your ${ninth} drink is free at Sasha's Corner, 23 Commercial Street, Dundee. The card lives in Apple Wallet or Google Wallet; no app to install.`}
+  extraJsonLd={jsonLd}
+>
+  <section class="rhead wrap" aria-labelledby="rewards-title">
+    <div class="rhead__copy">
+      <p class="label">Sasha's Corner Rewards</p>
+      <h1 id="rewards-title">
+        <span data-p="stamps">{P.stamps_required}</span> stamps, <span class="soft">then a drink on us.</span>
+      </h1>
+      <p class="rhead__lede">
+        Our stamp card, now on your phone. One stamp for every drink, hot or cold. Your{' '}
+        <span data-p="ninth">{ninth}</span> drink is free, and it can be any drink.
+      </p>
+      <ul class="rhead__points">
+        <li>Lives in Apple Wallet or Google Wallet</li>
+        <li>No app to install</li>
+        <li data-p-birthday>A free drink on your birthday</li>
+      </ul>
+      <div class="rhead__cta">
+        <a class="btn btn--caramel" href="#join">Get your card <span class="arrow" aria-hidden="true">→</span></a>
+        <a class="btn btn--ghost" href="#recover" data-open-recover>Already have a card?</a>
+      </div>
+    </div>
+    <figure class="rhead__card">
+      <Fragment set:html={sample} />
+      <figcaption>What your card looks like, halfway to a free drink.</figcaption>
+    </figure>
+  </section>
+
+  <section class="steps wrap" aria-labelledby="steps-title">
+    <h2 id="steps-title" class="sr-only">How it works</h2>
+    <ol>
+      <li><span class="num">1</span><p><strong>Join below.</strong> Your first name and an email or mobile number.</p></li>
+      <li><span class="num">2</span><p><strong>Save the card.</strong> Add it to Apple Wallet or Google Wallet, or keep it in your browser.</p></li>
+      <li><span class="num">3</span><p><strong>Show it at the till.</strong> We scan the code and the stamp lands on your phone.</p></li>
+      <li>
+        <span class="num">4</span><p>
+          <strong>After <span data-p="stamps">{P.stamps_required}</span> stamps</strong>, the next drink is free.
+        </p>
+      </li>
+    </ol>
+  </section>
+
+  <!-- Join / result / recovery. One panel is visible at a time. -------------------- -->
+  <section class="join" id="join" aria-labelledby="join-title" tabindex="-1">
+    <div class="wrap join__in">
+      <div class="join__intro">
+        <p class="label">Join</p>
+        <h2 id="join-title">Get your card.</h2>
+        <p>It's free. We only need a first name and one way to reach you, so you can get the card back if you change phones.</p>
+        <p class="join__here" data-have-card hidden>
+          This device already has a card. <a href="#" data-have-card-link>Open my card</a>
+        </p>
+        <!-- Phase 3: clubs this device's member has not joined yet, one tap each. -->
+        <div class="join__clubs" data-have-clubs hidden>
+          <p class="label">More cards</p>
+          <ul class="clubs" data-have-clubs-list></ul>
+          <p class="clubs__msg" data-have-clubs-msg role="status"></p>
+        </div>
+      </div>
+
+      <div class="join__panel">
+        <form class="jform" id="join-form" novalidate data-panel="join">
+          <label class="field">
+            <span>First name</span>
+            <input class="input" name="first_name" autocomplete="given-name" autocapitalize="words" required maxlength="40" aria-describedby="err-first_name" />
+            <small class="ferr" id="err-first_name" data-err="first_name"></small>
+          </label>
+
+          <fieldset class="jform__contact">
+            <legend>How can we reach you?</legend>
+            <div class="seg" role="radiogroup" aria-label="Contact by">
+              <label><input type="radio" name="via" value="email" checked /><span>Email</span></label>
+              <label><input type="radio" name="via" value="phone" /><span>Mobile</span></label>
+            </div>
+            <label class="field">
+              <span data-contact-label>Email address</span>
+              <input
+                class="input"
+                name="contact"
+                type="email"
+                inputmode="email"
+                autocomplete="email"
+                autocapitalize="off"
+                spellcheck="false"
+                required
+                maxlength="254"
+                aria-describedby="contact-hint err-contact"
+              />
+              <small class="fhint" id="contact-hint">Only used for your card, unless you tick the news box below.</small>
+              <small class="ferr" id="err-contact" data-err="contact"></small>
+            </label>
+          </fieldset>
+
+          <fieldset class="jform__bday" data-p-birthday>
+            <legend>Birthday <em>(optional)</em></legend>
+            <p class="fhint" id="bday-hint">For a free drink around your birthday. Day and month only, no year.</p>
+            <div class="jform__bday-row">
+              <label class="field">
+                <span>Day</span>
+                <select class="input" name="birthday_day" aria-describedby="bday-hint err-birthday">
+                  <option value="">Day</option>
+                  {Array.from({ length: 31 }, (_, i) => <option value={i + 1}>{i + 1}</option>)}
+                </select>
+              </label>
+              <label class="field">
+                <span>Month</span>
+                <select class="input" name="birthday_month" aria-describedby="bday-hint err-birthday">
+                  <option value="">Month</option>
+                  {MONTHS.map((m, i) => <option value={i + 1}>{m}</option>)}
+                </select>
+              </label>
+            </div>
+            <small class="ferr" id="err-birthday" data-err="birthday"></small>
+          </fieldset>
+
+          <!-- Phase 3: other programmes, when the café runs any. Filled from the API. -->
+          <fieldset class="jform__clubs" data-clubs hidden>
+            <legend>Also join <em>(optional)</em></legend>
+            <p class="fhint">Each club is its own card, counted alongside the main one.</p>
+            <div class="jform__clublist" data-clubs-list></div>
+          </fieldset>
+
+          <div class="jform__checks">
+            <label class="check">
+              <input type="checkbox" name="terms" required aria-describedby="err-terms" />
+              <span>I agree to the <a href="#rules">card rules</a> and have read the <a href="/privacy">privacy notice</a>.</span>
+            </label>
+            <small class="ferr" id="err-terms" data-err="terms"></small>
+            <label class="check">
+              <input type="checkbox" name="marketing_opt_in" />
+              <span>
+                Send me news and offers, like a new seasonal menu. Optional: no more than two a month, and you can stop
+                them at any time.
+              </span>
+            </label>
+          </div>
+
+          <label class="hp" aria-hidden="true">Website <input name="website" tabindex="-1" autocomplete="off" /></label>
+
+          <p class="jform__err" data-error role="alert" hidden></p>
+          <div class="jform__go">
+            <button class="btn btn--caramel" type="submit" data-submit>Get my card <span class="arrow" aria-hidden="true">→</span></button>
+            <button class="linkbtn" type="button" data-open-recover>Already have a card?</button>
+          </div>
+        </form>
+
+        <!-- After join or recovery: the wallet buttons. -->
+        <div class="done" data-panel="done" hidden tabindex="-1" role="status" aria-labelledby="done-title">
+          <p class="label">Done</p>
+          <h3 id="done-title" data-done-title>Your card is ready.</h3>
+          <p class="done__lede" data-done-lede>Save it where you'll find it at the till.</p>
+          <div class="done__wallet" data-wallet-root></div>
+          <ul class="done__extra" data-done-extra hidden></ul>
+        </div>
+
+        <!-- Recovery: contact -> code -> the same card. -->
+        <div class="recover" id="recover" data-panel="recover" hidden tabindex="-1" aria-labelledby="recover-title">
+          <p class="label">Already have a card</p>
+          <h3 id="recover-title">Get your card back.</h3>
+          <p class="recover__note" data-recover-note hidden></p>
+
+          <form class="rform" data-step="contact" novalidate>
+            <label class="field">
+              <span>The email or mobile number you joined with</span>
+              <input class="input" name="contact" autocomplete="email" autocapitalize="off" spellcheck="false" required maxlength="254" aria-describedby="err-rcontact" />
+              <small class="ferr" id="err-rcontact" data-err="rcontact"></small>
+            </label>
+            <p class="jform__err" data-error role="alert" hidden></p>
+            <div class="jform__go">
+              <button class="btn btn--caramel" type="submit">Send me a code</button>
+              <button class="linkbtn" type="button" data-open-join>I'm new: join instead</button>
+            </div>
+          </form>
+
+          <form class="rform" data-step="code" novalidate hidden>
+            <p data-code-sent></p>
+            <label class="field">
+              <span>Code</span>
+              <input
+                class="input input--code num"
+                name="code"
+                inputmode="numeric"
+                autocomplete="one-time-code"
+                pattern="[0-9]*"
+                maxlength="8"
+                required
+                aria-describedby="err-code"
+              />
+              <small class="ferr" id="err-code" data-err="code"></small>
+            </label>
+            <p class="jform__err" data-error role="alert" hidden></p>
+            <div class="jform__go">
+              <button class="btn btn--caramel" type="submit">Get my card</button>
+              <button class="linkbtn" type="button" data-restart>Use a different email or number</button>
+            </div>
+          </form>
+
+          <div class="staff" data-step="staff" hidden role="status" tabindex="-1">
+            <p class="staff__big">Show this screen at the till and we'll send your card to your phone.</p>
+            <p>We check it's you, then show a code you scan with your camera. Your stamps come with it.</p>
+            <button class="linkbtn" type="button" data-restart>Try a different email or number</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="rules wrap" id="rules" aria-labelledby="rules-title" tabindex="-1">
+    <div class="rules__head">
+      <p class="label">The rules</p>
+      <h2 id="rules-title">Short, and the same for everyone.</h2>
+    </div>
+    <!-- OWNER TO CONFIRM: any further conditions (e.g. "no cash value", staff drinks). None stated until confirmed. -->
+    <ol class="rules__list">
+      <li>One stamp for each drink, hot or cold. Up to <span data-p="per-scan">{P.max_stamps_per_scan}</span> stamps in one scan when you're buying for others.</li>
+      <li>After <span data-p="stamps">{P.stamps_required}</span> stamps, your next drink is free. <span data-p="reward">{P.reward_text}</span>.</li>
+      <li>A free drink doesn't expire while your card is active. Stamps above <span data-p="stamps">{P.stamps_required}</span> carry over to the next round.</li>
+      <li data-p-birthday>
+        Birthday drink: from 7 days before to 7 days after your birthday, once a year. A birthday added or changed less than 30 days
+        before the date counts from the following year.
+      </li>
+      <li>One card per email address or mobile number.</li>
+      <li>Cards not used for 24 months are deleted, with their stamps.</li>
+    </ol>
+  </section>
+
+  <section class="rfaq wrap" id="faq" aria-labelledby="faq-title">
+    <h2 id="faq-title">Questions</h2>
+    <div class="rfaq__list">
+      {
+        faqs.map((f) => (
+          <details class="rq" id={f.id}>
+            <summary>
+              <span>{f.q}</span>
+            </summary>
+            <p>
+              {f.a}
+              {f.id === 'data' && (
+                <>
+                  {' '}
+                  <a href="/privacy">Read the privacy notice</a>.
+                </>
+              )}
+              {f.id === 'lost' && (
+                <>
+                  {' '}
+                  <a href="#recover" data-open-recover>
+                    Get your card back
+                  </a>
+                  .
+                </>
+              )}
+            </p>
+          </details>
+        ))
+      }
+    </div>
+  </section>
+</Base>
+
+<script>
+  import '../scripts/rewards/join';
+</script>
+
+<style>
+  .label {
+    color: var(--coffee);
+  }
+  .soft {
+    font-family: var(--font-light);
+    font-weight: 200;
+    font-stretch: 100%;
+    letter-spacing: -0.03em;
+  }
+  a:not(.btn) {
+    color: var(--coffee);
+  }
+
+  /* ---- header: copy left, the sample card right --------------------------------- */
+  .rhead {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    gap: clamp(32px, 6vw, 96px);
+    align-items: center;
+    padding-block: clamp(48px, 7vw, 96px) clamp(40px, 6vw, 80px);
+  }
+  .rhead h1 {
+    margin-top: 14px;
+    font-size: var(--step-5);
+    max-width: 12ch;
+  }
+  .rhead__lede {
+    margin-top: 20px;
+    max-width: 44ch;
+    font-size: var(--step-1);
+    font-weight: 300;
+    color: var(--olive-900);
+  }
+  .rhead__points {
+    list-style: none;
+    margin: 22px 0 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 22px;
+    color: var(--olive-900);
+  }
+  .rhead__points li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .rhead__points li::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--sage);
+  }
+  .rhead__cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 30px;
+  }
+  .rhead__card {
+    margin: 0;
+    display: grid;
+    justify-items: center;
+    gap: 14px;
+  }
+  .rhead__card :global(.rwcard) {
+    transform: rotate(1.5deg);
+  }
+  .rhead__card figcaption {
+    font-size: var(--step--1);
+    color: var(--olive-700);
+    text-align: center;
+  }
+  @media (max-width: 860px) {
+    .rhead {
+      grid-template-columns: 1fr;
+    }
+    .rhead__card :global(.rwcard) {
+      transform: none;
+    }
+  }
+
+  /* ---- four steps: a numbered line, not a card grid ----------------------------- */
+  .steps ol {
+    list-style: none;
+    margin: 0;
+    padding: 0 0 clamp(48px, 7vw, 88px);
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0 clamp(16px, 3vw, 40px);
+    border-top: 1px solid var(--rule-strong);
+  }
+  .steps li {
+    display: flex;
+    gap: 14px;
+    padding-top: 18px;
+  }
+  .steps .num {
+    font-size: var(--step-2);
+    line-height: 1;
+    color: var(--sage);
+  }
+  .steps strong {
+    font-weight: 500;
+  }
+  @media (max-width: 860px) {
+    .steps ol {
+      grid-template-columns: 1fr 1fr;
+      gap: 18px 24px;
+    }
+  }
+  @media (max-width: 520px) {
+    .steps ol {
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+    .steps li {
+      padding-block: 14px;
+      border-bottom: 1px solid var(--rule);
+    }
+  }
+
+  /* Panels and steps are switched with `hidden`; the display rules below must not undo it. */
+  .join [hidden],
+  .rhead [hidden],
+  .rules [hidden] {
+    display: none !important;
+  }
+  /* ---- join --------------------------------------------------------------------- */
+  .join {
+    background: var(--oat);
+    outline: none;
+    scroll-margin-top: 16px;
+  }
+  .join__in {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: clamp(28px, 6vw, 96px);
+    padding-block: clamp(48px, 7vw, 96px);
+  }
+  .join .label {
+    color: var(--coffee-deep);
+  }
+  .join__intro h2 {
+    margin-top: 12px;
+    font-size: var(--step-4);
+  }
+  .join__intro p:not(.label) {
+    margin-top: 16px;
+    max-width: 36ch;
+    color: var(--olive-900);
+  }
+  .join a:not(.btn) {
+    color: var(--coffee-deep);
+  }
+  .join__here {
+    padding: 12px 14px;
+    border-left: 3px solid var(--caramel);
+    background: var(--paper);
+  }
+  @media (max-width: 860px) {
+    .join__in {
+      grid-template-columns: 1fr;
+    }
+    /* One column: once the form has done its job, its sales pitch is just in the way. */
+    .join[data-panel='done'] .join__intro,
+    .join[data-panel='recover'] .join__intro {
+      display: none;
+    }
+  }
+  .jform,
+  .rform {
+    display: grid;
+    gap: 22px;
+  }
+  fieldset {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+    display: grid;
+    gap: 10px;
+  }
+  legend {
+    padding: 0;
+    margin-bottom: 10px;
+    font-size: var(--step--1);
+    color: var(--olive-900);
+  }
+  legend em,
+  .field em {
+    font-style: normal;
+    color: var(--olive-700);
+  }
+  .seg {
+    display: inline-flex;
+    width: max-content;
+    padding: 3px;
+    border: 1px solid var(--rule-strong);
+    border-radius: 999px;
+    background: var(--paper-bright);
+  }
+  .seg label {
+    position: relative;
+    cursor: pointer;
+  }
+  .seg input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    margin: 0;
+    cursor: inherit;
+  }
+  .seg span {
+    display: block;
+    min-width: 96px;
+    padding: 9px 18px;
+    border-radius: 999px;
+    text-align: center;
+    transition: background-color 0.2s, color 0.2s;
+  }
+  .seg input:checked + span {
+    background: var(--olive-900);
+    color: var(--paper);
+  }
+  .seg input:focus-visible + span {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px var(--focus-halo);
+  }
+  .fhint {
+    font-size: var(--step--1);
+    color: var(--olive-700);
+  }
+  .ferr {
+    font-size: var(--step--1);
+    color: var(--coffee-deep);
+    font-weight: 500;
+  }
+  .ferr:empty {
+    display: none;
+  }
+  .jform__bday-row {
+    display: grid;
+    grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.3fr);
+    gap: 12px;
+    max-width: 420px;
+  }
+  .jform__checks {
+    display: grid;
+    gap: 14px;
+  }
+  .check {
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+    cursor: pointer;
+  }
+  .check input {
+    width: 22px;
+    height: 22px;
+    margin: 2px 0 0;
+    accent-color: var(--olive-900);
+    cursor: pointer;
+  }
+  .check span {
+    max-width: 60ch;
+  }
+  .jform__err {
+    padding: 10px 12px;
+    border-radius: var(--radius-s);
+    background: color-mix(in oklab, var(--caramel) 25%, transparent);
+    font-size: var(--step--1);
+  }
+  .jform__go {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 22px;
+  }
+  .jform__go :global(.is-busy) {
+    opacity: 0.7;
+    cursor: progress;
+  }
+  .linkbtn {
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--coffee-deep);
+    font: inherit;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+    cursor: pointer;
+  }
+  .input--code {
+    max-width: 220px;
+    font-size: var(--step-2);
+    letter-spacing: 0.2em;
+  }
+
+  .done,
+  .recover {
+    outline: none;
+  }
+  .done h3,
+  .recover h3 {
+    margin-top: 10px;
+    font-size: var(--step-3);
+  }
+  .done__lede,
+  .recover__note,
+  [data-code-sent] {
+    margin-top: 12px;
+    max-width: 48ch;
+    color: var(--olive-900);
+  }
+  .done__wallet {
+    margin-top: 24px;
+  }
+  .recover .rform {
+    margin-top: 22px;
+  }
+  .recover__note {
+    padding: 12px 14px;
+    border-left: 3px solid var(--caramel);
+    background: var(--paper);
+  }
+  .staff {
+    margin-top: 22px;
+    padding: clamp(20px, 4vw, 32px);
+    border-radius: var(--radius-m);
+    background: var(--olive-900);
+    color: var(--on-dark);
+    display: grid;
+    gap: 12px;
+  }
+  .staff__big {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-stretch: 88%;
+    font-size: var(--step-3);
+    line-height: 1.02;
+  }
+  .staff p:not(.staff__big) {
+    color: var(--on-dark-soft);
+  }
+  .staff .linkbtn {
+    justify-self: start;
+    color: var(--on-dark);
+    --focus-ring: var(--paper);
+    --focus-halo: var(--ink);
+  }
+
+  /* ---- rules -------------------------------------------------------------------- */
+  .rules {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: clamp(24px, 6vw, 96px);
+    padding-block: clamp(56px, 8vw, 104px) clamp(24px, 4vw, 48px);
+    outline: none;
+  }
+  .rules h2 {
+    margin-top: 12px;
+    font-size: var(--step-3);
+  }
+  .rules__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: r;
+  }
+  .rules__list li {
+    counter-increment: r;
+    position: relative;
+    padding: 14px 0 14px calc(2.4ch + 12px);
+    border-top: 1px solid var(--rule);
+  }
+  .rules__list li::before {
+    content: counter(r);
+    position: absolute;
+    left: 0;
+    top: 14px;
+    font-family: var(--font-display);
+    font-variant-numeric: tabular-nums;
+    color: var(--coffee);
+  }
+  @media (max-width: 860px) {
+    .rules {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* ---- FAQ ---------------------------------------------------------------------- */
+  .rfaq {
+    padding-block: clamp(32px, 5vw, 64px) clamp(64px, 9vw, 120px);
+  }
+  .rfaq h2 {
+    font-size: var(--step-3);
+  }
+  .rfaq__list {
+    margin-top: 22px;
+    border-bottom: 1px solid var(--rule-strong);
+  }
+  .rq {
+    border-top: 1px solid var(--rule-strong);
+    scroll-margin-top: 96px;
+  }
+  .rq summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    min-height: 56px;
+    padding-block: 14px;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-stretch: 88%;
+    font-size: var(--step-1);
+    line-height: 1.15;
+    color: var(--olive-900);
+    cursor: pointer;
+    list-style: none;
+  }
+  .rq summary::-webkit-details-marker {
+    display: none;
+  }
+  .rq summary::after {
+    content: '+';
+    flex: none;
+    font-family: var(--font-text);
+    font-weight: 300;
+    font-size: 1.6rem;
+    line-height: 1;
+    color: var(--coffee);
+    transition: transform 0.25s var(--ease-out);
+  }
+  .rq[open] summary::after {
+    transform: rotate(45deg);
+  }
+  .rq p {
+    max-width: 64ch;
+    padding-bottom: 20px;
+  }
+
+  /* ---- phase 3: clubs ---------------------------------------------------------- */
+  .jform__clubs {
+    border: 0;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 8px;
+  }
+  .jform__clubs legend {
+    font-weight: 500;
+    padding: 0;
+    margin-bottom: 4px;
+  }
+  .jform__clublist {
+    display: grid;
+    gap: 8px;
+  }
+  /* The club ticks are rendered by join.ts: the .check rules above, reached globally. */
+  .jform__clublist :global(.check) {
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+    cursor: pointer;
+  }
+  .jform__clublist :global(.check input) {
+    width: 22px;
+    height: 22px;
+    margin: 2px 0 0;
+    accent-color: var(--olive-900);
+    cursor: pointer;
+  }
+  .jform__clublist :global(strong) {
+    font-weight: 500;
+  }
+  .jform__clublist :global(small) {
+    display: block;
+    color: var(--olive-700);
+  }
+  .join__clubs {
+    margin-top: 20px;
+  }
+  .clubs {
+    list-style: none;
+    margin: 8px 0 0;
+    padding: 0;
+    display: grid;
+    gap: 8px;
+  }
+  .clubs :global(li) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-m);
+    background: var(--paper-bright);
+  }
+  .clubs :global(strong) {
+    display: block;
+  }
+  .clubs :global(small) {
+    display: block;
+    color: var(--olive-700);
+  }
+  .clubs :global(.btn) {
+    flex: none;
+  }
+  .clubs__msg:empty {
+    display: none;
+  }
+  .done__extra {
+    list-style: none;
+    margin: 16px 0 0;
+    padding: 0;
+    display: grid;
+    gap: 6px;
+  }
+</style>

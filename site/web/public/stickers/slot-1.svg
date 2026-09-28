@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Sasha's Corner Rewards sticker, slot 1: a ginger cat (the framed cat prints in the café). Our own drawing.
+       CANONICAL: assets/pass/stickers/ in the repo. site/web/public/stickers/ and
+       web/public/stickers/ are copies written by `cafeops wallet assets`; edit here.
+       Layers: shadow, white die-cut, then the art in the logo's olive line. -->
+  <g transform="rotate(-8 32 32)">
+    <g transform="translate(0.8 1.8)" fill="#474531" stroke="#474531" opacity="0.16">
+      <path d="M15 36C15 30.5 16.3 26.5 18.3 23.6L16.5 12.2L27.6 19.7C29 19.2 30.5 19 32 19C33.5 19 35 19.2 36.4 19.7L47.5 12.2L45.7 23.6C47.7 26.5 49 30.5 49 36C49 45 41.5 51 32 51C22.5 51 15 45 15 36Z" stroke-width="8"/>
+    </g>
+    <g fill="#ffffff" stroke="#ffffff">
+      <path d="M15 36C15 30.5 16.3 26.5 18.3 23.6L16.5 12.2L27.6 19.7C29 19.2 30.5 19 32 19C33.5 19 35 19.2 36.4 19.7L47.5 12.2L45.7 23.6C47.7 26.5 49 30.5 49 36C49 45 41.5 51 32 51C22.5 51 15 45 15 36Z" stroke-width="8"/>
+    </g>
+    <path d="M15 36C15 30.5 16.3 26.5 18.3 23.6L16.5 12.2L27.6 19.7C29 19.2 30.5 19 32 19C33.5 19 35 19.2 36.4 19.7L47.5 12.2L45.7 23.6C47.7 26.5 49 30.5 49 36C49 45 41.5 51 32 51C22.5 51 15 45 15 36Z" fill="#d4884e" stroke="#474531" stroke-width="1.8"/>
+    <path d="M19.6 21.2L18.8 15.9L23.9 19.4Z" fill="#e9dcd6"/>
+    <path d="M44.4 21.2L45.2 15.9L40.1 19.4Z" fill="#e9dcd6"/>
+    <path d="M32 20.5V25.5M27.8 21.2L28.6 24.6M36.2 21.2L35.4 24.6" stroke="#9b6038" stroke-width="1.8"/>
+    <ellipse cx="25.5" cy="34" rx="2.3" ry="2.9" fill="#0d0d0b"/>
+    <ellipse cx="38.5" cy="34" rx="2.3" ry="2.9" fill="#0d0d0b"/>
+    <circle cx="26.3" cy="33" r="0.8" fill="#ffffff"/>
+    <circle cx="39.3" cy="33" r="0.8" fill="#ffffff"/>
+    <path d="M30.2 39.4H33.8L32 41.6Z" fill="#9b6038" stroke="#9b6038" stroke-width="1"/>
+    <path d="M32 41.6C32 43.6 30 44.6 28.4 43.5M32 41.6C32 43.6 34 44.6 35.6 43.5" stroke="#474531" stroke-width="1.5"/>
+    <path d="M21.5 40.2L12.5 38.6M21.5 42.8L13 44M42.5 40.2L51.5 38.6M42.5 42.8L51 44" stroke="#474531" stroke-width="1.4"/>
+  </g>
+</svg>

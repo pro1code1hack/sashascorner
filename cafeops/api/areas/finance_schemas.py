@@ -49,6 +49,7 @@ __all__ = [
     "SalesDayIn",
     "SalesDayOut",
     "SalesDayPatch",
+    "SalesInsightsOut",
     "SalesResponse",
     "TakingsLedgerResponse",
     "TakingsRowOut",
@@ -603,4 +604,100 @@ class TakingsLedgerResponse(Out):
     used_gross_pence: Pence
     by_method_pence: dict[str, Pence]
     shadowed_count: int
+    caveats: list[str]
+
+
+# --------------------------------------------------------------------------
+# sales insights: the till lines behind the Sales dashboard
+# --------------------------------------------------------------------------
+
+Qty = str  # a Decimal rendered as text (CLAUDE.md 10.10)
+
+
+class InsightTotalsOut(Out):
+    gross_pence: Pence = Field(description="Non-voided till lines; refunds net out.")
+    receipts: int
+    items: Qty
+    trading_days: int = Field(description="Days with at least one till line.")
+    refund_receipts: int
+    avg_basket_pence: Pence | None
+    items_per_basket: Qty | None
+    per_day_pence: Pence | None = Field(description="Per trading day, not per calendar day.")
+
+
+class InsightDayOut(Out):
+    date: dt.date
+    gross_pence: Pence | None = Field(description="None: nothing rung up (closed, or not synced).")
+    receipts: int
+
+
+class InsightHourOut(Out):
+    hour: int
+    gross_pence: Pence
+    receipts: int
+
+
+class InsightHeatOut(Out):
+    weekday: int = Field(description="0 Monday .. 6 Sunday.")
+    hour: int
+    receipts: int
+    gross_pence: Pence
+
+
+class InsightWeekdayOut(Out):
+    weekday: int
+    gross_pence: Pence
+    receipts: int
+    trading_days: int
+
+
+class InsightShareOut(Out):
+    key: str = Field(description="Channel, category ('__none__' = no category) or size.")
+    gross_pence: Pence
+    qty: Qty
+    receipts: int
+
+
+class InsightProductOut(Out):
+    name: str
+    category: str | None
+    gross_pence: Pence
+    qty: Qty
+    receipts: int
+    sizes: dict[str, Qty]
+
+
+class InsightBasketOut(Out):
+    items: str = Field(description="'1', '2', '3' or '4+'.")
+    receipts: int
+
+
+class InsightOptionsOut(Out):
+    channels: list[str]
+    categories: list[str]
+    products: list[str]
+    sizes: list[str]
+
+
+class SalesInsightsOut(Out):
+    since: dt.date
+    until: dt.date
+    prev_since: dt.date
+    prev_until: dt.date
+    first_sale_date: dt.date | None
+    last_sale_date: dt.date | None
+    months: list[str] = Field(description="YYYY-MM from the first till line to the last.")
+    is_demo: bool = Field(description="Every line in the window is from the demo seed.")
+    totals: InsightTotalsOut
+    previous: InsightTotalsOut | None = Field(description="Same length, just before; same filters.")
+    by_day: list[InsightDayOut]
+    by_hour: list[InsightHourOut]
+    heat: list[InsightHeatOut]
+    by_weekday: list[InsightWeekdayOut]
+    by_channel: list[InsightShareOut]
+    by_category: list[InsightShareOut]
+    by_size: list[InsightShareOut]
+    products: list[InsightProductOut]
+    baskets: list[InsightBasketOut]
+    options: InsightOptionsOut
     caveats: list[str]

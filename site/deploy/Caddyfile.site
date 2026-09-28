@@ -16,6 +16,22 @@
 {$SITE_DOMAIN:sashascorner.co.uk} {
 	encode zstd gzip
 
+	# Sasha's Corner Rewards, the staff scanner's API and Apple Wallet's web service
+	# live in cafeops, not the site API (docs/loyalty/CONTRACT.md §8). Path matchers
+	# are more specific than /api/*, so Caddy tries these first whatever their order.
+	# reverse_proxy sets X-Forwarded-Proto/-For/-Host itself; cafeops builds absolute
+	# pass and wallet URLs from CAFEOPS_LOYALTY_PUBLIC_URL, not from these headers.
+	# The .pkpass Content-Type (application/vnd.apple.pkpass) comes from the API.
+	handle /api/loyalty/* {
+		reverse_proxy api:8000
+	}
+	handle /api/staff/* {
+		reverse_proxy api:8000
+	}
+	handle /wallet/apple/* {
+		reverse_proxy api:8000
+	}
+
 	# The site API. Same origin as the pages, so no CORS in production.
 	handle /api/* {
 		# No header_up needed: with no `trusted_proxies` configured, Caddy ignores any
@@ -30,6 +46,22 @@
 	@dothtml path_regexp dothtml ^(/.+)\.html$
 	handle @dothtml {
 		redir {re.dothtml.1} permanent
+	}
+
+	# Every web card, /c/<card id>, is the one static page c.html; its script reads the
+	# id from the path and the token from the #fragment (which never reaches this log).
+	handle /c/* {
+		root * /srv/site/public
+		rewrite * /c.html
+		file_server
+	}
+
+	# The staff scanner: /staff is staff.html (found by try_files below); anything under
+	# /staff/ that is not a real file (manifest, service worker, icons) is the same app.
+	handle /staff/* {
+		root * /srv/site/public
+		try_files {path} /staff.html
+		file_server
 	}
 
 	handle {
@@ -53,14 +85,47 @@
 	header @hashed Cache-Control "public, max-age=31536000, immutable"
 
 	@html {
-		not path /_astro/* /api/*
+		not path /_astro/* /api/* /wallet/* /staff /staff/*
 		not path_regexp \.(png|jpe?g|webp|avif|svg|ico|woff2?|xml|txt|webmanifest|json)$
 	}
 	header @html Cache-Control "public, max-age=0, must-revalidate"
 
+	# The scanner (page, manifest, service worker) is never cached: a till must pick up a
+	# fix on its next load. The worker lives at /staff/sw.js but controls /staff itself,
+	# which is outside its default scope (/staff/) without this header.
+	@staff {
+		path /staff /staff/*
+		not path_regexp \.(png|svg|ico)$
+	}
+	header @staff Cache-Control "no-cache"
+	header /staff/sw.js Service-Worker-Allowed /staff
+
+	# Private pages: a card belongs to one person, the scanner to the staff.
+	header /c/* X-Robots-Tag "noindex, nofollow"
+	header /staff* X-Robots-Tag "noindex, nofollow"
+
 	# Photos, icons, fonts, og.png, sitemap: not hashed, change rarely.
-	@static path_regexp \.(png|jpe?g|webp|avif|svg|ico|woff2?|webmanifest)$
+	@static {
+		path_regexp \.(png|jpe?g|webp|avif|svg|ico|woff2?|webmanifest)$
+		not path /stickers/*
+		# The scanner's manifest is no-cache (below); without this both matched and the
+		# week-long policy won, so a till kept a stale manifest.
+		not path /staff/*.webmanifest
+	}
 	header @static Cache-Control "public, max-age=604800"
+
+	# The stamp stickers (web card, /rewards sample card, scanner) are redrawn IN PLACE
+	# under the same names (slot-1.svg ... reward.svg, copied from assets/pass/stickers by
+	# `cafeops wallet assets`), so a week-long cache would show old art next to a wallet
+	# pass that already has the new one. Revalidate every time: file_server's ETag turns
+	# that into a tiny 304 until the art actually changes.
+	# Caddy has no MIME type for .webmanifest and served the scanner's and the site's
+	# manifests with none at all; the spec'd type keeps "install app" reliable.
+	@manifest path *.webmanifest
+	header @manifest Content-Type "application/manifest+json"
+
+	@stickers path /stickers/*
+	header @stickers Cache-Control "public, max-age=0, must-revalidate"
 
 	header {
 		-Server

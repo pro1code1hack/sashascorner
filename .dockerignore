@@ -26,3 +26,18 @@ web/node_modules
 web/dist
 *.log
 .DS_Store
+
+# Wallet certificates and keys are MOUNTED (./secrets/wallet -> /secrets/wallet:ro), never
+# baked into an image layer where `docker history`/a pushed image would expose them.
+secrets
+# Host-only trees the ops image never reads. site/ itself stays: the wallet reads
+# site/web/src/data/info.json (hours on the pass) and `cafeops wallet assets` reads
+# site/web/public/brand/. The site has its own image (site/Dockerfile).
+media
+site/media
+site/web/node_modules
+site/web/dist
+site/web/.astro
+site/backend/.venv
+**/node_modules
+**/.venv

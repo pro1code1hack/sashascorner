@@ -9,6 +9,10 @@
 # Left unset, it falls back to :80 over plain HTTP so a fresh checkout can be curled
 # immediately without owning a domain yet. Do not run the café on that in production --
 # set CAFEOPS_DOMAIN.
+# The public website's site block (site/deploy/README.md, "Wiring"). A glob on
+# purpose: with no site deployed it matches nothing and this file starts as before.
+import /srv/site/*.caddy
+
 {$CAFEOPS_DOMAIN:http://:80} {
 	encode gzip
 
@@ -51,6 +55,11 @@
 
 	@html path / /index.html
 	header @html Cache-Control "no-cache"
+
+	# Members' stamp stickers keep their names when redrawn (cafeops wallet assets), so
+	# revalidate instead of caching; the ETag makes it a 304 until the art changes.
+	@stickers path /stickers/*
+	header @stickers Cache-Control "public, max-age=0, must-revalidate"
 
 	header {
 		# Belt-and-braces on top of the app's own security posture (single shared

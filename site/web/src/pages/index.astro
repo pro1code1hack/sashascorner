@@ -1,20 +1,137 @@
 ---
 import Base from '../layouts/Base.astro';
 import Hero from '../components/Hero.astro';
-import LineDraw from '../components/LineDraw.astro';
 import OpenNow from '../components/OpenNow.astro';
 import Icon from '../components/Icon.astro';
 import Slot from '../components/Slot.astro';
+import RwCta from '../components/RwCta.astro';
 import { slotCount } from '../components/slotData';
-import { info, menu, signatures } from '../lib/data';
-import { clock, gbp, WEEKDAYS } from '../lib/format';
+import { info, menu } from '../lib/data';
+import type { MenuItem } from '../lib/types';
+import { gbp, WEEKDAYS } from '../lib/format';
 
-const blobColours = ['var(--coffee)', 'var(--sage)', 'var(--caramel)', 'var(--olive-700)'];
+// Every number and price on this page is read from the menu export, so it moves
+// when the board does. An item that has left the board drops out of the page
+// rather than showing a stale price.
 const all = menu.categories.flatMap((c) => c.items.map((i) => ({ ...i, cat: c.slug })));
 const food = new Set(['breakfast', 'lunch', 'waffles', 'cakes']);
 const drinks = all.filter((i) => !food.has(i.cat));
 const matchas = drinks.filter((i) => /matcha|hojicha/i.test(i.name));
+const cakes = all.filter((i) => i.cat === 'cakes');
 const bakes = all.filter((i) => i.cat === 'cakes' || i.cat === 'waffles');
+const cheapest = Math.min(...all.flatMap((i) => i.sizes.map((s) => s.price_pence)));
+const byId = new Map(all.map((i) => [i.id, i]));
+const from = (i: MenuItem) => Math.min(...i.sizes.map((s) => s.price_pence));
+const price = (i: MenuItem) => `${i.sizes.length > 1 ? 'from ' : ''}${gbp(from(i))}`;
+
+const stats = [
+  { n: String(drinks.length), label: 'drinks on the board', short: 'drinks on the board', tone: 'warm' },
+  { n: String(matchas.length), label: 'matcha & hojicha, green and blue', short: 'matcha & hojicha', tone: 'sage' },
+  { n: String(bakes.length), label: 'cakes, bakes & waffles', short: 'cakes, bakes & waffles', tone: 'warm' },
+  { n: gbp(cheapest), label: 'is where the board starts', short: 'where the board starts', tone: 'sage' },
+];
+
+const blue = byId.get('iced-honey-blue-matcha');
+const raff = byId.get('raff-coffee');
+const kyiv = byId.get('kyiv-cake-slice');
+
+// The drinks board: a taste, coloured by family.
+const family = (i: (typeof all)[number]) =>
+  /blue/i.test(i.name)
+    ? 'blue'
+    : /hojicha/i.test(i.name)
+      ? 'hojicha'
+      : /matcha/i.test(i.name)
+        ? 'matcha'
+        : ['bubble-tea', 'milkshakes', 'cold'].includes(i.cat)
+          ? 'other'
+          : 'coffee';
+const families = [
+  { key: 'coffee', label: 'Coffee' },
+  { key: 'matcha', label: 'Matcha' },
+  { key: 'blue', label: 'Blue matcha' },
+  { key: 'hojicha', label: 'Hojicha' },
+  { key: 'other', label: 'Shakes & bubble tea' },
+];
+const tasteIds = [
+  'raff-coffee', 'iced-honey-blue-matcha', 'cortado', 'iced-banana-bread-hojicha', 'lavender-matcha',
+  'honey-vanilla-latte', 'honey-bubble-tea', 'iced-citrus-blue-matcha', 'iced-coconut-water-latte',
+  'iced-mango-matcha', 'lavender-latte', 'strawberry-milkshake', 'iced-coconut-matcha', 'flat-white',
+  'tropical-mint-bliss', 'single-espresso',
+];
+const taste = tasteIds.map((id) => byId.get(id)).filter((i) => i !== undefined);
+// Phones show the first twelve.
+const MOBILE_TASTE = 12;
+
+// Build your drink: read off the board, never made up. Every drink name is split
+// into base (the first chip row), flavour and temperature, so a new drink on the
+// board shows up here by itself -- and a base with no drinks (ube, today) shows no chip.
+type Base = { id: string; label: string; swatch: string; liquid: string; is: (n: string) => boolean; strip: RegExp };
+const BASES: Base[] = [
+  { id: 'ube', label: 'Ube', swatch: '#8a5fa8', liquid: '#8e68ad', is: (n) => /\bube\b/.test(n), strip: /\b(pure|ube|latte)\b/g },
+  { id: 'green', label: 'Green matcha', swatch: '#7d9160', liquid: '#8aa35e', is: (n) => /matcha/.test(n) && !/blue/.test(n), strip: /\b(matcha|latte)\b/g },
+  { id: 'blue', label: 'Blue matcha', swatch: '#3d6a9e', liquid: '#3d6a9e', is: (n) => /blue/.test(n) && /matcha/.test(n), strip: /\b(blue|matcha)\b/g },
+  { id: 'coffee', label: 'Coffee', swatch: '#7a4f2e', liquid: '#a8744a', is: (n) => /\blatte\b/.test(n) && !/matcha|chai|hojicha|ube/.test(n), strip: /\blatte\b/g },
+  { id: 'bubble', label: 'Bubble tea', swatch: '#d9c4a0', liquid: '#dcc7a1', is: (n) => /bubble tea/.test(n), strip: /\bbubble tea\b/g },
+];
+// Syrup band colour by the first flavour word it contains; unknown flavours stay clear.
+const SYRUPS: Array<[RegExp, string]> = [
+  [/brown sugar/, '#8a5a2b'], [/honey/, '#e3b04b'], [/lavender/, '#a792c9'], [/vanilla/, '#eadbb4'],
+  [/mango/, '#f0a23a'], [/coconut/, '#efe8d6'], [/citrus|lemon/, '#f2d25c'], [/strawberr/, '#e8707a'],
+  [/raspberr/, '#d9546e'], [/rose/, '#e9a0b4'], [/banana/, '#f3d77a'], [/kiwi/, '#9cc45a'],
+  [/apple/, '#b5d36a'], [/peach/, '#f4b183'], [/pistachio/, '#b9c98a'], [/caramel/, '#c98a4b'],
+  [/chocolate/, '#efe4cf'], [/passion/, '#f2b134'],
+];
+const slug = (s: string) => s.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const combos: Record<string, { name: string; price: string }> = {};
+const flavourLabels: Record<string, string> = {};
+const baseFlavours: Record<string, string[]> = {};
+for (const it of drinks) {
+  const n = it.name.toLowerCase();
+  const base = BASES.find((b) => b.is(n));
+  if (!base) continue;
+  const temp = /^iced\b/.test(n) || base.id === 'bubble' ? 'iced' : 'hot';
+  const words = n.replace(/^iced\s+/, '').replace(base.strip, '').replace(/\s+/g, ' ').trim();
+  const flavour = words ? slug(words) : 'classic';
+  const k = `${base.id}|${flavour}|${temp}`;
+  if (combos[k]) continue;
+  combos[k] = { name: it.name, price: price(it) };
+  flavourLabels[flavour] = words ? words.charAt(0).toUpperCase() + words.slice(1) : 'Classic';
+  const list = (baseFlavours[base.id] ??= []);
+  if (!list.includes(flavour)) flavour === 'classic' ? list.unshift(flavour) : list.push(flavour);
+}
+const bases = BASES.filter((b) => baseFlavours[b.id]?.length);
+const allFlavours = [...new Set(bases.flatMap((b) => baseFlavours[b.id]))];
+const syrup = (f: string) => SYRUPS.find(([re]) => re.test(f.replace(/-/g, ' ')))?.[1] ?? 'transparent';
+const builder = {
+  combos,
+  flavours: baseFlavours,
+  syrups: Object.fromEntries(allFlavours.map((f) => [f, syrup(f)])),
+  liquids: Object.fromEntries(bases.map((b) => [b.id, b.liquid])),
+  start: combos['blue|honey|iced'] ? 'blue|honey|iced' : (Object.keys(combos)[0] ?? ''),
+};
+const [b0, f0, t0] = builder.start.split('|');
+const tempsOf = (base: string) => ['iced', 'hot'].filter((t) => Object.keys(combos).some((k) => k.startsWith(`${base}|`) && k.endsWith(`|${t}`)));
+const first = combos[builder.start];
+
+const waffles = ['pistachio-waffles', 'maple-fruity-waffles', 'cheesy-waffles']
+  .map((id) => byId.get(id))
+  .filter((i) => i !== undefined);
+const waffleNote: Record<string, string> = { 'cheesy-waffles': 'with salad' };
+const soup = byId.get('soup-of-the-day');
+const kyivWhole = byId.get('kyiv-cake-whole');
+
+// Opening hours, runs of days with the same times folded into one row.
+type Row = { days: number[]; text: string };
+const rows: Row[] = [];
+for (const h of info?.hours ?? []) {
+  const text = h.closed ? 'Closed' : `${h.open.replace(/^0/, '')} – ${h.close.replace(/^0/, '')}`;
+  const last = rows.at(-1);
+  if (last && last.text === text && last.days.at(-1) === h.weekday - 1) last.days.push(h.weekday);
+  else rows.push({ days: [h.weekday], text });
+}
+const dayRange = (d: number[]) => (d.length === 1 ? WEEKDAYS[d[0]] : `${WEEKDAYS[d[0]]} – ${WEEKDAYS[d.at(-1)!]}`);
+
 const mapsUrl = info
   ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`Sasha's Corner, ${info.address.line1}, ${info.address.city} ${info.address.postcode}`)}`
   : '';
@@ -29,114 +146,355 @@ const range = (n: number) => Array.from({ length: n }, (_, i) => i);
 >
   <Hero />
 
-  <!-- Signatures -------------------------------------------------------- -->
-  <section class="sig" aria-labelledby="sig-title">
+  <!-- The range in numbers ------------------------------------------------- -->
+  <section class="stats on-dark" aria-label="The range in numbers">
+    <dl class="wrap stats__grid">
+      {
+        stats.map((s) => (
+          <div class={`stats__cell stats__cell--${s.tone}`}>
+            <dt class="sr-only">{s.label}</dt>
+            <dd>
+              <span class="stats__n num">{s.n}</span>
+              <span class="stats__label" aria-hidden="true">
+                <span class="stats__long">{s.label}</span>
+                <span class="stats__short">{s.short}</span>
+              </span>
+            </dd>
+          </div>
+        ))
+      }
+    </dl>
+  </section>
+
+  <!-- Three reasons ----------------------------------------------------------- -->
+  <section class="sec reasons" aria-labelledby="reasons-title">
+    <div class="wrap">
+      <header class="sec-head sec-head--split" data-reveal>
+        <div>
+          <p class="label">Only at the corner</p>
+          <h2 id="reasons-title" class="sec-title">Three reasons <span class="soft">to cross town.</span></h2>
+        </div>
+        <a class="more" href="/menu">All signatures <span aria-hidden="true">→</span></a>
+      </header>
+      <div class="reasons__grid">
+        {
+          blue && (
+            <article class="reason reason--blue" data-reveal>
+              <Slot key="home.blue-matcha" class="reason__photo" sizes="(max-width: 760px) 100vw, 33vw" />
+              <div class="reason__body">
+                <span class="tag">Most photographed</span>
+                <h3>Blue matcha</h3>
+                <p class="reason__desc">
+                  Butterfly-pea flower whisked sky-blue — with honey and milk, or with citrus and sparkling water.
+                </p>
+                <p class="reason__price num">{price(blue)}</p>
+              </div>
+            </article>
+          )
+        }
+        {
+          raff && (
+            <article class="reason reason--coffee" data-reveal>
+              <div class="reason__art">
+                <svg viewBox="0 0 240 240" fill="none" stroke="#fff5ea" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M62 96h116l-10 96a14 14 0 0 1-14 12H86a14 14 0 0 1-14-12z" />
+                  <path d="M178 112c26 0 30 44 0 46" />
+                  <path d="M68 112c30 10 74 10 104 0" />
+                  <path d="M96 76c-8-12 8-20 0-34M124 76c-8-12 8-20 0-34M152 76c-8-12 8-20 0-34" />
+                  <path d="M40 218h160" />
+                </svg>
+              </div>
+              <div class="reason__body">
+                <span class="tag">Eastern European classic</span>
+                <h3>{raff.name}</h3>
+                <p class="reason__desc">{raff.description}</p>
+                <p class="reason__price num">{price(raff)}</p>
+              </div>
+            </article>
+          )
+        }
+        {
+          kyiv && (
+            <article class="reason reason--olive" data-reveal>
+              <div class="reason__art">
+                <svg viewBox="0 0 240 240" aria-hidden="true" stroke-linejoin="round">
+                  <path d="M40 150l90-60 70 40-90 62z" fill="#e2b48e" stroke="#2b2a1c" stroke-width="3" />
+                  <path d="M40 150v26l70 34v-26z" fill="#c9a27e" stroke="#2b2a1c" stroke-width="3" />
+                  <path d="M110 184v26l90-56v-24z" fill="#9b6038" stroke="#2b2a1c" stroke-width="3" />
+                  <path d="M40 162l70 34M110 196l90-56" stroke="#f3efe4" stroke-width="5" />
+                  <path d="M40 150v-18l90-60 70 40v18" fill="none" stroke="#2b2a1c" stroke-width="3" />
+                  <path d="M40 132l70 34 90-56M110 166v18" fill="none" stroke="#2b2a1c" stroke-width="3" />
+                  <path d="M44 134l66 32 86-54-66-38z" fill="#6e4428" />
+                  <circle cx="96" cy="120" r="6" fill="#f3efe4" />
+                  <circle cx="128" cy="104" r="6" fill="#f3efe4" />
+                  <circle cx="150" cy="124" r="6" fill="#f3efe4" />
+                  <circle cx="118" cy="138" r="6" fill="#f3efe4" />
+                </svg>
+              </div>
+              <div class="reason__body">
+                <span class="tag">By the slice or whole</span>
+                <h3>Kyiv cake</h3>
+                <p class="reason__desc">{kyiv.description}</p>
+                <p class="reason__price num">{gbp(from(kyiv))} <span class="reason__unit">a slice</span></p>
+              </div>
+            </article>
+          )
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Build your drink ---------------------------------------------------------- -->
+  {
+    first && (
+      <section class="sec builder" aria-labelledby="builder-title" data-builder={JSON.stringify(builder)}>
+        <div class="wrap builder__grid">
+          <div class="builder__controls">
+            <p class="label builder__kicker">Made in front of you</p>
+            <h2 id="builder-title" class="sec-title builder__title">
+              Build your <span class="soft">drink.</span>
+            </h2>
+            <p class="builder__lede">
+              Matcha green or blue, a latte or a bubble tea — hot or over ice, plain or with a twist. Pick yours and
+              show it at the bar.
+            </p>
+            <fieldset>
+              <legend class="label">Base</legend>
+              <div class="chips">
+                {bases.map((b) => (
+                  <button type="button" class="chip" data-dim="base" data-val={b.id} aria-pressed={String(b.id === b0)}>
+                    <span class="chip__dot" style={`background:${b.swatch}`} aria-hidden="true" />
+                    {b.label}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend class="label">Flavour</legend>
+              <div class="chips">
+                {allFlavours.map((f) => (
+                  <button
+                    type="button"
+                    class="chip"
+                    data-dim="flavour"
+                    data-val={f}
+                    aria-pressed={String(f === f0)}
+                    hidden={!builder.flavours[b0]?.includes(f)}
+                  >
+                    {flavourLabels[f]}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+            <fieldset data-temps>
+              <legend class="label">Temperature</legend>
+              <div class="chips">
+                {[
+                  { id: 'iced', label: 'Over ice' },
+                  { id: 'hot', label: 'Hot' },
+                ].map((t) => (
+                  <button
+                    type="button"
+                    class="chip"
+                    data-dim="temp"
+                    data-val={t.id}
+                    aria-pressed={String(t.id === t0)}
+                    hidden={!tempsOf(b0).includes(t.id)}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+            <p class="builder__note" data-note hidden />
+          </div>
+          <div class="builder__card" data-base={b0} data-temp={t0} data-flavour={f0}>
+            <svg class="cup" viewBox="0 0 300 380" aria-hidden="true">
+              <path class="cup__steam" d="M110 62c-10-14 10-22 0-38M150 62c-10-14 10-22 0-38M190 62c-10-14 10-22 0-38" fill="none" stroke="#9a9580" stroke-width="3" stroke-linecap="round" />
+              <path class="cup__liquid" d="M65 110L235 110L220 330Q218 346 202 346L98 346Q82 346 80 330Z" fill={builder.liquids[b0]} />
+              <path class="cup__milk" d="M65 110L235 110L231 168L69 168Z" fill="#f6f1e4" opacity="0.92" />
+              <path class="cup__syrup" d="M78 296L222 296L220 330Q218 346 202 346L98 346Q82 346 80 330Z" fill={builder.syrups[f0]} />
+              <g class="cup__pearls" fill="#3b2a1e">
+                <circle cx="104" cy="326" r="9" /><circle cx="126" cy="332" r="9" /><circle cx="150" cy="328" r="9" />
+                <circle cx="174" cy="333" r="9" /><circle cx="197" cy="326" r="9" /><circle cx="115" cy="310" r="9" />
+                <circle cx="140" cy="312" r="9" /><circle cx="163" cy="309" r="9" /><circle cx="186" cy="311" r="9" />
+              </g>
+              <g class="cup__ice">
+                <rect x="92" y="126" width="46" height="46" rx="9" fill="#fff" opacity="0.55" transform="rotate(-12 115 149)" />
+                <rect x="150" y="140" width="46" height="46" rx="9" fill="#fff" opacity="0.5" transform="rotate(14 173 163)" />
+                <rect x="118" y="196" width="42" height="42" rx="9" fill="#fff" opacity="0.4" transform="rotate(6 139 217)" />
+              </g>
+              <path class="cup__straw" d="M168 20L150 250" stroke="#0d0d0b" stroke-width="12" stroke-linecap="round" />
+              <path d="M58 60L242 60L220 330Q218 346 202 346L98 346Q82 346 80 330Z" fill="none" stroke="#0d0d0b" stroke-width="3" stroke-linejoin="round" />
+              <path d="M50 60h200" stroke="#0d0d0b" stroke-width="3" stroke-linecap="round" />
+            </svg>
+            <div class="builder__out" aria-live="polite">
+              <p class="label">Your drink</p>
+              <p class="builder__name" data-name>{first.name}</p>
+              <p class="builder__price num" data-price>{first.price}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- The drinks board ------------------------------------------------------- -->
+  <section class="sec board on-dark" aria-labelledby="board-title">
+    <div class="wrap">
+      <header class="sec-head sec-head--split" data-reveal>
+        <div>
+          <p class="label">The drinks board</p>
+          <h2 id="board-title" class="sec-title">
+            {drinks.length} drinks. <span class="soft board__soft"><span class="board__long">Here's a</span><span class="board__short">A</span> taste.</span>
+          </h2>
+        </div>
+        <ul class="board__legend" aria-label="Key">
+          {
+            families.map((f) => (
+              <li>
+                <span class={`dot dot--${f.key}`} aria-hidden="true" />
+                {f.label}
+              </li>
+            ))
+          }
+        </ul>
+      </header>
+      <ul class="board__chips" data-reveal>
+        {
+          taste.map((i, n) => (
+            <li class:list={['bchip', { 'bchip--wide': n >= MOBILE_TASTE }]}>
+              <span class={`dot dot--${family(i)}`} aria-hidden="true" />
+              {i.name}
+            </li>
+          ))
+        }
+        <li class="bchip bchip--more">
+          <span class="bchip__wide">+ {drinks.length - taste.length} more on the board</span>
+          <span class="bchip__narrow">+ {drinks.length - Math.min(MOBILE_TASTE, taste.length)} more</span>
+        </li>
+      </ul>
+      <a class="btn btn--ghost btn--lg board__all" href="/menu">See the full menu <span class="arrow" aria-hidden="true">→</span></a>
+    </div>
+  </section>
+
+  <!-- Food -------------------------------------------------------------------- -->
+  <section class="sec food" aria-labelledby="food-title">
     <div class="wrap">
       <header class="sec-head" data-reveal>
-        <p class="label">What people come back for</p>
-        <h2 id="sig-title" class="sec-title">The signatures</h2>
+        <p class="label">Hungry too?</p>
+        <h2 id="food-title" class="sec-title">Not just <span class="soft">a coffee stop.</span></h2>
       </header>
-      <ul class="sig__strip" aria-label="Photos of the signatures" data-reveal>
+      <div class="food__grid">
+        <article class="tile tile--waffles" data-reveal>
+          <div class="tile__top">
+            <div>
+              <p class="label tile__eyebrow">Sweet or savoury</p>
+              <h3>Waffles, <span class="tile__soft">for brunch.</span></h3>
+            </div>
+            <svg class="tile__icon" viewBox="0 0 120 120" aria-hidden="true" fill="none" stroke="#0d0d0b" stroke-width="2.4">
+              <rect x="10" y="10" width="100" height="100" rx="22" fill="#e9b07a" />
+              <path d="M35 10v100M60 10v100M85 10v100M10 35h100M10 60h100M10 85h100" />
+            </svg>
+          </div>
+          <ul class="tile__list">
+            {
+              waffles.map((w) => {
+                const note = w.description?.replace(/\.$/, '') ?? waffleNote[w.id];
+                return (
+                  <li>
+                    <span>
+                      <strong>{w.name}</strong>
+                      {note && <span class="tile__note"> — {note}</span>}
+                    </span>
+                    <span class="num">{gbp(from(w))}</span>
+                  </li>
+                );
+              })
+            }
+          </ul>
+        </article>
+        <article class="tile tile--bakes" data-reveal>
+          <Slot key="home.bakes" class="tile__photo" sizes="(max-width: 760px) 100vw, 42vw" />
+          <div class="tile__caption">
+            <h3 class="tile__cap-title">Cakes &amp; bakes</h3>
+            <span>{cakes.length} on the board</span>
+          </div>
+        </article>
         {
-          range(slotCount('home.signatures', 4)).map((i) => (
+          soup && (
+            <article class="tile tile--soup" data-reveal>
+              <svg viewBox="0 0 48 48" width="44" height="44" fill="none" stroke="#0d0d0b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M6 22h36a18 18 0 0 1-36 0z" />
+                <path d="M18 14c-3-4 3-6 0-10M28 14c-3-4 3-6 0-10" />
+              </svg>
+              <div>
+                <h3>Soup</h3>
+                <p>Changes daily</p>
+                <p class="num">{gbp(from(soup))}</p>
+              </div>
+            </article>
+          )
+        }
+        <a class="tile tile--order on-dark" href="/order" data-reveal>
+          <span class="label">To order{kyivWhole && <span class="tile__wide"> · {gbp(from(kyivWhole))}</span>}</span>
+          <span class="tile__order">
+            Whole Kyiv cake <span class="tile__wide">for your table</span>
+            <span aria-hidden="true"> →</span>
+          </span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- The corner ----------------------------------------------------------- -->
+  <section class="sec corner" aria-labelledby="corner-title">
+    <div class="wrap corner__grid">
+      <div class="corner__copy" data-reveal>
+        <p class="label">The corner</p>
+        <h2 id="corner-title" class="sec-title">Stay for <span class="soft">a second one.</span></h2>
+        <p class="corner__text">
+          Sage walls, a sunny window bar, tables for catching up and a chess board if you fancy a game.
+        </p>
+        <a class="more" href="/about">Our story <span aria-hidden="true">→</span></a>
+      </div>
+      <ul class="corner__photos" aria-label="Photos from the café" data-reveal>
+        {
+          range(slotCount('home.corner', 3)).map((i) => (
             <li>
-              <Slot key="home.signatures" index={i} sizes="(max-width: 600px) 46vw, 24vw" />
+              <Slot key="home.corner" index={i} tone="paper" sizes="(max-width: 860px) 46vw, 18vw" />
             </li>
           ))
         }
       </ul>
-      <ol class="sig__list">
-        {
-          signatures.map((s, i) => (
-            <li class="sig__row" data-reveal style={`--blob:${blobColours[i % blobColours.length]}`}>
-              <span class="sig__blob" aria-hidden="true" />
-              <div class="sig__name">
-                <span class="sig__cat">{s.category}</span>
-                <h3>{s.name}</h3>
-              </div>
-              <p class="sig__desc">{s.description}</p>
-              <p class="sig__price num">
-                {s.sizes.length > 1 && <span class="sig__from">from</span>}
-                {gbp(Math.min(...s.sizes.map((z) => z.price_pence)))}
-              </p>
-            </li>
-          ))
-        }
-      </ol>
-      <a class="sig__all" href="/menu">
-        The whole menu — {all.length} things, from a £1.90 espresso to Kyiv cake
-        <Icon name="arrow" />
-      </a>
     </div>
   </section>
 
-  <!-- The corner ---------------------------------------------------------- -->
-  <section class="corner" aria-labelledby="corner-title">
-    <div class="wrap corner__grid">
-      <div class="corner__art">
-        <LineDraw />
-      </div>
-      <div class="corner__copy">
-        <p class="label" data-reveal>The corner</p>
-        <h2 id="corner-title" class="sec-title" data-reveal>
-          One line, <span class="soft">from the group head to your cup.</span>
-        </h2>
-        <div class="corner__cols">
-          <div data-reveal>
-            <h3><span class="num">{drinks.length}</span> drinks</h3>
-            <p>
-              Probably the longest drinks board in Dundee: a cortado for £3.10, Raff coffee, honey-vanilla and
-              lavender lattes, milkshakes, refreshers and creamy bubble tea.
-            </p>
-          </div>
-          <div data-reveal>
-            <h3><span class="num">{matchas.length}</span> matcha &amp; hojicha</h3>
-            <p>
-              Whisked fresh in front of you, green or butterfly-pea blue, hot or over ice — with honey, lavender,
-              mango, coconut water. The blue ones get photographed.
-            </p>
-          </div>
-          <div data-reveal>
-            <h3><span class="num">{bakes.length}</span> cakes &amp; waffles</h3>
-            <p>
-              The counter changes daily. Kyiv cake by the slice (or whole, ordered ahead), tiramisu blondie, and
-              brunch waffles — sweet with fruit and ice cream, or cheesy with salad.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-    <ul class="mood wrap" aria-label="Photos from the café" data-reveal>
-      {
-        range(slotCount('home.mood', 4)).map((i) => (
-          <li>
-            <Slot key="home.mood" index={i} tone="paper" sizes="(max-width: 600px) 46vw, 24vw" />
-          </li>
-        ))
-      }
-    </ul>
-  </section>
+  <!-- Rewards -------------------------------------------------------------- -->
+  <RwCta variant="section" src="site-home" />
 
   <!-- Visit ------------------------------------------------------------------ -->
   {
     info && (
-      <section class="visit on-dark" aria-labelledby="visit-title">
-        <figure class="wrap visit__room" data-reveal>
-          <Slot key="home.room" tone="olive" sizes="(max-width: 1320px) 100vw, 1320px" />
-        </figure>
+      <section class="sec visit on-dark" aria-labelledby="visit-title">
         <div class="wrap visit__grid">
-          <div data-reveal>
+          <div class="visit__copy" data-reveal>
             <p class="label">Come by</p>
             <h2 id="visit-title" class="sec-title">
-              {info.address.line1},<br />
-              <span class="soft">{info.address.city}</span>
+              {info.address.line1},<br class="visit__br" /> <span class="soft">{info.address.city}</span>
             </h2>
-            <OpenNow tone="dark" />
+            <div class="visit__line">
+              <OpenNow tone="dark" />
+              <span class="visit__facts">
+                <span>{info.address.postcode}</span>
+                <a href={`tel:${info.phone.replace(/\s/g, '')}`}>{info.phone}</a>
+              </span>
+            </div>
             <div class="visit__cta">
-              <a class="btn btn--caramel" href="/book">
+              <a class="btn btn--caramel btn--lg" href="/book">
                 Book a table <span class="arrow" aria-hidden="true">→</span>
               </a>
-              <a class="btn btn--ghost" href={mapsUrl} target="_blank" rel="noopener">
+              <a class="btn btn--ghost btn--lg" href={mapsUrl} target="_blank" rel="noopener">
                 <Icon name="pin" /> Directions
               </a>
             </div>
@@ -144,10 +502,10 @@ const range = (n: number) => Array.from({ length: n }, (_, i) => i);
           <table class="visit__hours" data-reveal>
             <caption class="label">Opening hours</caption>
             <tbody>
-              {info.hours.map((h) => (
-                <tr data-weekday={h.weekday}>
-                  <th scope="row">{WEEKDAYS[h.weekday]}</th>
-                  <td class="num">{h.closed ? 'Closed' : `${clock(h.open)} – ${clock(h.close)}`}</td>
+              {rows.map((r) => (
+                <tr data-days={r.days.join(',')}>
+                  <th scope="row">{dayRange(r.days)}</th>
+                  <td>{r.text}</td>
                 </tr>
               ))}
             </tbody>
@@ -160,13 +518,13 @@ const range = (n: number) => Array.from({ length: n }, (_, i) => i);
   <!-- Instagram ------------------------------------------------------------ -->
   {
     info?.socials.instagram && (
-      <section class="insta" aria-label="Instagram">
+      <section class="sec insta" aria-label="Instagram">
         <div class="wrap insta__in" data-reveal>
-          <p class="label">Follow along</p>
+          <p class="label">What's new on the board</p>
           <a class="insta__handle" href={info.socials.instagram} target="_blank" rel="me noopener">
-            <Icon name="instagram" size={40} />@{handle}
+            <Icon name="instagram" size={48} />@{handle}
           </a>
-          <p class="insta__note">New drinks, seasonal boards and what's on the counter today.</p>
+          <p class="insta__note">Seasonal drinks, new flavours and what's on the counter today.</p>
         </div>
       </section>
     )
@@ -178,20 +536,125 @@ const range = (n: number) => Array.from({ length: n }, (_, i) => i);
   const wd = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].indexOf(
     new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', weekday: 'short' }).format(new Date()),
   );
-  document.querySelector(`.visit__hours tr[data-weekday="${wd}"]`)?.classList.add('is-today');
+  for (const tr of document.querySelectorAll<HTMLElement>('.visit__hours tr[data-days]')) {
+    if ((tr.dataset.days ?? '').split(',').map(Number).includes(wd)) tr.classList.add('is-today');
+  }
+
+  // Build your drink. Every state is a drink on the board. Picking a base shows that
+  // base's flavours and temperatures; picking an option that doesn't exist with the
+  // current others keeps the choice and changes the others (temperature first, then
+  // flavour, then base) until it names a real drink, and says what it changed.
+  type Dim = 'base' | 'flavour' | 'temp';
+  type State = Record<Dim, string>;
+  type B = {
+    combos: Record<string, { name: string; price: string }>;
+    flavours: Record<string, string[]>;
+    syrups: Record<string, string>;
+    liquids: Record<string, string>;
+    start: string;
+  };
+  const host = document.querySelector<HTMLElement>('[data-builder]');
+  if (host) {
+    const b: B = JSON.parse(host.dataset.builder ?? '{}');
+    const card = host.querySelector<HTMLElement>('.builder__card')!;
+    const note = host.querySelector<HTMLElement>('[data-note]')!;
+    const dims: Dim[] = ['base', 'flavour', 'temp'];
+    const prefer: Dim[] = ['temp', 'flavour', 'base'];
+    const [base, flavour, temp] = b.start.split('|');
+    let st: State = { base, flavour, temp };
+    const key = (s: State) => `${s.base}|${s.flavour}|${s.temp}`;
+    const values = (d: Dim, s: State): string[] =>
+      d === 'base' ? Object.keys(b.flavours) : d === 'flavour' ? (b.flavours[s.base] ?? []) : ['iced', 'hot'];
+    const label = (dim: Dim, v: string) =>
+      host.querySelector<HTMLElement>(`[data-dim="${dim}"][data-val="${v}"]`)?.textContent?.trim().toLowerCase() ?? v;
+
+    const resolve = (dim: Dim, v: string): State => {
+      const want = { ...st, [dim]: v };
+      if (b.combos[key(want)]) return want;
+      const others = prefer.filter((d) => d !== dim);
+      for (const d of others)
+        for (const x of values(d, want)) {
+          const s = { ...want, [d]: x };
+          if (b.combos[key(s)]) return s;
+        }
+      for (const x of values(others[0], want)) {
+        const s0 = { ...want, [others[0]]: x };
+        for (const y of values(others[1], s0)) {
+          const s = { ...s0, [others[1]]: y };
+          if (b.combos[key(s)]) return s;
+        }
+      }
+      return st;
+    };
+
+    const render = (changed: Dim[]) => {
+      const c = b.combos[key(st)];
+      if (!c) return;
+      const temps = ['iced', 'hot'].filter((t) => Object.keys(b.combos).some((k) => k.startsWith(`${st.base}|`) && k.endsWith(`|${t}`)));
+      for (const btn of host.querySelectorAll<HTMLButtonElement>('[data-dim]')) {
+        const d = btn.dataset.dim as Dim;
+        btn.setAttribute('aria-pressed', String(st[d] === btn.dataset.val));
+        if (d === 'flavour') btn.hidden = !(b.flavours[st.base] ?? []).includes(btn.dataset.val!);
+        if (d === 'temp') btn.hidden = !temps.includes(btn.dataset.val!);
+      }
+      card.dataset.base = st.base;
+      card.dataset.temp = st.temp;
+      card.dataset.flavour = st.flavour;
+      card.querySelector('.cup__liquid')!.setAttribute('fill', b.liquids[st.base] ?? '#8aa35e');
+      card.querySelector('.cup__syrup')!.setAttribute('fill', b.syrups[st.flavour] ?? 'transparent');
+      host.querySelector('[data-name]')!.textContent = c.name;
+      host.querySelector('[data-price]')!.textContent = c.price;
+      note.hidden = changed.length === 0;
+      note.textContent = changed.length
+        ? `On the board that one comes ${changed.map((d) => label(d, st[d])).join(', ')}.`
+        : '';
+    };
+
+    host.addEventListener('click', (e) => {
+      const btn = (e.target as Element).closest<HTMLButtonElement>('[data-dim]');
+      if (!btn) return;
+      const dim = btn.dataset.dim as Dim;
+      const next = resolve(dim, btn.dataset.val!);
+      // A new base brings its own flavours, so a changed flavour there is expected,
+      // not news; only a forced temperature is worth a line.
+      const changed = dims.filter(
+        (d) => d !== dim && next[d] !== st[d] && !(dim === 'base' && d === 'flavour'),
+      );
+      st = next;
+      render(changed);
+    });
+  }
 </script>
 
 <style>
-  .sec-head {
-    display: grid;
-    gap: 14px;
-    margin-bottom: clamp(28px, 4vw, 48px);
+  /* Grounds and accents this page adds. Hues are the brand's; only lightness moves. */
+  .sec {
+    --board-ink: #2b2a1c; /* the deepest olive, for the drinks board */
+    --blue-card: #2f5a8a;
+    --coffee-card: #9b6038;
+    padding-block: clamp(64px, 9vw, 130px);
   }
-  .sec-head .label,
-  .corner .label {
-    color: var(--coffee);
+  .label {
+    color: var(--coffee-deep);
+  }
+  .on-dark .label {
+    color: var(--sage-on-dark);
+  }
+  .sec-head {
+    margin-bottom: clamp(24px, 3.6vw, 52px);
+  }
+  .sec-head .label {
+    margin-bottom: 14px;
+  }
+  .sec-head--split {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 24px 40px;
+    flex-wrap: wrap;
   }
   .sec-title {
+    font-weight: 700;
     font-size: var(--step-4);
     line-height: 0.95;
   }
@@ -201,181 +664,816 @@ const range = (n: number) => Array.from({ length: n }, (_, i) => i);
     font-stretch: 100%;
     letter-spacing: -0.03em;
   }
-
-  /* signatures: a printed menu card, not a card grid */
-  .sig {
-    padding-block: clamp(72px, 10vw, 140px) clamp(56px, 8vw, 100px);
-  }
-  .sig__list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    border-top: 1px solid var(--rule-strong);
-  }
-  .sig__row {
-    position: relative;
-    display: grid;
-    grid-template-columns: 56px minmax(0, 1.2fr) minmax(0, 1.3fr) auto;
-    align-items: center;
-    gap: clamp(12px, 3vw, 40px);
-    padding-block: clamp(18px, 2.4vw, 28px);
-    border-bottom: 1px solid var(--rule);
-  }
-  .sig__strip {
-    list-style: none;
-    margin: 0 0 clamp(32px, 5vw, 64px);
-    padding: 0;
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: clamp(8px, 1.4vw, 18px);
-  }
-  .sig__strip li:nth-child(odd) {
-    margin-top: clamp(20px, 4vw, 56px);
-  }
-  @media (max-width: 600px) {
-    .sig__strip {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-    .sig__strip li:nth-child(odd) {
-      margin-top: 0;
-    }
-    .sig__strip li:nth-child(even) {
-      margin-top: 24px;
-    }
-  }
-  .sig__blob {
-    width: 40px;
-    height: 34px;
-    background: var(--blob);
-    border-radius: var(--radius-blob);
-    transition:
-      transform 0.6s var(--ease-out),
-      border-radius 0.6s var(--ease-out);
-  }
-  .sig__row:hover .sig__blob {
-    transform: rotate(-14deg) scale(1.15);
-    border-radius: 42% 58% 45% 55% / 55% 42% 58% 45%;
-  }
-  .sig__cat {
-    display: block;
-    font-size: var(--step--1);
-    color: var(--olive-700);
-    margin-bottom: 4px;
-  }
-  .sig__name h3 {
-    font-size: var(--step-2);
-  }
-  .sig__desc {
-    color: var(--ink-soft);
-    font-weight: 300;
-  }
-  .sig__price {
-    font-size: var(--step-2);
-    text-align: right;
-    white-space: nowrap;
-  }
-  .sig__from {
-    font-family: var(--font-text);
-    font-size: var(--step--1);
-    color: var(--olive-700);
-    margin-right: 6px;
-  }
-  .sig__all {
+  .more {
     display: inline-flex;
     align-items: center;
     gap: 10px;
-    margin-top: 28px;
+    min-height: 44px;
     font-size: var(--step-1);
     color: var(--coffee);
     text-decoration: none;
   }
-  .sig__all:hover {
+  .more:hover {
     text-decoration: underline;
   }
+  .btn--lg {
+    min-height: 52px;
+    padding-inline: 26px;
+  }
+
+  /* numbers band, continuing the hero's olive ground */
+  .stats {
+    background: var(--olive-900);
+    color: var(--on-dark);
+    padding-bottom: clamp(28px, 4vw, 56px);
+  }
+  .stats__grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin-block: 0;
+  }
+  .stats__cell {
+    padding: 32px 32px 0;
+    border-top: 1px solid color-mix(in oklab, var(--paper) 20%, transparent);
+  }
+  .stats__cell:first-child {
+    padding-left: 0;
+  }
+  .stats__cell:last-child {
+    padding-right: 0;
+  }
+  .stats__cell + .stats__cell {
+    border-left: 1px solid color-mix(in oklab, var(--paper) 20%, transparent);
+  }
+  .stats dd {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .stats__n {
+    font-weight: 700;
+    font-stretch: 88%;
+    font-size: clamp(3.25rem, 2rem + 4.4vw, 5.5rem);
+    line-height: 0.9;
+  }
+  .stats__cell--warm .stats__n {
+    color: var(--caramel-on-dark);
+  }
+  .stats__cell--sage .stats__n {
+    color: var(--sage-on-dark);
+  }
+  .stats__label {
+    font-size: var(--step-1);
+    font-weight: 300;
+    color: color-mix(in oklab, var(--on-dark) 85%, transparent);
+  }
+  .stats__short {
+    display: none;
+  }
   @media (max-width: 760px) {
-    .sig__row {
-      grid-template-columns: 44px minmax(0, 1fr) auto;
-      align-items: start;
+    .stats__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
-    .sig__blob {
-      width: 32px;
-      height: 28px;
-      margin-top: 6px;
+    .stats__cell,
+    .stats__cell:first-child,
+    .stats__cell:last-child {
+      padding: 20px 12px 16px 0;
+      border-top: 0;
     }
-    .sig__desc {
-      grid-column: 2 / -1;
-      grid-row: 2;
+    .stats__cell:nth-child(-n + 2) {
+      border-top: 1px solid color-mix(in oklab, var(--paper) 20%, transparent);
+      border-bottom: 1px solid color-mix(in oklab, var(--paper) 20%, transparent);
+    }
+    .stats__cell:nth-child(even) {
+      padding-left: 16px;
+      padding-right: 0;
+    }
+    .stats__cell + .stats__cell:nth-child(odd) {
+      border-left: 0;
+    }
+    .stats__label {
+      font-size: 0.95rem;
+    }
+    .stats__long {
+      display: none;
+    }
+    .stats__short {
+      display: inline;
+    }
+  }
+
+  /* three reasons */
+  .reasons__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+  }
+  .reason {
+    display: flex;
+    flex-direction: column;
+    min-height: 640px;
+    border-radius: 20px;
+    overflow: hidden;
+    color: #fff;
+  }
+  .reason--blue {
+    background: var(--blue-card);
+  }
+  .reason--coffee {
+    background: var(--coffee-card);
+  }
+  .reason--olive {
+    background: var(--olive-900);
+    color: var(--on-dark);
+  }
+  .reason__art {
+    height: 330px;
+    flex: none;
+    display: grid;
+    place-items: center;
+  }
+  .reason__art svg {
+    width: 230px;
+    height: 230px;
+  }
+  .reason--coffee .reason__art {
+    background: #b5774a;
+  }
+  .reason--olive .reason__art {
+    background: #5a5840;
+  }
+  .reason :global(.reason__photo) {
+    flex: none;
+    height: 330px;
+    aspect-ratio: auto;
+    border-radius: 0;
+  }
+  .reason__body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 32px;
+  }
+  .tag {
+    align-self: flex-start;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: color-mix(in oklab, currentColor 16%, transparent);
+    font-size: 0.875rem;
+  }
+  .reason h3 {
+    font-weight: 700;
+    font-size: clamp(2.25rem, 1.6rem + 1.8vw, 3.25rem);
+    line-height: 0.95;
+  }
+  .reason__desc {
+    flex: 1;
+    font-weight: 300;
+    font-size: var(--step-0);
+    line-height: 1.5;
+    opacity: 0.9;
+  }
+  .reason__price {
+    font-weight: 600;
+    font-size: clamp(1.375rem, 1.2rem + 0.5vw, 1.625rem);
+  }
+  .reason__unit {
+    font-family: var(--font-text);
+    font-weight: 300;
+    font-size: 1.05rem;
+  }
+  @media (max-width: 1000px) and (min-width: 761px) {
+    .reason {
+      min-height: 0;
+    }
+    .reason__art,
+    .reason :global(.reason__photo) {
+      height: 240px;
+    }
+    .reason__art svg {
+      width: 170px;
+      height: 170px;
+    }
+    .reason__body {
+      padding: 24px;
+    }
+  }
+  @media (max-width: 760px) {
+    .reasons__grid {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    .reason {
+      min-height: 0;
+      border-radius: 18px;
+    }
+    .reason__art {
+      height: 150px;
+    }
+    .reason :global(.reason__photo) {
+      height: 190px;
+    }
+    .reason__art svg {
+      width: 140px;
+      height: 140px;
+    }
+    .reason__body {
+      padding: 22px;
+      gap: 8px;
+    }
+  }
+
+  /* build your matcha */
+  .builder {
+    background: var(--oat);
+  }
+  .builder__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: clamp(32px, 6vw, 72px);
+    align-items: center;
+  }
+  .builder__controls {
+    display: flex;
+    flex-direction: column;
+  }
+  .builder__kicker {
+    margin-bottom: 14px;
+  }
+  .builder__lede {
+    margin-block: 16px 40px;
+    max-width: 48ch;
+    font-weight: 300;
+    font-size: var(--step-1);
+    line-height: 1.5;
+    color: var(--ink-soft);
+  }
+  fieldset {
+    margin: 0 0 28px;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+  }
+  legend.label {
+    padding: 0;
+    margin-bottom: 12px;
+    color: var(--ink-soft);
+  }
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 48px;
+    padding: 0 20px;
+    border-radius: 999px;
+    border: 1px solid color-mix(in oklab, var(--olive-900) 35%, transparent);
+    background: #fff;
+    color: var(--ink);
+    font: inherit;
+    font-size: 1.0625rem;
+    cursor: pointer;
+    transition:
+      background-color 0.2s,
+      color 0.2s,
+      border-color 0.2s;
+  }
+  .chip:hover {
+    border-color: var(--olive-900);
+  }
+  /* Flavours and temperatures that don't exist for the chosen base. */
+  .chip[hidden] {
+    display: none;
+  }
+  .chip[aria-pressed='true'] {
+    background: var(--olive-900);
+    border-color: var(--olive-900);
+    color: var(--paper);
+  }
+  .chip__dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+  }
+  .builder__note {
+    margin-top: -8px;
+    font-size: 0.95rem;
+    font-weight: 300;
+    color: var(--ink-soft);
+  }
+  .builder__card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    padding: 40px;
+    border-radius: 20px;
+    background: var(--paper);
+    text-align: center;
+  }
+  .cup {
+    width: 280px;
+    height: auto;
+  }
+  /* The liquid and syrup colours are set from the board data (the fill attribute). */
+  .cup__liquid,
+  .cup__syrup {
+    transition: fill 0.4s;
+  }
+  .cup__steam,
+  .cup__ice,
+  .cup__milk,
+  .cup__pearls,
+  .cup__straw {
+    transition: opacity 0.3s;
+  }
+  [data-temp='iced'] .cup__steam,
+  [data-temp='hot'] .cup__ice,
+  [data-flavour='citrus'] .cup__milk,
+  [data-flavour='coconut-water'] .cup__milk,
+  .builder__card:not([data-base='bubble']) .cup__pearls,
+  .builder__card:not([data-base='bubble']) .cup__straw {
+    opacity: 0;
+  }
+  .builder__out {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+  }
+  .builder__name {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-stretch: 88%;
+    font-size: clamp(1.75rem, 1.3rem + 1.4vw, 2.75rem);
+    line-height: 1;
+    text-wrap: balance;
+  }
+  .builder__price {
+    font-weight: 600;
+    font-size: clamp(1.25rem, 1.1rem + 0.4vw, 1.5rem);
+    color: var(--coffee);
+  }
+  /* Phones: title, then the result as a compact row, then the options. */
+  @media (max-width: 860px) {
+    .builder__grid {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 22px;
+    }
+    .builder__controls {
+      display: contents;
+    }
+    .builder__kicker,
+    .builder__title {
+      order: -2;
+    }
+    .builder__kicker {
+      margin-bottom: -8px;
+    }
+    .builder__card {
+      order: -1;
+      flex-direction: row;
+      text-align: left;
+      padding: 20px;
+      gap: 16px;
+      border-radius: 18px;
+    }
+    .cup {
+      width: 110px;
+      flex: none;
+    }
+    .builder__out {
+      align-items: flex-start;
+      gap: 6px;
+    }
+    .builder__lede {
+      display: none;
+    }
+    fieldset {
+      margin-bottom: 0;
+    }
+    .chips {
+      gap: 8px;
+    }
+    .chip {
+      padding: 0 16px;
+    }
+    .builder__note {
+      margin-top: 0;
+    }
+  }
+
+  /* the drinks board */
+  .board {
+    background: var(--board-ink);
+    color: var(--on-dark);
+  }
+  .board__soft {
+    color: var(--caramel-on-dark);
+  }
+  .board__short {
+    display: none;
+  }
+  .board__legend {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px 18px;
+    flex: 0 1 460px; /* shrinks and wraps beside the heading before dropping below it */
+    font-size: 0.95rem;
+    color: color-mix(in oklab, var(--on-dark) 80%, transparent);
+  }
+  .board__legend li {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .dot {
+    flex: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+  }
+  .dot--coffee {
+    background: #b5774a;
+  }
+  .dot--matcha {
+    background: #9db07e;
+  }
+  .dot--blue {
+    background: #7aa3d4;
+  }
+  .dot--hojicha {
+    background: var(--caramel);
+  }
+  .dot--other {
+    background: #e0cfa8;
+  }
+  .board__chips {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .bchip {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 22px;
+    border-radius: 999px;
+    border: 1px solid color-mix(in oklab, var(--paper) 22%, transparent);
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(1.0625rem, 0.85rem + 0.9vw, 1.625rem);
+    line-height: 1.1;
+  }
+  .bchip--more {
+    background: var(--caramel);
+    border-color: var(--caramel);
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .bchip__narrow {
+    display: none;
+  }
+  .board__all {
+    margin-top: 48px;
+  }
+  @media (max-width: 760px) {
+    .board__legend {
+      justify-content: flex-start;
+      font-size: 0.875rem;
+    }
+    .board__long,
+    .bchip--wide,
+    .bchip__wide {
+      display: none;
+    }
+    .board__short,
+    .bchip__narrow {
+      display: inline;
+    }
+    .board__chips {
+      gap: 8px;
+    }
+    .bchip {
+      gap: 8px;
+      padding: 9px 14px;
+    }
+    .dot {
+      width: 10px;
+      height: 10px;
+    }
+    .board__all {
+      margin-top: 22px;
+      width: 100%;
+      justify-content: center;
+    }
+  }
+
+  /* food */
+  .food__grid {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    grid-template-rows: 300px 300px;
+    gap: 20px;
+  }
+  .tile {
+    border-radius: 20px;
+    overflow: hidden;
+  }
+  .tile--waffles {
+    grid-column: span 7;
+    grid-row: span 2;
+    padding: 44px;
+    background: var(--caramel);
+    color: var(--ink);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 24px;
+  }
+  .tile__top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+  }
+  .tile .tile__eyebrow {
+    color: var(--ink);
+    margin-bottom: 12px;
+  }
+  .tile--waffles h3 {
+    font-weight: 700;
+    font-size: clamp(2.5rem, 1.6rem + 2.8vw, 4.5rem);
+    line-height: 0.92;
+  }
+  .tile__soft {
+    font-family: var(--font-text);
+    font-weight: 300;
+    font-stretch: 100%;
+  }
+  .tile__icon {
+    width: 150px;
+    height: 150px;
+    flex: none;
+  }
+  .tile__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid color-mix(in oklab, var(--ink) 30%, transparent);
+  }
+  .tile__list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 20px;
+    padding: 16px 0;
+    font-size: var(--step-1);
+  }
+  .tile__list li + li {
+    border-top: 1px solid color-mix(in oklab, var(--ink) 20%, transparent);
+  }
+  .tile__list li:last-child {
+    padding-bottom: 0;
+  }
+  .tile__list strong {
+    font-family: var(--font-display);
+    font-weight: 600;
+  }
+  .tile__note {
+    font-weight: 350;
+  }
+  .tile__list .num {
+    font-weight: 600;
+    font-size: 1.375rem;
+    white-space: nowrap;
+  }
+  .tile--bakes {
+    grid-column: span 5;
+    position: relative;
+  }
+  .tile--bakes :global(.tile__photo) {
+    aspect-ratio: auto;
+    height: 100%;
+    border-radius: 0;
+  }
+  .tile__caption {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 22px 26px;
+    background: color-mix(in oklab, #2b2a1c 82%, transparent);
+    color: var(--paper);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+    font-weight: 300;
+  }
+  .tile__cap-title {
+    font-size: 1.75rem;
+  }
+  .tile--soup {
+    grid-column: span 2;
+    padding: 26px;
+    background: var(--sage);
+    color: var(--ink);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .tile--soup h3 {
+    font-size: 1.625rem;
+    margin-bottom: 4px;
+  }
+  .tile--soup p {
+    line-height: 1.4;
+  }
+  .tile--order {
+    grid-column: span 3;
+    padding: 26px;
+    background: var(--olive-900);
+    color: var(--paper);
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: background-color 0.25s;
+  }
+  .tile--order:hover {
+    background: var(--olive-700);
+  }
+  .tile__order {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-stretch: 88%;
+    font-size: clamp(1.375rem, 1rem + 1vw, 1.875rem);
+    line-height: 1.05;
+  }
+  @media (max-width: 1100px) and (min-width: 761px) {
+    .food__grid {
+      grid-template-rows: auto 280px 200px;
+    }
+    .tile--waffles {
+      grid-column: 1 / -1;
+      grid-row: auto;
+    }
+    .tile--bakes {
+      grid-column: 1 / -1;
+    }
+    .tile--soup {
+      grid-column: span 5;
+    }
+    .tile--order {
+      grid-column: span 7;
+    }
+  }
+  @media (max-width: 760px) {
+    .food__grid {
+      grid-template-rows: auto 220px 160px;
+      gap: 14px;
+    }
+    .tile {
+      border-radius: 18px;
+    }
+    .tile--waffles {
+      grid-column: 1 / -1;
+      grid-row: auto;
+      padding: 24px;
+      gap: 16px;
+    }
+    .tile__eyebrow,
+    .tile__note {
+      display: none;
+    }
+    .tile--waffles h3 {
+      font-size: 2.5rem;
+    }
+    .tile__icon {
+      width: 64px;
+      height: 64px;
+    }
+    .tile__list li {
+      font-size: 1.0625rem;
+      padding: 12px 0;
+    }
+    .tile__list .num {
+      font-size: 1.0625rem;
+    }
+    .tile--bakes {
+      grid-column: 1 / -1;
+    }
+    .tile__caption {
+      padding: 14px 18px;
+      font-size: 0.875rem;
+    }
+    .tile__cap-title {
+      font-size: 1.375rem;
+    }
+    .tile--soup,
+    .tile--order {
+      grid-column: span 6;
+      padding: 18px;
+    }
+    .tile--soup h3 {
+      font-size: 1.375rem;
+    }
+    .tile--soup p {
+      font-size: 0.95rem;
+    }
+    .tile--soup svg {
+      width: 36px;
+      height: 36px;
+    }
+    .tile__wide {
+      display: none;
+    }
+    .tile__order {
+      font-size: 1.375rem;
     }
   }
 
   /* the corner */
   .corner {
     background: var(--oat);
-    padding-block: clamp(72px, 10vw, 140px);
   }
   .corner__grid {
     display: grid;
     grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-    gap: clamp(32px, 6vw, 96px);
+    gap: clamp(32px, 6vw, 80px);
     align-items: center;
   }
-  .corner__art {
-    color: var(--ink);
-    max-width: 520px;
+  .corner__copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
   }
   .corner__copy .sec-title {
-    margin-block: 14px clamp(28px, 4vw, 48px);
+    font-size: clamp(2.6rem, 1.9rem + 2.6vw, 4.5rem);
   }
-  .corner__cols {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: clamp(20px, 3vw, 36px);
-  }
-  .corner__cols h3 {
-    font-size: var(--step-2);
-    margin-bottom: 10px;
-  }
-  .corner__cols h3 .num {
-    color: var(--coffee);
-  }
-  .corner__cols p {
+  .corner__text {
     font-weight: 300;
+    font-size: var(--step-1);
+    line-height: 1.6;
     color: var(--ink-soft);
   }
-  @media (max-width: 1000px) {
-    .corner__grid {
-      grid-template-columns: 1fr;
-    }
-    .corner__art {
-      max-width: 380px;
-      margin-inline: auto;
-    }
-  }
-  @media (max-width: 720px) {
-    .corner__cols {
-      grid-template-columns: 1fr;
-    }
-  }
-  .mood {
+  .corner__photos {
     list-style: none;
+    margin: 0;
+    padding: 0;
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: clamp(8px, 1.4vw, 18px);
-    margin-top: clamp(56px, 8vw, 110px);
-    margin-bottom: 0;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    align-items: start;
   }
-  .mood li:nth-child(even) {
-    transform: translateY(clamp(16px, 3vw, 44px));
+  .corner__photos li:nth-child(2) {
+    margin-top: 48px;
   }
-  .mood :global(.slot) {
-    aspect-ratio: 2 / 3;
+  .corner__photos :global(.slot) {
+    border-radius: 14px;
   }
-  @media (max-width: 600px) {
-    .mood {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+  /* Phones: copy, two photos, then the link. */
+  @media (max-width: 860px) {
+    .corner__grid {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 16px;
     }
-    .mood li:nth-child(even) {
-      transform: translateY(24px);
+    .corner__copy {
+      display: contents;
+    }
+    .corner__copy .more {
+      order: 2;
+      align-self: flex-start;
+    }
+    .corner__photos {
+      order: 1;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .corner__photos li:nth-child(2) {
+      margin-top: 32px;
+    }
+    .corner__photos li:nth-child(n + 3) {
+      display: none;
     }
   }
 
@@ -383,28 +1481,41 @@ const range = (n: number) => Array.from({ length: n }, (_, i) => i);
   .visit {
     background: var(--olive-700);
     color: var(--on-dark);
-    padding-block: clamp(80px, 10vw, 140px);
+    padding-block: clamp(64px, 8vw, 110px);
   }
-  .visit__room {
-    margin-top: 0;
-    margin-bottom: clamp(48px, 7vw, 96px);
-  }
-  @media (max-width: 600px) {
-    .visit__room :global(.slot) {
-      aspect-ratio: 4 / 3;
-    }
-  }
-  .visit .label {
-    color: color-mix(in oklab, var(--paper) 70%, var(--sage));
+  .visit .label,
+  .visit__hours caption {
+    color: var(--on-dark);
   }
   .visit__grid {
     display: grid;
-    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
     gap: clamp(40px, 6vw, 96px);
     align-items: end;
   }
   .visit .sec-title {
     margin-block: 14px 22px;
+    font-size: clamp(2.6rem, 1.9rem + 2.6vw, 4.5rem);
+  }
+  .visit__line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    font-size: 1rem;
+    font-weight: 300;
+  }
+  .visit__line :global(.open) {
+    font-size: 1rem;
+  }
+  .visit__facts > *::before {
+    content: ' · ';
+    white-space: pre;
+  }
+  .visit__facts a {
+    text-decoration: none;
+  }
+  .visit__facts a:hover {
+    text-decoration: underline;
   }
   .visit__cta {
     display: flex;
@@ -415,11 +1526,12 @@ const range = (n: number) => Array.from({ length: n }, (_, i) => i);
   .visit__hours {
     width: 100%;
     border-collapse: collapse;
+    font-size: var(--step-1);
+    font-variant-numeric: tabular-nums;
   }
   .visit__hours caption {
     text-align: left;
     padding-bottom: 12px;
-    color: color-mix(in oklab, var(--paper) 70%, var(--sage));
   }
   .visit__hours th,
   .visit__hours td {
@@ -434,10 +1546,8 @@ const range = (n: number) => Array.from({ length: n }, (_, i) => i);
   .visit__hours tr.is-today th,
   .visit__hours tr.is-today td {
     font-weight: 500;
-    color: var(--paper);
   }
-  /* Ink on a caramel tag, 8:1. Caramel text on olive-700 was 2.1:1, and no caramel
-     tint clears 4.5:1 there before it turns to paper. */
+  /* Ink on a caramel tag, 8:1. */
   .visit__hours tr.is-today th::after {
     content: 'today';
     display: inline-block;
@@ -446,20 +1556,52 @@ const range = (n: number) => Array.from({ length: n }, (_, i) => i);
     border-radius: 999px;
     background: var(--caramel);
     color: var(--ink);
-    font-size: var(--step--1);
+    font-size: 0.875rem;
     font-weight: 500;
     line-height: 1.4;
-    vertical-align: 0.1em;
+    vertical-align: 0.15em;
   }
+  /* Phones: heading, hours, then the buttons full width. */
   @media (max-width: 800px) {
     .visit__grid {
-      grid-template-columns: 1fr;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 16px;
+    }
+    .visit__copy {
+      display: contents;
+    }
+    .visit .sec-title {
+      margin-block: 0;
+    }
+    .visit__br {
+      display: none;
+    }
+    .visit__hours {
+      order: 1;
+      font-size: 1.0625rem;
+    }
+    .visit__hours caption {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+    }
+    .visit__cta {
+      order: 2;
+      flex-direction: column;
+      margin-top: 8px;
+    }
+    .visit__cta .btn {
+      justify-content: center;
     }
   }
 
   /* instagram */
   .insta {
-    padding-block: clamp(64px, 9vw, 120px);
+    padding-block: clamp(56px, 7vw, 100px);
     text-align: center;
   }
   .insta__in {
@@ -467,13 +1609,11 @@ const range = (n: number) => Array.from({ length: n }, (_, i) => i);
     justify-items: center;
     gap: 16px;
   }
-  .insta .label {
-    color: var(--coffee);
-  }
   .insta__handle {
     display: inline-flex;
     align-items: center;
     gap: 14px;
+    min-height: 44px;
     font-family: var(--font-display);
     font-weight: 600;
     font-stretch: 88%;
@@ -490,25 +1630,15 @@ const range = (n: number) => Array.from({ length: n }, (_, i) => i);
   }
   @media (max-width: 480px) {
     .insta__handle {
-      font-size: var(--step-3);
+      font-size: 2.125rem;
+      gap: 10px;
     }
     .insta__handle :global(svg) {
       width: 28px;
       height: 28px;
     }
-  }
-
-  /* QA pass: contrast and tap targets */
-  .sec-head .label,
-  .corner .label {
-    color: var(--coffee-deep);
-  }
-  .visit .label,
-  .visit__hours caption {
-    color: var(--on-dark);
-  }
-  .insta__handle,
-  .sig__all {
-    min-height: 44px;
+    .insta__note {
+      display: none;
+    }
   }
 </style>

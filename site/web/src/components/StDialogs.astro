@@ -1,0 +1,70 @@
+---
+// Modal dialogs: the manager PIN (cooldown override) and the drink picker for a
+// redemption. Native <dialog>: focus is trapped and Escape closes.
+import StKeypad from './StKeypad.astro';
+---
+
+<dialog class="st-dialog" data-dlg="manager" aria-labelledby="st-mgr-h">
+  <div class="st-dialog-in">
+    <h2 id="st-mgr-h" class="st-dialog-h">Manager PIN needed</h2>
+    <p class="st-dialog-text" data-mgr-detail></p>
+    <StKeypad name="manager" label="Manager PIN keypad" />
+    <p class="st-err" data-mgr-err role="alert" hidden></p>
+    <div class="st-dialog-btns">
+      <button type="button" class="btn btn--ghost" data-mgr-cancel>Cancel</button>
+      <button type="button" class="btn btn--caramel" data-mgr-go disabled>Approve</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog class="st-dialog" data-dlg="options" aria-labelledby="st-opt-h">
+  <div class="st-dialog-in">
+    <div class="st-dialog-top">
+      <h2 id="st-opt-h" class="st-dialog-h">Which reward?</h2>
+      <button type="button" class="st-close" data-opt-cancel aria-label="Cancel, don't redeem">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+      </button>
+    </div>
+    <p class="st-dialog-text" data-opt-for></p>
+    <ul class="st-rewardlist" data-opt-list></ul>
+  </div>
+</dialog>
+
+<dialog class="st-dialog st-dialog--tall" data-dlg="link" aria-labelledby="st-link-h">
+  <div class="st-dialog-in">
+    <div class="st-dialog-top">
+      <h2 id="st-link-h" class="st-dialog-h">Link to the till</h2>
+      <button type="button" class="st-close" data-link-cancel aria-label="Close">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+      </button>
+    </div>
+    <p class="st-dialog-text" data-link-for></p>
+    <form class="st-manual-row" data-link-form novalidate>
+      <label class="sr-only" for="st-link-q">Lightspeed customer number</label>
+      <input class="input" id="st-link-q" name="q" data-link-q placeholder="Customer number" autocomplete="off" spellcheck="false" />
+      <button type="submit" class="btn btn--caramel" data-link-go>Link</button>
+    </form>
+    <p class="st-err" data-link-err role="alert" hidden></p>
+    <p class="label st-kicker">Recent till customers</p>
+    <div class="st-drinks" data-link-list></div>
+  </div>
+</dialog>
+
+<dialog class="st-dialog st-dialog--tall" data-dlg="drinks" aria-labelledby="st-drk-h">
+  <div class="st-dialog-in">
+    <div class="st-dialog-top">
+      <h2 id="st-drk-h" class="st-dialog-h">Which drink?</h2>
+      <button type="button" class="st-close" data-drk-cancel aria-label="Cancel, don't redeem">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+      </button>
+    </div>
+    <p class="st-dialog-text" data-drk-for></p>
+    <label class="field">
+      <span class="sr-only">Search drinks</span>
+      <input class="input" type="search" data-drk-q placeholder="Search drinks" autocomplete="off" spellcheck="false" />
+    </label>
+    <p class="st-err" data-drk-err role="alert" hidden></p>
+    <div class="st-drinks" data-drk-list></div>
+    <button type="button" class="btn btn--ghost st-wide" data-drk-skip>Skip, don't log a drink</button>
+  </div>
+</dialog>

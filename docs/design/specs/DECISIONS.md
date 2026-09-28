@@ -119,3 +119,33 @@ using the resolutions recommended in each spec's "Conflicts" section.
     Keyboard focus on fields is now a 2px brand edge (border + `ring-1 ring-brand`) instead
     of the design's pale `brand-wash` halo, which was ~1.1:1 and could not be seen. Chart
     series colours from decision 21 are tokens now (`--color-chart-*` in `styles.css`).
+
+## Sales dashboard, till lines (owner, 2026-09-28)
+24. **Sales now leads with "Till sales"**, built from the Lightspeed receipt lines in `sale`
+    (`GET /api/finance/sales/insights`, `services/finance/sales_insights.py`): figures with
+    "vs the same number of days before", sales over time, by channel, when people buy
+    (weekday × hour heatmap), by weekday, best sellers (£ or units), by category, size mix,
+    items per receipt. Then Takings (decision 21), Profit by month, Day by day, with a
+    sticky section nav.
+    **One filter row scopes the page**: period and weekday apply to both ledgers; channel,
+    category, product and size apply to till lines only; paid by, orders and day total to
+    takings only. Each section says which filters it ignores. Clicking a product,
+    category, channel, size or weekday in a chart sets that filter.
+    **The two ledgers are never added together.** Takings say how much money came in;
+    till lines say what was sold. A day with no till lines is `null`, not £0. When every
+    line in the window starts `DEMO-` the section is badged "Demo data".
+
+## Website admin moves into the back office (owner, 2026-09-28)
+25. **One back office.** The public website's admin (bookings, messages, events, website
+    menu, photos, café details), which lived at `/admin` on the site with its own olive /
+    caramel look and its own password, is now the **Website** group in this app's sidebar
+    (`#/website…`, `web/src/screens/website/`), in the back office's styles and behind the
+    back office's one password. This reverses the same morning's choice to dress the site
+    admin in the café's brand.
+    **How:** the site API (`sashasite`) stays the owner of that data. The back office
+    forwards `/api/website/<path>` to the site's `/api/admin/<path>` after its own sign-in
+    (`cafeops/api/areas/website.py`), with a shared secret (`SITE_SERVICE_KEY`, one value in
+    `.env` read by both) that the site accepts in place of its cookie. The site's own
+    login, logout and password routes are not forwarded. Photo files come through the open
+    `/api/website-media/*` (they are public on the site anyway). Site admin passwords no
+    longer matter to the owner; the back office's Settings password guards both.

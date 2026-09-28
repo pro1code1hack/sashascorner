@@ -23,6 +23,13 @@ report; summarised here because they change the code):
    treats an explicit `size` field as a nicety when present and otherwise
    parses a trailing size token out of the name -- the path a real integration
    would actually need.
+
+A third, for loyalty (docs/loyalty/CONTRACT.md "Phase 3"): the Financial API's sales
+take `include=consumer` and then carry the customer account staff attached to the check
+-- `consumer: {id, customerId, firstName, lastName, email, phoneNumber1, ...}`
+(https://api-docs.lsk.lightspeed.app/operation/operation-financial-apigetbusinesslocationsales).
+It is the ONLY customer identity a K-Series receipt has. `RawReceipt.consumer` parses it;
+a receipt without one simply belongs to nobody.
 """
 
 from __future__ import annotations
@@ -46,6 +53,7 @@ __all__ = [
     "MenuItemRef",
     "RawCatalogBatch",
     "RawCatalogItem",
+    "RawConsumer",
     "RawModifier",
     "RawReceipt",
     "RawReceiptBatch",
@@ -95,6 +103,25 @@ class RawReceiptLine(BaseModel):
     modifiers: list[RawModifier] = Field(default_factory=list)
 
 
+class RawConsumer(BaseModel):
+    """The customer attached to a check (K-Series `consumer`, Financial API)."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+
+    id: str | None = None
+    customer_id: str | None = Field(default=None, alias="customerId")
+    first_name: str | None = Field(default=None, alias="firstName")
+    last_name: str | None = Field(default=None, alias="lastName")
+    email: str | None = None
+    phone: str | None = Field(default=None, alias="phoneNumber1")
+
+    @property
+    def key(self) -> str | None:
+        """The stable customer id: `customerId` (the account), else the consumer `id`."""
+        value = (self.customer_id or self.id or "").strip()
+        return value or None
+
+
 class RawReceipt(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
@@ -103,6 +130,16 @@ class RawReceipt(BaseModel):
     channel: str = "EPOS"
     void_reason: str | None = Field(default=None, alias="voidReason")
     lines: list[RawReceiptLine] = Field(default_factory=list)
+    #: Loyalty only. Deliberately NOT part of `_receipt_fingerprint`: attaching a customer
+    #: after the fact changes nothing ingestion acts on.
+    consumer: RawConsumer | None = None
+
+    @property
+    def total_pence(self) -> int:
+        """What the customer actually paid: voided receipts and lines count nothing."""
+        if self.void_reason is not None:
+            return 0
+        return sum(line.total_amount_pence for line in self.lines if line.void_reason is None)
 
 
 class RawReceiptBatch(BaseModel):

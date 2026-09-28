@@ -1,5 +1,6 @@
 ---
-// The admin sign-in card (design-system.md: login card, r24, shadow-login, "Open").
+// The admin sign-in card: paper on the café's olive, the brand's caramel "Open".
+// (Layout from design-system.md: login card, r24.)
 // Behaviour lives in scripts/admin-core/shell.ts (initSignIn).
 ---
 
@@ -41,17 +42,25 @@
     display: grid;
     place-items: center;
     padding: 24px 16px;
+    background: var(--brand);
   }
   .adm-signin-card {
     width: 100%;
-    max-width: 380px;
-    background: var(--surface);
+    max-width: 400px;
+    background: var(--canvas);
     border-radius: var(--r-login);
-    box-shadow: var(--shadow-login);
-    padding: 32px 28px 28px;
+    box-shadow: 0 24px 60px rgb(0 0 0 / 0.28);
+    padding: 36px 32px 30px;
     display: flex;
     flex-direction: column;
     gap: 16px;
+    animation: adm-signin-in 0.6s var(--ease-out) both;
+  }
+  @keyframes adm-signin-in {
+    from {
+      opacity: 0;
+      transform: translateY(14px) scale(0.98);
+    }
   }
   .adm-signin-logo {
     width: 132px;
@@ -59,15 +68,16 @@
     display: block;
   }
   .adm-signin-title {
-    font-size: 26px;
-    line-height: 32px;
-    font-weight: 800;
-    letter-spacing: -0.01em;
+    font-size: 44px;
+    line-height: 1;
+    letter-spacing: -0.015em;
+    margin-top: 6px;
   }
   .adm-signin-lede {
     color: var(--ink-2);
-    font-size: 15px;
-    margin-top: -8px;
+    font-size: 16px;
+    font-weight: 350;
+    margin-top: -4px;
   }
   .adm-signin-note {
     font-size: 14px;
@@ -87,16 +97,15 @@
   }
   .adm-signin-input:focus {
     border-color: var(--brand);
-    box-shadow: 0 0 0 3px var(--brand-wash);
+    box-shadow: 0 0 0 3px var(--accent-wash);
   }
   .adm-signin-input[aria-invalid='true'] {
     border-color: var(--alert);
   }
   .adm-signin-btn {
     width: 100%;
-    min-height: 48px;
-    border-radius: var(--r-card);
-    font-size: 16px;
+    min-height: 52px;
+    font-size: 17px;
   }
   .adm-signin-keep {
     font-size: 13px;

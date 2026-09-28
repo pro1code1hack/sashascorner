@@ -8,7 +8,7 @@
  *   </FilterBar>
  *   <ActiveFilters chips={[{ key: 'cat', label: 'Category: Syrup', onRemove }]} onClearAll={…} />
  *
- * Below the 900px breakpoint a bar with a search box folds its selects and
+ * Below the 900px breakpoint a bar with a search box (or `fold`) folds its selects and
  * `trailing` behind a "Filters (n)" button, so a phone sees the list rather
  * than a wall of dropdowns. `activeCount` is the number on that button.
  */
@@ -24,6 +24,7 @@ export function FilterBar({
   children,
   trailing,
   activeCount = 0,
+  fold,
   className,
 }: {
   label: string
@@ -33,17 +34,19 @@ export function FilterBar({
   trailing?: ReactNode
   /** How many filters are set, shown on the narrow-screen "Filters" button. */
   activeCount?: number
+  /** Fold below 900px. Defaults to true when there is a search box. */
+  fold?: boolean
   className?: string
 }) {
   const docked = useIsDocked()
   const [open, setOpen] = useState(false)
-  const folds = !docked && search != null && (children != null || trailing != null)
+  const folds = !docked && (fold ?? search != null) && (children != null || trailing != null)
   const shown = !folds || open
   return (
     <div role="group" aria-label={label} className={cx('flex flex-wrap items-center gap-2', className)}>
-      {search && (
+      {(search || folds) && (
         <div className={cx('flex w-full min-w-0 items-center gap-2', !folds && 'sm:w-[240px] sm:flex-none')}>
-          <div className="min-w-0 flex-1">{search}</div>
+          {search && <div className="min-w-0 flex-1">{search}</div>}
           {folds && (
             <Button variant="secondary" size="sm" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
               Filters{activeCount > 0 ? ` (${activeCount})` : ''}

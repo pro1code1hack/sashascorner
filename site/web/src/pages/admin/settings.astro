@@ -360,9 +360,26 @@ const RULES = [
       }, 5000);
   }
 
+  // Rewrites each form from the saved settings, except a form the owner is still
+  // editing: saving one section must not wipe what was typed in another.
   function fillAll() {
     if (!s) return;
     const d = form('details');
+    if (!unsaved.has(d)) fillDetails(d);
+    const hf = form('hours');
+    if (!unsaved.has(hf)) fillHours(hf);
+    const rf = form('rules');
+    if (!unsaved.has(rf)) {
+      for (const [k, v] of Object.entries(s.booking)) {
+        const el = rf.elements.namedItem(k) as HTMLInputElement | null;
+        if (el) el.value = String(v);
+      }
+    }
+    renderClosures();
+  }
+
+  function fillDetails(d: HTMLFormElement) {
+    if (!s) return;
     setVal(d, 'name', s.cafe.name);
     setVal(d, 'phone', s.cafe.phone);
     setVal(d, 'email', s.cafe.email);
@@ -370,8 +387,10 @@ const RULES = [
     setVal(d, 'city', s.cafe.address?.city);
     setVal(d, 'postcode', s.cafe.address?.postcode);
     for (const k of ['instagram', 'facebook', 'tiktok']) setVal(d, k, s.cafe.socials?.[k] ?? '');
+  }
 
-    const hf = form('hours');
+  function fillHours(hf: HTMLFormElement) {
+    if (!s) return;
     for (let i = 0; i < 7; i++) {
       const hw = s.cafe.hours.find((x) => x.weekday === i);
       const open = !!hw && !hw.closed && !!hw.open;
@@ -381,13 +400,6 @@ const RULES = [
       setVal(hf, `to-${i}`, hw?.close ?? '');
       paintDay(i);
     }
-
-    const rf = form('rules');
-    for (const [k, v] of Object.entries(s.booking)) {
-      const el = rf.elements.namedItem(k) as HTMLInputElement | null;
-      if (el) el.value = String(v);
-    }
-    renderClosures();
   }
 
   function paintDay(i: number) {
@@ -401,10 +413,26 @@ const RULES = [
     row.querySelector('th')!.style.color = cb.checked ? '' : 'var(--ink-3)';
   }
 
+  // Forms with typed-but-unsaved changes. Each section saves on its own, so leaving
+  // the page would drop them silently; ask first.
+  const unsaved = new Set<HTMLFormElement>();
+  for (const key of ['details', 'hours', 'rules', 'closure'] as const) {
+    const f = form(key);
+    f.addEventListener('input', () => unsaved.add(f));
+    f.addEventListener('change', () => unsaved.add(f));
+  }
+  window.addEventListener('beforeunload', (e) => {
+    if (unsaved.size) {
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  });
+
   async function put(body: Partial<Settings>, f: HTMLFormElement, btn: HTMLButtonElement | null, okText: string) {
     clearFieldErrors(f);
     try {
       s = await busy(btn, 'Saving…', () => api.put<Settings>('/api/admin/settings', body));
+      unsaved.delete(f);
       fillAll();
       status(f, okText);
       toast(okText);

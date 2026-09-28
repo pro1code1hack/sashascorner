@@ -15,6 +15,7 @@ import { ago } from '../../lib/format'
 import { useIsDocked } from '../../lib/media'
 import { navigate } from '../../lib/router'
 import { useOperator } from '../../lib/operator'
+import { useWebsiteSummary } from '../../lib/website-api'
 import {
   goToRoute,
   readDismissed,
@@ -37,9 +38,13 @@ function syncLine(shell: ShellResponse | undefined): string | null {
   return `sales synced ${ago(shell.sync.last_ok_finished_at)}`
 }
 
-function badgeFor(r: RouteDef, shell: ShellResponse | undefined): number | undefined {
-  if (!r.badge || shell === undefined) return undefined
-  return shell.badges[r.badge]
+/** Counts the Website group's badges read from the site (undefined when it is not connected). */
+type WebsiteBadges = { messages_new: number; photos_missing: number } | undefined
+
+function badgeFor(r: RouteDef, shell: ShellResponse | undefined, site: WebsiteBadges): number | undefined {
+  if (!r.badge) return undefined
+  if (r.badge === 'messages_new' || r.badge === 'photos_missing') return site?.[r.badge]
+  return shell?.badges[r.badge]
 }
 
 function BrandTile({ size }: { size: 'sm' | 'md' }) {
@@ -99,6 +104,7 @@ function Sidebar({
   className?: string
 }) {
   const line = syncLine(shell)
+  const site = useWebsiteSummary().data
   return (
     <div
       className={cx(
@@ -128,7 +134,7 @@ function Sidebar({
                 key={id}
                 route={ROUTES[id]}
                 active={current === id}
-                count={badgeFor(ROUTES[id], shell)}
+                count={badgeFor(ROUTES[id], shell, site)}
                 onNavigate={onNavigate}
               />
             ))}

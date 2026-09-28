@@ -149,8 +149,11 @@ import Admin from '../../layouts/Admin.astro';
     font-size: 16px;
     color: var(--ink);
   }
-  .mn-chips .adm-chip {
-    min-height: 36px;
+  /* Compact only for a mouse on a wide screen; fingers keep 44px. */
+  @media (pointer: fine) and (min-width: 760px) {
+    .mn-chips .adm-chip {
+      min-height: 36px;
+    }
   }
   .mn-view {
     margin-left: auto;
@@ -197,8 +200,8 @@ import Admin from '../../layouts/Admin.astro';
     min-width: 0;
   }
   .mn-cat__title h2 {
-    font-size: 16px;
-    line-height: 22px;
+    font-size: 22px;
+    line-height: 1.1;
   }
   .mn-cat__meta {
     display: flex;
@@ -438,7 +441,7 @@ import Admin from '../../layouts/Admin.astro';
     width: 18px;
     height: 18px;
     border-radius: 50%;
-    background: #fff;
+    background: var(--surface);
     box-shadow: 0 1px 2px rgb(0 0 0 / 0.2);
     transition: left 0.15s;
   }

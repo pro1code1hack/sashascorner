@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Sasha's Corner Rewards sticker, slot 7: a latte with a rose (the rose latte). Our own drawing.
+       CANONICAL: assets/pass/stickers/ in the repo. site/web/public/stickers/ and
+       web/public/stickers/ are copies written by `cafeops wallet assets`; edit here.
+       Layers: shadow, white die-cut, then the art in the logo's olive line. -->
+  <g transform="rotate(5 32 32)">
+    <g transform="translate(0.8 1.8)" fill="#474531" stroke="#474531" opacity="0.16">
+      <ellipse cx="30" cy="52.5" rx="21" ry="4" stroke-width="8"/>
+      <path d="M44.5 34C53.5 32.5 54 44 43 43.5" stroke-width="13.2"/>
+      <path d="M13.5 30H46.5C46.5 42.5 40 51 30 51C20 51 13.5 42.5 13.5 30Z" stroke-width="8"/>
+      <path d="M21 20.5C21 15.5 23.8 12.6 27 13.6C28.4 10.6 31.6 10.6 33 13.6C36.2 12.6 39 15.5 39 20.5C39 25.8 35 29 30 29C25 29 21 25.8 21 20.5Z" stroke-width="8"/>
+    </g>
+    <g fill="#ffffff" stroke="#ffffff">
+      <ellipse cx="30" cy="52.5" rx="21" ry="4" stroke-width="8"/>
+      <path d="M44.5 34C53.5 32.5 54 44 43 43.5" stroke-width="13.2"/>
+      <path d="M13.5 30H46.5C46.5 42.5 40 51 30 51C20 51 13.5 42.5 13.5 30Z" stroke-width="8"/>
+      <path d="M21 20.5C21 15.5 23.8 12.6 27 13.6C28.4 10.6 31.6 10.6 33 13.6C36.2 12.6 39 15.5 39 20.5C39 25.8 35 29 30 29C25 29 21 25.8 21 20.5Z" stroke-width="8"/>
+    </g>
+    <ellipse cx="30" cy="52.5" rx="21" ry="4" fill="#ebe6dd" stroke="#474531" stroke-width="1.8"/>
+    <path d="M44.5 34C53.5 32.5 54 44 43 43.5" stroke="#474531" stroke-width="5.2"/>
+    <path d="M44.5 34C53.5 32.5 54 44 43 43.5" stroke="#899c6a" stroke-width="2.2"/>
+    <path d="M13.5 30H46.5C46.5 42.5 40 51 30 51C20 51 13.5 42.5 13.5 30Z" fill="#899c6a" stroke="#474531" stroke-width="1.8"/>
+    <ellipse cx="30" cy="30" rx="16.5" ry="3.6" fill="#d4884e" stroke="#474531" stroke-width="1.4"/>
+    <ellipse cx="20.5" cy="27.5" rx="4.4" ry="2" transform="rotate(20 20.5 27.5)" fill="#666749" stroke="#474531" stroke-width="1.2"/>
+    <ellipse cx="39.5" cy="27.5" rx="4.4" ry="2" transform="rotate(-20 39.5 27.5)" fill="#666749" stroke="#474531" stroke-width="1.2"/>
+    <path d="M21 20.5C21 15.5 23.8 12.6 27 13.6C28.4 10.6 31.6 10.6 33 13.6C36.2 12.6 39 15.5 39 20.5C39 25.8 35 29 30 29C25 29 21 25.8 21 20.5Z" fill="#e9dcd6" stroke="#474531" stroke-width="1.8"/>
+    <path d="M24 18.6C25.2 23.4 34.8 23.4 36 18.6M27.4 16.4C27.8 19.4 32.2 19.4 32.6 16.4M30 17.6C28.8 16.2 30.4 14.6 31.4 15.6M22 23.4C24.5 27.6 35.5 27.6 38 23.4" stroke="#9b6038" stroke-width="1.4"/>
+  </g>
+</svg>

@@ -1,0 +1,53 @@
+---
+// Landing page for "bubble tea Dundee". Drinks and prices from menu.json only.
+import SeoLayout from '../components/SeoLayout.astro';
+import { category, inCategory, lowest, matching, menuJsonLd, tidy } from '../components/seoData';
+import { gbp } from '../lib/format';
+
+const creamy = inCategory('bubble-tea');
+const all = matching(/bubble tea/i);
+const seasonal = all.filter((i) => i.seasonal);
+const cat = category('bubble-tea');
+
+const sections = tidy([
+  { id: 'creamy', title: cat?.name ?? 'Bubble tea', blurb: cat?.blurb, items: creamy },
+  { id: 'seasonal', title: 'On the seasonal board', blurb: 'While the season lasts.', items: seasonal },
+  { id: 'other', title: 'More bubble tea', blurb: null, items: all },
+]);
+
+const count = sections.reduce((n, s) => n + s.items.length, 0);
+const from = lowest(all);
+const fromCreamy = lowest(creamy);
+const flavours = creamy.map((i) => i.name.replace(/\s*bubble tea$/i, '').toLowerCase());
+const list = flavours.length > 1 ? `${flavours.slice(0, -1).join(', ')} and ${flavours.at(-1)}` : flavours.join('');
+
+const site = Astro.site!;
+const jsonLd = {
+  '@context': 'https://schema.org',
+  ...menuJsonLd(site, '/bubble-tea-dundee', "Bubble tea at Sasha's Corner, Dundee", sections),
+};
+const description = `${count} bubble teas with tapioca pearls in Dundee city centre${
+  from !== null ? `, from ${gbp(from)}` : ''
+}. Drink in or take away at 23 Commercial Street, or order on Deliveroo or Just Eat.`;
+---
+
+<SeoLayout
+  title="Bubble tea in Dundee · Sasha's Corner"
+  description={description}
+  jsonLd={jsonLd}
+  label="Bubble tea"
+  photos={['menu.bubble-tea']}
+  sections={sections}
+  visitTitle="Come in for a bubble tea."
+>
+  <Fragment slot="title">Bubble tea in Dundee, <span class="soft">with tapioca pearls.</span></Fragment>
+  <p>
+    <span class="num">{creamy.length}</span> creamy bubble teas on the board{fromCreamy !== null && <>, from <span class="num">{gbp(fromCreamy)}</span></>}:
+    milk tea with tapioca pearls, in {list}.
+    {seasonal.length > 0 && <> Plus {seasonal.length === 1 ? 'one' : seasonal.length} on the seasonal board.</>}
+  </p>
+  <p>
+    Drink it in, take it away, or have it brought to you through Deliveroo or Just Eat. The{' '}
+    <a href="/menu#bubble-tea">menu</a> has every size and price.
+  </p>
+</SeoLayout>

@@ -2,6 +2,7 @@
 import { info, socialLinks } from '../lib/data';
 import { clock, WEEKDAYS } from '../lib/format';
 import Icon from './Icon.astro';
+import RwCta from './RwCta.astro';
 
 // Collapse consecutive days with identical hours: "Monday – Sunday 7.30am – 6pm".
 type Row = { from: number; to: number; text: string };
@@ -20,6 +21,7 @@ const year = new Date().getFullYear();
     <div class="ftr__brand">
       <img src="/brand/logo-reverse.svg" alt="Sasha's Corner" width="170" height="102" loading="lazy" />
       <p class="ftr__sign">See you on the corner.</p>
+      <RwCta variant="compact" src="site-footer" tone="dark" text="Collect stamps on your phone." class="ftr__rw" />
     </div>
 
     {
@@ -84,6 +86,9 @@ const year = new Date().getFullYear();
         <li><a href="/book">Book</a></li>
         <li><a href="/visit">Visit &amp; contact</a></li>
         <li><a href="/faq">FAQ</a></li>
+        <li><a href="/rewards">Rewards</a></li>
+        <li><a href="/events">Events</a></li>
+        <li><a href="/privacy">Privacy</a></li>
       </ul>
     </nav>
   </div>
@@ -122,6 +127,9 @@ const year = new Date().getFullYear();
     font-weight: 250;
     font-size: var(--step-1);
     color: var(--on-dark-soft);
+  }
+  .ftr__brand :global(.ftr__rw) {
+    margin-top: 16px;
   }
   .ftr__col {
     display: grid;

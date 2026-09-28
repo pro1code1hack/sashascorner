@@ -25,7 +25,7 @@ const NAMED = [
   'Google-Extended',
   'Applebot-Extended',
 ];
-const RULES = ['Allow: /', 'Disallow: /book/manage', 'Disallow: /admin'];
+const RULES = ['Allow: /', 'Disallow: /book/manage', 'Disallow: /admin', 'Disallow: /staff', 'Disallow: /c/'];
 
 export const GET: APIRoute = ({ site }) =>
   new Response(

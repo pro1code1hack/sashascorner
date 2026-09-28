@@ -14,6 +14,7 @@ from typing import Any
 from alembic import context
 from sashasite.config import get_settings
 from sashasite.db import Base, create_db_engine
+from sashasite.events import SiteEvent  # noqa: F401  (registers site_event* on Base.metadata)
 
 config = context.config
 if config.config_file_name is not None:

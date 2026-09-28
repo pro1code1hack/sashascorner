@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from aiogram import Router
 
-from cafeops.bot.handlers import checklist, common, count, delivery, digest, orders
+from cafeops.bot.handlers import checklist, common, count, delivery, digest, member, orders
 
 __all__ = ["ALL_ROUTERS", "build_root_router"]
 
@@ -20,6 +20,7 @@ ALL_ROUTERS: tuple[Router, ...] = (
     delivery.router,
     digest.router,
     orders.router,
+    member.router,
 )
 
 
