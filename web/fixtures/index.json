@@ -524,6 +524,28 @@
       "body": null,
       "status": 200,
       "note": ""
+    },
+    {
+      "name": "integrations",
+      "file": "integrations.json",
+      "method": "GET",
+      "path": "/api/integrations",
+      "params": null,
+      "body": null,
+      "status": 200,
+      "note": "Supplier portals: adapters, stored sign-ins, last job (BROWSER-ORDERING.md 7)."
+    },
+    {
+      "name": "browser-jobs",
+      "file": "browser-jobs.json",
+      "method": "GET",
+      "path": "/api/browser-jobs",
+      "params": {
+        "limit": "30"
+      },
+      "body": null,
+      "status": 200,
+      "note": ""
     }
   ]
 }

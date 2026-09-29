@@ -105,6 +105,22 @@ uv run cafeops jobs --run drift_report
 uv run cafeops jobs --run pre_delivery_orders --order-date 2026-09-18   # replay a past day
 ```
 
+### Browser worker
+
+A fourth long-running process, `cafeops browser-worker` (Docker service
+`browser-worker`, systemd unit `cafeops-browser-worker`), is the **only** thing that
+opens a browser. The API and the scheduler just queue `browser_job` rows; the worker
+claims one at a time, fills the supplier's web basket from the order and stops at the
+basket -- it never places an order (invariant 1). Design and boundaries:
+[`docs/agents/BROWSER-ORDERING.md`](agents/BROWSER-ORDERING.md).
+
+Off by default. It runs only with `CAFEOPS_BROWSER_WORKER_ENABLED=true`; with it off,
+"Stage basket" is refused with that reason and the scheduler queues nothing. Safe to
+restart at any time: a job whose heartbeat goes stale is failed by the next worker
+(`CAFEOPS_BROWSER_HEARTBEAT_STALE_SECONDS`), never silently re-run. Queue and history:
+`GET /api/browser-jobs`, or `cafeops portal jobs`. A worker that is down shows up as
+jobs sitting in `QUEUED`, not as a broken deploy -- nothing else depends on it.
+
 ## 2. Receiving a delivery
 
 Two ways, both write a `stock_batch` with its expiry and a linked `DELIVERY` movement:
@@ -312,6 +328,8 @@ In order of likelihood:
 ```bash
 docker compose ps                       # health of all five services
 docker compose logs -f api              # or bot / scheduler / caddy / backup
+docker compose logs -f browser-worker   # the browser ordering agents; jobs it ran: cafeops portal jobs
+docker compose up -d browser-worker      # after setting CAFEOPS_BROWSER_WORKER_ENABLED=true
 docker compose restart bot              # e.g. after setting the Telegram token
 docker compose exec api cafeops info
 docker compose exec api cafeops jobs --run drift_report
@@ -325,9 +343,10 @@ someone could forget.
 ## 7. systemd — operational commands
 
 ```bash
-systemctl status cafeops-api cafeops-bot cafeops-scheduler
+systemctl status cafeops-api cafeops-bot cafeops-scheduler cafeops-browser-worker
 journalctl -u cafeops-api -f
 systemctl restart cafeops-bot                     # after editing /etc/cafeops/cafeops.env
+systemctl restart cafeops-browser-worker          # after enabling CAFEOPS_BROWSER_WORKER_ENABLED
 systemctl list-timers cafeops-backup.timer        # confirm the nightly backup is scheduled
 systemctl start cafeops-backup.service            # fire a backup by hand, e.g. before a restart
 ```
@@ -344,6 +363,9 @@ sudo chmod 600 /etc/cafeops/cafeops.env
 sudo cp deploy/systemd/*.service deploy/systemd/*.timer /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now cafeops-api cafeops-bot cafeops-scheduler cafeops-backup.timer
+# Browser ordering agents (optional): `playwright install --with-deps chromium` as root
+# once, then `sudo -u cafeops /opt/cafeops/.venv/bin/playwright install chromium`, and
+#   sudo systemctl enable --now cafeops-browser-worker
 ```
 
 Set `CAFEOPS_DATABASE_URL=sqlite+pysqlite:////opt/cafeops/data/cafeops.db` and
@@ -360,3 +382,23 @@ Set `CAFEOPS_DATABASE_URL=sqlite+pysqlite:////opt/cafeops/data/cafeops.db` and
 - The database volume (`cafeops_data`, or `/opt/cafeops/data`) holds real business
   data (costs, margins). Treat access to it and to the backup volume/remote with the
   same care as `.env`.
+
+## 9. Sales the till never saw: the bot's money commands
+
+DECISIONS 28. The Lightspeed sync writes every till sale; the Telegram bot (owner chat
+only, Russian) takes the rest. Needs `CAFEOPS_TELEGRAM_BOT_TOKEN` and
+`CAFEOPS_TELEGRAM_OWNER_CHAT_ID`; `cafeops bot-run` refuses without both (exit 78).
+
+| Command | What it writes | Undo |
+|---|---|---|
+| `/sale` | `sale` rows, `source=MANUAL`, `recorded_by=telegram:<user>`; stock is depleted by `nightly_expand` like a till line | the «Отменить эту продажу» button voids the receipt; the nightly job reverses any depletion |
+| `/cash` | the day's one Cash figure (`payment_day`, CASH, MANUAL) | type it again; a day whose cash came from an export is refused |
+| `/export` | nothing -- sends `transactions_<from>_<to>.csv` | -- |
+| a sent `.csv` | after «Записать»: transactions rows, a takings export, or a Deliveroo / Just Eat report, chosen by the file's header row | transactions: void the receipts; takings/channel: re-import the corrected file |
+
+**Safe to repeat:** sending the same transactions file twice writes nothing the second
+time (receipt ids are derived from the file's content). Every flow can be driven locally
+with no token: `cafeops bot-preview sale|cash|export|import` (dry run by default).
+
+**Reading them back:** Money › Transactions › Receipts, Source filter → "Added by hand"
+or "CSV file"; `cafeops transactions export --source MANUAL`. The till is `POS_API`.

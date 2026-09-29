@@ -416,6 +416,24 @@ export interface IngredientRow {
   photo_url?: string | null
   /** UK 14 allergens: null = unknown, [] = checked and none. */
   allergens?: string[] | null
+  /** A research URL, or "checked by <name> on <date>". */
+  allergens_source?: string | null
+  /** True only when a person recorded the list from the pack. */
+  allergens_confirmed?: boolean
+  /** Provenance of a photo the café did not take; null for own uploads. */
+  photo_licence?: string | null
+  photo_author?: string | null
+  photo_source_url?: string | null
+}
+export interface IngredientPhotoResult {
+  ingredient_id: number
+  asset_id: number | null
+  photo_url: string | null
+}
+export interface IngredientAllergensResult {
+  ingredient_id: number
+  allergens: string[] | null
+  allergens_source: string | null
 }
 export interface IngredientsResponse {
   rows: IngredientRow[]

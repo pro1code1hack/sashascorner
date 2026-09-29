@@ -280,7 +280,7 @@ def sales_insights(
         try:
             channel = SaleChannel[channel.upper()].value
         except KeyError as exc:
-            raise FinanceRefused("channel: EPOS, DELIVEROO, JUST_EAT or OTHER") from exc
+            raise FinanceRefused("channel: EPOS, CASH, DELIVEROO, JUST_EAT, WEB or OTHER") from exc
     if size is not None and size.upper() not in _SIZE_ORDER:
         raise FinanceRefused("size: S, M, XL or ONE")
     size = size.upper() if size is not None else None

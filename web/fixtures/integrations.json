@@ -1,0 +1,150 @@
+{
+  "suppliers": [
+    {
+      "supplier_id": 7,
+      "supplier_name": "Amazon",
+      "portal": null,
+      "session": {
+        "status": "NOT_CONNECTED",
+        "account_label": null,
+        "connected_at": null,
+        "connected_by": null,
+        "last_ok_at": null,
+        "last_checked_at": null,
+        "last_error": null
+      },
+      "auto_stage": false,
+      "can_stage": false,
+      "cannot_stage_reason": "the browser worker is off (CAFEOPS_BROWSER_WORKER_ENABLED)",
+      "last_job": null
+    },
+    {
+      "supplier_id": 3,
+      "supplier_name": "Booker",
+      "portal": null,
+      "session": {
+        "status": "NOT_CONNECTED",
+        "account_label": null,
+        "connected_at": null,
+        "connected_by": null,
+        "last_ok_at": null,
+        "last_checked_at": null,
+        "last_error": null
+      },
+      "auto_stage": false,
+      "can_stage": false,
+      "cannot_stage_reason": "the browser worker is off (CAFEOPS_BROWSER_WORKER_ENABLED)",
+      "last_job": null
+    },
+    {
+      "supplier_id": 2,
+      "supplier_name": "Brakes",
+      "portal": null,
+      "session": {
+        "status": "NOT_CONNECTED",
+        "account_label": null,
+        "connected_at": null,
+        "connected_by": null,
+        "last_ok_at": null,
+        "last_checked_at": null,
+        "last_error": null
+      },
+      "auto_stage": false,
+      "can_stage": false,
+      "cannot_stage_reason": "the browser worker is off (CAFEOPS_BROWSER_WORKER_ENABLED)",
+      "last_job": null
+    },
+    {
+      "supplier_id": 1,
+      "supplier_name": "Cakesmiths",
+      "portal": null,
+      "session": {
+        "status": "NOT_CONNECTED",
+        "account_label": null,
+        "connected_at": null,
+        "connected_by": null,
+        "last_ok_at": null,
+        "last_checked_at": null,
+        "last_error": "forgotten by Sasha"
+      },
+      "auto_stage": false,
+      "can_stage": false,
+      "cannot_stage_reason": "the browser worker is off (CAFEOPS_BROWSER_WORKER_ENABLED)",
+      "last_job": null
+    },
+    {
+      "supplier_id": 4,
+      "supplier_name": "Cups Direct",
+      "portal": null,
+      "session": {
+        "status": "NOT_CONNECTED",
+        "account_label": null,
+        "connected_at": null,
+        "connected_by": null,
+        "last_ok_at": null,
+        "last_checked_at": null,
+        "last_error": null
+      },
+      "auto_stage": false,
+      "can_stage": false,
+      "cannot_stage_reason": "the browser worker is off (CAFEOPS_BROWSER_WORKER_ENABLED)",
+      "last_job": null
+    },
+    {
+      "supplier_id": 5,
+      "supplier_name": "Monolith",
+      "portal": null,
+      "session": {
+        "status": "NOT_CONNECTED",
+        "account_label": null,
+        "connected_at": null,
+        "connected_by": null,
+        "last_ok_at": null,
+        "last_checked_at": null,
+        "last_error": null
+      },
+      "auto_stage": false,
+      "can_stage": false,
+      "cannot_stage_reason": "the browser worker is off (CAFEOPS_BROWSER_WORKER_ENABLED)",
+      "last_job": null
+    },
+    {
+      "supplier_id": 8,
+      "supplier_name": "Nataly (custom)",
+      "portal": null,
+      "session": {
+        "status": "NOT_CONNECTED",
+        "account_label": null,
+        "connected_at": null,
+        "connected_by": null,
+        "last_ok_at": null,
+        "last_checked_at": null,
+        "last_error": null
+      },
+      "auto_stage": false,
+      "can_stage": false,
+      "cannot_stage_reason": "the browser worker is off (CAFEOPS_BROWSER_WORKER_ENABLED)",
+      "last_job": null
+    },
+    {
+      "supplier_id": 6,
+      "supplier_name": "Tesco",
+      "portal": null,
+      "session": {
+        "status": "NOT_CONNECTED",
+        "account_label": null,
+        "connected_at": null,
+        "connected_by": null,
+        "last_ok_at": null,
+        "last_checked_at": null,
+        "last_error": null
+      },
+      "auto_stage": false,
+      "can_stage": false,
+      "cannot_stage_reason": "the browser worker is off (CAFEOPS_BROWSER_WORKER_ENABLED)",
+      "last_job": null
+    }
+  ],
+  "worker_enabled": false,
+  "portals": []
+}

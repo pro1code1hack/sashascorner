@@ -125,6 +125,8 @@ export interface StockRow {
   par?: Par | null
   /** Preferred (else cheapest) supplier pack, for "≈ 3 bottles". Display only. */
   pack?: StockPack | null
+  /** The ingredient's reference photo (/media/…), or null. */
+  photo_url?: string | null
 }
 
 export interface StockPack {

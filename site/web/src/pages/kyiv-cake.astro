@@ -2,7 +2,7 @@
 // Landing page for "Kyiv cake Dundee". Search engines read the phrase as "Dundee
 // cake" (docs/SEO-GEO.md), so the page pairs the two words plainly. Description and
 // prices from menu.json; the whole cake is ordered through the contact form
-// (topic "order"), exactly as on /order.
+// (topic "order"), exactly as on /delivery.
 import SeoLayout from '../components/SeoLayout.astro';
 import { category, inCategory, menuJsonLd, tidy } from '../components/seoData';
 import { gbp } from '../lib/format';
@@ -62,7 +62,7 @@ const description = [
         <a class="btn btn--caramel" href={ORDER_URL} data-track="cake_enquiry" data-track-source="kyiv-cake">
           Order a whole cake <span class="arrow" aria-hidden="true">→</span>
         </a>
-        <a class="btn btn--ghost" href="/order#ahead">How ordering ahead works</a>
+        <a class="btn btn--ghost" href="/delivery#ahead">How ordering ahead works</a>
       </p>
     )
   }

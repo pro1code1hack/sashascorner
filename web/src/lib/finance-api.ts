@@ -7,9 +7,10 @@
  * the design's demo figures -- and anything unrecorded says so.
  */
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
-import { apiWrite, request } from './api'
+import { API_BASE, apiWrite, authHeaders, request } from './api'
 import type { WriteResult } from './api'
 import type {
+  ISODate,
   CardRow,
   CashRow,
   ChannelUploadOut,
@@ -89,6 +90,34 @@ export const financeApi = {
       })}`,
     ),
   takings: (f: TakingsFilters) => read<TakingsLedgerResponse>(`/api/finance/transactions/takings${qs({ ...f })}`),
+}
+
+/** Download the window's sale lines as CSV (DECISIONS 28): the same file the bot's
+ *  /export sends, and the shape /import reads back. A fetch rather than a link so
+ *  the credential travels in the header, never in a URL. */
+export async function downloadTransactionsCsv(f: {
+  from: ISODate
+  to: ISODate
+  channel?: string
+  source?: string
+  include_voided?: boolean
+}): Promise<void> {
+  const path = `/api/finance/transactions/export.csv${qs({
+    ...f,
+    include_voided: f.include_voided === false ? 'false' : undefined,
+  })}`
+  const res = await fetch(`${API_BASE}${path}`, { headers: authHeaders() })
+  if (!res.ok) throw new Error(`${res.status} on ${path}`)
+  const blob = await res.blob()
+  const name = /filename="([^"]+)"/.exec(res.headers.get('content-disposition') ?? '')?.[1] ?? 'transactions.csv'
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = name
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
 }
 
 export const useFinanceMonths = () =>

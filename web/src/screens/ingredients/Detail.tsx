@@ -49,6 +49,7 @@ import {
 } from '../menu/common/figures'
 import { ImpactPanel, impactFigures } from '../menu/common/Impact'
 import { usePreview } from '../menu/common/usePreview'
+import { Allergens, IngredientPhoto } from './PhotoAllergens'
 
 const UNITS: Unit[] = ['L', 'ML', 'KG', 'G', 'EACH']
 
@@ -136,6 +137,11 @@ function DetailBody({ d, categories, onRetired }: { d: IngredientDetail; categor
           use it. Nothing is ever deleted; retired ingredients keep their history.
         </p>
       )}
+
+      <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start">
+        <IngredientPhoto row={row} />
+        <Allergens key={`${row.allergens_source ?? ''}-${(row.allergens ?? ['?']).join()}`} row={row} />
+      </div>
 
       <div className="my-4 grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3.5">
         <label className="flex min-w-0 flex-col gap-1 text-base text-ink-2">

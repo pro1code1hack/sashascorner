@@ -123,12 +123,51 @@ class ChecklistStatus(enum.Enum):
 
 
 class SaleChannel(enum.Enum):
-    """Spec 1: also sells through Deliveroo and Just Eat."""
+    """Where a sale came from. Spec 1: also sells through Deliveroo and Just Eat.
+
+    `EPOS` is the till, and only the Lightspeed sync writes it. `CASH` is a counter
+    sale that was NOT rung through the till and was paid in cash -- the one the owner
+    types into the bot or the back office by hand (DECISIONS 28). It is a channel and
+    not a payment method on purpose: a till sale paid in cash is still `EPOS`, because
+    the till already has it and typing it again would count it twice.
+    """
 
     EPOS = "EPOS"
+    CASH = "CASH"
     DELIVEROO = "DELIVEROO"
     JUST_EAT = "JUST_EAT"
     OTHER = "OTHER"
+    #: A click-and-collect order placed on the website and written at COLLECTED
+    #: (docs/shop/CONTRACT.md §3.1). Never typed by hand: absent from
+    #: `MANUAL_SALE_CHANNELS` on purpose.
+    WEB = "WEB"
+
+
+#: The channels a person may record by hand. `EPOS` is deliberately absent: the till is
+#: synced from Lightspeed, so a hand-typed till sale would land twice once the sync runs.
+MANUAL_SALE_CHANNELS: tuple[SaleChannel, ...] = (
+    SaleChannel.CASH,
+    SaleChannel.DELIVEROO,
+    SaleChannel.JUST_EAT,
+    SaleChannel.OTHER,
+)
+
+
+class SaleSource(enum.Enum):
+    """How a `sale` row got here. Same rule as `PaymentSourceKind`: a figure typed by a
+    person and a figure pulled from the till deserve different trust, and a silent mix
+    is unauditable. Every row says which it is."""
+
+    #: The Lightspeed sync (`services/ingest_sales.py`). The only source of `EPOS`.
+    POS_API = "POS_API"
+    #: Typed by a person -- the Telegram bot's `/sale` or `POST /api/finance/transactions`.
+    MANUAL = "MANUAL"
+    #: A transactions CSV sent to the bot or uploaded to the API (`services/transactions_csv`).
+    CSV_UPLOAD = "CSV_UPLOAD"
+    #: A free drink redeemed on a loyalty card (`services/loyalty/redeem.py`).
+    LOYALTY = "LOYALTY"
+    #: A collected online order (`services/shop/orders.py`, CONTRACT §3.1).
+    ONLINE = "ONLINE"
 
 
 class Storage(enum.Enum):
@@ -676,3 +715,50 @@ class ProposalConfidence(enum.Enum):
     MEDIUM = "MEDIUM"
     LOW = "LOW"
     NONE = "NONE"
+
+
+# --- browser ordering agents (docs/agents/BROWSER-ORDERING.md) -----------------
+
+
+class SupplierSessionStatus(enum.Enum):
+    """`supplier_session.status`: whether the stored browser profile is signed in."""
+
+    NOT_CONNECTED = "NOT_CONNECTED"
+    CONNECTED = "CONNECTED"
+    #: The last check found the portal asking to sign in again. A person reconnects.
+    EXPIRED = "EXPIRED"
+    #: The check itself could not run (browser or portal down). Not the same as EXPIRED.
+    CHECK_FAILED = "CHECK_FAILED"
+
+
+class BrowserJobKind(enum.Enum):
+    #: Fill a supplier's web basket from a purchase order and STOP at the basket.
+    STAGE_BASKET = "STAGE_BASKET"
+    #: Open the stored profile and report whether it is still signed in.
+    CHECK_SESSION = "CHECK_SESSION"
+
+
+class BrowserJobStatus(enum.Enum):
+    QUEUED = "QUEUED"
+    RUNNING = "RUNNING"
+    SUCCEEDED = "SUCCEEDED"
+    FAILED = "FAILED"
+    CANCELLED = "CANCELLED"
+    #: The job stopped on purpose because the next step needs a person (a one-time
+    #: code, a sign-in, a CAPTCHA). Nothing was staged.
+    NEEDS_HUMAN = "NEEDS_HUMAN"
+
+
+class BrowserStepSource(enum.Enum):
+    #: A deterministic Playwright step from the portal adapter.
+    SCRIPT = "SCRIPT"
+    #: A browser toolset member call chosen by the model.
+    MODEL = "MODEL"
+    #: The policy layer refused an action; nothing ran.
+    POLICY = "POLICY"
+
+
+class BrowserStepOutcome(enum.Enum):
+    OK = "OK"
+    ERROR = "ERROR"
+    REFUSED = "REFUSED"

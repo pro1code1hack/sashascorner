@@ -228,6 +228,13 @@ EXAMPLES: tuple[Example, ...] = (
     Example("agent-proposals", "GET", "/api/agents/proposals", params={"limit": "6"}),
     Example("agent-runs", "GET", "/api/agents/runs", params={"limit": "30"}),
     Example(
+        "integrations",
+        "GET",
+        "/api/integrations",
+        note="Supplier portals: adapters, stored sign-ins, last job (BROWSER-ORDERING.md 7).",
+    ),
+    Example("browser-jobs", "GET", "/api/browser-jobs", params={"limit": "30"}),
+    Example(
         "stock-all",
         "GET",
         "/api/stock",

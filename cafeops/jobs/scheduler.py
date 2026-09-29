@@ -186,10 +186,36 @@ async def job_pre_delivery_orders(
     created = [outcome.po_id for outcome in report.created]
     if not created:
         return
+    if settings.browser_worker_enabled:
+        # docs/agents/BROWSER-ORDERING.md 4.1: suppliers with channel_config.auto_stage
+        # get a STAGE_BASKET job queued for each draft this run wrote. Queued only; the
+        # worker fills the basket and a person pays.
+        await _to_thread(_auto_stage_drafts, factory, po_ids=[p for p in created if p])
     views = [await _to_thread(build_order_view, factory, po_id=po_id) for po_id in created if po_id]
     text = fmt.job_new_drafts(views)
     if text:
         await (notifier or notifier_for_settings()).send(text)
+
+
+def _auto_stage_drafts(session: Session, *, po_ids: list[int]) -> None:
+    from cafeops.db.models import PurchaseOrder
+    from cafeops.services.browser_jobs import BrowserJobRefused, enqueue_stage_basket
+
+    for po_id in po_ids:
+        po = session.get(PurchaseOrder, po_id)
+        if po is None:
+            continue
+        config = po.supplier.channel_config if isinstance(po.supplier.channel_config, dict) else {}
+        if not config.get("auto_stage"):
+            continue
+        try:
+            job = enqueue_stage_basket(
+                session, po_id=po_id, requested_by="scheduler", via="scheduler"
+            )
+        except BrowserJobRefused as exc:
+            log.info("auto-stage skipped for PO %s (%s): %s", po_id, po.supplier.name, exc)
+            continue
+        log.info("auto-stage queued job %s for PO %s (%s)", job.id, po_id, po.supplier.name)
 
 
 async def job_digest(
@@ -309,7 +335,24 @@ def build_scheduler(
         name="drift_report",
     )
     _add_loyalty_jobs(scheduler, factory=factory, notifier=notifier)
+    _add_shop_jobs(scheduler, factory=factory)
     return scheduler
+
+
+def _add_shop_jobs(scheduler: AsyncIOScheduler, *, factory: sessionmaker[Session] | None) -> None:
+    """Order online (docs/shop/CONTRACT.md §3.6): expire abandoned online payments."""
+    from apscheduler.triggers.interval import IntervalTrigger
+
+    from cafeops.jobs.shop_jobs import job_shop_expire_pending
+
+    scheduler.add_job(
+        job_shop_expire_pending,
+        IntervalTrigger(minutes=5, timezone=settings.tz),
+        kwargs={"factory": factory},
+        id="shop_expire_pending",
+        name="shop_expire_pending",
+        misfire_grace_time=300,
+    )
 
 
 def _add_loyalty_jobs(

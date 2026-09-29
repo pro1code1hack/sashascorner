@@ -18,6 +18,7 @@ import { KEYS, stockApi } from '../../lib/stock-api'
 import { CountFlow } from './CountFlow'
 import { Batches, ChecklistSection, Counts, DeliveryForm, KeepsForm, Overview, Panel, TierPicker, WriteOffForm } from './StockItemSections'
 import { StockTrust } from './StockList'
+import { IngredientThumb } from '../ingredients/Thumb'
 
 export function StockItemPage({ id, back }: { id: number; back: string }) {
   const q = useQuery({ queryKey: KEYS.stock, queryFn: stockApi.stock, staleTime: 60_000 })
@@ -34,6 +35,7 @@ export function StockItemPage({ id, back }: { id: number; back: string }) {
         <span aria-hidden="true" className="text-ink-3">
           /
         </span>
+        {row?.photo_url && <IngredientThumb url={row.photo_url} name={row.name} fallback={null} className="size-9 rounded-control" />}
         <h1 className="min-w-0 flex-1 truncate text-2xl font-extrabold tracking-[-.01em]">{row?.name ?? 'Ingredient'}</h1>
         {row && (
           <span className="flex items-center gap-2 text-base text-ink-2">

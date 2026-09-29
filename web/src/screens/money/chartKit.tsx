@@ -42,7 +42,7 @@ export function Legend({
   items,
   onToggle,
 }: {
-  items: { key: string; label: string; color: string; value: ReactNode; off?: boolean }[]
+  items: { key: string; label: string; color: string; value: ReactNode; off?: boolean; shape?: 'bar' | 'line' }[]
   onToggle?: (key: string) => void
 }) {
   return (
@@ -50,7 +50,13 @@ export function Legend({
       {items.map((it) => {
         const body = (
           <>
-            <span aria-hidden="true" className="size-3 flex-none rounded-[3px]" style={{ background: it.off ? 'transparent' : it.color, boxShadow: `inset 0 0 0 2px ${it.color}` }} />
+            {it.shape === 'line' ? (
+              <span aria-hidden="true" className="flex h-3 w-4 flex-none items-center">
+                <span className="h-[3px] w-full rounded-full" style={{ background: it.off ? 'transparent' : it.color, boxShadow: `inset 0 0 0 1.5px ${it.color}` }} />
+              </span>
+            ) : (
+              <span aria-hidden="true" className="size-3 flex-none rounded-[3px]" style={{ background: it.off ? 'transparent' : it.color, boxShadow: `inset 0 0 0 2px ${it.color}` }} />
+            )}
             <span className={cx('text-sm', it.off ? 'text-ink-3 line-through' : 'text-ink-2')}>{it.label}</span>
             <span className={cx('fig text-sm font-bold', it.off ? 'text-ink-3' : 'text-ink')}>{it.value}</span>
           </>

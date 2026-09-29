@@ -15,6 +15,7 @@
 import { useMemo, useState } from 'react'
 import {
   Button,
+  Checkbox,
   Drawer,
   Empty,
   ErrorBox,
@@ -34,10 +35,13 @@ import { menuApi, useInvalidateMenu, useMenuItems, useSeasons } from '../../lib/
 import { useOperator } from '../../lib/operator'
 import { href, navigate, useLocation } from '../../lib/router'
 import type { MenuCategory, MenuGroup, MenuKind, SizeCode } from '../../lib/types/menu'
+import type { ProductAdmin } from '../../lib/types/shop'
 import { MONEY_INPUT, gbp, pctText, poundsToPence, sizeLabel } from './common/figures'
 import { rememberMenuListQuery } from './listMemory'
 import { MenuTabs } from './MenuTabs'
 import { PhotoView } from './Photo'
+import { CategoriesDrawer } from '../shop/CategoriesDrawer'
+import { BulkOnline, ONLINE_OPTIONS, OnlinePills, matchesOnline, useShopProductsByName, type OnlineFilter } from '../shop/menu-list'
 
 const PAGE_SIZES = [24, 48, 96] as const
 const KIND_LABEL: Record<MenuKind, string> = { DRINKS: 'Drinks', FOOD: 'Food', OTHER: 'Other' }
@@ -73,6 +77,7 @@ const DEFAULTS = {
   status: 'all',
   recipe: 'all',
   season: 'all',
+  online: 'all',
   pmin: '',
   pmax: '',
   sort: 'name',
@@ -136,6 +141,9 @@ export function MenuItemsScreen() {
   const data = useMenuItems()
   const seasons = useSeasons()
   const [creating, setCreating] = useState(false)
+  const [categoriesOpen, setCategoriesOpen] = useState(false)
+  const [selected, setSelected] = useState<number[]>([])
+  const shop = useShopProductsByName()
   const fromUrl = readFilters(loc.query)
   rememberMenuListQuery(loc.query)
   // The search box is typed into, so it is local state first: writing each key
@@ -179,6 +187,7 @@ export function MenuItemsScreen() {
       if (f.season === 'none' && g.season_id) return false
       if (f.season === 'any' && !g.season_id) return false
       if (/^\d+$/.test(f.season) && String(g.season_id ?? '') !== f.season) return false
+      if (f.online !== 'all' && !matchesOnline(f.online as OnlineFilter, shop?.get(g.name))) return false
       if (pmin !== null || pmax !== null) {
         const inRange = onSale(g).some(
           (s) => s.price_pence > 0 && (pmin === null || s.price_pence >= pmin) && (pmax === null || s.price_pence <= pmax),
@@ -200,7 +209,7 @@ export function MenuItemsScreen() {
       sales_desc: (a, b) => sold(b) - sold(a) || byName(a, b),
     }
     return [...rows].sort(cmp[f.sort as SortKey] ?? byName)
-  }, [groups, f.q, f.cat, f.kind, f.size, f.margin, f.status, f.recipe, f.season, f.sort, pmin, pmax])
+  }, [groups, f.q, f.cat, f.kind, f.size, f.margin, f.status, f.recipe, f.season, f.online, f.sort, pmin, pmax, shop])
 
   const per = (PAGE_SIZES as readonly number[]).includes(Number(f.per)) ? Number(f.per) : 24
   const pages = Math.max(1, Math.ceil(shown.length / per))
@@ -232,11 +241,12 @@ export function MenuItemsScreen() {
   if (f.recipe !== 'all')
     chip('recipe', f.recipe === 'template' ? 'Made from a recipe' : f.recipe === 'oneoff' ? 'Own recipe' : 'No recipe yet')
   if (f.season !== 'all') chip('season', seasonOptions.find((o) => o.value === f.season)?.label ?? 'Season')
+  if (f.online !== 'all') chip('online', ONLINE_OPTIONS.find((o) => o.value === f.online)?.label ?? 'Online')
   if (f.pmin) chip('pmin', `From £${f.pmin}`)
   if (f.pmax) chip('pmax', `Up to £${f.pmax}`)
 
   const clearAll = () =>
-    set({ q: '', cat: 'all', kind: 'all', size: 'all', margin: 'all', status: 'all', recipe: 'all', season: 'all', pmin: '', pmax: '' })
+    set({ q: '', cat: 'all', kind: 'all', size: 'all', margin: 'all', status: 'all', recipe: 'all', season: 'all', online: 'all', pmin: '', pmax: '' })
 
   return (
     <>
@@ -245,9 +255,12 @@ export function MenuItemsScreen() {
         subtitle={<MenuTabs current="items" />}
         saved={data.isFetching ? 'Loading…' : undefined}
         actions={
-          <Button variant="primary" className="rounded-[18px] px-[18px] text-lg" onClick={() => setCreating(true)}>
-            + Add item
-          </Button>
+          <>
+            <Button onClick={() => setCategoriesOpen(true)}>Categories</Button>
+            <Button variant="primary" className="rounded-[18px] px-[18px] text-lg" onClick={() => setCreating(true)}>
+              + Add item
+            </Button>
+          </>
         }
       />
       <div className="flex-none border-b border-line bg-surface px-4 pb-2.5 pt-3 sm:px-5">
@@ -340,12 +353,19 @@ export function MenuItemsScreen() {
             ]}
           />
           <FilterSelect label="Season" value={f.season} onChange={(v) => set({ season: v })} options={seasonOptions} />
+          {shop && <FilterSelect label="Online" value={f.online} onChange={(v) => set({ online: v })} options={ONLINE_OPTIONS} />}
           <PriceRange min={f.pmin} max={f.pmax} onChange={(pmin, pmax) => set({ pmin, pmax })} />
         </FilterBar>
         <ActiveFilters className="mt-2" chips={chips} onClearAll={clearAll} summary={data.data ? `${shown.length} of ${groups.length} items` : undefined} />
+        {selected.length > 0 && (
+          <div className="mt-2">
+            <BulkOnline selected={selected} onClear={() => setSelected([])} />
+          </div>
+        )}
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto bg-canvas px-4 pb-6 pt-3.5 sm:px-5">
+      <div className="flex min-h-0 flex-1">
+      <div className="min-h-0 min-w-0 flex-1 overflow-y-auto bg-canvas px-4 pb-6 pt-3.5 sm:px-5">
         {data.isLoading && <Loading what="Loading the menu" />}
         {data.error && <ErrorBox error={data.error} what="the menu" />}
         {data.data && shown.length === 0 && (
@@ -363,11 +383,11 @@ export function MenuItemsScreen() {
           </Empty>
         )}
         {f.view === 'list' ? (
-          slice.length > 0 && <ListView rows={slice} />
+          slice.length > 0 && <ListView rows={slice} shop={shop} selected={selected} onSelect={setSelected} />
         ) : (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-3.5 compact:grid-cols-[repeat(auto-fill,minmax(170px,1fr))] wide:grid-cols-[repeat(auto-fill,minmax(200px,1fr))]">
             {slice.map((g) => (
-              <Card key={g.key} group={g} />
+              <Card key={g.key} group={g} shop={shop?.get(g.name)} />
             ))}
           </div>
         )}
@@ -384,6 +404,7 @@ export function MenuItemsScreen() {
           />
         )}
       </div>
+      <CategoriesDrawer open={categoriesOpen} onClose={() => setCategoriesOpen(false)} />
       {creating && (
         <CreateDrawer
           categories={categories}
@@ -395,6 +416,7 @@ export function MenuItemsScreen() {
           }}
         />
       )}
+      </div>
     </>
   )
 }
@@ -460,8 +482,12 @@ function priceLine(g: MenuGroup): string {
 }
 
 const itemPath = (g: MenuGroup) => `/menu/${g.sizes[0]?.menu_item_id ?? g.anchor_id}`
+const LIST_COLS = 'compact:grid-cols-[44px_minmax(0,1fr)_200px_104px_92px_80px]'
+/** With the Online column (and a select box before the row). */
+const LIST_COLS_ONLINE = 'compact:grid-cols-[18px_44px_minmax(0,1fr)_150px_200px_104px_92px_80px]'
+const LIST_COLS_ONLINE_ROW = 'compact:grid-cols-[44px_minmax(0,1fr)_150px_200px_104px_92px_80px]'
 
-function Card({ group }: { group: MenuGroup }) {
+function Card({ group, shop }: { group: MenuGroup; shop: ProductAdmin | undefined }) {
   const badge = marginBadge(group)
   return (
     <GridCard inactive={!group.is_active} onClick={() => navigate(itemPath(group))} label={`Open ${group.name}`}>
@@ -481,17 +507,32 @@ function Card({ group }: { group: MenuGroup }) {
         <div className="line-clamp-2 text-md font-bold leading-[1.25]">{group.name}</div>
         <div className="fig text-sm text-ink-2">{priceLine(group)}</div>
         {!group.is_active && <div className="text-xs font-bold text-ink-2">Off the menu</div>}
+        {shop && <OnlinePills p={shop} compact />}
       </div>
     </GridCard>
   )
 }
 
-function ListView({ rows }: { rows: MenuGroup[] }) {
+function ListView({
+  rows,
+  shop,
+  selected,
+  onSelect,
+}: {
+  rows: MenuGroup[]
+  shop: Map<string, ProductAdmin> | undefined
+  selected: number[]
+  onSelect: (ids: number[]) => void
+}) {
+  const ids = rows.map((g) => shop?.get(g.name)?.id).filter((id): id is number => id !== undefined)
+  const allOn = ids.length > 0 && ids.every((id) => selected.includes(id))
   return (
     <div className="overflow-hidden rounded-card-lg bg-surface shadow-raised">
-      <div className="hidden grid-cols-[44px_minmax(0,1fr)_200px_104px_92px_80px] gap-3 border-b border-line px-3.5 py-2 text-label font-bold uppercase tracking-[.06em] text-ink-3 compact:grid">
+      <div className={cx('hidden gap-3 border-b border-line px-3.5 py-2 text-label font-bold uppercase tracking-[.06em] text-ink-3 compact:grid', shop ? LIST_COLS_ONLINE : LIST_COLS)}>
+        {shop && <Checkbox checked={allOn} onChange={(on) => onSelect(on ? [...new Set([...selected, ...ids])] : selected.filter((id) => !ids.includes(id)))} label={<span className="sr-only">Select every item shown</span>} />}
         <span />
         <span>Item</span>
+        {shop && <span>Online</span>}
         <span className="text-right">Price</span>
         <span className="text-right">Margin</span>
         <span className="text-right">£ / min</span>
@@ -502,12 +543,22 @@ function ListView({ rows }: { rows: MenuGroup[] }) {
           const b = marginBadge(g)
           const mpm = lowestMpm(g)
           const mpmEst = onSale(g).some((s) => s.cost.is_estimate || s.prep_is_estimate)
+          const sp = shop?.get(g.name)
           return (
-            <li key={g.key} className="border-b border-line-row last:border-b-0">
+            <li key={g.key} className={cx('border-b border-line-row last:border-b-0', shop && 'flex items-center gap-x-3 pl-3.5')}>
+              {shop && (
+                <Checkbox
+                  checked={sp !== undefined && selected.includes(sp.id)}
+                  disabled={sp === undefined}
+                  onChange={(on) => sp && onSelect(on ? [...selected, sp.id] : selected.filter((id) => id !== sp.id))}
+                  label={<span className="sr-only">Select {g.name}</span>}
+                />
+              )}
               <a
                 href={href(itemPath(g))}
                 className={cx(
-                  'grid grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-x-3 px-3.5 py-2.5 text-ink no-underline hover:bg-canvas-2 compact:grid-cols-[44px_minmax(0,1fr)_200px_104px_92px_80px]',
+                  'grid grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-x-3 px-3.5 py-2.5 text-ink no-underline hover:bg-canvas-2',
+                  shop ? cx('min-w-0 flex-1 pl-0', LIST_COLS_ONLINE_ROW) : LIST_COLS,
                   !g.is_active && 'opacity-60',
                 )}
               >
@@ -523,7 +574,17 @@ function ListView({ rows }: { rows: MenuGroup[] }) {
                     {!g.is_active ? ' · off the menu' : ''}
                   </span>
                   <span className="fig block truncate text-sm text-ink-2 compact:hidden">{priceLine(g)}</span>
+                  {shop && (
+                    <span className="mt-0.5 block compact:hidden">
+                      <OnlinePills p={sp} />
+                    </span>
+                  )}
                 </span>
+                {shop && (
+                  <span className="hidden compact:block">
+                    <OnlinePills p={sp} />
+                  </span>
+                )}
                 <span className="fig hidden truncate text-right text-base compact:block">{priceLine(g)}</span>
                 <span className="text-right">
                   <span className={cx('fig inline-block whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-bold', b.cls, b.italic && 'italic')}>

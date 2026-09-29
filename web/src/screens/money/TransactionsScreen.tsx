@@ -2,7 +2,9 @@
  * Money → Transactions: what the back office recorded, read-only.
  *
  * Two ledgers, never summed together:
- * - Receipts: Lightspeed receipts (lines grouped by receipt), newest first.
+ * - Receipts: receipt lines grouped by receipt, newest first -- the till's, and since
+ *   DECISIONS 28 the ones typed into the Telegram bot or imported from a CSV, each
+ *   labelled with its source and who recorded it. Filter by source to separate them.
  * - Takings: one row per day, method and source (workbook, CSV export,
  *   Lightspeed, typed cash). When two sources report the same day and method,
  *   only the winner counts; the other is shown faded, never added.
@@ -13,6 +15,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import {
   ActiveFilters,
+  Button,
   ErrorBox,
   FilterBar,
   FilterSelect,
@@ -32,7 +35,7 @@ import {
   cx,
 } from '../../components/ui'
 import type { ActiveFilterChip } from '../../components/ui'
-import { useReceipts, useTakingsLedger } from '../../lib/finance-api'
+import { downloadTransactionsCsv, useReceipts, useTakingsLedger } from '../../lib/finance-api'
 import type { ReceiptFilters, TakingsFilters, TakingsRow } from '../../lib/types/finance'
 import { AmountRange, Figures, PeriodBar, count, isWeekend, shortDate, windowOf } from './filters'
 import type { DateRange, PenceRange } from './filters'
@@ -55,7 +58,21 @@ const SOURCE_NAME: Record<string, string> = {
   MANUAL: 'Added here',
   LEGACY_WORKBOOK: 'Finance workbook',
 }
-const CHANNEL_NAME: Record<string, string> = { EPOS: 'Till', DELIVEROO: 'Deliveroo', JUST_EAT: 'Just Eat', OTHER: 'Other' }
+const CHANNEL_NAME: Record<string, string> = {
+  EPOS: 'Till',
+  CASH: 'Cash (off till)',
+  DELIVEROO: 'Deliveroo',
+  JUST_EAT: 'Just Eat',
+  WEB: 'Website',
+  OTHER: 'Other',
+}
+/** Where a receipt came from (DECISIONS 28). The till's rows are POS_API. */
+const RECEIPT_SOURCE_NAME: Record<string, string> = {
+  POS_API: 'Till',
+  MANUAL: 'Added by hand',
+  CSV_UPLOAD: 'CSV file',
+  LOYALTY: 'Loyalty reward',
+}
 
 const dash = <span className="text-ink-3">—</span>
 const money = (p: number | null) => (p === null ? dash : gbp(p))
@@ -70,7 +87,7 @@ export function TransactionsScreen() {
     <>
       <PageHeader
         title="Transactions"
-        subtitle="what the till and the bank recorded, as imported"
+        subtitle="what the till, the bank and the bot recorded"
         actions={
           <Segmented<Tab>
             label="Ledger"
@@ -142,13 +159,16 @@ function Receipts({ win, range, clearRange }: { win: DateRange | null; range: Da
     return () => window.clearTimeout(t)
   }, [search])
   const [channel, setChannel] = useState('all')
+  const [source, setSource] = useState('all')
   const [amount, setAmount] = useState<PenceRange>({ min: null, max: null })
   const [hideVoided, setHideVoided] = useState(false)
-  const [page, setPage, size, setSize] = usePaging([win, qText, channel, amount, hideVoided])
+  const [exporting, setExporting] = useState(false)
+  const [page, setPage, size, setSize] = usePaging([win, qText, channel, source, amount, hideVoided])
   const f: ReceiptFilters = {
     from: win?.from,
     to: win?.to,
     channel: channel === 'all' ? undefined : channel,
+    source: source === 'all' ? undefined : source,
     q: qText || undefined,
     min_pence: amount.min ?? undefined,
     max_pence: amount.max ?? undefined,
@@ -163,10 +183,25 @@ function Receipts({ win, range, clearRange }: { win: DateRange | null; range: Da
     ...rangeChip(range, clearRange),
     ...(qText ? [{ key: 'q', label: `“${qText}”`, onRemove: () => setSearch('') }] : []),
     ...(channel !== 'all' ? [{ key: 'ch', label: CHANNEL_NAME[channel] ?? channel, onRemove: () => setChannel('all') }] : []),
+    ...(source !== 'all' ? [{ key: 'src', label: RECEIPT_SOURCE_NAME[source] ?? source, onRemove: () => setSource('all') }] : []),
     ...amountChip(amount, () => setAmount({ min: null, max: null })),
     ...(hideVoided ? [{ key: 'v', label: 'Voided hidden', onRemove: () => setHideVoided(false) }] : []),
   ]
   const avg = d && d.total_rows - d.voided_count > 0 ? Math.floor((d.gross_pence * 2 + (d.total_rows - d.voided_count)) / ((d.total_rows - d.voided_count) * 2)) : null
+
+  // The export takes the window on screen; with no period set it takes the dates the
+  // rows actually span, so the file never silently covers less than the table.
+  const exportFrom = win?.from ?? d?.first_date ?? null
+  const exportTo = win?.to ?? d?.last_date ?? null
+  const exportCsv = async () => {
+    if (!exportFrom || !exportTo) return
+    setExporting(true)
+    try {
+      await downloadTransactionsCsv({ from: exportFrom, to: exportTo, ...f, include_voided: !hideVoided })
+    } finally {
+      setExporting(false)
+    }
+  }
 
   const body: ReactNode[] = []
   let prev = ''
@@ -190,6 +225,7 @@ function Receipts({ win, range, clearRange }: { win: DateRange | null; range: Da
           </div>
           <div className="truncate text-sm text-ink-3">
             {r.receipt_id}
+            {r.source !== 'POS_API' && ` · ${RECEIPT_SOURCE_NAME[r.source] ?? r.source}${r.recorded_by ? ` by ${r.recorded_by}` : ''}`}
             {r.voided ? ' · voided' : ''}
             {r.refund ? ' · refund' : ''}
           </div>
@@ -227,15 +263,25 @@ function Receipts({ win, range, clearRange }: { win: DateRange | null; range: Da
             onChange={setChannel}
             options={[{ value: 'all', label: 'All channels' }, ...Object.entries(CHANNEL_NAME).map(([value, label]) => ({ value, label }))]}
           />
+          <FilterSelect
+            label="Source"
+            value={source}
+            onChange={setSource}
+            options={[{ value: 'all', label: 'Till and by hand' }, ...Object.entries(RECEIPT_SOURCE_NAME).map(([value, label]) => ({ value, label }))]}
+          />
           <AmountRange label="Receipt total" value={amount} onChange={setAmount} />
           <FilterToggle active={hideVoided} onToggle={() => setHideVoided(!hideVoided)}>
             Hide voided
           </FilterToggle>
+          <Button variant="outline" size="sm" onClick={exportCsv} disabled={exporting || !exportFrom || !exportTo}>
+            {exporting ? 'Exporting…' : 'Export CSV'}
+          </Button>
         </FilterBar>
         <ActiveFilters chips={chips} onClearAll={() => {
           clearRange()
           setSearch('')
           setChannel('all')
+          setSource('all')
           setAmount({ min: null, max: null })
           setHideVoided(false)
         }} />
@@ -250,7 +296,7 @@ function Receipts({ win, range, clearRange }: { win: DateRange | null; range: Da
             <Figures
               items={[
                 { label: 'Receipts', value: count(d.total_rows - d.voided_count), strong: true, sub: d.voided_count > 0 ? `+ ${count(d.voided_count)} voided` : undefined },
-                { label: 'Takings', value: gbp(d.gross_pence), sub: 'as rung on the till' },
+                { label: 'Takings', value: gbp(d.gross_pence), sub: source === 'POS_API' ? 'as rung on the till' : 'till and by hand' },
                 { label: 'Avg receipt', value: avg === null ? '—' : gbp(avg) },
                 {
                   label: 'Dates',
@@ -260,7 +306,7 @@ function Receipts({ win, range, clearRange }: { win: DateRange | null; range: Da
             />
             {d.caveats.length > 0 && <p className="pt-2 text-sm text-ink-2">{d.caveats.join(' ')}</p>}
             <div className="pt-3">
-              <Table header="upper" minWidth={560} label="Lightspeed receipts">
+              <Table header="upper" minWidth={560} label="Receipts">
                 <THead>
                   <tr>
                     <Th width={64} className="pl-2!">

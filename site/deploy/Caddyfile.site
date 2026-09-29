@@ -28,6 +28,18 @@
 	handle /api/staff/* {
 		reverse_proxy api:8000
 	}
+	# Order ahead (click & collect): catalogue, slots, quotes, orders, the Stripe webhook
+	# (docs/shop/CONTRACT.md §4). Same cafeops API as Rewards.
+	# Menu photos the online shop shows: cafeops' content-addressed uploads, on the
+	# cafeops_media volume this Caddy already mounts read-only (never the data volume).
+	handle /media/* {
+		root * /srv
+		file_server
+		header Cache-Control "public, max-age=31536000, immutable"
+	}
+	handle /api/shop/* {
+		reverse_proxy api:8000
+	}
 	handle /wallet/apple/* {
 		reverse_proxy api:8000
 	}
@@ -51,7 +63,8 @@
 	# Website section now: one app, one password. Each page goes to its React route.
 	# SITE_OPS_URL is the back office's origin (repo-root .env, read via env_file).
 	map {path} {ops_admin_route} {
-		~^/admin/(bookings|messages|events|menu|photos)(\.html)?/?$ /website/${1}
+		~^/admin/menu(\.html)?/?$ /menu
+		~^/admin/(bookings|messages|events|photos)(\.html)?/?$ /website/${1}
 		~^/admin/settings(\.html)?/?$ /website/details
 		default /website
 	}
@@ -71,6 +84,16 @@
 	handle /c/* {
 		root * /srv/site/public
 		rewrite * /c.html
+		file_server
+	}
+
+	# The order-ahead app: /order is order.html (found by try_files below); every route
+	# inside it (/order/basket, /order/checkout, /order/status/SC-ABC123, ...) is the same
+	# page, whose script reads the rest of the path. Unlike /staff there are no real files
+	# under /order/, so rewrite outright rather than try_files.
+	handle /order/* {
+		root * /srv/site/public
+		rewrite * /order.html
 		file_server
 	}
 
@@ -118,9 +141,13 @@
 	header @staff Cache-Control "no-cache"
 	header /staff/sw.js Service-Worker-Allowed /staff
 
-	# Private pages: a card belongs to one person, the scanner to the staff.
+	# Private pages: a card belongs to one person, the scanner to the staff, an order and
+	# a sign-in to the customer. The shop's overview and menu (/order, /order/c/*, /order/p/*)
+	# stay indexable.
 	header /c/* X-Robots-Tag "noindex, nofollow"
 	header /staff* X-Robots-Tag "noindex, nofollow"
+	header /order/status/* X-Robots-Tag "noindex, nofollow"
+	header /order/account X-Robots-Tag "noindex, nofollow"
 
 	# Photos, icons, fonts, og.png, sitemap: not hashed, change rarely.
 	@static {

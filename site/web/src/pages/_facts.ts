@@ -135,7 +135,7 @@ export const faqs: Faq[] = [
   {
     id: 'takeaway-delivery',
     q: 'Do you do takeaway and delivery?',
-    html: `Yes. Everything on the menu can be taken away: order at the counter. For delivery, we're on ${a(DELIVEROO, 'Deliveroo', true)} and ${a(JUST_EAT, 'Just Eat', true)}, with no-contact delivery. The apps show whether they deliver to your address. ${a('/order', 'More on ordering')}.`,
+    html: `Yes. Everything on the menu can be taken away: order at the counter, or ${a('/order', 'order ahead online')} and collect it from 23 Commercial Street. For delivery, we're on ${a(DELIVEROO, 'Deliveroo', true)} and ${a(JUST_EAT, 'Just Eat', true)}, with no-contact delivery. The apps show whether they deliver to your address. ${a('/delivery', 'More on cakes and delivery')}.`,
   },
   {
     id: 'matcha',
@@ -160,7 +160,7 @@ export const faqs: Faq[] = [
           q: 'What is Kyiv cake, and can I order a whole one?',
           html: `${kyivSlice?.description ?? ''} ${kyivSlice ? `We sell it by the slice at ${gbp(low(kyivSlice))}` : ''}${
             kyivWhole
-              ? `${kyivSlice ? ', and' : 'We sell'} whole at ${gbp(low(kyivWhole))}. A whole cake is made to order: ${a('/order#ahead', 'order it ahead')} and tell us the day you'd like to collect it from Commercial Street`
+              ? `${kyivSlice ? ', and' : 'We sell'} whole at ${gbp(low(kyivWhole))}. A whole cake is made to order: ${a('/delivery#ahead', 'order it ahead')} and tell us the day you'd like to collect it from Commercial Street`
               : ''
           }.`.trim(),
           ownerNote: 'how many days notice a whole Kyiv cake needs',

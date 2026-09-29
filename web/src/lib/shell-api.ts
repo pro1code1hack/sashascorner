@@ -50,7 +50,8 @@ export interface ShellBanner {
 
 export interface ShellResponse {
   sync: ShellSync
-  badges: { orders_waiting: number; proposals_waiting: number }
+  /** `shop_new` (online orders waiting) is optional: the Live orders screen counts itself when absent. */
+  badges: { orders_waiting: number; proposals_waiting: number; shop_new?: number }
   banners: ShellBanner[]
   setup: { empty_install: boolean; open_steps: number }
 }

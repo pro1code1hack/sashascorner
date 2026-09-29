@@ -171,6 +171,45 @@ const range = (n: number) => Array.from({ length: n }, (_, i) => i);
     </dl>
   </section>
 
+  <!-- Order ahead ------------------------------------------------------------ -->
+  <!-- Takeaway / collection only: the delivery apps live on /delivery. -->
+  <section class="sec ahead" aria-labelledby="ahead-title">
+    <div class="wrap ahead__grid">
+      <div class="ahead__copy" data-reveal>
+        <p class="label">Order online</p>
+        <h2 id="ahead-title" class="sec-title">Order ahead <span class="soft">for takeaway.</span></h2>
+        <p class="ahead__lede">
+          Skip the queue: choose from the whole board, and it's made to order for the time you pick. Collection from
+          the counter, not delivery.
+        </p>
+        <div class="ahead__cta">
+          <a class="btn btn--caramel btn--lg" href="/order">Start an order <span class="arrow" aria-hidden="true">→</span></a>
+          <p class="ahead__rw">
+            <img src="/stickers/slot-1.svg" alt="" width="26" height="26" />
+            <span><a href="/rewards">Stamps count online too</a>: sign in with your Rewards card at checkout.</span>
+          </p>
+        </div>
+      </div>
+      <ol class="ahead__steps" data-reveal>
+        <li>
+          <span class="ahead__n num">01</span>
+          <span class="ahead__step">Choose</span>
+          <span class="ahead__how">Any drink or dish, your milk, your size.</span>
+        </li>
+        <li>
+          <span class="ahead__n num">02</span>
+          <span class="ahead__step">Pay here or at the counter</span>
+          <span class="ahead__how">By card online, or when you pick it up.</span>
+        </li>
+        <li>
+          <span class="ahead__n num">03</span>
+          <span class="ahead__step">Collect at 23 Commercial Street</span>
+          <span class="ahead__how">Say your name or show the order code.</span>
+        </li>
+      </ol>
+    </div>
+  </section>
+
   <!-- Three reasons ----------------------------------------------------------- -->
   <section class="sec reasons" aria-labelledby="reasons-title">
     <div class="wrap">
@@ -441,10 +480,10 @@ const range = (n: number) => Array.from({ length: n }, (_, i) => i);
             </article>
           )
         }
-        <a class="tile tile--order on-dark" href="/order" data-reveal>
-          <span class="label">To order{kyivWhole && <span class="tile__wide"> · {gbp(from(kyivWhole))}</span>}</span>
+        <a class="tile tile--order on-dark" href="/delivery" data-reveal>
+          <span class="label">Delivery{kyivWhole && <span class="tile__wide"> · whole cake {gbp(from(kyivWhole))}</span>}</span>
           <span class="tile__order">
-            Whole Kyiv cake <span class="tile__wide">for your table</span>
+            Deliveroo, Just Eat <span class="tile__wide">and cakes to order</span>
             <span aria-hidden="true"> →</span>
           </span>
         </a>
@@ -716,6 +755,97 @@ const range = (n: number) => Array.from({ length: n }, (_, i) => i);
   .btn--lg {
     min-height: 52px;
     padding-inline: 26px;
+  }
+
+  /* order ahead: copy left, the three steps as a numbered rule on the right */
+  .ahead {
+    background: var(--oat);
+    padding-block: clamp(48px, 7vw, 96px);
+  }
+  .ahead__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    gap: clamp(28px, 5vw, 80px);
+    align-items: center;
+  }
+  .ahead__lede {
+    margin-top: 18px;
+    max-width: 40ch;
+    font-size: var(--step-1);
+    font-weight: 300;
+    color: var(--olive-900);
+  }
+  .ahead__cta {
+    display: grid;
+    gap: 18px;
+    margin-top: 28px;
+    justify-items: start;
+  }
+  .ahead__rw {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--olive-700);
+    font-size: var(--step--1);
+  }
+  .ahead__rw img {
+    flex: none;
+    width: 26px;
+    height: 26px;
+  }
+  .ahead__rw a {
+    color: var(--coffee-deep);
+  }
+  .ahead__steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--rule-strong);
+  }
+  .ahead__steps li {
+    display: grid;
+    grid-template-columns: 3.2rem minmax(0, 1fr);
+    grid-template-areas: 'n step' 'n how';
+    column-gap: 12px;
+    padding-block: 18px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .ahead__n {
+    grid-area: n;
+    font-size: var(--step-2);
+    font-weight: 600;
+    line-height: 1;
+    color: var(--caramel);
+  }
+  .ahead__step {
+    grid-area: step;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-stretch: 88%;
+    font-size: var(--step-2);
+    line-height: 1;
+  }
+  .ahead__how {
+    grid-area: how;
+    margin-top: 6px;
+    color: var(--olive-700);
+  }
+  @media (max-width: 860px) {
+    .ahead__grid {
+      grid-template-columns: 1fr;
+    }
+    .ahead__steps {
+      margin-top: 8px;
+    }
+  }
+  @media (max-width: 520px) {
+    .ahead__cta .btn {
+      width: 100%;
+      justify-content: center;
+    }
+    .ahead__rw {
+      align-items: flex-start;
+    }
   }
 
   /* numbers band, continuing the hero's olive ground */

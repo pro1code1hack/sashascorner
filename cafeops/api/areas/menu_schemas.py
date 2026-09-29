@@ -753,6 +753,17 @@ class IngredientRowOut(Out):
     photo_url: str | None = None
     #: UK 14 allergens; null = unknown, [] = checked, none.
     allergens: tuple[str, ...] | None = None
+    #: Where the allergen list came from: a research URL, or "checked by <name> on <date>".
+    allergens_source: str | None = None
+    allergens_confirmed: bool = Field(
+        default=False,
+        description="True only when a person recorded the list from the pack; a researched "
+        "list is an estimate to check against the pack.",
+    )
+    #: Provenance of a photo the café did not take (media_asset); null for own uploads.
+    photo_licence: str | None = None
+    photo_author: str | None = None
+    photo_source_url: str | None = None
 
 
 class SupplierNameOut(Out):
@@ -893,3 +904,28 @@ class IngredientMetaIn(In):
 class IngredientWriteOut(Out):
     ingredient_id: int
     summary: str
+
+
+class IngredientPhotoOut(Out):
+    ingredient_id: int
+    asset_id: int | None
+    photo_url: str | None
+    width: int | None
+    height: int | None
+    bytes: int | None
+    content_type: str | None
+
+
+class IngredientAllergensIn(In):
+    actor: str = ACTOR
+    allergens: list[str] | None = Field(
+        description="UK 14 keys (milk, cereals_gluten, ...). [] = checked, none; "
+        "null = back to unknown.",
+        max_length=14,
+    )
+
+
+class IngredientAllergensOut(Out):
+    ingredient_id: int
+    allergens: tuple[str, ...] | None
+    allergens_source: str | None

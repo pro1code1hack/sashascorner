@@ -376,6 +376,11 @@ The agent gets three jobs, each behind a whitelisted tool interface:
 3. **Import assistance** — proposing template groupings and `waste_factor`
    adjustments, always as a proposal a human confirms.
 
+**Job 1 is now real for supplier baskets** (2026-09-29): a separate `cafeops
+browser-worker` process drives Anthropic's browser toolset against per-supplier
+Playwright profiles, stops at the basket and emits a `SUPPLIER_BASKET` proposal.
+Design: `docs/agents/BROWSER-ORDERING.md`; decision record: `ARCHITECTURE.md` §8W.
+
 Hard rules: never writes to `stock_movement`, `purchase_order` or composition directly.
 Every action logged to `agent_action_log` with inputs, output and tool. Anything that
 would spend money stops at a human.
@@ -420,7 +425,11 @@ earlier uppercase ban). Specs and owner decisions: `docs/design/specs/` (read
 - **Orders** is its own page with three sub-pages: Orders (`#/orders`, rows, filterable by
   text, supplier, status, dates, "no receipt yet"), Draft orders (`#/orders/drafts`),
   Shop runs (`#/orders/shop-runs`). Old `#/money/expenses/orders…` links redirect.
-- **The Telegram bot is not in use for now (DECISIONS 18).** Orders are created and
+- **The Telegram bot is used for money, not orders (DECISIONS 18 and 28).** `/sale` (a
+  sale past the till: cash, Deliveroo, Just Eat), `/cash` (the day's cash), `/export` and a
+  sent CSV (`/import`) write through `services/record_sale.py` and
+  `services/transactions_csv.py`; every such row carries `sale.source` and `recorded_by`,
+  and `EPOS` can never be typed. Orders are created and
   confirmed on the web: "Create order" on a draft basket writes a DRAFT from today's run
   (`POST /api/orders/from-draft`, recomputed server-side); the order page sets packs and a
   named person confirms (`POST /api/orders/{id}/confirm`, invariant 1 unchanged). Nothing is
@@ -429,6 +438,14 @@ earlier uppercase ban). Specs and owner decisions: `docs/design/specs/` (read
   statement (lines, subtotal, delivery, total), then confirm / mark sent / receive into
   stock / cancel, and a side column with the receipt photo (`POST /api/orders/{id}/receipt`)
   and what happened when.
+- **Online orders (click & collect, 2026-09-29):** the public site's `/order` app (Preact
+  island in `site/web/src/scripts/shop/`) orders ahead for takeaway/collection against
+  `/api/shop/*`; the back office has an **Online orders** group (Live orders with a ring,
+  All orders, Insights, Option groups, Banners & upsells, Settings) on `/api/shop-admin/*`,
+  and each Menu item page carries an "Online ordering" section. Collected orders write
+  `sale` rows (channel WEB, source ONLINE) and stamp the Rewards card; payments go through
+  `integrations/payments/providers/` (Stripe; Lightspeed records only), the till through
+  `integrations/pos/`. Contract: `docs/shop/CONTRACT.md` (read §10 agents' additions too).
 - **Stock and Ingredients** use the Menu items list layout and the same filter set
   (search, category, supplier, storage, unit, used-in, estimates, sort); Stock keeps its
   status chips, tier and trust, and invariant 6.
@@ -528,11 +545,17 @@ uv run cafeops shelf-life list | set <name> --days N [--open-days N] --source su
 #     the only remedy on offer was editing a seed file (ARCHITECTURE.md 8O).
 uv run cafeops count / expand / ingredients / info
 uv run cafeops import-finance --dry-run | --commit   # Daily Sales, Expenses, Director sheets
+uv run cafeops transactions export --from D --to D [--channel CASH] [--out f.csv]
+uv run cafeops transactions import f.csv [--by name] [--commit]   # dry run by default
+uv run cafeops bot-preview sale | cash | export | import         # drive the money flows locally
+uv run cafeops shop vapid-keys                         # Web Push keys for online-order updates (docs/shop/CONTRACT.md 3c)
 uv run cafeops password reset                          # forget the Settings password; env rules
 uv run cafeops doctor                                  # is this install operable?
 uv run cafeops simulate [--weeks 8] [--supplier X] [--cadence-days 7]
 uv run cafeops sync --fixtures --from D --to D
 uv run cafeops proposals / materialise-template / templates / components
+uv run cafeops browser-worker                          # the ONLY process that opens a browser
+uv run cafeops portal list | connect <supplier> | check <supplier> | stage <po_id> | jobs [--job N]
 #   ^ proposals prints a stable `id`. Confirm by id: two pairs of proposals share
 #     a name and they are different recipes (ARCHITECTURE.md 8Q).
 uv run cafeops edit-recipe / cost-rollup / menu-costs / set-price

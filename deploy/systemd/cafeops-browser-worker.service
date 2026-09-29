@@ -1,0 +1,32 @@
+[Unit]
+Description=Cafe Ops browser worker (stages supplier web baskets from queued browser_job rows)
+After=network-online.target cafeops-api.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=cafeops
+Group=cafeops
+WorkingDirectory=/opt/cafeops
+EnvironmentFile=/etc/cafeops/cafeops.env
+# The only process that opens a browser (docs/agents/BROWSER-ORDERING.md 8). Needs
+# `playwright install --with-deps chromium` run once on the box as root (system libs)
+# and once as cafeops (the browser itself), or PLAYWRIGHT_BROWSERS_PATH pointing at a
+# shared install. Exits immediately unless CAFEOPS_BROWSER_WORKER_ENABLED=true.
+Environment=CAFEOPS_BROWSER_DATA_DIR=/opt/cafeops/data/browser
+ExecStart=/opt/cafeops/.venv/bin/cafeops browser-worker
+Restart=on-failure
+RestartSec=10
+# A job in flight gets time to record its last step before the unit is killed.
+TimeoutStopSec=60
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+# The database, the persistent Chromium profiles and the screenshots.
+ReadWritePaths=/opt/cafeops/data
+UMask=0027
+
+[Install]
+WantedBy=multi-user.target

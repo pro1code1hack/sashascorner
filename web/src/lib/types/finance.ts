@@ -362,7 +362,12 @@ export interface Receipt {
   weekday: string
   /** HH:MM, Europe/London. */
   time: string
+  /** EPOS | CASH | DELIVEROO | JUST_EAT | OTHER */
   channel: string
+  /** POS_API (the till) | MANUAL | CSV_UPLOAD | LOYALTY (DECISIONS 28). */
+  source: string
+  /** Who typed it; null for the till. */
+  recorded_by: string | null
   lines: number
   /** Item count as a decimal string. */
   items: string
@@ -419,6 +424,7 @@ export interface ReceiptFilters {
   from?: ISODate
   to?: ISODate
   channel?: string
+  source?: string
   q?: string
   min_pence?: number
   max_pence?: number

@@ -25,6 +25,8 @@ import type {
   IngredientPricePreview,
   IngredientsResponse,
   IngredientWrite,
+  IngredientPhotoResult,
+  IngredientAllergensResult,
   ItemSales,
   LineIn,
   LinesPreview,
@@ -245,6 +247,16 @@ export const ingredientApi = {
     send<IngredientPricePreview>(`/api/ingredients/${id}/price/preview`, body),
   priceApply: (id: number, body: IngredientPriceBody & { actor: string }) =>
     send<{ rollup_items_recosted: number }>(`/api/ingredients/${id}/price/apply`, body),
+  clearPhoto: (id: number) => send<IngredientPhotoResult>(`/api/ingredients/${id}/photo/clear`, {}),
+  /** Raw body; the server decides the type from the bytes, not this header. */
+  uploadPhoto: (id: number, blob: Blob, actor: string | null) =>
+    send<IngredientPhotoResult>(`/api/ingredients/${id}/photo`, undefined, {
+      body: blob,
+      headers: { 'Content-Type': blob.type || 'application/octet-stream', ...(actor ? { 'X-Operator': actor } : {}) },
+    }),
+  /** [] = checked, none; null = back to unknown. */
+  allergens: (id: number, allergens: string[] | null, actor: string) =>
+    send<IngredientAllergensResult>(`/api/ingredients/${id}/allergens`, { allergens, actor }),
 }
 
 /** Photo URLs are same-origin paths; in split-origin dev they need the API base. */

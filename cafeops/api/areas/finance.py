@@ -20,6 +20,7 @@ from datetime import date
 from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query, status
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from cafeops.api.areas import finance_views as v
@@ -48,6 +49,7 @@ from cafeops.api.areas.finance_schemas import (
     FinanceMonthsOut,
     FinanceSettingsIn,
     FinanceSettingsOut,
+    MenuPickResponse,
     OverviewOut,
     PayoutIn,
     PLResponse,
@@ -59,6 +61,11 @@ from cafeops.api.areas.finance_schemas import (
     SalesInsightsOut,
     SalesResponse,
     TakingsLedgerResponse,
+    TransactionImportIn,
+    TransactionImportOut,
+    TransactionIn,
+    TransactionOut,
+    TransactionVoidIn,
 )
 from cafeops.api.runtime import in_session
 from cafeops.api.security import ApiAuth
@@ -309,12 +316,17 @@ PageSizeQ = Annotated[int, Query(ge=1, le=200)]
 @router.get(
     "/transactions/receipts",
     response_model=ReceiptsResponse,
-    summary="Lightspeed receipts, newest first. Read-only.",
+    summary="Receipts, newest first: the till's and the hand-typed ones. Read-only.",
 )
 async def receipts(
     since: FromQ = None,
     until: ToQ = None,
-    channel: Annotated[str | None, Query(description="EPOS | DELIVEROO | JUST_EAT | OTHER")] = None,
+    channel: Annotated[
+        str | None, Query(description="EPOS | CASH | DELIVEROO | JUST_EAT | WEB | OTHER")
+    ] = None,
+    source: Annotated[
+        str | None, Query(description="POS_API | MANUAL | CSV_UPLOAD | LOYALTY | ONLINE")
+    ] = None,
     q: Annotated[str | None, Query(max_length=100)] = None,
     min_pence: MinQ = None,
     max_pence: MinQ = None,
@@ -328,6 +340,7 @@ async def receipts(
             since=since,
             until=until,
             channel=channel,
+            source=source,
             q=q,
             min_pence=min_pence,
             max_pence=max_pence,
@@ -336,6 +349,80 @@ async def receipts(
             page_size=page_size,
         )
     )
+
+
+# --------------------------------------- hand-typed transactions (DECISIONS 28) ---
+
+
+@router.get(
+    "/transactions/menu",
+    response_model=MenuPickResponse,
+    summary="Active menu items to pick from when typing a sale. Read-only.",
+)
+async def transactions_menu(
+    category: Annotated[str | None, Query(description="One category; '' = uncategorised.")] = None,
+    q: Annotated[str | None, Query(max_length=100, description="Name contains.")] = None,
+) -> MenuPickResponse:
+    return await _run(lambda s: v.transactions_menu_view(s, category=category, q=q))
+
+
+@router.post(
+    "/transactions",
+    response_model=TransactionOut,
+    status_code=201,
+    summary="Record a sale the till never saw: cash at the counter, Deliveroo, Just Eat.",
+)
+async def transaction_create(body: TransactionIn) -> TransactionOut:
+    """EPOS is refused: the till is synced from Lightspeed and a typed till sale would
+    be counted twice. Stock is depleted by the nightly expansion like any other sale."""
+    return await _run(lambda s: v.transaction_create_view(s, body))
+
+
+@router.post(
+    "/transactions/{receipt_id}/void",
+    response_model=TransactionOut,
+    summary="Void a hand-typed receipt. A till receipt is refused (void it in Lightspeed).",
+)
+async def transaction_void(receipt_id: str, body: TransactionVoidIn) -> TransactionOut:
+    return await _run(lambda s: v.transaction_void_view(s, receipt_id, body))
+
+
+@router.get(
+    "/transactions/export.csv",
+    summary="Every sale line in the window as CSV, the shape /transactions/import reads back.",
+    response_class=Response,
+)
+async def transactions_export(
+    since: Annotated[date, Query(alias="from")],
+    until: Annotated[date, Query(alias="to")],
+    channel: Annotated[str | None, Query()] = None,
+    source: Annotated[str | None, Query()] = None,
+    include_voided: bool = True,
+) -> Response:
+    out = await _run(
+        lambda s: v.transactions_export_view(
+            s,
+            since=since,
+            until=until,
+            channel=channel,
+            source=source,
+            include_voided=include_voided,
+        )
+    )
+    return Response(
+        content=out.text,
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{out.filename}"'},
+    )
+
+
+@router.post(
+    "/transactions/import",
+    response_model=TransactionImportOut,
+    summary="Import a transactions CSV. Dry run by default; dry_run=false writes.",
+)
+async def transactions_import(body: TransactionImportIn) -> TransactionImportOut:
+    return await _run(lambda s: v.transactions_import_view(s, body))
 
 
 @router.get(
@@ -368,3 +455,14 @@ async def takings_ledger(
             page_size=page_size,
         )
     )
+
+
+# Declared LAST: a path parameter would otherwise swallow /transactions/menu,
+# /transactions/export.csv, /transactions/import and /transactions/takings.
+@router.get(
+    "/transactions/{receipt_id}",
+    response_model=TransactionOut,
+    summary="One receipt with its lines.",
+)
+async def transaction_get(receipt_id: str) -> TransactionOut:
+    return await _run(lambda s: v.transaction_get_view(s, receipt_id))

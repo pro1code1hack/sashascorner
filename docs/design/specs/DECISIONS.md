@@ -169,3 +169,77 @@ using the resolutions recommended in each spec's "Conflicts" section.
     totals, P&L/overview period figures); `editable.cash_till` + `editable.cash_off_till`
     → `editable.cash`; `POST /api/finance/sales` and `PATCH …/sales/{date}` take
     `cash_pence`. Do not reintroduce a second cash field without the owner.
+
+## One consolidated Sales dashboard (owner, 2026-09-28, later the same day)
+27. **Sales is one dashboard, not two stacked ones.** Owner: *"integrate the whole
+    dashboard into one consolidated view where we can filter cash, see deliveroo, see
+    just eat … the top dashboard should consolidate the bottom stuff"*. The separate
+    "Till sales" and "Takings" sections (decisions 21 and 24) are merged into **Money
+    in**: one figures strip (till sales, receipts, avg basket, per day open, busiest
+    hour · money taken, card, cash · delivery apps), one **Over time** chart (card and
+    cash as stacked bars, till sales as a line over them, legend keys toggle), one
+    **Where it came from** panel (rung up through · paid by · delivery statements for the
+    months in view), the heatmap, **By weekday** and **Best days** with a Till sales /
+    Money taken switch. Then **What sold** (best sellers, category, size, baskets), Profit
+    by month, Day by day.
+    **Filters:** "Paid by" is now Card or cash / Card / Cash and picks that money across
+    the takings figures, chart series and the day table (which drops the other column);
+    the old "Has card / Card only" day filters are gone. The channel filter always offers
+    In store, Deliveroo and Just Eat; picking an app filters till lines to it *and* swaps
+    card and cash (till money) for that app's monthly statements. Clicking Card or Cash
+    in Where it came from sets Paid by, the same as channels and products.
+    **Still true:** the two ledgers are never added (`SalesDashboard.tsx` header); a
+    statement not uploaded is "not uploaded", never £0.
+
+## Transactions from Telegram (owner, 2026-09-28)
+28. **The Telegram bot is back in use, for money -- not for orders.** Decision 18 stands
+    for ordering (orders are created and confirmed on the web); the bot now takes the
+    things the till never sees, so `sale` is the whole picture and not the Lightspeed
+    slice. Four commands, all Russian, all owner-chat only:
+    - `/sale` -- a sale past the till: pick a channel (**Cash (off till)**, Deliveroo,
+      Just Eat, Other), then items by category button or typed name, a quantity, an
+      optional app price and date, «Записать». Written as ordinary `sale` rows with
+      `source = MANUAL`, `recorded_by = telegram:<user>`, expanded into stock by the
+      nightly job like a till line. «Отменить эту продажу» voids (never deletes).
+    - `/cash` -- the day's one cash figure (decision 26), today / yesterday / a typed
+      day; refused when that day's cash came from an export.
+    - `/export` -- today / 7 / 30 days / everything as `transactions_<from>_<to>.csv`.
+    - a sent `.csv` -- classified by its header row (transactions file, takings
+      export, or Deliveroo / Just Eat report), shown as a **dry run that writes
+      nothing**, written on «Записать». The same file twice adds nothing.
+    **Data:** `SaleChannel.CASH` is new and means "paid in cash, not rung through the
+    till"; a till sale paid in cash is still `EPOS`. `sale.source`
+    (`POS_API | MANUAL | CSV_UPLOAD | LOYALTY`), `sale.recorded_by`, `sale.note` are new;
+    every existing row is `POS_API`, loyalty redemptions `LOYALTY`. **`EPOS` cannot be
+    typed anywhere** (`services/record_sale.py` refuses it): the till is synced from
+    Lightspeed and a typed till sale would count twice.
+    **Web:** Money › Transactions › Receipts gains a **Source** filter (Till / Added by
+    hand / CSV file / Loyalty reward), shows "added by hand by telegram:sasha" under a
+    typed receipt, offers **Export CSV**, and names Cash (off till) as a channel here
+    and on the Sales dashboard. No "add a sale" form on the web yet; the API has it
+    (`POST /api/finance/transactions`, `.../{receipt_id}/void`, `.../export.csv`,
+    `.../import`, `GET .../menu`).
+
+## One menu everywhere (owner, 2026-09-29)
+29. **The shop menu, the menu and the website menu are one thing.** Owner: *"shop menu
+    and menu itself should be consolidated — it is the same thing"*. Earlier the same day
+    the Order online catalogue was folded into Menu items (the "Online ordering" section
+    on `#/menu/<id>`, the Categories drawer on the list, `#/shop/menu` redirects). This
+    folds the last separate copy: the public website's menu page, which had its own
+    presentation (descriptions, signature marks, hidden flags, blurbs, order) in the
+    site's `site_menu_*_meta` tables and its own screen, Website › Website menu.
+    **Now:** the site reads `shop_product` / `shop_category` read-only as the website
+    menu's presentation (`description`, `visible`, `featured` = the signature mark,
+    `sort_order`; category `name`, `blurb`, `visible`, `sort_order`), so "Shown online and
+    on the website menu" and "Featured · Signature on the website" on the item page, and
+    the Categories drawer, are the website menu too. Website › Website menu is gone from
+    the nav; `#/website/menu` redirects to `#/menu`; the site's three menu write routes
+    answer 410 pointing at the back office; Website › Today's menu note links to Menu
+    items; the item page's side column gains "View on the website menu".
+    **Data:** the site tables are kept, not dropped, and no longer written. Their copy
+    (222 descriptions, 8 signature marks, 1 hidden item, 15 blurbs) was carried into the
+    shop once with `cafeops shop adopt-website-menu`, which never overwrites a value set
+    in the back office and can be re-run. The website keeps its own stable category slugs
+    (`/menu#hot-matcha`, photo slots `menu.<slug>`), not the shop's, and item names stay
+    `menu_item.name` (the shop's `display_name` override is shop-only, so site item ids
+    do not move).

@@ -282,7 +282,8 @@ export function Shell({ route, children }: { route: RouteDef | null; children: R
     document.title = route ? `${route.label} · Sasha's Corner` : "Sasha's Corner"
   }, [route])
 
-  const waiting = (shell?.badges.orders_waiting ?? 0) + (shell?.badges.proposals_waiting ?? 0)
+  const waiting =
+    (shell?.badges.orders_waiting ?? 0) + (shell?.badges.proposals_waiting ?? 0) + (shell?.badges.shop_new ?? 0)
   const current = route?.id ?? null
   useEmptyInstallRedirect(shell, current)
 

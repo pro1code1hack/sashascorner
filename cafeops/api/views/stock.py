@@ -57,6 +57,7 @@ from cafeops.db.models import (
     DriftObservation,
     ExpirySource,
     Ingredient,
+    MediaAsset,
     MovementType,
     ParLevel,
     PriceSource,
@@ -101,6 +102,7 @@ from cafeops.services.build_order import (
     forecast_for,
     shelf_life_specs,
 )
+from cafeops.services.media_store import media_url
 from cafeops.services.read_stock import StockReading, read_on_hand
 from cafeops.services.record_count import explain_drift_history, gate_status
 
@@ -404,6 +406,7 @@ def _row(
         since_count=_since_count(session, reading, at),
         par=extras.par.get(ingredient.id),
         pack=extras.packs.get(ingredient.id),
+        photo_url=extras.photos.get(ingredient.id),
     )
 
 
@@ -641,6 +644,7 @@ class _Extras:
     checklist: dict[int, ChecklistStateOut] = field(default_factory=dict)
     par: dict[int, ParOut] = field(default_factory=dict)
     packs: dict[int, StockPackOut] = field(default_factory=dict)
+    photos: dict[int, str] = field(default_factory=dict)
 
     @classmethod
     def load(cls, session: Session) -> _Extras:
@@ -651,6 +655,12 @@ class _Extras:
             out.categories[ing_id] = category
             if retired_at is not None:
                 out.retired.add(ing_id)
+        for ing_id, asset in session.execute(
+            select(Ingredient.id, MediaAsset).join(
+                MediaAsset, MediaAsset.id == Ingredient.photo_asset_id
+            )
+        ).all():
+            out.photos[ing_id] = media_url(asset.filename)
         # `qty_remaining > 0` is safe in SQL since Qty became a scaled integer
         # (ARCHITECTURE 8E); only open lots are shown, so only those are read.
         for batch in session.scalars(select(StockBatch).where(StockBatch.qty_remaining > 0)):

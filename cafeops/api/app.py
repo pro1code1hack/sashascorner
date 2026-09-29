@@ -43,6 +43,7 @@ from cafeops.db.repositories.par import AutoOrderGrantRefused
 from cafeops.domain.types import SubstitutionError
 from cafeops.services.edit_composition import RetroactiveEditError
 from cafeops.services.loyalty.errors import LoyaltyError
+from cafeops.services.shop.errors import ShopError
 
 __all__ = ["create_app"]
 
@@ -139,10 +140,19 @@ def create_app() -> FastAPI:
     # /media/<sha>.<ext>: menu photos. Caddy serves the files directly in production;
     # this route is the dev/fallback path.
     app.include_router(areas.menu.open_router)
-    for area in (areas.shell, areas.stock, areas.menu, areas.finance, areas.website):
+    for area in (
+        areas.shell,
+        areas.stock,
+        areas.menu,
+        areas.finance,
+        areas.website,
+        areas.shop_admin,
+        areas.integrations,
+    ):
         app.include_router(area.router)
     app.include_router(areas.website.open_router)
     _include_loyalty(app)
+    _include_shop(app)
     return app
 
 
@@ -175,6 +185,29 @@ def _include_loyalty(app: FastAPI) -> None:
             app.include_router(module.router)
         except Exception as exc:
             log.warning("wallet router %s not mounted: %s", name, exc)
+
+
+async def _shop_error_handler(request: Request, exc: Exception) -> JSONResponse:
+    """A `ShopError` is a `LoyaltyError` with an optional payload (the fresh quote on
+    409 `price_changed`, docs/shop/CONTRACT.md §3.3)."""
+    assert isinstance(exc, ShopError)
+    base = await loyalty_error_handler(request, exc)
+    if not exc.extra:
+        return base
+    content = {"error": exc.code, "detail": exc.detail, **exc.extra}
+    retry = base.headers.get("Retry-After")
+    return JSONResponse(
+        status_code=exc.status,
+        content=content,
+        headers={"Retry-After": retry} if retry else None,
+    )
+
+
+def _include_shop(app: FastAPI) -> None:
+    """Order online (docs/shop/CONTRACT.md §4): the public ordering routes. The admin
+    router is Agent B's and sits in the `for area in (...)` tuple above."""
+    app.add_exception_handler(ShopError, _shop_error_handler)
+    app.include_router(areas.shop.open_router)
 
 
 app = create_app()

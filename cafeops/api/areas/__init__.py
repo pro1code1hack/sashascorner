@@ -9,10 +9,37 @@ Caddy: `loyalty.open_router` (`/api/loyalty/*`, card-token scoped) and `staff.op
 (`/api/staff/*`, device token + PIN session). `members.router` is the back office's side
 and sits behind `ApiAuth` like every other area.
 
+`integrations.router` is the browser ordering agents' side (docs/agents/BROWSER-ORDERING.md
+§7): portal sign-ins and the browser job queue, plus `POST /api/orders/{id}/stage-basket`.
+
 `website.router` forwards the public website's admin (`/api/website/*`) to the site API;
 `website.open_router` serves its photo files, which are public on the site anyway.
 """
 
-from cafeops.api.areas import finance, loyalty, members, menu, shell, staff, stock, website
+from cafeops.api.areas import (
+    finance,
+    integrations,
+    loyalty,
+    members,
+    menu,
+    shell,
+    shop,
+    shop_admin,
+    staff,
+    stock,
+    website,
+)
 
-__all__ = ["finance", "loyalty", "members", "menu", "shell", "staff", "stock", "website"]
+__all__ = [
+    "finance",
+    "integrations",
+    "loyalty",
+    "members",
+    "menu",
+    "shell",
+    "shop",
+    "shop_admin",
+    "staff",
+    "stock",
+    "website",
+]

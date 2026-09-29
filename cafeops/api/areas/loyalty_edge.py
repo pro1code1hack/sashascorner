@@ -44,7 +44,7 @@ __all__ = [
 
 log = logging.getLogger("cafeops.loyalty")
 
-LOYALTY_PREFIXES = ("/api/loyalty", "/api/staff", "/api/members")
+LOYALTY_PREFIXES = ("/api/loyalty", "/api/staff", "/api/members", "/api/shop")
 
 
 def err(status: int, code: str, detail: str) -> LoyaltyError:

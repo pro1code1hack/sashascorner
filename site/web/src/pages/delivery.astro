@@ -1,0 +1,650 @@
+---
+import Base from '../layouts/Base.astro';
+import OpenNow from '../components/OpenNow.astro';
+import Icon from '../components/Icon.astro';
+import Slot from '../components/Slot.astro';
+import RwCta from '../components/RwCta.astro';
+import { menu } from '../lib/data';
+import { gbp } from '../lib/format';
+
+const cat = (slug: string) => menu.categories.find((c) => c.slug === slug);
+const one = (i: { sizes: { price_pence: number }[] }) => Math.min(...i.sizes.map((z) => z.price_pence));
+
+// Order-ahead products: whatever the menu marks as whole or "order ahead". Today
+// that is only the Kyiv cake; anything added to the board later appears here too.
+const all = menu.categories.flatMap((c) => c.items);
+const wholes = all.filter((i) => /\(whole\)/i.test(i.name) || /order ahead/i.test(i.note ?? ''));
+const kyiv = wholes.find((i) => /kyiv/i.test(i.name));
+const kyivSlice = all.find((i) => /kyiv/i.test(i.name) && /slice/i.test(i.name));
+const others = wholes.filter((i) => i !== kyiv);
+const plain = (n: string) => n.replace(/\s*\(whole\)\s*/i, '');
+
+// Made to order at the counter.
+const waffles = cat('waffles');
+const lunch = cat('lunch');
+const madeToOrder = [waffles, lunch]
+  .filter((c): c is NonNullable<typeof c> => !!c && c.items.length > 0)
+  .map((c) => ({ slug: c.slug, name: c.name, count: c.items.length, from: Math.min(...c.items.map(one)) }));
+const itemCount = all.length;
+
+// Delivery listings, each confirmed against the platform's own page (name +
+// 23 Commercial Street, DD1 3DD) on 2026-09-26. Uber Eats: no listing found.
+const deliveroo = 'https://deliveroo.co.uk/menu/fife-and-perthshire/dundee/sashas-corner';
+const justEat = 'https://www.just-eat.co.uk/restaurants-sashas-corner-dundee/menu';
+
+// A whole cake has no description of its own on the board; borrow the slice's.
+const describe = (i: (typeof all)[number]) =>
+  i.description ?? (i === kyiv ? kyivSlice?.description : null) ?? null;
+
+const site = Astro.site!;
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: "Order ahead at Sasha's Corner",
+  url: new URL('/delivery', site).href,
+  itemListElement: wholes.map((i, n) => ({
+    '@type': 'ListItem',
+    position: n + 1,
+    item: {
+      '@type': 'Product',
+      name: i.name,
+      ...(describe(i) ? { description: describe(i) } : {}),
+      brand: { '@type': 'Brand', name: "Sasha's Corner" },
+      offers: {
+        '@type': 'Offer',
+        price: (one(i) / 100).toFixed(2),
+        priceCurrency: 'GBP',
+        availability: 'https://schema.org/PreOrder',
+        url: new URL('/delivery#ahead', site).href,
+        seller: { '@id': new URL('/#cafe', site).href },
+      },
+    },
+  })),
+};
+---
+
+<Base
+  title="Kyiv cake to order, takeaway & delivery · Sasha's Corner"
+  description="Order a whole Kyiv cake to collect on Commercial Street, take anything away, or get coffee, matcha and cake delivered in Dundee via Deliveroo or Just Eat."
+  extraJsonLd={jsonLd}
+>
+  <header class="ohead wrap">
+    <p class="label">Cakes &amp; delivery</p>
+    <h1>Beyond the table. <span class="soft">Three ways to have us.</span></h1>
+    <p class="ohead__online">
+      Want a coffee ready when you get here? <a href="/order">Order online for takeaway</a> and collect it from
+      23 Commercial Street.
+    </p>
+    <ol class="ohead__ways">
+      <li>
+        <a href="#ahead"><span class="num">01</span> Order a whole cake ahead</a>
+      </li>
+      <li>
+        <a href="#takeaway"><span class="num">02</span> Takeaway at the counter</a>
+      </li>
+      <li>
+        <a href="#delivery"><span class="num">03</span> Delivery through the apps</a>
+      </li>
+    </ol>
+  </header>
+
+  <!-- 01 Order ahead ---------------------------------------------------- -->
+  {
+    kyiv && (
+      <section id="ahead" class="ahead on-dark" aria-labelledby="ahead-title">
+        <div class="wrap ahead__grid">
+          <div class="ahead__copy" data-reveal>
+            <p class="label">
+              <span class="num">01</span> Order ahead
+            </p>
+            <h2 id="ahead-title">
+              {plain(kyiv.name)}, <span class="soft">whole.</span>
+            </h2>
+            {kyivSlice?.description && <p class="ahead__desc">{kyivSlice.description}</p>}
+            <p class="ahead__more">
+              {kyivSlice ? (
+                <>
+                  We sell it by the slice at <span class="num">{gbp(one(kyivSlice))}</span>. For a birthday, a table of
+                  friends or a box to take home, order the whole cake.
+                </>
+              ) : (
+                <>For a birthday, a table of friends or a box to take home.</>
+              )}
+            </p>
+            <Fragment set:html="<!-- OWNER TO CONFIRM: how much notice a whole cake needs. Hidden from customers until confirmed; draft: 'Give us a few days' notice, and tell us the day you'd like to collect.' -->" />
+            <a class="btn btn--caramel" href="/visit?topic=order#contact">
+              Order a whole cake <span class="arrow" aria-hidden="true">→</span>
+            </a>
+          </div>
+          <div class="ahead__side">
+            <figure class="ahead__photo" data-reveal>
+              <Slot key="order.kyiv" tone="olive" sizes="(max-width: 860px) 100vw, 400px" />
+            </figure>
+            <div class="ahead__price" data-reveal>
+              <p class="ahead__tag">Whole cake</p>
+              <p class="ahead__big num">{gbp(one(kyiv))}</p>
+              <p class="ahead__fine">Collected from 23 Commercial Street</p>
+            </div>
+          </div>
+        </div>
+        {
+          others.length > 0 && (
+            <ul class="wrap ahead__others" aria-label="Also to order ahead">
+              {others.map((i) => (
+                <li>
+                  <span>{i.name}</span>
+                  <span class="num">{gbp(one(i))}</span>
+                </li>
+              ))}
+            </ul>
+          )
+        }
+      </section>
+    )
+  }
+
+  <!-- 02 Takeaway ------------------------------------------------------- -->
+  <section id="takeaway" class="take" aria-labelledby="take-title">
+    <div class="wrap take__grid">
+      <figure class="take__photo" data-reveal>
+        <Slot key="order.takeaway" sizes="(max-width: 860px) 320px, 34vw" />
+      </figure>
+      <div class="take__copy">
+        <p class="label" data-reveal><span class="num">02</span> Takeaway</p>
+        <h2 id="take-title" data-reveal>
+          The whole board, <span class="soft">to go.</span>
+        </h2>
+        <p class="take__lede" data-reveal>
+          All <span class="num">{itemCount}</span> things on the menu can be taken away — every coffee, matcha and bubble
+          tea, and whatever cake is on the counter. Order at the till and we'll pack it up.
+        </p>
+        {
+          madeToOrder.length > 0 && (
+            <div class="take__made" data-reveal>
+              <div>
+                <h3>Made to order at the counter</h3>
+                <ul>
+                  {madeToOrder.map((c) => (
+                    <li>
+                      <a href={`/menu#${c.slug}`}>{c.name}</a>
+                      <span class="take__meta">
+                        <span class="num">{c.count}</span> on the menu, from <span class="num">{gbp(c.from)}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <p class="take__note">These are cooked when you order, so allow a few minutes.</p>
+              </div>
+              <figure class="take__waffle">
+                <Slot key="order.waffles" sizes="(max-width: 1000px) 100vw, 280px" />
+              </figure>
+            </div>
+          )
+        }
+        <div class="take__foot" data-reveal>
+          <OpenNow />
+          <a class="take__menu" href="/menu">
+            See the full menu <Icon name="arrow" />
+          </a>
+        </div>
+        <!-- Stamps are scanned at the till, so the prompt sits with takeaway, not delivery. -->
+        <RwCta
+          variant="compact"
+          src="site-order"
+          text="Takeaway drinks collect stamps too: show your card at the till."
+          class="take__rw"
+        />
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 Delivery ------------------------------------------------------- -->
+  <section id="delivery" class="deliv" aria-labelledby="deliv-title">
+    <div class="wrap">
+      <header class="deliv__head" data-reveal>
+        <p class="label"><span class="num">03</span> Delivery</p>
+        <h2 id="deliv-title">To your door, <span class="soft">across Dundee.</span></h2>
+        <p class="deliv__lede">
+          Coffee, matcha, bubble tea and cake, delivered no-contact through the apps. Opens in a new tab.
+        </p>
+      </header>
+
+      <div class="deliv__grid">
+        <a class="app app--solid" href={deliveroo} target="_blank" rel="noopener" data-reveal>
+          <span class="app__kicker">Order on</span>
+          <span class="app__name">Deliveroo</span>
+          <span class="app__go">
+            Sasha's Corner on Deliveroo <Icon name="arrow" />
+            <span class="sr-only">(opens in a new tab)</span>
+          </span>
+        </a>
+        <a class="app app--line" href={justEat} target="_blank" rel="noopener" data-reveal>
+          <span class="app__name">Just Eat</span>
+          <span class="app__go">
+            Sasha's Corner on Just Eat <Icon name="arrow" />
+            <span class="sr-only">(opens in a new tab)</span>
+          </span>
+          <span class="app__kicker">Order on</span>
+        </a>
+      </div>
+
+      <p class="deliv__note" data-reveal>
+        Prices, fees and what's available in the apps are set per platform and can differ from the counter.
+      </p>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .soft {
+    font-family: var(--font-light);
+    font-weight: 200;
+    font-stretch: 100%;
+    letter-spacing: -0.03em;
+  }
+  .label {
+    color: var(--coffee);
+  }
+  .label .num {
+    font-family: var(--font-text);
+    font-stretch: 100%;
+    margin-right: 0.6em;
+  }
+  h2 {
+    font-size: var(--step-4);
+    line-height: 0.95;
+    margin-top: 14px;
+  }
+
+  /* head */
+  .ohead {
+    padding-block: clamp(48px, 7vw, 96px) clamp(40px, 6vw, 80px);
+  }
+  .ohead h1 {
+    font-size: var(--step-5);
+    margin-top: 14px;
+    max-width: 14ch;
+  }
+  .ohead__online {
+    margin-top: 22px;
+    max-width: 52ch;
+    font-size: var(--step-1);
+    font-weight: 300;
+    color: var(--olive-900);
+  }
+  .ohead__online a {
+    display: inline-block;
+    min-height: 44px;
+    line-height: 44px;
+    margin-block: -10px;
+    color: var(--coffee-deep);
+    font-weight: 400;
+  }
+  .ohead__ways {
+    list-style: none;
+    margin: clamp(28px, 4vw, 48px) 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border-top: 1px solid var(--rule-strong);
+  }
+  .ohead__ways li + li {
+    border-left: 1px solid var(--rule);
+  }
+  .ohead__ways a {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    padding: 18px clamp(12px, 2vw, 24px) 18px 0;
+    font-size: var(--step-1);
+    text-decoration: none;
+    color: var(--olive-900);
+  }
+  .ohead__ways li + li a {
+    padding-left: clamp(12px, 2vw, 24px);
+  }
+  .ohead__ways a:hover {
+    color: var(--coffee);
+  }
+  .ohead__ways .num {
+    font-size: var(--step--1);
+    color: var(--coffee);
+  }
+  @media (max-width: 760px) {
+    .ohead__ways {
+      grid-template-columns: 1fr;
+    }
+    .ohead__ways li + li {
+      border-left: 0;
+      border-top: 1px solid var(--rule);
+    }
+    .ohead__ways li + li a {
+      padding-left: 0;
+    }
+  }
+
+  /* 01 order ahead: dark, editorial, the price is the picture */
+  .ahead {
+    background: var(--olive-900);
+    color: var(--on-dark);
+    padding-block: clamp(72px, 10vw, 140px);
+    scroll-margin-top: 80px;
+  }
+  .ahead .label {
+    color: color-mix(in oklab, var(--paper) 70%, var(--sage));
+  }
+  .ahead__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+    gap: clamp(40px, 6vw, 96px);
+    align-items: end;
+  }
+  .ahead__desc {
+    margin-top: 22px;
+    font-size: var(--step-1);
+    font-weight: 300;
+    max-width: 36ch;
+  }
+  .ahead__more {
+    margin-top: 14px;
+    color: var(--on-dark-soft);
+    max-width: 48ch;
+  }
+  .ahead__notice {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin-block: 26px 30px;
+    padding-top: 16px;
+    border-top: 1px solid color-mix(in oklab, var(--paper) 20%, transparent);
+    color: var(--on-dark-soft);
+    max-width: 48ch;
+  }
+  .ahead__notice :global(svg) {
+    flex: none;
+    margin-top: 3px;
+    color: var(--caramel);
+  }
+  .ahead__photo {
+    margin: 0 0 clamp(28px, 4vw, 44px) auto;
+    max-width: 400px;
+  }
+  .ahead__price {
+    text-align: right;
+    border-bottom: 1px solid color-mix(in oklab, var(--paper) 30%, transparent);
+    padding-bottom: 18px;
+  }
+  .ahead__tag {
+    font-size: var(--step-1);
+    color: var(--sage);
+  }
+  .ahead__big {
+    font-size: clamp(4.5rem, 2rem + 11vw, 11rem);
+    font-weight: 600;
+    line-height: 0.85;
+    letter-spacing: -0.03em;
+    color: var(--caramel);
+  }
+  .ahead__fine {
+    margin-top: 16px;
+    font-size: var(--step--1);
+    color: var(--on-dark-soft);
+  }
+  .ahead__others {
+    list-style: none;
+    margin-top: 48px;
+    margin-bottom: 0;
+  }
+  .ahead__others li {
+    display: flex;
+    justify-content: space-between;
+    padding-block: 12px;
+    border-bottom: 1px solid color-mix(in oklab, var(--paper) 20%, transparent);
+  }
+  @media (max-width: 860px) {
+    .ahead__grid {
+      grid-template-columns: 1fr;
+    }
+    .ahead__side {
+      order: -1;
+    }
+    .ahead__photo {
+      margin-left: 0;
+      max-width: none;
+    }
+    .ahead__photo :global(.slot) {
+      aspect-ratio: 4 / 3;
+    }
+    .ahead__price {
+      text-align: left;
+    }
+  }
+
+  /* 02 takeaway */
+  .take {
+    padding-block: clamp(72px, 10vw, 140px);
+    scroll-margin-top: 80px;
+  }
+  .take__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+    gap: clamp(32px, 6vw, 96px);
+    align-items: start;
+  }
+  .take__photo {
+    margin: 0;
+  }
+
+  .take__lede {
+    margin-top: 22px;
+    font-size: var(--step-1);
+    font-weight: 300;
+    color: var(--olive-900);
+    max-width: 44ch;
+  }
+  .take__made {
+    margin-top: clamp(32px, 4vw, 48px);
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    gap: clamp(20px, 3vw, 40px);
+    align-items: end;
+  }
+  .take__waffle {
+    margin: 0;
+  }
+  @media (max-width: 1000px) {
+    .take__made {
+      grid-template-columns: 1fr;
+    }
+    .take__waffle {
+      max-width: 420px;
+    }
+  }
+  .take__made h3 {
+    font-size: var(--step-2);
+    margin-bottom: 12px;
+  }
+  .take__made ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--rule-strong);
+  }
+  .take__made li {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 4px 20px;
+    padding-block: 14px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .take__made a {
+    font-size: var(--step-1);
+    color: var(--coffee);
+    text-decoration: none;
+  }
+  .take__made a:hover {
+    text-decoration: underline;
+  }
+  .take__meta {
+    color: var(--olive-700);
+  }
+  .take__note {
+    margin-top: 12px;
+    font-size: var(--step--1);
+    color: var(--olive-700);
+  }
+  .take__foot {
+    margin-top: 32px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px 32px;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .take__menu {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: var(--step-1);
+    color: var(--coffee);
+    text-decoration: none;
+  }
+  .take__menu:hover {
+    text-decoration: underline;
+  }
+  .take__copy :global(.take__rw) {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--rule);
+  }
+  @media (max-width: 860px) {
+    .take__grid {
+      grid-template-columns: 1fr;
+    }
+    .take__photo {
+      max-width: 320px;
+    }
+    .take__photo :global(.slot) {
+      aspect-ratio: 4 / 3;
+    }
+  }
+
+  /* 03 delivery: two different treatments, no platform branding */
+  .deliv {
+    background: var(--oat);
+    padding-block: clamp(72px, 10vw, 140px);
+    scroll-margin-top: 80px;
+  }
+  .deliv__lede {
+    margin-top: 18px;
+    max-width: 52ch;
+    color: var(--olive-900);
+    font-weight: 300;
+  }
+  .deliv__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: clamp(12px, 2vw, 24px);
+    margin-top: clamp(32px, 4vw, 56px);
+    align-items: stretch;
+  }
+  .app {
+    display: grid;
+    gap: 10px;
+    padding: clamp(22px, 3vw, 40px);
+    border-radius: var(--radius-s);
+    text-decoration: none;
+    transition:
+      transform 0.35s var(--ease-out),
+      background-color 0.25s;
+  }
+  .app:hover {
+    transform: translateY(-3px);
+  }
+  .app__kicker {
+    font-size: var(--step--1);
+  }
+  .app__name {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-stretch: 88%;
+    font-size: var(--step-4);
+    line-height: 0.9;
+  }
+  .app__go {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 400;
+  }
+  .app :global(svg) {
+    transition: transform 0.35s var(--ease-out);
+  }
+  .app:hover :global(svg) {
+    transform: translateX(4px);
+  }
+  .app--solid {
+    background: var(--olive-700);
+    color: var(--on-dark);
+    align-content: space-between;
+    min-height: clamp(200px, 22vw, 280px);
+  }
+  .app--solid .app__kicker {
+    color: color-mix(in oklab, var(--paper) 70%, var(--sage));
+  }
+  .app--solid:hover {
+    background: var(--olive-900);
+  }
+  .app--line {
+    border: 1px solid var(--rule-strong);
+    color: var(--ink);
+    align-content: end;
+  }
+  .app--line .app__name {
+    color: var(--olive-900);
+  }
+  .app--line .app__go {
+    color: var(--coffee);
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 12px;
+  }
+  .app--line .app__kicker {
+    color: var(--olive-700);
+  }
+  .app--line:hover {
+    background: color-mix(in oklab, var(--paper) 60%, transparent);
+  }
+  .deliv__note {
+    margin-top: 20px;
+    font-size: var(--step--1);
+    color: var(--olive-700);
+  }
+  @media (max-width: 760px) {
+    .deliv__grid {
+      grid-template-columns: 1fr;
+    }
+    .app--solid {
+      min-height: 0;
+    }
+  }
+
+  /* QA pass: contrast and tap targets */
+  .ahead__tag {
+    color: var(--sage-on-dark);
+  }
+  .app--solid .app__kicker {
+    color: var(--on-dark);
+  }
+  .app--line .app__go,
+  #delivery .label {
+    color: var(--coffee-deep);
+  }
+  .take__made a,
+  .take__menu {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+</style>

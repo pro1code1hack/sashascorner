@@ -4,6 +4,7 @@
 // (src/data/menu.json, written by `sashasite menu-export`) so search engines see it.
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
+import preact from '@astrojs/preact';
 import { execFileSync } from 'node:child_process';
 import { existsSync, statSync } from 'node:fs';
 
@@ -25,7 +26,7 @@ const changedAt = (file) => {
     return modified; // no git (e.g. a tarball build): mtime is the best we have
   }
 };
-const MENU_PAGES = new Set(['/', '/menu', '/order', '/faq', '/matcha-dundee', '/bubble-tea-dundee', '/kyiv-cake']);
+const MENU_PAGES = new Set(['/', '/menu', '/delivery', '/faq', '/matcha-dundee', '/bubble-tea-dundee', '/kyiv-cake']);
 const lastmodFor = (url) => {
   const path = new URL(url).pathname.replace(/\/$/, '') || '/';
   const page = path === '/' ? 'index' : path.slice(1);
@@ -36,7 +37,9 @@ const lastmodFor = (url) => {
   const t = Math.max(...files.map(changedAt));
   return t ? new Date(t).toISOString() : undefined;
 };
-const NOT_IN_SITEMAP = [/\/book\/manage/, /\/admin/, /\/404$/, /\/c(\/|$)/, /\/staff(\/|$)/];
+// /order/checkout, /order/account and /order/status/<code> are routes inside the order-ahead
+// app (one static page, /order): a basket, a sign-in and a private order are not for search.
+const NOT_IN_SITEMAP = [/\/book\/manage/, /\/admin/, /\/404$/, /\/c(\/|$)/, /\/staff(\/|$)/, /\/order\/(checkout|account|status)(\/|$)/];
 
 // ---- dev proxy to cafeops (Rewards, the staff scanner, Apple Wallet's web service) ----
 // CAFEOPS_API_URL wins. Without it, `astro dev` looks for a running cafeops API on the
@@ -62,7 +65,7 @@ async function findCafeops() {
   const found = (await Promise.all(bases.map(probe))).find(Boolean);
   console.info(
     found
-      ? `[cafeops proxy] /api/loyalty, /api/staff, /wallet -> ${found} (set CAFEOPS_API_URL to choose)`
+      ? `[cafeops proxy] /api/loyalty, /api/staff, /api/shop, /wallet -> ${found} (set CAFEOPS_API_URL to choose)`
       : `[cafeops proxy] no cafeops API answering on ${bases.join(', ')}; using ${fallback}. Start it with \`uv run cafeops serve\` or set CAFEOPS_API_URL.`,
   );
   return found ?? fallback;
@@ -93,6 +96,8 @@ export default defineConfig({
   trailingSlash: 'never',
   build: { format: 'file' },
   integrations: [
+    // The order-ahead app (pages/order.astro, scripts/shop/) is a Preact island.
+    preact(),
     sitemap({
       filter: (page) => !NOT_IN_SITEMAP.some((re) => re.test(new URL(page).pathname)),
       serialize: (item) => ({ ...item, lastmod: lastmodFor(item.url) }),
@@ -111,17 +116,23 @@ export default defineConfig({
       ],
     },
     server: {
-      // Rewards, the staff scanner and Apple Wallet's web service are cafeops routes
-      // (docs/loyalty/CONTRACT.md §8); everything else under /api is the site API.
-      // Vite matches keys in order, so the specific prefixes come first.
+      // Rewards, the staff scanner, order-ahead (docs/shop/CONTRACT.md §4) and Apple
+      // Wallet's web service are cafeops routes (docs/loyalty/CONTRACT.md §8); everything
+      // else under /api is the site API. Vite matches keys in order, so the specific
+      // prefixes come first.
       proxy: {
         '/api/loyalty': cafeopsProxy(),
         '/api/staff': cafeopsProxy(),
+        '/api/shop': cafeopsProxy(),
+        // Menu photos the shop shows are cafeops uploads (content-addressed, /media/<sha>.<ext>).
+        '/media': cafeopsProxy(),
         '/wallet': cafeopsProxy(),
         '/api': process.env.SITE_API_URL ?? 'http://127.0.0.1:8100',
       },
     },
-    // Dev twin of Caddy's `/c/* -> /c.html` rewrite: every web card is one static page.
+    // Dev twin of Caddy's rewrites: every web card (`/c/* -> /c.html`) and every route of
+    // the order-ahead app (`/order/* -> /order.html`; /order itself is the page) is one
+    // static page whose script reads the rest of the path.
     plugins: [
       {
         name: 'sc-dev-rewrites',
@@ -129,6 +140,7 @@ export default defineConfig({
         configureServer(server) {
           server.middlewares.use((req, _res, next) => {
             if (req.url && /^\/c\/[^/?#]+/.test(req.url)) req.url = '/c' + req.url.replace(/^\/c\/[^?#]*/, '');
+            else if (req.url && /^\/order\/[^?#]+/.test(req.url)) req.url = '/order' + req.url.replace(/^\/order\/[^?#]*/, '');
             next();
           });
         },

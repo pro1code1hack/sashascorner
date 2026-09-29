@@ -10,6 +10,7 @@
  */
 import { Pill, TierBadge, TrustPill, cx } from '../../components/ui'
 import type { StockRow } from '../../lib/types/stock'
+import { IngredientThumb } from '../ingredients/Thumb'
 import type { ReactNode } from 'react'
 import { driftShown, packEquiv } from './fmt'
 import { lastCountCell, leftCell, runsOutCell, trustOf, useByCell } from './model'
@@ -126,9 +127,7 @@ function Row({ row, selected, onSelect }: { row: StockRow; selected: boolean; on
         'focus-visible:outline-offset-[-2px]',
       )}
     >
-      <span className="grid size-11 place-items-center rounded-control bg-line-soft">
-        <TierBadge tier={row.tier} />
-      </span>
+      <IngredientThumb url={row.photo_url} name={row.name} fallback={<TierBadge tier={row.tier} />} corner={<TierBadge tier={row.tier} />} />
       <span className="min-w-0">
         <span className="block truncate text-md font-bold">{row.name}</span>
         <span className="block truncate text-sm text-ink-2">{sub}</span>

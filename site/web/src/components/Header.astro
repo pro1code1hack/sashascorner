@@ -6,7 +6,9 @@ const { tone } = Astro.props;
 const path = Astro.url.pathname.replace(/\.html$/, '');
 const links: { href: string; label: string; sticker?: string }[] = [
   { href: '/menu', label: 'Menu' },
-  { href: '/order', label: 'Cakes & delivery' },
+  // Order ahead for takeaway / collection (the shop app). Whole cakes and the delivery
+  // apps moved to /delivery, reached from the shop, the footer and the landing food tile.
+  { href: '/order', label: 'Order online' },
   { href: '/about', label: 'About' },
   { href: '/visit', label: 'Visit' },
   // The loyalty card: a gentle highlight (its first stamp sticker), never louder than Book a table.

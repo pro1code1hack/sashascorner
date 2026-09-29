@@ -77,25 +77,46 @@ the first time it's needed. `/api/info`, availability and `info-export` read the
 `GET /api/admin/summary` →
 `{today: {date, closed, bookings, covers, capacity, next: [Booking]}, week: [{date, bookings, covers}], messages_new, photos_missing, menu: {source: "ops"|"board", warnings}}`
 
-## Website menu (read from ops, presentation edited here)
+## Website menu (read from ops; edited in Café Ops › Menu items)
 
-The public `/api/menu` reads the ops menu read-only:
-- active `menu_item` rows grouped by `name`, giving the sizes and prices;
-- `menu_item.category` joined to `menu_category`, which supplies the order and the
-  `DRINKS`/`FOOD` kind;
-- `season` for seasonal items.
+**One menu everywhere (owner, 2026-09-29; DECISIONS.md 29).** The public `/api/menu`
+and `sashasite menu-export` read the ops menu read-only, and its presentation is the
+back office's Order online catalogue, read the same way:
+- active `menu_item` rows grouped by `name` give the sizes and prices; `menu_item.category`
+  joined to `menu_category` gives the order and the `DRINKS`/`FOOD` kind; `season` marks
+  seasonal items (unchanged);
+- **`shop_product`** (keyed by `item_name` = `menu_item.name`) gives the item's
+  description (`description`; else the ops `menu_item.note` only where the site's old row
+  said `use_ops_note`; else none), whether it is shown (`visible`), its signature mark
+  (`featured`) and its order (`sort_order`);
+- **`shop_category`** (keyed by `ops_name` = `menu_category.name`) gives the category's
+  display name (`name`), blurb, whether it is shown (`visible`) and its order (`sort_order`).
+  The website keeps its own stable category slugs (the board's, else the name's), not the
+  shop's.
 
-That source applies once the ops table `menu_category` exists **and** at least one active
-item has a category. Until then, the site uses `config/menu_board.toml` (`source: "board"`).
-Website-only presentation lives in `site_menu_category_meta(name, slug, blurb, hidden, position)`
-and `site_menu_item_meta(item_name, description, signature, hidden, position)`.
-- `GET /api/admin/menu` →
-  `{source, categories: [{name, slug, kind, blurb, hidden, position, items: [{key, name, sizes: [{code, label, price_pence}], seasonal, web: {description, signature, hidden, position}}]}], unassigned: [items], drift: {price_mismatches: [...], board_only: [...], ops_only: [...]}}`
-- `PUT /api/admin/menu/categories/{slug} {blurb?, hidden?}`
-- `PUT /api/admin/menu/items/{key} {description?, signature?, hidden?}` (key = the item name)
-- `POST /api/admin/menu/order {categories: [slug…], items: {slug: [key…]}}`
-- Prices, names and sizes are **read-only** on the site. The UI says "Change prices in
-  the back office", because the ops redesign owns that screen.
+So an edit on the item's page in Café Ops › Menu items ("Online ordering": description,
+"Shown online and on the website menu", "Featured · Signature on the website") or in the
+list's Categories drawer is the shop *and* the website menu; the site shows it within a
+minute (60 s cache). Nothing on the site edits any of it any more.
+
+The site's own `site_menu_category_meta` / `site_menu_item_meta` tables are **kept but no
+longer written** (no destructive migration). They are read only for `use_ops_note`, and as
+the whole overlay when the ops shop tables are absent (a checkout without the ops
+migration), which `warnings` says. Their copy was carried into the shop once with
+`cafeops shop adopt-website-menu` (idempotent, never overwrites a shop value);
+`sashasite menu-meta-seed` refuses once the shop tables exist.
+
+The ops source applies once `menu_category` exists **and** at least one active item has a
+category. Until then the site serves `config/menu_board.toml` (`source: "board"`).
+
+- `GET /api/admin/menu` (read-only) →
+  `{source, overlay: "shop"|"site"|"none", edit_href, warnings, categories: [{name, display_name, slug, kind, blurb, hidden, position, edit_href, items: [{key, name, sizes: [{code, label, price_pence}], seasonal, ops_note, has_photo, public, web: {description, signature, hidden, position, use_ops_note}, ops_menu_item_id, edit_href}]}], unassigned: [items], drift: {price_mismatches: [...], board_only: [...], ops_only: [...]}}`.
+  `edit_href` is the back-office page (`{SITE_OPS_URL}/#/menu/<id>`, or `#/menu?view=list`
+  for categories). The dashboard summary's `menu.warnings` counts the same warnings.
+- `PUT /api/admin/menu/categories/{slug}`, `PUT /api/admin/menu/items/{key}` and
+  `POST /api/admin/menu/order` answer **410** with `detail`
+  `"Edit the menu in Café Ops › Menu items (<edit_href>)"`.
+- Prices, names and sizes were always read-only here; now everything is.
 
 ## Photos
 

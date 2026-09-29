@@ -96,6 +96,8 @@ class BannerOut(Out):
 class ShellBadgesOut(Out):
     orders_waiting: int
     proposals_waiting: int
+    #: Online orders waiting to be accepted (sidebar badge on Live orders).
+    shop_new: int = 0
 
 
 class ShellSetupOut(Out):

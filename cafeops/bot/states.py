@@ -19,7 +19,15 @@ from __future__ import annotations
 
 from aiogram.fsm.state import State, StatesGroup
 
-__all__ = ["AdhocFlow", "ChecklistFlow", "CountFlow", "DeliveryFlow"]
+__all__ = [
+    "AdhocFlow",
+    "CashFlow",
+    "ChecklistFlow",
+    "CountFlow",
+    "DeliveryFlow",
+    "ImportFlow",
+    "SaleFlow",
+]
 
 
 class CountFlow(StatesGroup):
@@ -55,3 +63,42 @@ class AdhocFlow(StatesGroup):
 
     awaiting_qty = State()
     awaiting_expiry = State()
+
+
+class SaleFlow(StatesGroup):
+    """A hand-typed sale (DECISIONS 28). The one flow here that holds a basket.
+
+    The basket -- channel, lines, an optional date -- lives in FSM state until
+    «Записать», which is a deliberate exception to "write every consequence the moment
+    it is known". A count of four cartons is a fact the moment it is typed; a half-built
+    receipt is not a sale yet, and writing it line by line would put a `sale` row into
+    the ledger for a customer who then changed their mind. A restart mid-basket loses
+    the basket, not a sale.
+    """
+
+    #: Choosing items: category buttons on screen, or a typed name to search.
+    picking = State()
+    #: An item is chosen; how many?
+    awaiting_qty = State()
+    #: «Другая цена»: the unit price for the last line (delivery apps charge their own).
+    awaiting_price = State()
+    #: «Другая дата»: a day for the whole receipt, typed as DD.MM.
+    awaiting_date = State()
+
+
+class CashFlow(StatesGroup):
+    """The day's one cash figure (DECISIONS 26), written when the amount arrives."""
+
+    awaiting_date = State()
+    awaiting_amount = State()
+
+
+class ImportFlow(StatesGroup):
+    """A CSV was sent; the dry run is on screen and the file waits on disk for «Записать».
+
+    State holds the temp path and what the header row said the file is. The write
+    happens only on the button, because an import is the one action here that can
+    put hundreds of rows in at once and should be read before it is real.
+    """
+
+    awaiting_confirm = State()

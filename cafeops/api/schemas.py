@@ -662,6 +662,9 @@ class StockRow(Out):
         default=None,
         description="Preferred (else cheapest linked) supplier pack, for pack-equivalents.",
     )
+    photo_url: str | None = Field(
+        default=None, description="The ingredient's reference photo (/media/...), or null."
+    )
 
 
 class WrittenOffOut(Out):

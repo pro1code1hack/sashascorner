@@ -83,7 +83,9 @@ def shell_view(session: Session) -> ShellOut:
             is_stale=s.sync.is_stale,
         ),
         badges=ShellBadgesOut(
-            orders_waiting=s.orders_waiting, proposals_waiting=s.proposals_waiting
+            orders_waiting=s.orders_waiting,
+            proposals_waiting=s.proposals_waiting,
+            shop_new=s.shop_new,
         ),
         banners=tuple(
             BannerOut(

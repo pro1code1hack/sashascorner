@@ -28,10 +28,12 @@ from sqlalchemy.orm import Session
 
 from cafeops.db.models import (
     AgentProposal,
+    OrderStatus,
     POStatus,
     ProposalStatus,
     PurchaseOrder,
     Sale,
+    ShopOrder,
 )
 from cafeops.services.finance.overview import finance_alerts
 from cafeops.services.setup_status import setup_status
@@ -83,6 +85,8 @@ class ShellStatus:
     sync: SyncStatusView
     orders_waiting: int
     proposals_waiting: int
+    #: Online orders nobody has accepted yet (the Live orders board's ring).
+    shop_new: int
     banners: tuple[BannerView, ...]
     empty_install: bool
     open_steps: int
@@ -210,11 +214,16 @@ def shell_status(session: Session, *, now: datetime | None = None) -> ShellStatu
         )
         or 0
     )
+    shop_new = int(
+        session.scalar(select(func.count(ShopOrder.id)).where(ShopOrder.status == OrderStatus.NEW))
+        or 0
+    )
     setup = setup_status(session, with_counts=False, with_warnings=False)
     return ShellStatus(
         sync=sync,
         orders_waiting=orders_waiting,
         proposals_waiting=proposals_waiting,
+        shop_new=shop_new,
         banners=tuple(_banners(session, sync, now)),
         empty_install=setup.empty_install,
         open_steps=setup.open_steps,

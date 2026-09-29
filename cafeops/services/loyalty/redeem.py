@@ -37,6 +37,7 @@ from cafeops.db.models import (
     MenuKind,
     Sale,
     SaleChannel,
+    SaleSource,
     SizeCode,
 )
 from cafeops.domain.loyalty import UNDO_SECONDS, Eligibility, item_matches
@@ -197,6 +198,8 @@ def redeem(
                 gross_pence=0,
                 sold_at=now,
                 channel=SaleChannel.OTHER,
+                source=SaleSource.LOYALTY,
+                recorded_by=None,
                 applied_modifiers=[],
                 voided=False,
                 is_refund=False,

@@ -35,6 +35,7 @@ from cafeops.agent.policies import (
     ToolSpec,
     register,
 )
+from cafeops.config import settings
 from cafeops.db.models import Ingredient, StockBatch, StockMovement
 from cafeops.domain.stock import drift_attribution
 from cafeops.domain.types import AgentProposal, MovementType, SalesChannelName
@@ -426,8 +427,19 @@ def _stage_supplier_basket(ctx: ToolContext, args: dict[str, Any]) -> ToolResult
     )
     adapter = adapter_for(order.supplier.order_channel)
     prepared = adapter.prepare(po_id, order.supplier, items)
+    text = adapter.describe(prepared) + "\n\n" + prepared.instructions
+    if settings.browser_worker_enabled:
+        # The handler holds a read-only repository bundle and no Session (policies.py
+        # device 2), so the queue INSERT is left to the services layer: the tool
+        # describes the basket and names the two places a person queues the job.
+        # docs/agents/BROWSER-ORDERING.md 4.1.
+        text += (
+            f"\n\nThe browser worker is on. Queue it with `cafeops portal stage {po_id}` or "
+            "the order page's Stage basket: a browser job fills the supplier's basket "
+            "and stops there, with a SUPPLIER_BASKET proposal on the Agents page."
+        )
     return ToolResult(
-        text=adapter.describe(prepared) + "\n\n" + prepared.instructions,
+        text=text,
         figures=(_money(prepared.total_pence),),
         awaiting_human=(
             f"basket for purchase order {po_id} ({prepared.supplier_name}, "
@@ -450,6 +462,7 @@ def _po_lines(ctx: ToolContext, po_id: int) -> list[Any]:
             POLine.final_packs.label("packs"),
             SupplierProduct.pack_size.label("pack_size"),
             POLine.unit_price_pence.label("unit_price_pence"),
+            SupplierProduct.product_url.label("product_url"),
         )
         .join(Ingredient, Ingredient.id == POLine.ingredient_id)
         .join(SupplierProduct, SupplierProduct.id == POLine.supplier_product_id)
@@ -673,8 +686,10 @@ register(
         name="browser_stage_supplier_basket",
         kind=ToolKind.BROWSER,
         description=(
-            "Fill a supplier's web basket for a DRAFT purchase order and STOP before "
-            "checkout. Reuses the existing BROWSER_AGENT order channel. This spends "
+            "Describe and queue the filling of a supplier's web basket for a DRAFT "
+            "purchase order, STOPPING before checkout. With the browser worker enabled "
+            "the basket is staged by a queued browser job (`cafeops portal stage`); "
+            "otherwise the existing BROWSER_AGENT channel plan is described. This spends "
             "money if completed, so it always ends with a person pressing the last "
             "button; the agent can never place the order."
         ),

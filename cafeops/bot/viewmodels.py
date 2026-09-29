@@ -45,18 +45,24 @@ from cafeops.domain.types import (
     POStatus,
     ReceiptWarningKind,
     RevokeCause,
+    SaleChannel,
     Storage,
     Tier,
     Unit,
 )
+from cafeops.services.transactions_csv import CsvKind
 
 __all__ = [
+    "BasketLineView",
+    "BasketView",
     "CapKind",
     "CapNotice",
+    "CashDayView",
     "ChecklistItemView",
     "CountItemView",
     "CountResultView",
     "CountSessionKind",
+    "CsvKind",
     "DeliveryLineView",
     "DeliveryOrderView",
     "DigestView",
@@ -64,13 +70,18 @@ __all__ = [
     "DriftAlertView",
     "EmergencyDigestView",
     "ExpiryLineView",
+    "ExportView",
+    "ImportResultView",
     "IngredientRefView",
     "LowConfidenceKind",
     "LowConfidenceNotice",
+    "MenuPageView",
+    "MenuPickView",
     "OrderLineView",
     "OrderView",
     "ReceiptIssue",
     "ReceiptView",
+    "RecordedSaleView",
     "RetailRunView",
     "RevocationView",
     "StockLineView",
@@ -551,3 +562,134 @@ class IngredientRefView:
     storage: Storage
     shelf_life_days: int | None
     shelf_life_is_estimate: bool
+
+
+# ==========================================================================
+# Hand-typed transactions, cash, files (DECISIONS 28). Produced by `money_views`.
+# ==========================================================================
+
+
+@dataclass(frozen=True, slots=True)
+class MenuPickView:
+    """One sellable item on a picker button."""
+
+    menu_item_id: int
+    name: str
+    size: str
+    price_pence: int
+
+    @property
+    def label(self) -> str:
+        return f"{self.name} {self.size}".strip()
+
+
+@dataclass(frozen=True, slots=True)
+class MenuPageView:
+    """One page of items in a category, or the categories themselves when `category`
+    is None and `items` is empty."""
+
+    categories: tuple[str, ...]
+    category_index: int | None
+    items: tuple[MenuPickView, ...]
+    page: int
+    pages: int
+
+    @property
+    def category(self) -> str | None:
+        if self.category_index is None or self.category_index >= len(self.categories):
+            return None
+        return self.categories[self.category_index]
+
+
+@dataclass(frozen=True, slots=True)
+class BasketLineView:
+    menu_item_id: int
+    name: str
+    size: str
+    qty: Decimal
+    unit_price_pence: int
+    gross_pence: int
+    #: The person typed a price other than the menu's (a delivery app's own price).
+    price_is_custom: bool
+
+    @property
+    def label(self) -> str:
+        return f"{self.name} {self.size}".strip()
+
+
+@dataclass(frozen=True, slots=True)
+class BasketView:
+    channel: SaleChannel
+    sold_on: date | None
+    lines: tuple[BasketLineView, ...]
+
+    @property
+    def total_pence(self) -> int:
+        return sum(line.gross_pence for line in self.lines)
+
+
+@dataclass(frozen=True, slots=True)
+class RecordedSaleView:
+    receipt_id: str
+    first_sale_id: int
+    channel: SaleChannel
+    sold_at: datetime
+    recorded_by: str | None
+    voided: bool
+    lines: tuple[BasketLineView, ...]
+
+    @property
+    def total_pence(self) -> int:
+        return sum(line.gross_pence for line in self.lines)
+
+
+@dataclass(frozen=True, slots=True)
+class CashDayView:
+    day: date
+    #: What is on the day already, before this entry. None: nothing typed yet.
+    cash_pence: int | None
+    card_pence: int | None
+    #: The day's cash came from an export and cannot be typed over. The source name.
+    locked_by: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class ImportResultView:
+    """A dry run or a commit of one uploaded file. `written` says which."""
+
+    kind: CsvKind
+    filename: str
+    written: bool
+    #: The whole file was refused: why. Nothing else below is meaningful.
+    refused: str | None = None
+    #: CHANNEL_REPORT: which platform, once known.
+    platform: str | None = None
+    #: TRANSACTIONS.
+    receipts: int = 0
+    lines: int = 0
+    gross_pence: int = 0
+    already_recorded: int = 0
+    by_channel: tuple[tuple[SaleChannel, int], ...] = ()
+    since: date | None = None
+    until: date | None = None
+    #: PAYMENTS and CHANNEL_REPORT: day rows, and for a channel report item rows.
+    days_inserted: int = 0
+    days_updated: int = 0
+    items_inserted: int = 0
+    items_updated: int = 0
+    #: Rows the importer refused, with the reason (English from the importer; the
+    #: formatter shows them verbatim, quoted, because a rejected row must be findable).
+    rejected: tuple[str, ...] = ()
+    notes: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class ExportView:
+    filename: str
+    data: bytes
+    since: date
+    until: date
+    receipts: int
+    lines: int
+    gross_pence: int
+    voided_lines: int

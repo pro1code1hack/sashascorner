@@ -3146,6 +3146,7 @@ def open_batch_cmd(
 # --------------------------------------------------------------------------
 
 from cafeops.agent.commands import app as _agent_app  # noqa: E402
+from cafeops.cli_transactions import app as _transactions_app  # noqa: E402
 from cafeops.integrations.channels.commands import app as _channels_app  # noqa: E402
 from cafeops.integrations.lightspeed.commands import app as _pos_app  # noqa: E402
 from cafeops.integrations.payments.commands import app as _payments_app  # noqa: E402
@@ -3158,15 +3159,25 @@ app.add_typer(_channels_app, name="channels")
 app.add_typer(_supplier_app, name="supplier")
 app.add_typer(_shelf_life_app, name="shelf-life")
 app.add_typer(_agent_app, name="agent")
+# Supplier web-shop integrations (docs/agents/BROWSER-ORDERING.md): sign-ins, basket
+# staging jobs, and the worker that is the only process to open a browser.
+from cafeops.agent.browser.commands import portal_app as _portal_app  # noqa: E402
+from cafeops.agent.browser.commands import worker_command as _worker_command  # noqa: E402
+
+app.add_typer(_portal_app, name="portal")
+app.command(name="browser-worker")(_worker_command)
 app.add_typer(_pos_app, name="pos")
 # The missing half of Money & P&L: what the cafe actually took (ARCHITECTURE 8T).
 app.add_typer(_payments_app, name="payments")
+app.add_typer(_transactions_app, name="transactions")
 
 # Sasha's Corner Rewards (docs/loyalty/CONTRACT.md §7). The wallet group is agent B's and
 # optional: a checkout without the wallet package still has a working CLI.
 from cafeops.services.loyalty.commands import loyalty_app as _loyalty_app  # noqa: E402
+from cafeops.services.shop.commands import shop_app as _shop_app  # noqa: E402
 
 app.add_typer(_loyalty_app, name="loyalty")
+app.add_typer(_shop_app, name="shop")
 _loyalty_app.command(name="qr-posters")(__import__("cafeops.cli_posters").cli_posters.qr_posters)
 try:
     from cafeops.integrations.wallet.cli import wallet_app as _wallet_app
@@ -3514,7 +3525,7 @@ def bot_preview_cmd(
         typer.Argument(
             help=(
                 "Which flow to drive: start, digest, orders, count, checklist, delivery, "
-                "stranger, or all."
+                "sale, cash, export, import, stranger, or all."
             )
         ),
     ] = "digest",

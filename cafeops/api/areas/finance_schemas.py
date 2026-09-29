@@ -39,6 +39,8 @@ __all__ = [
     "FinanceMonthsOut",
     "FinanceSettingsIn",
     "FinanceSettingsOut",
+    "MenuPickOut",
+    "MenuPickResponse",
     "OverviewOut",
     "PLResponse",
     "PayoutIn",
@@ -53,6 +55,13 @@ __all__ = [
     "SalesResponse",
     "TakingsLedgerResponse",
     "TakingsRowOut",
+    "TransactionImportIn",
+    "TransactionImportOut",
+    "TransactionIn",
+    "TransactionLineIn",
+    "TransactionLineOut",
+    "TransactionOut",
+    "TransactionVoidIn",
 ]
 
 Pence = int
@@ -557,7 +566,13 @@ class ReceiptOut(Out):
     date: dt.date
     weekday: str
     time: str = Field(description="HH:MM, Europe/London.")
-    channel: str
+    channel: str = Field(
+        description="EPOS | CASH | DELIVEROO | JUST_EAT | OTHER | WEB (Online orders)"
+    )
+    source: str = Field(
+        description="POS_API (the till) | MANUAL | CSV_UPLOAD | LOYALTY | ONLINE (the web shop)"
+    )
+    recorded_by: str | None = Field(description="Who typed it; null for the till.")
     lines: int
     items: str = Field(description="Item count as a decimal string.")
     summary: str
@@ -576,6 +591,89 @@ class ReceiptsResponse(Out):
     first_date: dt.date | None
     last_date: dt.date | None
     caveats: list[str]
+
+
+# ------------------------------------------- hand-typed transactions (DECISIONS 28) ---
+
+
+class TransactionLineIn(In):
+    menu_item_id: int
+    qty: str = Field(default="1", description="Decimal as a string; whole or fractional.")
+    unit_price_pence: Pence | None = Field(
+        default=None, ge=0, description="Null: the menu price. Delivery apps charge their own."
+    )
+
+
+class TransactionIn(In):
+    channel: Literal["CASH", "DELIVEROO", "JUST_EAT", "OTHER"] = Field(
+        description="EPOS is refused: the till is synced from Lightspeed."
+    )
+    lines: list[TransactionLineIn] = Field(min_length=1)
+    sold_on: dt.date | None = Field(
+        default=None, description="Null: now. A past day lands at local noon of that day."
+    )
+    note: str | None = Field(default=None, max_length=400)
+    operator: str = Field(min_length=1, max_length=120, description="Who is recording this.")
+
+
+class TransactionVoidIn(In):
+    operator: str = Field(min_length=1, max_length=120)
+
+
+class TransactionLineOut(Out):
+    sale_id: int
+    menu_item_id: int
+    name: str
+    size: str
+    qty: str
+    unit_price_pence: Pence
+    gross_pence: Pence
+
+
+class TransactionOut(Out):
+    receipt_id: str
+    channel: str
+    source: str
+    sold_at: dt.datetime
+    recorded_by: str | None
+    note: str | None
+    voided: bool
+    total_pence: Pence
+    lines: list[TransactionLineOut]
+
+
+class MenuPickOut(Out):
+    menu_item_id: int
+    name: str
+    size: str
+    category: str | None
+    price_pence: Pence
+
+
+class MenuPickResponse(Out):
+    categories: list[str]
+    items: list[MenuPickOut]
+
+
+class TransactionImportIn(In):
+    filename: str = Field(max_length=200)
+    text: str = Field(description="The CSV, as text. Columns: date, item, qty, channel, ...")
+    operator: str = Field(min_length=1, max_length=120)
+    dry_run: bool = Field(default=True, description="Default true: report, write nothing.")
+
+
+class TransactionImportOut(Out):
+    filename: str
+    written: bool
+    refused: str | None
+    receipts_written: int
+    lines_written: int
+    receipts_already_recorded: int
+    gross_pence: Pence
+    since: dt.date | None
+    until: dt.date | None
+    by_channel: dict[str, int]
+    rejected: list[str]
 
 
 class TakingsRowOut(Out):

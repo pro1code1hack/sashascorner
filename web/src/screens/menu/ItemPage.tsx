@@ -60,6 +60,7 @@ import { IngredientPicker } from './IngredientPicker'
 import { ItemSales } from './ItemSales'
 import { lastMenuListQuery } from './listMemory'
 import { PhotoSlot } from './Photo'
+import { OnlineSection, ShopPreview } from '../shop/OnlineSection'
 
 const KIND_LABEL = { DRINKS: 'Drinks', FOOD: 'Food', OTHER: 'Other' } as const
 const catLabel = (c: string) => c.replace(' (May 2026)', '')
@@ -100,6 +101,9 @@ export function ItemPage({ menuItemId }: { menuItemId: number }) {
                     <Actions detail={d} />
                   </div>
                 </Panel>
+                <Panel>
+                  <ShopPreview menuItemId={d.size.menu_item_id} />
+                </Panel>
               </aside>
               <div className="flex min-w-0 flex-col gap-4">
                 <Panel>
@@ -110,6 +114,9 @@ export function ItemPage({ menuItemId }: { menuItemId: number }) {
                 </Panel>
                 <Panel>
                   <SizesSection key={g.anchor_id} group={g} current={d.size} />
+                </Panel>
+                <Panel>
+                  <OnlineSection menuItemId={d.size.menu_item_id} itemName={g.name} />
                 </Panel>
                 <Panel>
                   <ItemSales

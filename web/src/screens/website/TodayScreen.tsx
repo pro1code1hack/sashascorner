@@ -478,10 +478,10 @@ function Notes({ summary }: { summary: SiteSummary }) {
         </span>
         {go}
       </a>
-      <a className={row} href={href('/website/menu')}>
+      <a className={row} href={href('/menu')}>
         <span className="min-w-0 flex-1">
           {m.source === 'ops'
-            ? 'The website menu comes from the till (back office).'
+            ? 'The website menu is Menu items: descriptions, signature marks and what is shown come from Online ordering.'
             : 'The website menu comes from the menu board file, not the till yet.'}
           {warnings.length > 0 && (
             <ul className="mt-1 flex flex-col gap-0.5 text-sm text-bad-ink">

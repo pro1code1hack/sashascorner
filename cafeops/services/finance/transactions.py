@@ -2,8 +2,10 @@
 
 Two ledgers, never mixed into one sum:
 
-- **Receipts** -- Lightspeed receipt lines in `sale`, grouped by receipt. What was
-  rung up, when, and for how much. Voided receipts are kept and labelled.
+- **Receipts** -- receipt lines in `sale`, grouped by receipt: the till's (source
+  POS_API) and, since DECISIONS 28, the hand-typed ones (MANUAL, CSV_UPLOAD) and the
+  loyalty redemptions, each labelled with its `source` and who recorded it. Voided
+  receipts are kept and labelled.
 - **Takings** -- `payment_day` rows: one day, one method, one source. Several sources
   may report the same (day, method); only the winner by `PAYMENT_SOURCE_PRECEDENCE`
   counts (`used`), the rest are shown so a disagreement is visible, never added.
@@ -21,7 +23,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from cafeops.config import settings
-from cafeops.db.models.enums import PaymentMethod, PaymentSourceKind, SaleChannel
+from cafeops.db.models.enums import PaymentMethod, PaymentSourceKind, SaleChannel, SaleSource
 from cafeops.db.models.menu import MenuItem
 from cafeops.db.models.payment import PaymentDay
 from cafeops.db.models.sale import Sale
@@ -48,6 +50,8 @@ class ReceiptRow:
     weekday: str
     time: str
     channel: str
+    source: str
+    recorded_by: str | None
     lines: int
     items: str
     summary: str
@@ -123,6 +127,7 @@ def list_receipts(
     since: date | None,
     until: date | None,
     channel: str | None = None,
+    source: str | None = None,
     q: str | None = None,
     min_pence: int | None = None,
     max_pence: int | None = None,
@@ -134,6 +139,11 @@ def list_receipts(
     _check_range(since, until)
     tz = settings.tz
     stmt = select(Sale, MenuItem.name).join(MenuItem, MenuItem.id == Sale.menu_item_id)
+    if source:
+        try:
+            stmt = stmt.where(Sale.source == SaleSource[source.upper()])
+        except KeyError as exc:
+            raise FinanceRefused("source: POS_API, MANUAL, CSV_UPLOAD or LOYALTY") from exc
     if since is not None:
         stmt = stmt.where(Sale.sold_at >= datetime.combine(since, time.min, tzinfo=tz))
     if until is not None:
@@ -144,7 +154,7 @@ def list_receipts(
         try:
             stmt = stmt.where(Sale.channel == SaleChannel[channel.upper()])
         except KeyError as exc:
-            raise FinanceRefused("channel: EPOS, DELIVEROO, JUST_EAT or OTHER") from exc
+            raise FinanceRefused("channel: EPOS, CASH, DELIVEROO, JUST_EAT, WEB or OTHER") from exc
 
     grouped: dict[str, list[tuple[Sale, str]]] = {}
     for sale, name in session.execute(stmt):
@@ -177,6 +187,8 @@ def list_receipts(
                 weekday=_WEEKDAYS[first.weekday()],
                 time=first.strftime("%H:%M"),
                 channel=lines[0][0].channel.value,
+                source=lines[0][0].source.value,
+                recorded_by=lines[0][0].recorded_by,
                 lines=len(lines),
                 items=_qty_text(total_items),
                 summary=", ".join(parts) if parts else "(voided)",
@@ -189,7 +201,13 @@ def list_receipts(
     start = (page - 1) * page_size
     caveats: list[str] = []
     if not grouped:
-        caveats.append("No Lightspeed receipts in this window.")
+        caveats.append("No receipts in this window.")
+    typed = sum(1 for r in rows if r.source != SaleSource.POS_API.value)
+    if typed and not source:
+        caveats.append(
+            f"{typed} receipt{'s' if typed != 1 else ''} here {'were' if typed != 1 else 'was'} "
+            "recorded by hand or from a file, not by the till. Filter by source to separate them."
+        )
     return ReceiptPage(
         rows=rows[start : start + page_size],
         page=page,

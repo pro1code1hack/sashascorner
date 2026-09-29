@@ -79,8 +79,10 @@ def menu_export(out: Path = typer.Option(..., help="Where to write the /api/menu
 
 @app.command("menu-meta-seed")
 def menu_meta_seed() -> None:
-    """Copy the board's blurbs, descriptions and signature flags into the website
-    menu overlay. Idempotent: names that already have a row are left alone."""
+    """LEGACY. Copy the board's blurbs, descriptions and signature flags into the
+    site's own menu overlay. Refused once the ops shop tables exist: the website
+    menu is edited in the back office's Menu items then (`cafeops shop adopt-website-menu`
+    carries the old rows over). Idempotent: names with a row are left alone."""
     from sashasite.menu_source import seed_overlay
 
     try:
@@ -339,7 +341,9 @@ def _doctor_menu(line: Callable[..., None]) -> None:
     n = sum(len(c.items) for c in menu.categories)
     line(
         True,
-        f"website menu source: {snap.source} (version {menu.version}); "
+        f"website menu source: {snap.source}, presentation from "
+        f"{'the back office (shop tables)' if snap.overlay == 'shop' else snap.overlay} "
+        f"(version {menu.version}); "
         f"{len(menu.categories)} categories, {n} public items ({counts})",
     )
     for w in snap.warnings:
@@ -350,11 +354,11 @@ def _doctor_menu(line: Callable[..., None]) -> None:
             + ", ".join(i.name for i in snap.unassigned[:30])
             + (" ..." if len(snap.unassigned) > 30 else "")
         )
-    if snap.overlay_ready:
+    if snap.overlay == "site":
         orph = orphans()
         line(
             not (orph.categories or orph.items),
-            "overlay rows for names no longer on any menu: "
+            "legacy overlay rows for names no longer on any menu: "
             + (", ".join([*orph.categories, *orph.items]) or "none"),
             hard=False,
         )

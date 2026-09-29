@@ -30,6 +30,8 @@ __all__ = [
     "is_owner",
     "owner_name",
     "parse_expiry",
+    "parse_money",
+    "parse_past_day",
     "parse_qty",
     "run_sync",
     "run_sync_factory",
@@ -145,3 +147,52 @@ def parse_expiry(raw: str, *, today: date | None = None) -> datetime | None:
     except ValueError:
         return None
     return datetime.combine(candidate, time(23, 59), tzinfo=settings.tz).astimezone(UTC)
+
+
+def parse_money(raw: str) -> int | None:
+    """A typed amount as integer pence, or None. `12`, `12.50`, `12,50`, `£12.50`.
+
+    Two decimals at most: `12.505` is refused rather than rounded, because a rounded
+    penny in a cash figure is a reconciliation difference nobody can find later.
+    A float never appears (invariant 11).
+    """
+    text = raw.strip().replace("£", "").replace(",", ".").replace(" ", "")
+    if not text:
+        return None
+    try:
+        value = Decimal(text)
+    except InvalidOperation:
+        return None
+    if value < 0 or not value.is_finite():
+        return None
+    if value != value.quantize(Decimal("0.01")):
+        return None
+    return int(value * 100)
+
+
+def parse_past_day(raw: str, *, today: date | None = None) -> date | None:
+    """`DD.MM` or `DD.MM.YYYY` as a calendar day that is today or in the past.
+
+    The mirror of `parse_expiry`: a sale or a cash figure is always for a day that
+    has happened, so a bare `28.12` typed in January means last December. A date in
+    the future is refused, not moved.
+    """
+    text = raw.strip().replace("/", ".").replace("-", ".")
+    parts = [p for p in text.split(".") if p]
+    today = today or datetime.now(UTC).astimezone(settings.tz).date()
+    try:
+        if len(parts) == 2:
+            day, month = int(parts[0]), int(parts[1])
+            candidate = date(today.year, month, day)
+            if candidate > today:
+                candidate = date(today.year - 1, month, day)
+        elif len(parts) == 3:
+            day, month, year = int(parts[0]), int(parts[1]), int(parts[2])
+            if year < 100:
+                year += 2000
+            candidate = date(year, month, day)
+        else:
+            return None
+    except ValueError:
+        return None
+    return None if candidate > today else candidate

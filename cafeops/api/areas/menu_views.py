@@ -36,9 +36,12 @@ from cafeops.api.areas.menu_schemas import (
     EditorItemOut,
     EditorOptionOut,
     HistoryEntryOut,
+    IngredientAllergensIn,
+    IngredientAllergensOut,
     IngredientCreateIn,
     IngredientDetailOut,
     IngredientMetaIn,
+    IngredientPhotoOut,
     IngredientPriceAppliedOut,
     IngredientPriceApplyIn,
     IngredientPriceIn,
@@ -1434,16 +1437,14 @@ def _rows(session: Session, ingredients: list[Ingredient]) -> list[IngredientRow
     usage = _usage(session)
     photo_ids = {i.photo_asset_id for i in ingredients if i.photo_asset_id is not None}
     photos = (
-        {
-            a.id: a.filename
-            for a in session.scalars(select(MediaAsset).where(MediaAsset.id.in_(photo_ids)))
-        }
+        {a.id: a for a in session.scalars(select(MediaAsset).where(MediaAsset.id.in_(photo_ids)))}
         if photo_ids
         else {}
     )
     out: list[IngredientRowOut] = []
     for i in ingredients:
         pack = packs.get(i.id)
+        photo = photos.get(i.photo_asset_id) if i.photo_asset_id is not None else None
         out.append(
             IngredientRowOut(
                 ingredient_id=i.id,
@@ -1485,12 +1486,15 @@ def _rows(session: Session, ingredients: list[Ingredient]) -> list[IngredientRow
                 transit_buffer_days=i.transit_buffer_days,
                 tier=i.tier.value,
                 waste_factor=as_qty(i.waste_factor) or "0",
-                photo_url=(
-                    media_url(photos[i.photo_asset_id])
-                    if i.photo_asset_id is not None and i.photo_asset_id in photos
-                    else None
-                ),
+                photo_url=media_url(photo.filename) if photo is not None else None,
                 allergens=tuple(i.allergens) if i.allergens is not None else None,
+                allergens_source=i.allergens_source,
+                allergens_confirmed=(i.allergens_source or "").startswith(
+                    ic.ALLERGENS_CHECKED_PREFIX
+                ),
+                photo_licence=photo.licence if photo is not None else None,
+                photo_author=photo.author if photo is not None else None,
+                photo_source_url=photo.source_url if photo is not None else None,
             )
         )
     return out
@@ -1695,6 +1699,50 @@ def ingredient_meta_view(
     except ic.IngredientInUseError as exc:
         raise _in_use(exc) from None
     return IngredientWriteOut(ingredient_id=ingredient_id, summary="Saved")
+
+
+def ingredient_photo_upload_view(
+    session: Session, ingredient_id: int, data: bytes, actor: str | None
+) -> IngredientPhotoOut:
+    if session.get(Ingredient, ingredient_id) is None:  # 404 before any file is written
+        raise LookupError(f"ingredient {ingredient_id} not found")
+    stored = store_image(session, data, uploaded_by=actor)
+    ic.attach_ingredient_photo(session, ingredient_id, stored.asset_id)
+    return IngredientPhotoOut(
+        ingredient_id=ingredient_id,
+        asset_id=stored.asset_id,
+        photo_url=stored.url,
+        width=stored.width,
+        height=stored.height,
+        bytes=stored.bytes,
+        content_type=stored.content_type,
+    )
+
+
+def ingredient_photo_clear_view(session: Session, ingredient_id: int) -> IngredientPhotoOut:
+    ic.attach_ingredient_photo(session, ingredient_id, None)
+    return IngredientPhotoOut(
+        ingredient_id=ingredient_id,
+        asset_id=None,
+        photo_url=None,
+        width=None,
+        height=None,
+        bytes=None,
+        content_type=None,
+    )
+
+
+def ingredient_allergens_view(
+    session: Session, ingredient_id: int, body: IngredientAllergensIn
+) -> IngredientAllergensOut:
+    ic.set_allergens(session, ingredient_id, body.allergens, actor=body.actor)
+    row = session.get(Ingredient, ingredient_id)
+    assert row is not None
+    return IngredientAllergensOut(
+        ingredient_id=ingredient_id,
+        allergens=tuple(row.allergens) if row.allergens is not None else None,
+        allergens_source=row.allergens_source,
+    )
 
 
 def ingredient_retire_view(session: Session, ingredient_id: int, actor: str) -> IngredientWriteOut:

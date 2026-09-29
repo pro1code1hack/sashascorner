@@ -29,6 +29,7 @@ import { navigate, useLocation } from '../../lib/router'
 import type { IngredientRow, Unit } from '../../lib/types/menu'
 import { MONEY_INPUT, gbp, poundsToPence, qtyText, unitPrice, unitWord } from '../menu/common/figures'
 import { CreateIngredient, IngredientDetailPane } from './Detail'
+import { IngredientThumb } from './Thumb'
 
 const ROW_GRID = 'compact:grid-cols-[44px_minmax(0,1fr)_150px_170px_70px_90px]'
 
@@ -342,12 +343,15 @@ function ListView({ rows, onOpen }: { rows: IngredientRow[]; onOpen: (id: number
                   r.retired && 'opacity-60',
                 )}
               >
-                <span
-                  aria-hidden="true"
-                  className="grid size-11 place-items-center rounded-control bg-line-soft text-lg font-extrabold text-ink-3"
-                >
-                  {r.name.trim().charAt(0).toUpperCase()}
-                </span>
+                <IngredientThumb
+                  url={r.photo_url}
+                  name={r.name}
+                  fallback={
+                    <span aria-hidden="true" className="text-lg font-extrabold text-ink-3">
+                      {r.name.trim().charAt(0).toUpperCase()}
+                    </span>
+                  }
+                />
                 <span className="min-w-0">
                   <span className="block truncate text-md font-bold">{r.name}</span>
                   <span className="block truncate text-sm text-ink-2">

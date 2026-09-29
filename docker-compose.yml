@@ -2,7 +2,8 @@
 # queue -- see CLAUDE.md 3 and ARCHITECTURE.md 8F.8 before adding any of those.
 #
 # Four services run the same image with different commands/entrypoints (api / bot /
-# scheduler / backup). NONE of them publishes a host port -- only `caddy` does. That is
+# scheduler / backup), and `browser-worker` runs the same code from a Chromium-bearing
+# variant of it. NONE of them publishes a host port -- only `caddy` does. That is
 # what makes "the bot and scheduler must not be reachable from outside" true by
 # construction rather than by convention: there is no port to reach even on localhost
 # from the host, only from inside the compose network, and `caddy` is the sole service
@@ -163,6 +164,39 @@ services:
     # Also listens on nothing. APScheduler runs in-process; the container just needs to
     # stay up, which `restart: unless-stopped` plus systemd-equivalent supervision
     # (Docker's own restart policy here) provides.
+
+  # The browser ordering agents (docs/agents/BROWSER-ORDERING.md 8): the ONLY process
+  # that opens a browser. It consumes `browser_job` rows the api/scheduler queued, fills
+  # a supplier's web basket and stops there; a person pays on the portal. Built from
+  # the `browser` target (runtime + Chromium), so it is a different image from the other
+  # four services. Off until CAFEOPS_BROWSER_WORKER_ENABLED=true in .env: with it off
+  # the worker exits at once and "Stage basket" is refused with that reason.
+  browser-worker:
+    build:
+      context: .
+      target: browser
+    image: cafeops:browser
+    command: ["cafeops", "browser-worker"]
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      CAFEOPS_DATABASE_URL: sqlite+pysqlite:////data/cafeops.db
+      # Persistent Chromium profiles, one per supplier, on the data volume so a
+      # sign-in survives a redeploy. Cookies live here and never in the database.
+      CAFEOPS_BROWSER_DATA_DIR: /data/browser
+      # Screenshots are media_asset rows; same volume the api serves them from.
+      CAFEOPS_MEDIA_DIR: /media
+    volumes:
+      - cafeops_data:/data
+      - cafeops_media:/media
+    # Chromium uses /dev/shm for its renderer; Docker's 64 MB default makes tabs crash
+    # on heavy pages with nothing in the logs but "Target closed".
+    shm_size: "1g"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    # No port, no healthcheck, and nothing depends on it: a worker that is down means
+    # jobs wait in QUEUED (visible on GET /api/browser-jobs), not a broken deploy.
 
   caddy:
     # Built here, not pulled: the image carries the dashboard bundle as well as

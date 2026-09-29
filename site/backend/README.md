@@ -167,50 +167,49 @@ item is hidden from the public menu but still in the admin. `is_recurring_annual
 compares month/day only and handles windows that wrap the new year. Public item ids
 are the slug of the name (category-suffixed on a collision, as for the board).
 
-**Overlay** (`site_menu_category_meta`, `site_menu_item_meta`, keyed by name,
-migration `site_0005`). Website-only presentation, applied in both modes:
-category `slug` (NULL → derived from the name; board mode keeps the board's slugs),
-`blurb` (NULL → the board's, or none), `hidden`, `position`; item `description`,
-`signature`, `hidden`, `position`, `use_ops_note`. While an item row exists, its
-fields win over the board's. A NULL `position` sorts after every positioned entry, in
-the source's own order. The ops `menu_item.note` may be internal, so it is **never**
-public unless the row's description is empty **and** `use_ops_note` is set, in which
-case it is published as the description. `menu_item.photo_asset_id` gives `photo:
-null` for now (TODO: the ops media URL scheme, expected `/media/<sha256>.<ext>`); the
-site never serves ops files.
+**Overlay = the shop catalogue (one menu everywhere, DECISIONS.md 29, 2026-09-29).**
+In ops mode the presentation is the back office's Order online tables, read READ-ONLY
+with Core `text()` selects: `shop_product` (keyed by `item_name` = `menu_item.name`)
+gives `description`, hidden (= not `visible`), signature (= `featured`) and order
+(`sort_order`); `shop_category` (keyed by `ops_name` = `menu_category.name`) gives the
+display `name`, `blurb`, hidden (= not `visible`) and order (`sort_order`). Ties in
+`sort_order` fall back to the board's order, then the name. The website keeps its own
+category slugs (the board's, else the name's) and item ids (slug of `menu_item.name`),
+so the shop's `slug` and `display_name` do not move any site URL. The ops
+`menu_item.note` may be internal, so it is **never** public unless the shop description
+is empty **and** the site's old row said `use_ops_note` (the one thing the shop has no
+column for). `menu_item.photo_asset_id` gives `photo: null` for now (TODO: the ops
+media URL scheme); the site never serves ops files.
 
-`sashasite menu-meta-seed` copies the board's blurbs, descriptions and signature
-flags into the overlay. Idempotent: a name that already has a row is never touched.
-Items are seeded under the board name and, where the drift matcher (alias or
-normalised name) finds an active ops item, under the ops name too, so the copy
-survives the switch to ops.
+The site's own `site_menu_category_meta` / `site_menu_item_meta` (migration
+`site_0005`) are **kept and no longer written**. They are the overlay only when the shop
+tables are absent (a checkout without the ops migration; `warnings` says so) and in board
+mode (board names, which the shop never has). `MenuSnapshot.overlay` reports which:
+`"shop" | "site" | "none"`. Their copy was carried into the shop once with
+`cafeops shop adopt-website-menu` (cafeops side, idempotent, never overwrites);
+`sashasite menu-meta-seed` (legacy: the board's copy into the site tables) refuses once
+the shop tables exist.
 
 **Public shape** is unchanged plus top-level `source` and `version` (12 hex chars of a
 sha256 over everything but `generated_at`; re-render when it changes) and a per-item
-`photo` (always null for now). Cached 60 s; rebuilt at once on a board-file change or
-an admin write, so an ops edit shows within a minute.
+`photo` (always null for now). Cached 60 s; rebuilt on a board-file change, so a
+back-office edit shows within a minute.
 
-**Admin** (session cookie; `X-Admin: 1` on writes; every write audited):
-- `GET /api/admin/menu` → `{source, warnings, categories: [{name, slug, kind, blurb,
-  hidden, position, items: [item]}], unassigned: [item], drift}`; an item is
-  `{key, id, name, sizes, seasonal: {name, starts_on, ends_on, recurring_annually,
-  in_season} | null, ops_note, has_photo, public, web: {description, signature, hidden,
-  position, use_ops_note}}`. `drift` is the board-vs-ops report as JSON.
-- `PUT /api/admin/menu/categories/{slug}` `{blurb?, hidden?}` → the category.
-- `PUT /api/admin/menu/items/{key}` `{description?, signature?, hidden?, use_ops_note?}`
-  → the item (`key` is the name, URL-encoded). A first edit starts from the values
-  currently shown, so it changes only the fields sent.
-- `POST /api/admin/menu/order` `{categories?: [slug…], items?: {slug: [key…]}}` → the
-  admin menu. Listed entries take those positions; the rest of that list's scope
-  follow in the source's order. One transaction; any unknown slug/key or duplicate is a
-  422 and nothing is written.
-- Writes validate slugs and keys against the current source (404 when unknown) and
-  answer 503 until the overlay migration has run. Prices, names and sizes are not
-  editable here: they belong to the back office.
+**Admin** (service key or session cookie; read-only):
+- `GET /api/admin/menu` → `{source, overlay, edit_href, warnings, categories: [{name,
+  display_name, slug, kind, blurb, hidden, position, edit_href, items: [item]}],
+  unassigned: [item], drift}`; an item is `{key, id, name, sizes, seasonal: {name,
+  starts_on, ends_on, recurring_annually, in_season} | null, ops_note, has_photo, public,
+  web: {description, signature, hidden, position, use_ops_note}, ops_menu_item_id,
+  edit_href}`. `edit_href` is the back-office page (`{SITE_OPS_URL}/#/menu/<id>`;
+  `#/menu?view=list` for categories). `drift` is the board-vs-ops report as JSON.
+- `PUT /api/admin/menu/categories/{slug}`, `PUT /api/admin/menu/items/{key}` and
+  `POST /api/admin/menu/order` answer **410** `"Edit the menu in Café Ops › Menu items
+  (<edit_href>)"`. Nothing about the menu is editable on the site.
 
-`doctor` reports the source and its reason, the public category/item counts,
-unassigned items, overlay rows for names that are on neither the board nor the
-active ops menu, and the drift.
+`doctor` reports the source and where the presentation comes from, the public
+category/item counts, unassigned items, legacy overlay rows for names on neither menu
+(only while the site tables are the overlay), and the drift.
 
 ## Booking model
 

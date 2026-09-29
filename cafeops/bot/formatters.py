@@ -34,12 +34,16 @@ from typing import TYPE_CHECKING
 from zoneinfo import ZoneInfo
 
 from cafeops.bot.viewmodels import (
+    BasketLineView,
+    BasketView,
     CapKind,
     CapNotice,
+    CashDayView,
     ChecklistItemView,
     CountItemView,
     CountResultView,
     CountSessionKind,
+    CsvKind,
     DeliveryLineView,
     DeliveryOrderView,
     DigestView,
@@ -47,13 +51,18 @@ from cafeops.bot.viewmodels import (
     DriftAlertView,
     EmergencyDigestView,
     ExpiryLineView,
+    ExportView,
+    ImportResultView,
     IngredientRefView,
     LowConfidenceKind,
     LowConfidenceNotice,
+    MenuPageView,
+    MenuPickView,
     OrderLineView,
     OrderView,
     ReceiptIssue,
     ReceiptView,
+    RecordedSaleView,
     RevocationView,
     StockLineView,
     WriteOffView,
@@ -68,6 +77,7 @@ from cafeops.domain.types import (
     OrderNoteKind,
     POStatus,
     RevokeCause,
+    SaleChannel,
     Storage,
     Tier,
     Unit,
@@ -1522,6 +1532,11 @@ def start_text() -> str:
             "/checklist — чек-лист категории C: хватает или заканчивается",
             "/delivery — приёмка поставки со сроком годности",
             "",
+            "/sale — продажа мимо кассы, Deliveroo или Just Eat",
+            "/cash — наличные за день, одной суммой",
+            "/export — транзакции за период файлом CSV",
+            "/import — как прислать CSV: транзакции, выручка, отчёт площадки",
+            "",
             "Без вашего подтверждения не заказывается ничего.",
         ]
     )
@@ -1557,6 +1572,11 @@ def help_text() -> str:
             "«Розничная наценка за спешку» — сколько лишнего заплачено в магазине за то, "
             "что товар понадобился раньше поставки. Сумма накопительная, и она про "
             "частоту заказов, а не про магазин.",
+            "",
+            "«Мимо кассы» — продажа, которой касса не видела: наличные без чека, заказ "
+            "Deliveroo или Just Eat. Кассу сюда вносить не надо, она приходит из "
+            "Lightspeed сама. Каждая такая запись помечена, кто её внёс, и в кабинете "
+            "отделяется от кассовых одним фильтром.",
         ]
     )
 
@@ -1819,3 +1839,366 @@ def member_brief(m: MemberBrief) -> str:
             f"Участник с {m.member_since.strftime('%d.%m.%Y')}",
         ]
     )
+
+
+# ==========================================================================
+# Продажа мимо кассы, Deliveroo / Just Eat, наличные за день, файлы (DECISIONS 28)
+# ==========================================================================
+
+BTN_SALE_CASH = "Наличные (мимо кассы)"
+BTN_SALE_DELIVEROO = "Deliveroo"
+BTN_SALE_JUST_EAT = "Just Eat"
+BTN_SALE_OTHER = "Другое"
+BTN_SALE_BACK = "← Категории"
+BTN_SALE_PREV = "← Назад"
+BTN_SALE_NEXT = "Ещё →"
+BTN_SALE_ADD = "Добавить позицию"
+BTN_SALE_PRICE = "Другая цена"
+BTN_SALE_DROP = "Убрать последнюю"
+BTN_SALE_DATE = "Другая дата"
+BTN_SALE_SAVE = "Записать"
+BTN_SALE_CANCEL = "Отмена"
+BTN_SALE_VOID = "Отменить эту продажу"
+
+BTN_CASH_TODAY = "Сегодня"
+BTN_CASH_YESTERDAY = "Вчера"
+BTN_CASH_OTHER = "Другой день"
+BTN_CASH_CANCEL = "Отмена"
+
+BTN_EXPORT_TODAY = "Сегодня"
+BTN_EXPORT_WEEK = "7 дней"
+BTN_EXPORT_MONTH = "30 дней"
+BTN_EXPORT_ALL = "Всё"
+
+BTN_IMPORT_WRITE = "Записать"
+BTN_IMPORT_CANCEL = "Отмена"
+BTN_IMPORT_DELIVEROO = "Deliveroo"
+BTN_IMPORT_JUST_EAT = "Just Eat"
+
+_CHANNELS: dict[SaleChannel, str] = {
+    SaleChannel.EPOS: "касса",
+    SaleChannel.CASH: "наличные мимо кассы",
+    SaleChannel.DELIVEROO: "Deliveroo",
+    SaleChannel.JUST_EAT: "Just Eat",
+    SaleChannel.OTHER: "другое",
+    SaleChannel.WEB: "онлайн-заказы",
+}
+
+_CSV_KINDS: dict[CsvKind, str] = {
+    CsvKind.TRANSACTIONS: "файл транзакций",
+    CsvKind.PAYMENTS: "выгрузка выручки по дням",
+    CsvKind.CHANNEL_REPORT: "отчёт площадки доставки",
+    CsvKind.UNKNOWN: "неизвестный файл",
+}
+
+
+def _channel(channel: SaleChannel) -> str:
+    return _CHANNELS.get(channel, channel.value)
+
+
+def _day_label(day: date) -> str:
+    return f"{_WEEKDAYS[day.weekday()]} {day:%d.%m}"
+
+
+def _count(qty: Decimal) -> str:
+    n = qty.normalize()
+    return format(n, "f") if n != n.to_integral_value() else str(int(n))
+
+
+def sale_channel_prompt() -> str:
+    return "\n".join(
+        [
+            "Откуда продажа?",
+            "",
+            "Касса сюда не вносится — она приходит из Lightspeed сама, и повтор "
+            "посчитался бы дважды. Здесь только то, чего касса не видела.",
+        ]
+    )
+
+
+def sale_pick_prompt(basket: BasketView) -> str:
+    lines = [f"{_channel(basket.channel).capitalize()}."]
+    if basket.lines:
+        lines.append(f"В чеке {_items(len(basket.lines))} на {_money(basket.total_pence)}.")
+    lines.append("Что продали? Выберите категорию или напишите часть названия.")
+    return "\n".join(lines)
+
+
+def sale_items_prompt(page: MenuPageView) -> str:
+    head = page.category or "Без категории"
+    if page.pages > 1:
+        return f"{head} — страница {page.page + 1} из {page.pages}."
+    return f"{head}."
+
+
+def sale_search_results(q: str, found: int) -> str:
+    if found == 0:
+        return f"По «{q}» ничего не нашла. Напишите иначе или выберите категорию."
+    return f"По «{q}» — {_items(found)}. Выберите:"
+
+
+def sale_qty_prompt(item: MenuPickView) -> str:
+    return f"{item.label} — {_money(item.price_pence)}. Сколько штук?"
+
+
+def _basket_lines(lines: Sequence[BasketLineView]) -> list[str]:
+    out: list[str] = []
+    for index, line in enumerate(lines, start=1):
+        price = (
+            f" по {_money(line.unit_price_pence)}" if line.qty != 1 or line.price_is_custom else ""
+        )
+        custom = " (своя цена)" if line.price_is_custom else ""
+        out.append(
+            f"{index}. {line.label} × {_count(line.qty)}{price}{custom} — "
+            f"{_money(line.gross_pence)}"
+        )
+    return out
+
+
+def sale_basket(basket: BasketView) -> str:
+    if not basket.lines:
+        return "В чеке пока ничего нет. Выберите позицию."
+    when = "сегодня" if basket.sold_on is None else _day_label(basket.sold_on)
+    return "\n".join(
+        [
+            f"Чек — {_channel(basket.channel)}, {when}.",
+            *_basket_lines(basket.lines),
+            f"Итого: {_money(basket.total_pence)}",
+            "",
+            "«Записать» внесёт продажу; со склада спишется ночью, как и кассовые.",
+        ]
+    )
+
+
+def sale_price_prompt(line: BasketLineView) -> str:
+    return "\n".join(
+        [
+            f"Цена за 1 шт. для «{line.label}»? Сейчас {_money(line.unit_price_pence)}.",
+            "Напишите сумму, например 4.50. Это цена площадки, меню не меняется.",
+        ]
+    )
+
+
+def sale_date_prompt() -> str:
+    return "\n".join(
+        [
+            "За какой день? Напишите ДД.ММ, например 27.09.",
+            "Время у такой продажи будет полдень — важен день, не минута.",
+        ]
+    )
+
+
+def sale_recorded(view: RecordedSaleView) -> str:
+    return "\n".join(
+        [
+            f"Записано. {_channel(view.channel).capitalize()}, {_dt(view.sold_at)}.",
+            *_basket_lines(view.lines),
+            f"Итого: {_money(view.total_pence)}",
+            "",
+            f"Чек {view.receipt_id}. Внёс: {view.recorded_by or '—'}.",
+            "Со склада спишется ночью. Ошиблись — нажмите кнопку ниже.",
+        ]
+    )
+
+
+def sale_voided(view: RecordedSaleView) -> str:
+    return "\n".join(
+        [
+            f"Продажа {view.receipt_id} отменена ({_money(view.total_pence)}).",
+            "Строки остались в журнале с пометкой «отменено». Если списание уже "
+            "прошло, остатки вернутся ночью.",
+        ]
+    )
+
+
+def sale_cancelled() -> str:
+    return "Отменено. Ничего не записано."
+
+
+def sale_nothing_to_save() -> str:
+    return "В чеке ничего нет — записывать нечего."
+
+
+def sale_refused(reason: str) -> str:
+    return f"Не записано: {reason}"
+
+
+def err_bad_money() -> str:
+    return "Не поняла сумму. Напишите число, например 12.50."
+
+
+def err_bad_past_day() -> str:
+    return "Не поняла дату. Напишите ДД.ММ, например 27.09 — сегодня или раньше."
+
+
+def err_bad_count() -> str:
+    return "Сколько штук? Напишите целое число, например 2."
+
+
+# --- наличные за день -------------------------------------------------------
+
+
+def cash_day_prompt() -> str:
+    return "\n".join(
+        [
+            "Наличные за какой день?",
+            "",
+            "Одна сумма на день — всё, что взяли наличными (DECISIONS 26). "
+            "Повторный ввод заменяет прежнюю сумму.",
+        ]
+    )
+
+
+def cash_other_day_prompt() -> str:
+    return "Напишите день: ДД.ММ, например 27.09."
+
+
+def cash_amount_prompt(view: CashDayView) -> str:
+    current = (
+        "пока ничего не записано"
+        if view.cash_pence is None
+        else f"сейчас записано {_money(view.cash_pence)}"
+    )
+    return "\n".join(
+        [
+            f"Сколько наличных за {_day_label(view.day)}? ({current})",
+            "Напишите сумму, например 85.50.",
+        ]
+    )
+
+
+def cash_locked(view: CashDayView) -> str:
+    return "\n".join(
+        [
+            f"Наличные за {_day_label(view.day)} пришли из выгрузки ({view.locked_by}) "
+            "и руками не меняются.",
+            "Исправьте в источнике и пришлите выгрузку заново.",
+        ]
+    )
+
+
+def cash_saved(view: CashDayView) -> str:
+    card = (
+        "карта за день не записана"
+        if view.card_pence is None
+        else f"карта за день {_money(view.card_pence)}"
+    )
+    return f"Записано: наличные за {_day_label(view.day)} — {_money(view.cash_pence)} ({card})."
+
+
+def cash_cancelled() -> str:
+    return "Отменено. Ничего не записано."
+
+
+# --- файлы -------------------------------------------------------------------
+
+
+def export_prompt() -> str:
+    return "За какой период выгрузить транзакции? Придёт CSV — касса, наличные, доставка."
+
+
+def export_caption(view: ExportView) -> str:
+    if view.lines == 0:
+        return f"Транзакций за {_d(view.since)}–{_d(view.until)} нет."
+    voided = f", отменённых строк {view.voided_lines}" if view.voided_lines else ""
+    return (
+        f"Транзакции {_d(view.since)}–{_d(view.until)}: чеков {view.receipts}, "
+        f"строк {view.lines}, на {_money(view.gross_pence)}{voided}."
+    )
+
+
+def import_usage() -> str:
+    return "\n".join(
+        [
+            "Пришлите CSV-файл сообщением — я разберу его по заголовкам и покажу, что "
+            "запишется, прежде чем записать.",
+            "",
+            "Понимаю три вида файлов:",
+            "• транзакции — колонки date, item, qty; по желанию size, unit price, "
+            "channel (CASH / DELIVEROO / JUST_EAT / OTHER), receipt, time, note. "
+            "Такой же файл делает /export, его можно поправить и прислать обратно;",
+            "• выручка по дням — date, method, gross (выгрузка кассы);",
+            "• отчёт Deliveroo или Just Eat из личного кабинета.",
+            "",
+            "Один и тот же файл дважды ничего не задвоит.",
+        ]
+    )
+
+
+def err_not_csv() -> str:
+    return "Нужен файл .csv. Из Excel или Numbers: «Экспорт» → CSV."
+
+
+def import_platform_prompt(filename: str) -> str:
+    return f"«{filename}» — колонки подходят и Deliveroo, и Just Eat. Чей это отчёт?"
+
+
+def _import_body(view: ImportResultView) -> list[str]:
+    out: list[str] = []
+    when = f" за {_d(view.since)}–{_d(view.until)}" if view.since and view.until else ""
+    if view.kind is CsvKind.TRANSACTIONS:
+        out.append(
+            f"Транзакции{when}: чеков {view.receipts}, строк {view.lines}, "
+            f"на {_money(view.gross_pence)}."
+        )
+        for channel, pence in view.by_channel:
+            out.append(f"  {_channel(channel)}: {_money(pence)}")
+        if view.already_recorded:
+            out.append(f"Уже были записаны раньше: {view.already_recorded} — пропущены.")
+    elif view.kind is CsvKind.PAYMENTS:
+        out.append(
+            f"Выручка по дням{when}: новых дней {view.days_inserted}, "
+            f"обновлено {view.days_updated}, всего {_money(view.gross_pence)}."
+        )
+    elif view.kind is CsvKind.CHANNEL_REPORT:
+        out.append(
+            f"Отчёт {view.platform or '?'}{when}: дней +{view.days_inserted}/~{view.days_updated}, "
+            f"позиций +{view.items_inserted}/~{view.items_updated}."
+        )
+    if view.rejected:
+        out.append(f"Отклонено строк: {len(view.rejected)}. Первые:")
+        out.extend(f"  · {reason}" for reason in view.rejected[:5])
+        if len(view.rejected) > 5:
+            out.append(f"  … и ещё {len(view.rejected) - 5}")
+    for note in view.notes[:3]:
+        out.append(f"  · {note}")
+    return out
+
+
+def import_preview(view: ImportResultView) -> str:
+    if view.refused:
+        return import_refused(view)
+    return "\n".join(
+        [
+            f"«{view.filename}» — {_CSV_KINDS[view.kind]}. Пока ничего не записано.",
+            *_import_body(view),
+            "",
+            "Записать?",
+        ]
+    )
+
+
+def import_written(view: ImportResultView) -> str:
+    if view.refused:
+        return import_refused(view)
+    return "\n".join([f"Записано: «{view.filename}».", *_import_body(view)])
+
+
+def import_refused(view: ImportResultView) -> str:
+    return "\n".join(
+        [
+            f"«{view.filename}» не принят, ничего не записано.",
+            f"Причина: {view.refused}",
+            "",
+            "Нужны колонки: date, item, qty (транзакции); date, method, gross "
+            "(выручка); либо отчёт Deliveroo / Just Eat как он выгружается.",
+        ]
+    )
+
+
+def import_cancelled() -> str:
+    return "Отменено. Файл не записан."
+
+
+def import_nothing_pending() -> str:
+    return "Нет файла, который ждал бы подтверждения. Пришлите CSV заново."

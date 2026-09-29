@@ -7,8 +7,8 @@ built before the session closes. No view computes a figure; the services do.
 from __future__ import annotations
 
 from dataclasses import fields, is_dataclass
-from datetime import date
-from decimal import Decimal
+from datetime import UTC, date, datetime
+from decimal import Decimal, InvalidOperation
 
 from sqlalchemy.orm import Session
 
@@ -37,6 +37,8 @@ from cafeops.api.areas.finance_schemas import (
     FinanceMonthsOut,
     FinanceSettingsIn,
     FinanceSettingsOut,
+    MenuPickOut,
+    MenuPickResponse,
     OverviewOut,
     PayoutIn,
     PLResponse,
@@ -48,13 +50,23 @@ from cafeops.api.areas.finance_schemas import (
     SalesInsightsOut,
     SalesResponse,
     TakingsLedgerResponse,
+    TransactionImportIn,
+    TransactionImportOut,
+    TransactionIn,
+    TransactionLineOut,
+    TransactionOut,
+    TransactionVoidIn,
 )
+from cafeops.config import settings
 from cafeops.db.models.enums import (
     DirectorEntryType,
     ExpenseKind,
     ExpenseMethod,
+    SaleChannel,
     SalesChannelName,
+    SaleSource,
 )
+from cafeops.services import record_sale, transactions_csv
 from cafeops.services.finance import (
     channels_month,
     director,
@@ -68,6 +80,7 @@ from cafeops.services.finance import (
 )
 from cafeops.services.finance.common import (
     UNSET,
+    FinanceConflict,
     FinanceRefused,
     Unset,
     month_key,
@@ -477,6 +490,7 @@ def receipts_view(
     since: date | None,
     until: date | None,
     channel: str | None,
+    source: str | None,
     q: str | None,
     min_pence: int | None,
     max_pence: int | None,
@@ -489,6 +503,7 @@ def receipts_view(
         since=since,
         until=until,
         channel=channel,
+        source=source,
         q=q,
         min_pence=min_pence,
         max_pence=max_pence,
@@ -525,3 +540,152 @@ def takings_ledger_view(
         page_size=page_size,
     )
     return TakingsLedgerResponse.model_validate(r)
+
+
+# ----------------------------------------- hand-typed transactions (DECISIONS 28) ---
+
+
+def _transaction_out(sale: record_sale.RecordedSale) -> TransactionOut:
+    return TransactionOut(
+        receipt_id=sale.receipt_id,
+        channel=sale.channel.value,
+        source=sale.source.value,
+        sold_at=sale.sold_at,
+        recorded_by=sale.recorded_by,
+        note=sale.note,
+        voided=sale.voided,
+        total_pence=sale.total_pence,
+        lines=[
+            TransactionLineOut(
+                sale_id=line.sale_id,
+                menu_item_id=line.menu_item_id,
+                name=line.name,
+                size=line.size,
+                qty=_qty_str(line.qty),
+                unit_price_pence=line.unit_price_pence,
+                gross_pence=line.gross_pence,
+            )
+            for line in sale.lines
+        ],
+    )
+
+
+def _qty_str(q: Decimal) -> str:
+    n = q.normalize()
+    return format(n, "f") if n != n.to_integral_value() else str(int(n))
+
+
+def transaction_create_view(session: Session, body: TransactionIn) -> TransactionOut:
+    lines = []
+    for line in body.lines:
+        try:
+            qty = Decimal(line.qty)
+        except (InvalidOperation, ValueError) as exc:
+            raise FinanceRefused(f"qty {line.qty!r}: not a number") from exc
+        lines.append(
+            record_sale.SaleLineIn(
+                menu_item_id=line.menu_item_id, qty=qty, unit_price_pence=line.unit_price_pence
+            )
+        )
+    when = None
+    if body.sold_on is not None:
+        today = datetime.now(UTC).astimezone(settings.tz).date()
+        when = None if body.sold_on == today else record_sale.noon_of(body.sold_on)
+    try:
+        sale = record_sale.record_sale(
+            session,
+            channel=SaleChannel[body.channel],
+            lines=lines,
+            recorded_by=body.operator,
+            sold_at=when,
+            note=body.note,
+        )
+    except record_sale.SaleRefused as exc:
+        raise FinanceRefused(str(exc)) from exc
+    return _transaction_out(sale)
+
+
+def transaction_get_view(session: Session, receipt_id: str) -> TransactionOut:
+    return _transaction_out(record_sale.recorded_sale(session, receipt_id))
+
+
+def transaction_void_view(
+    session: Session, receipt_id: str, body: TransactionVoidIn
+) -> TransactionOut:
+    try:
+        sale = record_sale.void_sale(session, receipt_id=receipt_id, voided_by=body.operator)
+    except record_sale.SaleRefused as exc:
+        raise FinanceConflict(str(exc)) from exc
+    return _transaction_out(sale)
+
+
+def transactions_menu_view(
+    session: Session, *, category: str | None, q: str | None
+) -> MenuPickResponse:
+    categories = record_sale.list_menu_categories(session)
+    if q:
+        items = record_sale.search_menu_items(session, q=q, limit=50)
+    elif category is not None:
+        items = record_sale.menu_items(session, category=category or None)
+    else:
+        items = []
+        for name in [*categories, None]:
+            items.extend(record_sale.menu_items(session, category=name))
+    return MenuPickResponse(
+        categories=categories,
+        items=[
+            MenuPickOut(
+                menu_item_id=i.menu_item_id,
+                name=i.name,
+                size=i.size,
+                category=i.category,
+                price_pence=i.price_pence,
+            )
+            for i in items
+        ],
+    )
+
+
+def transactions_import_view(session: Session, body: TransactionImportIn) -> TransactionImportOut:
+    report = transactions_csv.import_transactions(
+        session,
+        text=body.text,
+        filename=body.filename,
+        recorded_by=body.operator,
+        dry_run=body.dry_run,
+    )
+    return TransactionImportOut(
+        filename=report.filename,
+        written=not body.dry_run and report.refused is None,
+        refused=report.refused,
+        receipts_written=report.receipts_written,
+        lines_written=report.lines_written,
+        receipts_already_recorded=report.receipts_already_recorded,
+        gross_pence=report.gross_pence,
+        since=report.since,
+        until=report.until,
+        by_channel=dict(report.by_channel),
+        rejected=list(report.rejected),
+    )
+
+
+def transactions_export_view(
+    session: Session,
+    *,
+    since: date,
+    until: date,
+    channel: str | None,
+    source: str | None,
+    include_voided: bool,
+) -> transactions_csv.ExportFile:
+    try:
+        ch = SaleChannel[channel.upper()] if channel else None
+        src = SaleSource[source.upper()] if source else None
+    except KeyError as exc:
+        raise FinanceRefused("channel or source: unknown value") from exc
+    try:
+        return transactions_csv.export_transactions(
+            session, since=since, until=until, channel=ch, source=src, include_voided=include_voided
+        )
+    except ValueError as exc:
+        raise FinanceRefused(str(exc)) from exc

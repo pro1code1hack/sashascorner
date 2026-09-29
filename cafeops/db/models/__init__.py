@@ -6,6 +6,7 @@ from cafeops.db.base import Base
 from cafeops.db.models.agent_proposal import AgentProposal
 from cafeops.db.models.auth import AuthAudit, AuthCredential, AuthSession
 from cafeops.db.models.batch import Season, StockBatch
+from cafeops.db.models.browser_agent import BrowserJob, BrowserJobStep, SupplierSession
 from cafeops.db.models.channel import (
     AgentActionLog,
     ChannelItemMetric,
@@ -26,6 +27,10 @@ from cafeops.db.models.composition import (
 from cafeops.db.models.enums import (
     AgentToolOutcome,
     AuthEvent,
+    BrowserJobKind,
+    BrowserJobStatus,
+    BrowserStepOutcome,
+    BrowserStepSource,
     ChannelSourceKind,
     ChecklistStatus,
     ComponentRole,
@@ -48,8 +53,10 @@ from cafeops.db.models.enums import (
     ProposalStatus,
     SaleChannel,
     SalesChannelName,
+    SaleSource,
     SizeCode,
     Storage,
+    SupplierSessionStatus,
     SyncSource,
     SyncStatus,
     SyncTrigger,
@@ -185,6 +192,7 @@ __all__ = [
     "RewardKind",
     "Sale",
     "SaleChannel",
+    "SaleSource",
     "SalesChannelName",
     "Season",
     "SizeCode",
@@ -219,3 +227,60 @@ __all__ = [
 from cafeops.db.models.wallet import WalletAppleRegistration, WalletGoogleObject
 
 __all__ += ["WalletAppleRegistration", "WalletGoogleObject"]
+__all__ += [
+    "BrowserJob",
+    "BrowserJobKind",
+    "BrowserJobStatus",
+    "BrowserJobStep",
+    "BrowserStepOutcome",
+    "BrowserStepSource",
+    "SupplierSession",
+    "SupplierSessionStatus",
+]
+
+# Order online (docs/shop/CONTRACT.md, Agent A), appended so parallel edits do not collide.
+from cafeops.db.models.shop import (  # noqa: E402
+    DiningOption,
+    OptionKind,
+    OptionLayout,
+    OrderStatus,
+    PaymentStatus,
+    ShopBanner,
+    ShopCategory,
+    ShopOption,
+    ShopOptionGroup,
+    ShopOrder,
+    ShopOrderEvent,
+    ShopOrderLine,
+    ShopPaymentCustomer,
+    ShopPaymentMethod,
+    ShopProduct,
+    ShopProductOptionGroup,
+    ShopPushSubscription,
+    ShopSettings,
+    ShopUpsell,
+    UpsellPlacement,
+)
+
+__all__ += [
+    "DiningOption",
+    "OptionKind",
+    "OptionLayout",
+    "OrderStatus",
+    "PaymentStatus",
+    "ShopBanner",
+    "ShopCategory",
+    "ShopOption",
+    "ShopOptionGroup",
+    "ShopOrder",
+    "ShopOrderEvent",
+    "ShopOrderLine",
+    "ShopPaymentCustomer",
+    "ShopPaymentMethod",
+    "ShopProduct",
+    "ShopProductOptionGroup",
+    "ShopPushSubscription",
+    "ShopSettings",
+    "ShopUpsell",
+    "UpsellPlacement",
+]

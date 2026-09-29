@@ -38,6 +38,7 @@ from cafeops.db.models import (
     Ingredient,
     IngredientPrice,
     ManualRecipeLine,
+    MediaAsset,
     MenuItem,
     Modifier,
     ModifierVersion,
@@ -72,12 +73,15 @@ from cafeops.jobs.cost_rollup import (
     snapshots_at,
 )
 from cafeops.services.edit_composition import require_not_retroactive
+from cafeops.services.reference_seed import UK14
 
 __all__ = [
+    "ALLERGENS_CHECKED_PREFIX",
     "IngredientInUseError",
     "PriceIn",
     "PricePreview",
     "apply_ingredient_price",
+    "attach_ingredient_photo",
     "cost_per_unit",
     "create_ingredient",
     "ingredient_references",
@@ -85,6 +89,7 @@ __all__ = [
     "open_recipe_uses",
     "preview_ingredient_price",
     "retire_ingredient",
+    "set_allergens",
     "update_ingredient",
 ]
 
@@ -655,3 +660,55 @@ def retire_ingredient(session: Session, ingredient_id: int, *, actor: str) -> da
     row.retired_by = actor
     session.commit()
     return at
+
+
+# --------------------------------------------------------------------------
+# Reference photo and allergens (the ingredient page)
+# --------------------------------------------------------------------------
+
+#: `allergens_source` written when a person records the list from the pack. The
+#: reference seed writes the research page's URL instead, so a source that starts
+#: with this prefix is the only one the web shows as confirmed.
+ALLERGENS_CHECKED_PREFIX = "checked by "
+
+
+def attach_ingredient_photo(session: Session, ingredient_id: int, asset_id: int | None) -> None:
+    """Set (or clear) the ingredient's reference photo. The file itself is never deleted."""
+    row = session.get(Ingredient, ingredient_id)
+    if row is None:
+        raise LookupError(f"ingredient {ingredient_id} not found")
+    if asset_id is not None and session.get(MediaAsset, asset_id) is None:
+        raise LookupError(f"media asset {asset_id} not found")
+    row.photo_asset_id = asset_id
+    session.commit()
+
+
+def set_allergens(
+    session: Session, ingredient_id: int, allergens: list[str] | None, *, actor: str
+) -> list[str] | None:
+    """Record the UK 14 allergens a person read off the pack.
+
+    `None` puts the ingredient back to UNKNOWN; `[]` records "checked, none". The
+    source becomes "checked by <actor> on <date>", which is what marks the list as
+    confirmed rather than researched.
+    """
+    name = _signed(actor)
+    row = session.get(Ingredient, ingredient_id)
+    if row is None:
+        raise LookupError(f"ingredient {ingredient_id} not found")
+    if allergens is None:
+        row.allergens = None
+        row.allergens_source = None
+    else:
+        clean = sorted({a.strip().lower() for a in allergens})
+        bad = [a for a in clean if a not in UK14]
+        if bad:
+            raise ValueError(
+                "not one of the UK 14 allergens: " + ", ".join(bad) + "; nothing was changed"
+            )
+        row.allergens = clean
+        row.allergens_source = (
+            f"{ALLERGENS_CHECKED_PREFIX}{name} on {datetime.now(UTC).date().isoformat()}"
+        )
+    session.commit()
+    return row.allergens

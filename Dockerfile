@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 #
-# One image, three commands (api / bot / scheduler) -- see docker-compose.yml. There is
+# One image, four commands (api / bot / scheduler / browser-worker) -- see docker-compose.yml. There is
 # deliberately no multi-worker / multi-replica anything baked in here: spec 3 is 40
 # transactions a day against one SQLite file with a single writer, and a second app
 # instance would contend on that file rather than help. See CLAUDE.md 3 and
@@ -86,6 +86,33 @@ EXPOSE 8000
 # port 8000 is Caddy, over the private compose network -- see docker-compose.yml's
 # comment on why `api` publishes no host port of its own.
 CMD ["cafeops", "serve", "--host", "0.0.0.0", "--port", "8000"]
+
+
+# --------------------------------------------------------------------------
+# browser: runtime + Chromium, for the `browser-worker` service ONLY
+# --------------------------------------------------------------------------
+# The browser ordering agents (docs/agents/BROWSER-ORDERING.md 8) run in a fourth
+# process, `cafeops browser-worker`, and it is the only process that opens a browser.
+# Chromium and its apt libraries add ~400 MB, so they go in this stage rather than in
+# `runtime`: api / bot / scheduler / backup keep the slim image. `playwright` is a
+# locked dependency of the app (pyproject.toml), so the CLI here is the venv's own
+# and the browser it installs matches the library version exactly.
+#
+# Browsers go to a fixed, world-readable directory rather than root's home: the
+# install runs as root (`--with-deps` needs apt) but the worker runs as `cafeops`,
+# and Playwright's default location is per-user, so without this ENV the non-root
+# worker would report "Executable doesn't exist" for a browser that IS installed.
+FROM runtime AS browser
+USER root
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+RUN playwright install --with-deps chromium \
+    && rm -rf /var/lib/apt/lists/* \
+    && chown -R cafeops:cafeops /ms-playwright
+# Where the persistent per-supplier Chromium profiles live (CAFEOPS_BROWSER_DATA_DIR,
+# on the data volume). Seeded with the right ownership like /data above.
+RUN mkdir -p /data/browser && chown -R cafeops:cafeops /data/browser
+USER cafeops
+CMD ["cafeops", "browser-worker"]
 
 
 # --------------------------------------------------------------------------

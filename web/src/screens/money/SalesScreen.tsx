@@ -1,24 +1,27 @@
 /**
- * Money → Sales: the sales dashboard. One period bar and one filter row scope
- * every section below them:
+ * Money → Sales: one dashboard. A period bar and one filter row scope every
+ * section below them:
  *
- *   Till sales      what the till sold, when and through which channel
- *                   (Lightspeed receipt lines: TillInsights)
- *   Takings         how much money came in and how it was paid (daily
- *                   takings: SalesDashboard), then profit by month
- *   Day by day      one row per trading day, read-only
+ *   Money in      till sales, card and cash, and the delivery apps' statements,
+ *                 side by side in one figures strip and one set of charts
+ *                 (SalesDashboard)
+ *   What sold     best sellers, categories, sizes, basket sizes (till lines)
+ *   Profit by month   every month, not the filters (ProfitSection)
+ *   Day by day    one row per trading day, read-only
  *
  * The two ledgers are never added together. A filter that one of them cannot
- * apply (a product means nothing to a card total) is named on that section.
+ * apply (a product means nothing to a card total) is named under the title.
  *
  * Card figures come from imports (Mettle via the workbook, Lightspeed/CSV
  * exports), never from typing. The one thing a person adds here is cash: one
  * Cash figure per day, with a note (DECISIONS 26 retired the till/own split).
  * That happens in a drawer, not in the table.
  *
- * Filters run on the loaded period: weekday, how it was paid, whether the day
- * has an order count, and a £ range on the day's total. The figures strip and
- * the month subtotals are summed from the rows shown, in integer pence.
+ * Filters: period and weekday apply to both ledgers. Channel, category,
+ * product and size pick till lines; a Deliveroo or Just Eat channel also swaps
+ * card and cash for that app's statements. "Paid by" picks card or cash across
+ * the takings; "orders" and the £ range pick trading days. The figures strip,
+ * the charts and the table are all summed from the same rows, in integer pence.
  */
 import { useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
@@ -51,7 +54,6 @@ import { financeApi, financeWrite, useInvalidateFinance, useSales, useSalesInsig
 import type { InsightFilters, SalesDay, SalesDayIn } from '../../lib/types/finance'
 import {
   AmountRange,
-  Figures,
   PeriodBar,
   WEEKDAY_OPTIONS,
   count,
@@ -61,21 +63,15 @@ import {
   lastDayOfMonth,
   matchesWeekday,
   shortDate,
+  windowOf,
 } from './filters'
 import type { DateRange, PenceRange } from './filters'
 import { ProfitSection } from './ProfitSection'
-import { SalesDashboard } from './SalesDashboard'
-import { CHANNEL_LABEL, SIZE_LABEL, SectionTitle, TillSection, categoryLabel } from './TillInsights'
+import { PAID_OPTIONS, SalesDashboard, avgTicket, sumDays, takenOf } from './SalesDashboard'
+import type { Paid, Sums } from './SalesDashboard'
+import { CHANNEL_LABEL, CHANNEL_ORDER, SIZE_LABEL, categoryLabel } from './TillInsights'
 import type { Drill } from './TillInsights'
 import { addDays, fd, gbp, londonToday, mLabel, useFinancePeriod } from './shared'
-
-const PAID_OPTIONS = [
-  { value: 'all', label: 'Card or cash' },
-  { value: 'card', label: 'Has card' },
-  { value: 'cash', label: 'Has cash' },
-  { value: 'card_only', label: 'Card only' },
-  { value: 'cash_only', label: 'Cash only' },
-] as const
 
 const ORDERS_OPTIONS = [
   { value: 'all', label: 'Any orders' },
@@ -103,46 +99,8 @@ function weekdaysParam(f: string): string | undefined {
   return f
 }
 
-const hasCash = (d: SalesDay) => (d.cash_pence ?? 0) > 0
-
-function matchesPaid(d: SalesDay, f: string): boolean {
-  const card = (d.card_pence ?? 0) > 0
-  const cash = hasCash(d)
-  if (f === 'card') return card
-  if (f === 'cash') return cash
-  if (f === 'card_only') return card && !cash
-  if (f === 'cash_only') return cash && !card
-  return true
-}
-
-interface Sums {
-  days: number
-  card: number
-  cash: number
-  total: number
-  orders: number
-  /** Takings on days that have an order count: the avg ticket's numerator. */
-  totalWithOrders: number
-}
-
-function sum(rows: readonly SalesDay[]): Sums {
-  const s: Sums = { days: rows.length, card: 0, cash: 0, total: 0, orders: 0, totalWithOrders: 0 }
-  for (const d of rows) {
-    s.card += d.card_pence ?? 0
-    s.cash += d.cash_pence ?? 0
-    s.total += d.total_pence
-    if (d.orders !== null && d.orders > 0) {
-      s.orders += d.orders
-      s.totalWithOrders += d.total_pence
-    }
-  }
-  return s
-}
-
-/** Integer pence, half up, over days that have an order count. */
-function avgTicket(s: Sums): number | null {
-  return s.orders > 0 ? Math.floor((s.totalWithOrders * 2 + s.orders) / (s.orders * 2)) : null
-}
+/** Under a Paid-by filter a day counts only if it has that kind of money. */
+const matchesPaid = (d: SalesDay, paid: Paid) => paid === 'all' || takenOf(d, paid) > 0
 
 const dash = <span className="text-ink-3">—</span>
 
@@ -153,8 +111,8 @@ function shiftMonth(month: string, by: number): string {
 }
 
 const SECTIONS = [
-  { id: 'till', label: 'Till sales' },
-  { id: 'takings', label: 'Takings' },
+  { id: 'money', label: 'Money in' },
+  { id: 'sold', label: 'What sold' },
   { id: 'profit', label: 'Profit by month' },
   { id: 'days', label: 'Day by day' },
 ] as const
@@ -183,7 +141,7 @@ export function SalesScreen() {
   const [range, setRange] = useState<DateRange | null>(null)
   const q = useSales(range ? 'all' : period)
   const [weekday, setWeekday] = useState('all')
-  const [paid, setPaid] = useState('all')
+  const [paid, setPaid] = useState<Paid>('all')
   const [orders, setOrders] = useState('all')
   const [amount, setAmount] = useState<PenceRange>({ min: null, max: null })
   const [channel, setChannel] = useState('all')
@@ -212,14 +170,25 @@ export function SalesScreen() {
   const opts = till.data?.options
   // Months with takings or till lines, so a till-only install still has a month bar.
   const barMonths = useMemo(() => [...new Set([...months, ...(till.data?.months ?? [])])].sort(), [months, till.data?.months])
-  const tillOnly = channel !== 'all' || category !== 'all' || product !== 'all' || size !== 'all'
-  const takingsOnly = paid !== 'all' || orders !== 'all' || amount.min !== null || amount.max !== null
+  // Every channel the till can name, then anything else it has seen.
+  const channelOptions = useMemo(() => [...CHANNEL_ORDER.filter((c) => c !== 'OTHER'), ...(opts?.channels ?? []).filter((c) => !CHANNEL_ORDER.includes(c as (typeof CHANNEL_ORDER)[number]) || c === 'OTHER')], [opts?.channels])
+  // Months the window covers: delivery statements exist per month.
+  const monthsInView = useMemo(() => {
+    const w = windowOf(period, range)
+    if (!w) return barMonths
+    const out: string[] = []
+    for (let m = w.from.slice(0, 7); m <= w.to.slice(0, 7); m = shiftMonth(m, 1)) out.push(m)
+    return out
+  }, [period, range, barMonths])
+  const tillOnly = category !== 'all' || product !== 'all' || size !== 'all'
+  const daysOnly = orders !== 'all' || amount.min !== null || amount.max !== null
   const drill = (kind: Drill, value: string) => {
     const toggle = (cur: string, set: (v: string) => void) => set(cur === value ? 'all' : value)
     if (kind === 'channel') toggle(channel, setChannel)
     else if (kind === 'category') toggle(category, setCategory)
     else if (kind === 'product') toggle(product, setProduct)
     else if (kind === 'size') toggle(size, setSize)
+    else if (kind === 'paid') setPaid(paid === value ? 'all' : (value as Paid))
     else toggle(weekday, setWeekday)
   }
   // The period before, for "vs last month" on the figures: the month before a
@@ -236,37 +205,37 @@ export function SalesScreen() {
           matchesWeekday(d.date, weekday) &&
           matchesPaid(d, paid) &&
           (orders === 'all' || (orders === 'with') === (d.orders !== null)) &&
-          inPence(d.total_pence, amount),
+          inPence(takenOf(d, paid), amount),
       ),
     [all, range, weekday, paid, orders, amount],
   )
-  const totals = useMemo(() => sum(rows), [rows])
-  const keep = (d: SalesDay) => matchesWeekday(d.date, weekday) && matchesPaid(d, paid) && inPence(d.total_pence, amount)
+  const totals = useMemo(() => sumDays(rows, paid), [rows, paid])
+  const keep = (d: SalesDay) => matchesWeekday(d.date, weekday) && matchesPaid(d, paid) && inPence(takenOf(d, paid), amount)
   const prev = useMemo(() => {
     if (range) {
       const len = Math.round((Date.parse(range.to) - Date.parse(range.from)) / 864e5) + 1
       const to = addDays(range.from, -1)
       const from = addDays(range.from, -len)
-      return { label: `previous ${len} days`, s: sum((all ?? []).filter((d) => d.date >= from && d.date <= to && keep(d))) }
+      return { label: `previous ${len} days`, s: sumDays((all ?? []).filter((d) => d.date >= from && d.date <= to && keep(d)), paid) }
     }
-    if (prevMonth && prevQ.data) return { label: mLabel(prevMonth), s: sum(prevQ.data.days.filter(keep)) }
+    if (prevMonth && prevQ.data) return { label: mLabel(prevMonth), s: sumDays(prevQ.data.days.filter(keep), paid) }
     return null
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [range, all, prevMonth, prevQ.data, weekday, paid, amount])
-  const vs = (now: number, before: number | undefined) => {
-    if (!prev || before === undefined || before === 0) return undefined
-    const pct = Math.round(((now - before) / before) * 100)
-    return (
-      <span className={pct < 0 ? 'text-bad-ink' : 'text-ink-2'}>
-        {pct > 0 ? '▲' : pct < 0 ? '▼' : '='} {Math.abs(pct)}% vs {prev.label}
-      </span>
-    )
-  }
   const inWindow = useMemo(() => (all ?? []).filter((d) => inRange(d.date, range)).length, [all, range])
   const multiMonth = useMemo(() => new Set(rows.map((d) => d.date.slice(0, 7))).size > 1, [rows])
   const hasDeposits = rows.some((d) => d.basis !== 'TILL' && d.card_pence !== null)
   const otherCaveats = (q.data?.caveats ?? []).filter((c) => !c.startsWith(DEPOSIT_CAVEAT))
-  const avg = avgTicket(totals)
+
+  // What a filter cannot reach, said once under the title (DECISIONS 24).
+  const notes: ReactNode[] = []
+  if (tillOnly) notes.push('Category, product and size pick till lines. Card, cash and statements are whole-day and whole-month totals.')
+  if (paid !== 'all') notes.push(`Paid by picks ${paid} across card and cash. The till does not record how a receipt was paid, so till lines are unchanged.`)
+  if (channel === 'DELIVEROO' || channel === 'JUST_EAT')
+    notes.push(`${CHANNEL_LABEL[channel]} pays by monthly statement, so card and cash (till money) are set aside while it is selected.`)
+  if (daysOnly) notes.push('Orders and day total pick trading days: they change card and cash, not till lines.')
+  if (hasDeposits) notes.push('Card to Mar 2026 is the Mettle deposit on the day it landed (about a day after the sale), not that day\u2019s till takings.')
+  for (const c of otherCaveats) notes.push(c)
 
   const chips: ActiveFilterChip[] = []
   if (range)
@@ -340,7 +309,7 @@ export function SalesScreen() {
             label="Channel"
             value={channel}
             onChange={setChannel}
-            options={[{ value: 'all', label: 'Any channel' }, ...(opts?.channels ?? []).map((c) => ({ value: c, label: CHANNEL_LABEL[c] ?? c }))]}
+            options={[{ value: 'all', label: 'Any channel' }, ...channelOptions.map((c) => ({ value: c, label: CHANNEL_LABEL[c] ?? c }))]}
           />
           <FilterSelect
             label="Category"
@@ -363,7 +332,7 @@ export function SalesScreen() {
             onChange={setSize}
             options={[{ value: 'all', label: 'Any size' }, ...(opts?.sizes ?? []).map((z) => ({ value: z, label: SIZE_LABEL[z] ?? z }))]}
           />
-          <FilterSelect label="Paid by" value={paid} onChange={setPaid} options={PAID_OPTIONS} />
+          <FilterSelect label="Paid by" value={paid} onChange={(v) => setPaid(v as Paid)} options={PAID_OPTIONS} />
           <FilterSelect label="Orders" value={orders} onChange={setOrders} options={ORDERS_OPTIONS} />
           <AmountRange label="Day total" value={amount} onChange={setAmount} />
         </FilterBar>
@@ -380,100 +349,35 @@ export function SalesScreen() {
               ))}
             </nav>
 
-            {till.isError ? (
-              <ErrorBox error={till.error} what="till sales" />
-            ) : !till.data ? (
-              <Loading what="Loading till sales" />
+            {till.isError && <ErrorBox error={till.error} what="till sales" />}
+            {q.isError && <ErrorBox error={q.error} what="card and cash" />}
+            {(!till.data && !till.isError) || (!q.data && !q.isError) ? (
+              <Loading what="Loading sales" />
             ) : (
-              <TillSection
-                data={till.data}
+              <SalesDashboard
+                till={till.data ?? null}
                 dimmed={till.isPlaceholderData}
+                rows={rows}
+                totals={totals}
+                prev={prev}
+                paid={paid}
+                channel={channel}
+                months={monthsInView}
                 onDrill={drill}
-                active={{ channel, category, product, size, weekday }}
-                note={takingsOnly ? 'Paid by, orders and day total apply to takings only, not to these till lines.' : undefined}
+                active={{ channel, category, product, size, weekday, paid }}
+                notes={notes}
               />
             )}
-
-            <section id="takings" aria-labelledby="takings-title" className="scroll-mt-14 pt-12">
-              <SectionTitle id="takings-title" title="Takings" source="Card and cash, imported or added here" />
-              {tillOnly && (
-                <p className="mt-2 text-sm font-semibold text-ink-2">
-                  Channel, category, product and size apply to till sales only. Takings are whole-day totals.
+            {q.data && inWindow === 0 && (
+              <div className="mt-4 rounded-card border border-dashed border-line-strong px-4 py-4 text-base text-ink-2">
+                <p className="font-bold text-ink">No card or cash entered for this period.</p>
+                <p className="mt-1">
+                  Card and cash totals come from the finance workbook or a payment export. Import them with{' '}
+                  <code className="rounded-xs bg-canvas px-1 py-0.5 font-mono text-sm text-ink">cafeops import-finance --commit</code>, or add a
+                  day&rsquo;s cash with <b>+ Add cash</b>.
                 </p>
-              )}
-              {q.isError ? (
-                <ErrorBox error={q.error} what="sales" />
-              ) : !q.data ? (
-                <Loading what="Loading takings" />
-              ) : inWindow === 0 ? (
-                <div className="mt-4 rounded-card border border-dashed border-line-strong px-4 py-6 text-base text-ink-2">
-                  <p className="font-bold text-ink">No takings entered for this period.</p>
-                  <p className="mt-1">
-                    Card and cash totals come from the finance workbook or a payment export. Import them with{' '}
-                    <code className="rounded-xs bg-canvas px-1 py-0.5 font-mono text-sm text-ink">cafeops import-finance --commit</code>, or add a
-                    day&rsquo;s cash with <b>+ Add cash</b>.
-                  </p>
-                </div>
-              ) : (
-                <>
-                    <Figures
-                      items={[
-                        {
-                          label: 'Total',
-                          value: gbp(totals.total),
-                          strong: true,
-                          sub: (
-                            <>
-                              {count(totals.days)} {totals.days === 1 ? 'day' : 'days'}
-                              {prev && vs(totals.total, prev.s.total) ? <> · {vs(totals.total, prev.s.total)}</> : null}
-                            </>
-                          ),
-                        },
-                        { label: 'Card', value: gbp(totals.card), sub: vs(totals.card, prev?.s.card) },
-                        {
-                          label: 'Per trading day',
-                          value: totals.days ? gbp(Math.round(totals.total / totals.days)) : '—',
-                          sub: prev && prev.s.days ? vs(totals.total / Math.max(1, totals.days), prev.s.total / prev.s.days) : undefined,
-                        },
-                        {
-                          label: 'Cash',
-                          value: gbp(totals.cash),
-                          sub: vs(totals.cash, prev?.s.cash),
-                        },
-                        { label: 'Orders', value: totals.orders > 0 ? count(totals.orders) : '—' },
-                        {
-                          label: 'Avg ticket',
-                          value: avg === null ? '—' : gbp(avg),
-                          sub: totals.orders > 0 && totals.totalWithOrders !== totals.total ? 'days with orders only' : undefined,
-                        },
-                      ]}
-                    />
-                    {(hasDeposits || otherCaveats.length > 0) && (
-                      <div className="flex flex-col gap-0.5 pt-2 text-sm text-ink-2">
-                        {hasDeposits && (
-                          <p>
-                            <span className="text-ink-3">†</span> Card to Mar 2026 is the Mettle deposit on the day it landed (about a day
-                            after the sale), not that day&rsquo;s till takings.
-                          </p>
-                        )}
-                        {otherCaveats.length > 0 && (
-                          <details>
-                            <summary className="cursor-pointer select-none">
-                              {otherCaveats.length} {otherCaveats.length === 1 ? 'note' : 'notes'} on these figures
-                            </summary>
-                            <ul className="mt-1 flex flex-col gap-0.5 pl-3">
-                              {otherCaveats.map((c) => (
-                                <li key={c}>{c}</li>
-                              ))}
-                            </ul>
-                          </details>
-                        )}
-                      </div>
-                    )}
-                  <SalesDashboard rows={rows} />
-                </>
-              )}
-            </section>
+              </div>
+            )}
 
             <section id="profit" className="scroll-mt-14 pt-12">
               <ProfitSection />
@@ -486,6 +390,7 @@ export function SalesScreen() {
               {q.data && (
                 <SalesTable
                   rows={rows}
+                  paid={paid}
                   multiMonth={multiMonth}
                   totals={totals}
                   selected={openDay?.date ?? null}
@@ -520,20 +425,27 @@ function Money({ pence, dagger }: { pence: number | null; dagger?: boolean }) {
   )
 }
 
-function Totals({ s, label, className }: { s: Sums; label: ReactNode; className: string }) {
+/** Under a Paid-by filter the table shows just that column; Total would repeat it. */
+const showCol = (paid: Paid, col: 'card' | 'cash' | 'total') => paid === 'all' || paid === col
+
+function Totals({ s, paid, label, className }: { s: Sums; paid: Paid; label: ReactNode; className: string }) {
   const avg = avgTicket(s)
   return (
     <tr className={className}>
       <td className="whitespace-nowrap py-2 pl-2 pr-2">{label}</td>
-      <td className="fig px-2 text-right">
-        {gbp(s.card)}
-        <span className="inline-block w-[0.7em]" />
-      </td>
-      <td className="fig px-2 text-right">
-        {gbp(s.cash)}
-        <span className="inline-block w-[0.7em]" />
-      </td>
-      <td className="fig px-2 text-right">{gbp(s.total)}</td>
+      {showCol(paid, 'card') && (
+        <td className="fig px-2 text-right">
+          {gbp(s.card)}
+          <span className="inline-block w-[0.7em]" />
+        </td>
+      )}
+      {showCol(paid, 'cash') && (
+        <td className="fig px-2 text-right">
+          {gbp(s.cash)}
+          <span className="inline-block w-[0.7em]" />
+        </td>
+      )}
+      {showCol(paid, 'total') && <td className="fig px-2 text-right">{gbp(s.total)}</td>}
       <td className="fig px-2 text-right">{s.orders > 0 ? count(s.orders) : '—'}</td>
       <td className="fig px-2 text-right">{avg === null ? '—' : gbp(avg)}</td>
       <td />
@@ -543,25 +455,29 @@ function Totals({ s, label, className }: { s: Sums; label: ReactNode; className:
 
 function SalesTable({
   rows,
+  paid,
   multiMonth,
   totals,
   selected,
   onOpen,
 }: {
   rows: SalesDay[]
+  paid: Paid
   multiMonth: boolean
   totals: Sums
   selected: string | null
   onOpen: (date: string) => void
 }) {
   const body: ReactNode[] = []
+  const cols = 4 + ['card', 'cash', 'total'].filter((c) => showCol(paid, c as 'card' | 'cash' | 'total')).length
   const flush = (month: string, list: SalesDay[]) => {
     if (!multiMonth || list.length === 0) return
-    const s = sum(list)
+    const s = sumDays(list, paid)
     body.push(
       <Totals
         key={`sub-${month}`}
         s={s}
+        paid={paid}
         className="border-b-2 border-line-strong bg-canvas-2 text-base font-bold"
         label={
           <>
@@ -604,15 +520,21 @@ function SalesTable({
           <span className="fig inline-block w-5 text-right">{Number(d.date.slice(8, 10))}</span>{' '}
           <span className="text-ink-2">{mon}</span>
         </Td>
-        <Td numeric>
-          <Money pence={d.card_pence} dagger={d.basis !== 'TILL' && d.card_pence !== null} />
-        </Td>
-        <Td numeric>
-          <Money pence={d.cash_pence} />
-        </Td>
-        <Td numeric strong>
-          {gbp(d.total_pence)}
-        </Td>
+        {showCol(paid, 'card') && (
+          <Td numeric strong={paid === 'card'}>
+            <Money pence={d.card_pence} dagger={d.basis !== 'TILL' && d.card_pence !== null} />
+          </Td>
+        )}
+        {showCol(paid, 'cash') && (
+          <Td numeric strong={paid === 'cash'}>
+            <Money pence={d.cash_pence} />
+          </Td>
+        )}
+        {showCol(paid, 'total') && (
+          <Td numeric strong>
+            {gbp(d.total_pence)}
+          </Td>
+        )}
         <Td
           numeric
           title={
@@ -644,9 +566,9 @@ function SalesTable({
             <Th width={112} className="pl-2!">
               Day
             </Th>
-            <Th numeric>Card</Th>
-            <Th numeric>Cash</Th>
-            <Th numeric>Total</Th>
+            {showCol(paid, 'card') && <Th numeric>Card</Th>}
+            {showCol(paid, 'cash') && <Th numeric>Cash</Th>}
+            {showCol(paid, 'total') && <Th numeric>Total</Th>}
             <Th numeric width={70}>
               Orders
             </Th>
@@ -660,13 +582,14 @@ function SalesTable({
           {body}
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={7} className="p-10 text-center text-md text-ink-2">
+              <td colSpan={cols} className="p-10 text-center text-md text-ink-2">
                 No days match these filters.
               </td>
             </tr>
           ) : (
             <Totals
               s={totals}
+              paid={paid}
               className="border-t-2 border-ink text-md font-extrabold [&>td]:py-2.5"
               label={`${count(totals.days)} ${totals.days === 1 ? 'day' : 'days'}`}
             />

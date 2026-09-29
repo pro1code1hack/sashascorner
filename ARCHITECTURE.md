@@ -2128,3 +2128,93 @@ screens, so they are recorded here.
   setting ORM columns after the fact.
 * **Known gap:** `rebuild_batches` (only `seed --demo` calls it) does not carry
   `expiry_source` or `received_by` through a rebuild.
+
+## §8V — Hand-typed transactions, and a dry run that must not be a rollback
+
+**Date:** 2026-09-28. **Decision:** DECISIONS 28.
+
+The till is one of four places money comes from. Cash taken past the till, a Deliveroo
+order read off the tablet, a Just Eat order: none of them reach `sale`, so Sales,
+Transactions and stock depletion all under-count. The owner asked for the Telegram bot
+to take them.
+
+### What was built
+
+- `SaleChannel.CASH` -- a channel, not a payment method. A till sale paid in cash stays
+  `EPOS`; `CASH` means *the till never saw it*. Keeping it a channel means one filter
+  separates it everywhere the existing channel filter already exists.
+- `sale.source` (`POS_API | MANUAL | CSV_UPLOAD | LOYALTY`) + `recorded_by` + `note`.
+  Invariant 8's discipline applied to provenance: a typed row and a synced row are
+  never blurred. `list_receipts` adds a caveat when a page mixes them and no source
+  filter is set.
+- `services/record_sale.py`: `record_sale` / `void_sale` / menu picking. **`EPOS` is
+  refused** -- the only way a hand-typed row could double-count is if the till later
+  syncs the same sale, and the till only writes `EPOS`. Voiding flips `voided` and keeps
+  the row; `reverse_voided_expansions` puts the stock back (invariant 12). Hand-typed
+  rows are expanded by the nightly job exactly like till lines: nothing new touches
+  `stock_movement`.
+- `services/transactions_csv.py`: one CSV shape both ways (`/export` writes it,
+  `/import` reads it), classification of an uploaded file by header row into
+  transactions / takings export / channel report, and an importer idempotent per file
+  content (`csv:<hash>:<group>` receipt ids).
+- Bot: `/sale`, `/cash`, `/export`, document upload (`bot/handlers/sale.py`, `cash.py`,
+  `files.py`; `bot/money_views.py`). The basket is the one thing held in FSM state
+  until «Записать»: a half-built receipt is not a fact yet (`states.SaleFlow`).
+- API under `/api/finance/transactions/…`, CLI `cafeops transactions export|import`,
+  web Source filter + Export CSV on Money › Transactions.
+
+### The lesson: a rollback inside `bot-preview` is a leak
+
+The first import preview ran the real importer and then `session.rollback()` -- the
+same trick `cafeops payments import --dry-run` uses. Under `bot-preview`'s dry run it
+**wrote two rows to the live ledger.** The preview binds every session to one
+connection with `join_transaction_mode="rollback_only"`, and in that mode a
+`Session.rollback()` rolls back the *outer* transaction. The next `run_sync` call then
+autobegan a fresh, real transaction and its commit stuck. Gotcha 4 in memory was about
+savepoints; this is its sibling: **any exception or explicit rollback inside a
+`run_sync` unit of work ends the preview's dry run, silently, and everything after it
+is real.** The `SAWarning: transaction already deassociated from connection` at the
+end of a preview is the tell.
+
+Two consequences:
+
+1. The import preview is now a **write-free dry run**: `import_transactions(...,
+   dry_run=True)` does every lookup and sum and writes nothing; the takings and channel
+   previews only parse the file and count against the tables. A preview that cannot
+   write cannot leak, in the preview harness or anywhere else.
+2. The harness caveat stays open for the older flows: a handler that raises mid-flow in
+   `bot-preview --dry-run` has the same effect. Nothing raised in the flows shipped
+   here; the fix for the harness itself (a per-call transaction, or the pysqlite
+   `BEGIN` workaround that makes savepoints honest) is a separate decision.
+
+The two leaked rows were identified by `recorded_by = telegram:sasha` (the preview's
+fixed user) and `expanded_at IS NULL`, and deleted the same evening.
+
+## §8W — Browser ordering agents
+
+**Decided 2026-09-29.** CLAUDE.md §9 gave the agent three jobs and job 1 (browser
+automation where no API exists, output a staged basket, never a payment) was a
+protocol with a CSV implementation and nothing behind it. It is now real for supplier
+baskets. The design, alternatives and sources are in `docs/agents/BROWSER-ORDERING.md`;
+what matters architecturally:
+
+- **A fourth process.** `cafeops browser-worker` (compose `browser-worker`, built from
+  the Dockerfile's `browser` stage; systemd `cafeops-browser-worker`) is the only
+  process that opens a browser. The API (`api/areas/integrations.py`) and the scheduler
+  only INSERT `browser_job` rows. **The single-writer rule still holds:** the worker
+  runs one job at a time and holds the write lock only around its own rows (`browser_job`,
+  `browser_job_step`, `media_asset`, `agent_action_log`, one `agent_proposal`), and it
+  never writes `purchase_order`, `stock_movement` or composition. "Mark sent" stays a
+  person's click.
+- **Scripted first, model on failure.** Each supplier has a Playwright adapter
+  (`integrations/suppliers/portals/`); only a step the script cannot do goes to
+  Anthropic's `browser_toolset_20260801`, bounded by `browser_max_*` and a policy that
+  refuses checkout controls and URLs. A refusal is a logged step, not an exception.
+- **No credentials near the model.** Persistent Chromium profiles per supplier under
+  `CAFEOPS_BROWSER_DATA_DIR`; a person signs in once. `supplier_session.storage_state_enc`
+  is Fernet-encrypted cookies for moving a laptop sign-in to the server, never a password.
+- **The API is a queue front, so refusals are 409s with the service's own reason** and
+  every enum serialises by `.value`; the screens are not built yet, so the schemas in
+  `integrations_schemas.py` are the contract they will be built against, with fixtures
+  `web/fixtures/integrations.json` and `browser-jobs.json` captured from the running app.
+

@@ -52,9 +52,19 @@ const WebsiteToday = screen(() => import('./screens/website/TodayScreen'), 'Toda
 const WebsiteBookings = screen(() => import('./screens/website/BookingsScreen'), 'BookingsScreen')
 const WebsiteMessages = screen(() => import('./screens/website/MessagesScreen'), 'MessagesScreen')
 const WebsiteEvents = screen(() => import('./screens/website/EventsScreen'), 'EventsScreen')
-const WebsiteMenu = screen(() => import('./screens/website/SiteMenuScreen'), 'SiteMenuScreen')
+/** Retired (owner, 2026-09-29): the website menu is the shop menu is Menu items; the path redirects. */
+const WebsiteMenu = screen(() => import('./screens/website/MenuRedirect'), 'SiteMenuRedirect')
 const WebsitePhotos = screen(() => import('./screens/website/PhotosScreen'), 'PhotosScreen')
 const WebsiteDetails = screen(() => import('./screens/website/CafeDetailsScreen'), 'CafeDetailsScreen')
+/** Online orders (click & collect) admin: docs/shop/CONTRACT.md §7. */
+const ShopLive = screen(() => import('./screens/shop/LiveOrdersScreen'), 'LiveOrdersScreen')
+const ShopOrders = screen(() => import('./screens/shop/OrdersScreen'), 'ShopOrdersArea')
+/** Retired (owner, 2026-09-29): the shop menu is Menu items now; the path redirects. */
+const ShopMenu = screen(() => import('./screens/shop/MenuScreen'), 'ShopMenuRedirect')
+const ShopOptions = screen(() => import('./screens/shop/OptionsScreen'), 'OptionsScreen')
+const ShopPromos = screen(() => import('./screens/shop/PromosScreen'), 'PromosScreen')
+const ShopSettings = screen(() => import('./screens/shop/SettingsScreen'), 'ShopSettingsScreen')
+const ShopInsights = screen(() => import('./screens/shop/InsightsScreen'), 'InsightsScreen')
 
 export type RouteId =
   | 'stock'
@@ -80,6 +90,13 @@ export type RouteId =
   | 'website.menu'
   | 'website.photos'
   | 'website.details'
+  | 'shop'
+  | 'shop.orders'
+  | 'shop.menu'
+  | 'shop.options'
+  | 'shop.promos'
+  | 'shop.settings'
+  | 'shop.insights'
 
 export interface RouteDef {
   id: RouteId
@@ -89,7 +106,7 @@ export interface RouteDef {
   label: string
   Screen: ComponentType
   /** Which shell badge counts against this item. */
-  badge?: 'orders_waiting' | 'proposals_waiting' | 'messages_new' | 'photos_missing'
+  badge?: 'orders_waiting' | 'proposals_waiting' | 'messages_new' | 'photos_missing' | 'shop_new'
 }
 
 export const ROUTES: Record<RouteId, RouteDef> = {
@@ -140,6 +157,13 @@ export const ROUTES: Record<RouteId, RouteDef> = {
     badge: 'photos_missing',
   },
   'website.details': { id: 'website.details', path: '/website/details', label: 'Café details', Screen: WebsiteDetails },
+  shop: { id: 'shop', path: '/shop', label: 'Live orders', Screen: ShopLive, badge: 'shop_new' },
+  'shop.orders': { id: 'shop.orders', path: '/shop/orders', label: 'All orders', Screen: ShopOrders },
+  'shop.menu': { id: 'shop.menu', path: '/shop/menu', label: 'Shop menu', Screen: ShopMenu },
+  'shop.options': { id: 'shop.options', path: '/shop/options', label: 'Option groups', Screen: ShopOptions },
+  'shop.promos': { id: 'shop.promos', path: '/shop/promos', label: 'Banners & upsells', Screen: ShopPromos },
+  'shop.settings': { id: 'shop.settings', path: '/shop/settings', label: 'Settings', Screen: ShopSettings },
+  'shop.insights': { id: 'shop.insights', path: '/shop/insights', label: 'Insights', Screen: ShopInsights },
 }
 
 /** Sidebar groups, in the design's order. Settings sits in the footer. */
@@ -147,6 +171,7 @@ export const NAV_GROUPS: ReadonlyArray<{ head: string; items: readonly RouteId[]
   { head: 'Every day', items: ['stock', 'agents'] },
   { head: 'Menu', items: ['menu', 'ingredients', 'suppliers'] },
   { head: 'Customers', items: ['loyalty'] },
+  { head: 'Online orders', items: ['shop', 'shop.orders', 'shop.insights', 'shop.options', 'shop.promos', 'shop.settings'] },
   {
     head: 'Money',
     items: ['money.overview', 'money.sales', 'money.transactions', 'money.expenses', 'orders'],
@@ -158,7 +183,6 @@ export const NAV_GROUPS: ReadonlyArray<{ head: string; items: readonly RouteId[]
       'website.bookings',
       'website.messages',
       'website.events',
-      'website.menu',
       'website.photos',
       'website.details',
     ],

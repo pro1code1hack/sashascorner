@@ -1,15 +1,28 @@
 """Router registry. Order matters.
 
-`common` is first so `/start` and `/help` always answer even mid-flow. The three walking
+`common` is first so `/start` and `/help` always answer even mid-flow. The walking
 flows come next, and each owns its own FSM state so they cannot match each other's
-messages. `digest` and `orders` are stateless commands and go last.
+messages; `sale`, `cash` and `files` (DECISIONS 28) are the same shape. `digest` and
+`orders` are stateless commands and go last.
 """
 
 from __future__ import annotations
 
 from aiogram import Router
 
-from cafeops.bot.handlers import checklist, common, count, delivery, digest, member, orders
+from cafeops.bot import shop_handlers
+from cafeops.bot.handlers import (
+    cash,
+    checklist,
+    common,
+    count,
+    delivery,
+    digest,
+    files,
+    member,
+    orders,
+    sale,
+)
 
 __all__ = ["ALL_ROUTERS", "build_root_router"]
 
@@ -18,9 +31,13 @@ ALL_ROUTERS: tuple[Router, ...] = (
     count.router,
     checklist.router,
     delivery.router,
+    sale.router,
+    cash.router,
+    files.router,
     digest.router,
     orders.router,
     member.router,
+    shop_handlers.router,
 )
 
 

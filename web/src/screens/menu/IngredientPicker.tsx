@@ -8,6 +8,7 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { cx } from '../../components/ui'
 import type { IngredientRow } from '../../lib/types/menu'
 import { unitPrice, unitWord } from './common/figures'
+import { IngredientThumb } from '../ingredients/Thumb'
 
 const norm = (s: string) => s.toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '')
 
@@ -185,6 +186,17 @@ export function IngredientPicker({
                       o.ingredient_id === value && 'font-bold',
                     )}
                   >
+                    <IngredientThumb
+                      url={o.photo_url}
+                      name={o.name}
+                      decorative
+                      className="size-8 rounded-sm"
+                      fallback={
+                        <span aria-hidden="true" className="text-sm font-extrabold text-ink-3">
+                          {o.name.trim().charAt(0).toUpperCase()}
+                        </span>
+                      }
+                    />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-base">{o.name}</span>
                       <span className="block truncate text-xs text-ink-2">

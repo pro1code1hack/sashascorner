@@ -9,9 +9,21 @@ Two sources, chosen per request:
   has a non-empty category.
 * ``board`` -- ``config/menu_board.toml`` (menu.py), the fallback until then.
 
-Website-only presentation (blurbs, descriptions, signature and hidden flags, order)
-lives in ``site_menu_category_meta`` / ``site_menu_item_meta``, keyed by name, and
-applies in both modes. Prices, names and sizes are never edited here.
+Presentation (blurbs, descriptions, signature and hidden flags, order) is an
+overlay keyed by name. Since 2026-09-29 (DECISIONS.md 29, "one menu everywhere")
+it is the back office's Order online catalogue, read READ-ONLY here:
+
+* ``shop_category`` (``ops_name`` = ``menu_category.name``): display ``name``,
+  ``blurb``, ``visible``, ``sort_order``;
+* ``shop_product`` (``item_name`` = ``menu_item.name``): ``description``,
+  ``visible`` (hidden = not visible), ``featured`` (= signature), ``sort_order``.
+
+The site's own ``site_menu_category_meta`` / ``site_menu_item_meta`` tables are
+kept but no longer written; they are read only for ``use_ops_note`` (publish the
+ops ``menu_item.note`` as the description when the shop has none) and as the whole
+overlay when the shop tables are absent (a checkout without the ops migration) --
+which ``warnings`` says. Prices, names and sizes are never edited here; nothing
+is edited here at all any more (menu_admin.py answers 410).
 
 Both the public ``/api/menu`` and the admin view are cut from one ``MenuSnapshot``,
 so what the admin shows is exactly what the public menu was built from.
@@ -92,6 +104,8 @@ class SourceItem:
     board_note: str | None = None
     ops_note: str | None = None
     has_photo: bool = False
+    #: The ``menu_item.id`` of each size (ops mode): where the back office edits it.
+    ops_ids: list[int] = field(default_factory=list)
     natural: tuple[Any, ...] = ()
 
     @property
@@ -121,7 +135,13 @@ class SourceCategory:
     items: list[SourceItem]
     #: False when an ops category has no menu_category row (it sorts last).
     has_ops_row: bool = True
+    #: The shop's display name when it differs from the ops name; public only.
+    display_name: str | None = None
     natural: tuple[Any, ...] = ()
+
+    @property
+    def public_name(self) -> str:
+        return self.display_name or self.name
 
 
 @dataclass
@@ -133,6 +153,8 @@ class MenuSnapshot:
     extras: ExtrasOut
     warnings: list[str] = field(default_factory=list)
     overlay_ready: bool = True
+    #: Where the presentation came from: the shop tables, the site's legacy rows, none.
+    overlay: OverlaySource = "none"
     #: Why the board is being served (board mode only).
     reason: str | None = None
 
@@ -155,6 +177,9 @@ class MenuSnapshot:
 class OpsShape:
     has_menu_category: bool
     item_columns: frozenset[str]
+    #: ``shop_category`` AND ``shop_product`` exist (docs/shop/CONTRACT.md 2.3-2.4):
+    #: the back office's catalogue is the website's presentation overlay.
+    has_shop: bool = False
 
     @property
     def has_note(self) -> bool:
@@ -172,7 +197,11 @@ def ops_shape(conn: Connection) -> OpsShape:
         if insp.has_table("menu_item")
         else frozenset()
     )
-    return OpsShape(has_menu_category=insp.has_table("menu_category"), item_columns=cols)
+    return OpsShape(
+        has_menu_category=insp.has_table("menu_category"),
+        item_columns=cols,
+        has_shop=insp.has_table("shop_category") and insp.has_table("shop_product"),
+    )
 
 
 def detect_source(conn: Connection, shape: OpsShape | None = None) -> tuple[Source, str | None]:
@@ -259,11 +288,51 @@ def _ops_sizes(rows: list[Any]) -> list[SizeOut]:
 # --- overlay ---------------------------------------------------------------------
 
 
+OverlaySource = Literal["shop", "site", "none"]
+
+
+@dataclass(frozen=True)
+class CategoryMeta:
+    """One category's presentation, whichever table it came from."""
+
+    name: str
+    #: The shop's display name (``shop_category.name``); None = the ops name.
+    display_name: str | None
+    #: A site-set URL slug (legacy rows only); the shop's slug is the shop's URL,
+    #: the website keeps its own stable one (board slug, else the name's).
+    slug: str | None
+    blurb: str | None
+    hidden: bool
+    position: int | None
+
+
+@dataclass(frozen=True)
+class ItemMeta:
+    key: str
+    description: str | None
+    signature: bool
+    hidden: bool
+    position: int | None
+    use_ops_note: bool
+
+
 @dataclass
 class Overlay:
+    #: Which table answered: the shop catalogue, the site's legacy rows, or none.
+    source: OverlaySource
+    #: The site's own overlay tables exist (legacy; still read for ``use_ops_note``).
     ready: bool
-    categories: dict[str, SiteMenuCategoryMeta]
-    items: dict[str, SiteMenuItemMeta]
+    categories: dict[str, CategoryMeta]
+    items: dict[str, ItemMeta]
+
+    def category(self, name: str) -> CategoryMeta | None:
+        """Exact name, else case-insensitive: ``menu_item.category`` is free text
+        and may not match ``menu_category.name`` letter for letter."""
+        hit = self.categories.get(name)
+        if hit is not None:
+            return hit
+        fold = name.casefold()
+        return next((m for n, m in self.categories.items() if n.casefold() == fold), None)
 
 
 def overlay_ready(conn: Connection) -> bool:
@@ -271,17 +340,75 @@ def overlay_ready(conn: Connection) -> bool:
     return insp.has_table("site_menu_category_meta") and insp.has_table("site_menu_item_meta")
 
 
-def load_overlay(conn: Connection) -> Overlay:
-    if not overlay_ready(conn):
-        return Overlay(False, {}, {})
+def _site_rows(conn: Connection) -> tuple[dict[str, CategoryMeta], dict[str, ItemMeta]]:
     with Session(bind=conn) as s:
-        cats = {m.name: m for m in s.scalars(select(SiteMenuCategoryMeta))}
-        items = {m.item_name: m for m in s.scalars(select(SiteMenuItemMeta))}
+        cats = {
+            m.name: CategoryMeta(m.name, None, m.slug, m.blurb, bool(m.hidden), m.position)
+            for m in s.scalars(select(SiteMenuCategoryMeta))
+        }
+        items = {
+            m.item_name: ItemMeta(
+                m.item_name,
+                m.description,
+                bool(m.signature),
+                bool(m.hidden),
+                m.position,
+                bool(m.use_ops_note),
+            )
+            for m in s.scalars(select(SiteMenuItemMeta))
+        }
         s.expunge_all()
-    return Overlay(True, cats, items)
+    return cats, items
 
 
-def _web(meta: SiteMenuItemMeta | None, description: str | None, signature: bool) -> ItemWeb:
+def _shop_rows(
+    conn: Connection, site_items: dict[str, ItemMeta]
+) -> tuple[dict[str, CategoryMeta], dict[str, ItemMeta]]:
+    """The back office's catalogue as the website's overlay (READ-ONLY Core selects;
+    ``sashasite`` never imports ``cafeops``)."""
+    cats = {
+        r.ops_name: CategoryMeta(
+            name=r.ops_name,
+            display_name=((r.name or "").strip() or None) if r.name != r.ops_name else None,
+            slug=None,
+            blurb=(r.blurb or "").strip() or None,
+            hidden=not bool(r.visible),
+            position=int(r.sort_order) if r.sort_order is not None else None,
+        )
+        for r in conn.execute(
+            text("SELECT ops_name, name, blurb, visible, sort_order FROM shop_category")
+        )
+    }
+    items = {
+        r.item_name: ItemMeta(
+            key=r.item_name,
+            description=(r.description or "").strip() or None,
+            signature=bool(r.featured),
+            hidden=not bool(r.visible),
+            position=int(r.sort_order) if r.sort_order is not None else None,
+            # The one thing the shop has no column for: the site's old row keeps it.
+            use_ops_note=(m.use_ops_note if (m := site_items.get(r.item_name)) else False),
+        )
+        for r in conn.execute(
+            text("SELECT item_name, description, visible, featured, sort_order FROM shop_product")
+        )
+    }
+    return cats, items
+
+
+def load_overlay(conn: Connection, shape: OpsShape | None = None, *, ops: bool = True) -> Overlay:
+    """The shop tables when they exist and the ops menu is the source; else the
+    site's legacy rows (board mode keys by board names, which the shop never has)."""
+    shape = shape or ops_shape(conn)
+    ready = overlay_ready(conn)
+    site_cats, site_items = _site_rows(conn) if ready else ({}, {})
+    if shape.has_shop and ops:
+        cats, items = _shop_rows(conn, site_items)
+        return Overlay("shop", ready, cats, items)
+    return Overlay("site" if ready else "none", ready, site_cats, site_items)
+
+
+def _web(meta: ItemMeta | None, description: str | None, signature: bool) -> ItemWeb:
     if meta is None:
         return ItemWeb(description, signature, False, None, False, has_row=False)
     return ItemWeb(
@@ -309,10 +436,10 @@ def _assign_ids(cats: list[SourceCategory], unassigned: list[SourceItem]) -> Non
 
 def _sort(cats: list[SourceCategory]) -> None:
     def ckey(c: SourceCategory) -> tuple[Any, ...]:
-        return (0, c.position, ()) if c.position is not None else (1, 0, c.natural)
+        return (0, c.position, c.natural) if c.position is not None else (1, 0, c.natural)
 
     def ikey(i: SourceItem) -> tuple[Any, ...]:
-        return (0, i.web.position, ()) if i.web.position is not None else (1, 0, i.natural)
+        return (0, i.web.position, i.natural) if i.web.position is not None else (1, 0, i.natural)
 
     cats.sort(key=ckey)
     for c in cats:
@@ -364,7 +491,9 @@ def _board_snapshot(overlay: Overlay, extras: ExtrasOut) -> MenuSnapshot:
             )
         )
     _sort(cats)
-    return MenuSnapshot("board", cats, [], extras, overlay_ready=overlay.ready)
+    return MenuSnapshot(
+        "board", cats, [], extras, overlay_ready=overlay.ready, overlay=overlay.source
+    )
 
 
 def _board_rank(board: MenuBoard) -> dict[str, int]:
@@ -450,6 +579,7 @@ def _ops_snapshot(
             board_note=b_note,
             ops_note=note,
             has_photo=shape.has_photo and any(g.photo_asset_id is not None for g in group),
+            ops_ids=[int(g.id) for g in group],
             natural=(rank.get(normalise(name), 1_000_000), name.casefold(), name),
         )
 
@@ -474,7 +604,7 @@ def _ops_snapshot(
             loose.append(name)
             unassigned.extend(items)
             continue
-        meta = overlay.categories.get(name)
+        meta = overlay.category(name)
         cats.append(
             SourceCategory(
                 name=name,
@@ -487,6 +617,7 @@ def _ops_snapshot(
                 position=meta.position if meta else None,
                 items=items,
                 has_ops_row=ops_row is not None,
+                display_name=meta.display_name if meta else None,
                 natural=(
                     (0, int(ops_row.sort_order), name.casefold())
                     if ops_row is not None
@@ -499,7 +630,17 @@ def _ops_snapshot(
     _unique_slugs(cats)
     _assign_ids(cats, unassigned)
 
-    snap = MenuSnapshot("ops", cats, unassigned, extras, overlay_ready=overlay.ready)
+    snap = MenuSnapshot(
+        "ops", cats, unassigned, extras, overlay_ready=overlay.ready, overlay=overlay.source
+    )
+    if overlay.source == "shop":
+        unsynced = [i.name for c in cats for i in c.items if not i.web.has_row]
+        if unsynced:
+            snap.warnings.append(
+                f"{len(unsynced)} item(s) have no Order online product row yet, so the website "
+                "shows them with no description: open Café Ops › Menu items "  # noqa: RUF001
+                "(the list syncs them)"
+            )
     if unassigned:
         snap.warnings.append(
             f"{len(unassigned)} ops item(s) have no category, so they are not on the website"
@@ -519,16 +660,22 @@ def build_snapshot(today: dt.date | None = None) -> MenuSnapshot:
     with get_engine().connect() as conn:
         shape = ops_shape(conn)
         source, why = detect_source(conn, shape)
-        overlay = load_overlay(conn)
+        overlay = load_overlay(conn, shape, ops=source == "ops")
         if source == "ops":
             snap = _ops_snapshot(conn, shape, overlay, extras, today, board)
         else:
             snap = _board_snapshot(overlay, extras)
             snap.reason = f"serving config/menu_board.toml: {why}"
             snap.warnings.insert(0, snap.reason)
-    if not overlay.ready:
+    if source == "ops" and not shape.has_shop:
         snap.warnings.append(
-            "website menu overlay tables are missing: run `uv run alembic upgrade head`"
+            "the ops shop tables (shop_category / shop_product) are missing, so the website "
+            "menu's presentation comes from the site's own legacy rows and cannot be edited: "
+            "run the ops migration (`uv run alembic upgrade head` in cafeops)"
+            if overlay.ready
+            else "the ops shop tables (shop_category / shop_product) are missing and so are the "
+            "site's own overlay tables: the website menu has no descriptions or blurbs until "
+            "the ops migration runs (`uv run alembic upgrade head` in cafeops)"
         )
     return snap
 
@@ -560,7 +707,7 @@ def public_menu(snap: MenuSnapshot) -> MenuOut:
         ]
         if items:
             categories.append(
-                MenuCategoryOut(slug=c.slug, name=c.name, blurb=c.blurb or "", items=items)
+                MenuCategoryOut(slug=c.slug, name=c.public_name, blurb=c.blurb or "", items=items)
             )
     body = {
         "source": snap.source,
@@ -588,8 +735,8 @@ _cache: tuple[float, int, MenuOut] | None = None  # (built_at monotonic, board m
 
 
 def cached_menu() -> MenuOut:
-    """Rebuilt when 60 s old, when the board file changes, or after an admin write
-    (``invalidate``). Ops edits therefore show within a minute."""
+    """Rebuilt when 60 s old, when the board file changes, or on ``invalidate``.
+    Back-office edits (Menu items) therefore show within a minute."""
     global _cache
     with _cache_lock:
         now = time.monotonic()
@@ -661,7 +808,7 @@ def summary() -> dict[str, Any]:
         msg = f"menu unavailable: {type(exc).__name__}: {exc}"
         return {"source": "board", "warnings": 1, "messages": [msg], "reason": None}
     messages = [w for w in snap.warnings if w != snap.reason]
-    if snap.overlay_ready:
+    if snap.overlay == "site":
         orph = orphans()
         n = len(orph.categories) + len(orph.items)
         if n:
@@ -670,6 +817,7 @@ def summary() -> dict[str, Any]:
             )
     return {
         "source": snap.source,
+        "overlay": snap.overlay,
         "warnings": len(messages),
         "messages": messages,
         "reason": snap.reason,
@@ -694,6 +842,10 @@ def seed_overlay() -> SeedResult:
     owner set it. Items are seeded under the board name and, where the drift
     matcher (alias or normalised name) finds one, under the ops name too, so the
     copy survives the switch to the ops source.
+
+    Legacy: refused once the ops shop tables exist, because the site's overlay is
+    then read-only (DECISIONS.md 29). Carry the board's copy into the shop with
+    ``cafeops shop adopt-website-menu`` instead.
     """
     board = load_board()
     compiled, _ = compile_board(board)
@@ -701,6 +853,13 @@ def seed_overlay() -> SeedResult:
         if not overlay_ready(conn):
             raise RuntimeError("overlay tables missing: run `uv run alembic upgrade head`")
         shape = ops_shape(conn)
+        if shape.has_shop:
+            raise RuntimeError(
+                "the website menu is edited in Café Ops › Menu items now "  # noqa: RUF001
+                "(shop_product / "
+                "shop_category); the site's own overlay is read-only. To carry the site's "
+                "old rows into the shop run `uv run cafeops shop adopt-website-menu`."
+            )
         ops_names: list[str] = (
             [
                 n

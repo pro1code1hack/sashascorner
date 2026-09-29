@@ -333,7 +333,7 @@ def _presentation(
         "navigate",
         str(p.get("basket_url") or "#/orders"),
         None,
-        "Staged, not sent. Order confirmation happens in Telegram.",
+        "Staged, not sent. Pay on the supplier's site, then press Mark sent on the order.",
     )
 
 

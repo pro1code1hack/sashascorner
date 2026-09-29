@@ -1,9 +1,12 @@
-"""Admin endpoints for the website menu's presentation (ADMIN.md, "Website menu").
+"""Admin view of the website menu (ADMIN.md, "Website menu") -- read-only since
+2026-09-29 (DECISIONS.md 29, "one menu everywhere").
 
-Only the ``site_menu_*_meta`` overlay is written. Prices, names and sizes belong to
-the ops back office and are read-only here. Every write is validated against the
-CURRENT source (a slug or key the public menu could not show is a 404/422) and
-audited in the same transaction.
+The presentation the public menu is built from is the back office's Order online
+catalogue (``shop_category`` / ``shop_product``, read by menu_source.py). It is
+edited in the back office (Menu items), so the three write routes that used to update the
+site's own ``site_menu_*_meta`` rows answer **410** and say where to go. ``GET``
+still works: the back office's Website / Today reads ``menu.warnings`` from the
+summary, and ``sashasite doctor`` reads the same snapshot.
 """
 
 from __future__ import annotations
@@ -11,29 +14,25 @@ from __future__ import annotations
 import datetime as dt
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel, Field, field_validator
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 
-from sashasite.auth import audit, require_admin_session
-from sashasite.db import (
-    SiteMenuCategoryMeta,
-    SiteMenuItemMeta,
-    session_scope,
-    utcnow,
-)
+from sashasite.auth import require_admin_session
+from sashasite.config import get_settings
 from sashasite.drift import menu_drift
 from sashasite.menu import load_board
 from sashasite.menu_source import (
     MenuSnapshot,
+    OverlaySource,
     SourceCategory,
     SourceItem,
     build_snapshot,
-    invalidate,
 )
 from sashasite.schemas import SizeOut
 
 router = APIRouter(prefix="/api/admin/menu", dependencies=[Depends(require_admin_session)])
+
+EDIT_ELSEWHERE = "Edit the menu in Café Ops › Menu items"  # noqa: RUF001
 
 # --- shapes --------------------------------------------------------------------------
 
@@ -67,6 +66,10 @@ class AdminMenuItemOut(BaseModel):
     #: Would the public menu show it right now (not hidden, in season, category shown)?
     public: bool
     web: AdminItemWebOut
+    #: The ``menu_item.id`` the back office edits this under (ops source only).
+    ops_menu_item_id: int | None = None
+    #: The back-office page to edit it on; null when it cannot be computed.
+    edit_href: str | None = None
 
 
 class AdminMenuCategoryOut(BaseModel):
@@ -78,6 +81,10 @@ class AdminMenuCategoryOut(BaseModel):
     hidden: bool
     position: int | None
     items: list[AdminMenuItemOut]
+    #: The shop's display name when it differs from the ops name.
+    display_name: str | None = None
+    #: Where categories are edited (the Categories drawer on Menu items).
+    edit_href: str | None = None
 
 
 class DriftMismatchOut(BaseModel):
@@ -100,47 +107,30 @@ class AdminDriftOut(BaseModel):
 
 class AdminMenuOut(BaseModel):
     source: Literal["ops", "board"]
+    #: ``shop``: the back office's catalogue (editable there); ``site``: the site's
+    #: legacy rows (read-only, the ops migration is missing); ``none``.
+    overlay: OverlaySource
+    #: Where the menu is edited now.
+    edit_href: str
     warnings: list[str]
     categories: list[AdminMenuCategoryOut]
     unassigned: list[AdminMenuItemOut]
     drift: AdminDriftOut
 
 
-class CategoryPutIn(BaseModel):
-    #: null clears the website's override (the board's blurb, or none, shows).
-    blurb: str | None = Field(default=None, max_length=300)
-    hidden: bool | None = None
-
-    @field_validator("blurb", mode="before")
-    @classmethod
-    def _strip(cls, v: object) -> object:
-        return v.strip() if isinstance(v, str) else v
-
-
-class ItemPutIn(BaseModel):
-    #: "" or null: no website description.
-    description: str | None = Field(default=None, max_length=600)
-    signature: bool | None = None
-    hidden: bool | None = None
-    use_ops_note: bool | None = None
-
-    @field_validator("description", mode="before")
-    @classmethod
-    def _strip(cls, v: object) -> object:
-        if isinstance(v, str):
-            return v.strip() or None
-        return v
-
-
-class OrderIn(BaseModel):
-    #: Every listed slug takes that position; categories left out follow, in the
-    #: source's own order. Omit to leave category order untouched.
-    categories: list[str] | None = None
-    #: slug -> item keys, same rule within each category.
-    items: dict[str, list[str]] = Field(default_factory=dict)
-
-
 # --- rendering ----------------------------------------------------------------------
+
+
+def ops_href(path: str) -> str:
+    """A back-office page: ``ops_href("/menu/12")`` -> ``{SITE_OPS_URL}/#/menu/12``."""
+    return f"{get_settings().ops_url.rstrip('/')}/#{path}"
+
+
+def _item_edit_href(i: SourceItem) -> str | None:
+    return ops_href(f"/menu/{i.ops_ids[0]}") if i.ops_ids else None
+
+
+CATEGORIES_HREF = "/menu?view=list"
 
 
 def _item_out(i: SourceItem, category_shown: bool) -> AdminMenuItemOut:
@@ -169,6 +159,8 @@ def _item_out(i: SourceItem, category_shown: bool) -> AdminMenuItemOut:
             position=i.web.position,
             use_ops_note=i.web.use_ops_note,
         ),
+        ops_menu_item_id=i.ops_ids[0] if i.ops_ids else None,
+        edit_href=_item_edit_href(i),
     )
 
 
@@ -181,6 +173,8 @@ def _category_out(c: SourceCategory) -> AdminMenuCategoryOut:
         hidden=c.hidden,
         position=c.position,
         items=[_item_out(i, not c.hidden) for i in c.items],
+        display_name=c.display_name,
+        edit_href=ops_href(CATEGORIES_HREF),
     )
 
 
@@ -214,6 +208,8 @@ def admin_menu(snap: MenuSnapshot | None = None) -> AdminMenuOut:
     snap = snap or build_snapshot()
     return AdminMenuOut(
         source=snap.source,
+        overlay=snap.overlay,
+        edit_href=ops_href(CATEGORIES_HREF),
         warnings=snap.warnings,
         categories=[_category_out(c) for c in snap.categories],
         unassigned=[_item_out(i, False) for i in snap.unassigned],
@@ -221,166 +217,37 @@ def admin_menu(snap: MenuSnapshot | None = None) -> AdminMenuOut:
     )
 
 
-# --- writes -------------------------------------------------------------------------
-
-
-def _writable_snapshot() -> MenuSnapshot:
-    snap = build_snapshot()
-    if not snap.overlay_ready:
-        raise HTTPException(
-            503, detail="Website menu settings are not set up yet: run the database migration."
-        )
-    return snap
-
-
-def _category_row(s: Session, c: SourceCategory) -> SiteMenuCategoryMeta:
-    row = s.get(SiteMenuCategoryMeta, c.name)
-    if row is None:
-        # Start from what is showing now, so a partial edit changes only its fields.
-        row = SiteMenuCategoryMeta(name=c.name, hidden=c.hidden, position=c.position)
-        s.add(row)
-    return row
-
-
-def _item_row(s: Session, i: SourceItem) -> SiteMenuItemMeta:
-    row = s.get(SiteMenuItemMeta, i.key)
-    if row is None:
-        # Seed from the effective values (e.g. the board's description), or a
-        # first edit of one field would silently blank the others.
-        row = SiteMenuItemMeta(
-            item_name=i.key,
-            description=i.web.description,
-            signature=i.web.signature,
-            hidden=i.web.hidden,
-            position=i.web.position,
-            use_ops_note=i.web.use_ops_note,
-        )
-        s.add(row)
-    return row
-
-
 @router.get("", response_model=AdminMenuOut)
 def get_menu() -> AdminMenuOut:
     return admin_menu()
 
 
-@router.put("/categories/{slug}", response_model=AdminMenuCategoryOut)
-def put_category(slug: str, body: CategoryPutIn, request: Request) -> AdminMenuCategoryOut:
-    snap = _writable_snapshot()
-    cat = snap.category_by_slug(slug)
-    if cat is None:
-        raise HTTPException(404, detail=f"No category {slug!r} on the {snap.source} menu.")
-    changed = body.model_dump(include=body.model_fields_set)
-    with session_scope(immediate=True) as s:
-        row = _category_row(s, cat)
-        if "blurb" in body.model_fields_set:
-            row.blurb = body.blurb
-        if "hidden" in body.model_fields_set and body.hidden is not None:
-            row.hidden = body.hidden
-        row.updated_at = utcnow()
-        audit(
-            "menu.category",
-            {"name": cat.name, "slug": slug, **changed},
-            request=request,
-            session=s,
-        )
-    invalidate()
-    out = build_snapshot().category_by_slug(slug)
-    assert out is not None
-    return _category_out(out)
+# --- writes: gone (410) -----------------------------------------------------------------
 
 
-@router.put("/items/{key:path}", response_model=AdminMenuItemOut)
-def put_item(key: str, body: ItemPutIn, request: Request) -> AdminMenuItemOut:
-    snap = _writable_snapshot()
+def _gone(where: str | None) -> HTTPException:
+    detail = EDIT_ELSEWHERE + (f" ({where})" if where else "")
+    return HTTPException(410, detail=detail)
+
+
+@router.put("/categories/{slug}")
+def put_category(slug: str) -> None:
+    """410. Category blurbs, names, visibility and order are the Categories drawer
+    on Menu items in the back office (``shop_category``)."""
+    raise _gone(ops_href(CATEGORIES_HREF))
+
+
+@router.put("/items/{key:path}")
+def put_item(key: str) -> None:
+    """410. An item's description, signature and visibility are the "Online
+    ordering" section of its page in the back office's Menu items (``shop_product``)."""
+    snap = build_snapshot()
     item = next((i for i in snap.all_items() if i.key == key), None)
-    if item is None:
-        raise HTTPException(404, detail=f"No item {key!r} on the {snap.source} menu.")
-    fields = body.model_fields_set
-    with session_scope(immediate=True) as s:
-        row = _item_row(s, item)
-        if "description" in fields:
-            row.description = body.description
-        if body.signature is not None:
-            row.signature = body.signature
-        if body.hidden is not None:
-            row.hidden = body.hidden
-        if body.use_ops_note is not None:
-            row.use_ops_note = body.use_ops_note
-        row.updated_at = utcnow()
-        audit(
-            "menu.item",
-            {"key": key, **body.model_dump(include=fields)},
-            request=request,
-            session=s,
-        )
-    invalidate()
-    fresh = build_snapshot()
-    for c in fresh.categories:
-        for i in c.items:
-            if i.key == key:
-                return _item_out(i, not c.hidden)
-    for i in fresh.unassigned:
-        if i.key == key:
-            return _item_out(i, False)
-    raise HTTPException(404, detail=f"No item {key!r}.")  # vanished mid-request
+    raise _gone(_item_edit_href(item) if item is not None else ops_href("/menu"))
 
 
-def _dupes(xs: list[str]) -> list[str]:
-    return sorted({x for x in xs if xs.count(x) > 1})
-
-
-@router.post("/order", response_model=AdminMenuOut)
-def post_order(body: OrderIn, request: Request) -> AdminMenuOut:
-    snap = _writable_snapshot()
-    errors: list[str] = []
-    if body.categories is not None:
-        unknown = [x for x in body.categories if snap.category_by_slug(x) is None]
-        if unknown:
-            errors.append(f"unknown category slug(s): {unknown}")
-        if d := _dupes(body.categories):
-            errors.append(f"duplicate category slug(s): {d}")
-    for slug, keys in body.items.items():
-        cat = snap.category_by_slug(slug)
-        if cat is None:
-            errors.append(f"unknown category slug {slug!r} in items")
-            continue
-        have = {i.key for i in cat.items}
-        if missing := [k for k in keys if k not in have]:
-            errors.append(f"{slug}: not in this category: {missing}")
-        if d := _dupes(keys):
-            errors.append(f"{slug}: duplicate item key(s): {d}")
-    if errors:
-        raise HTTPException(422, detail=errors)
-
-    # All or nothing: one IMMEDIATE transaction for every position.
-    with session_scope(immediate=True) as s:
-        now = utcnow()
-        if body.categories is not None:
-            pos = {slug: n for n, slug in enumerate(body.categories)}
-            for c in snap.categories:
-                p = pos.get(c.slug)
-                row = s.get(SiteMenuCategoryMeta, c.name)
-                if row is None and p is None:
-                    continue
-                row = row or _category_row(s, c)
-                row.position, row.updated_at = p, now
-        for slug, keys in body.items.items():
-            cat = snap.category_by_slug(slug)
-            assert cat is not None
-            ipos = {k: n for n, k in enumerate(keys)}
-            for i in cat.items:
-                p = ipos.get(i.key)
-                irow = s.get(SiteMenuItemMeta, i.key)
-                if irow is None and p is None:
-                    continue
-                irow = irow or _item_row(s, i)
-                irow.position, irow.updated_at = p, now
-        audit(
-            "menu.order",
-            {"categories": body.categories, "items": body.items},
-            request=request,
-            session=s,
-        )
-    invalidate()
-    return admin_menu()
+@router.post("/order")
+def post_order() -> None:
+    """410. Order is ``shop_category.sort_order`` / ``shop_product.sort_order``,
+    set on Menu items in the back office."""
+    raise _gone(ops_href(CATEGORIES_HREF))

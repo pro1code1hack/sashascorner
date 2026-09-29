@@ -32,9 +32,12 @@ from cafeops.api.areas.menu_schemas import (
     ChangesetApplyIn,
     ChangesetIn,
     ChangesetPreviewOut,
+    IngredientAllergensIn,
+    IngredientAllergensOut,
     IngredientCreateIn,
     IngredientDetailOut,
     IngredientMetaIn,
+    IngredientPhotoOut,
     IngredientPriceAppliedOut,
     IngredientPriceApplyIn,
     IngredientPricePreviewIn,
@@ -385,6 +388,48 @@ async def ingredient_detail(ingredient_id: int) -> IngredientDetailOut:
 )
 async def ingredient_meta(ingredient_id: int, body: IngredientMetaIn) -> IngredientWriteOut:
     return await in_session(lambda s: views.ingredient_meta_view(s, ingredient_id, body))
+
+
+@router.post(
+    "/api/ingredients/{ingredient_id}/photo",
+    response_model=IngredientPhotoOut,
+    summary="Upload the ingredient's reference photo (raw body, <= 2 MB, PNG/JPEG/WebP)",
+)
+async def ingredient_photo_upload(
+    ingredient_id: int,
+    request: Request,
+    x_operator: Annotated[str | None, Header()] = None,
+    content_length: Annotated[int | None, Header()] = None,
+) -> IngredientPhotoOut:
+    if content_length is not None and content_length > MAX_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="that photo is over 2 MB; resize it (1200px wide is plenty) and try again",
+        )
+    data = await request.body()
+    return await in_session(
+        lambda s: views.ingredient_photo_upload_view(s, ingredient_id, data, x_operator)
+    )
+
+
+@router.post(
+    "/api/ingredients/{ingredient_id}/photo/clear",
+    response_model=IngredientPhotoOut,
+    summary="Remove the ingredient's photo (the file is kept)",
+)
+async def ingredient_photo_clear(ingredient_id: int) -> IngredientPhotoOut:
+    return await in_session(lambda s: views.ingredient_photo_clear_view(s, ingredient_id))
+
+
+@router.post(
+    "/api/ingredients/{ingredient_id}/allergens",
+    response_model=IngredientAllergensOut,
+    summary="Record the UK 14 allergens from the pack ([] = none; null = unknown)",
+)
+async def ingredient_allergens(
+    ingredient_id: int, body: IngredientAllergensIn
+) -> IngredientAllergensOut:
+    return await in_session(lambda s: views.ingredient_allergens_view(s, ingredient_id, body))
 
 
 @router.post(

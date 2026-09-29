@@ -12,7 +12,17 @@ from __future__ import annotations
 
 from aiogram.filters.callback_data import CallbackData
 
-__all__ = ["ChecklistCB", "CountCB", "DeliveryCB", "DigestCB", "OrderCB"]
+__all__ = [
+    "CashCB",
+    "ChecklistCB",
+    "CountCB",
+    "DeliveryCB",
+    "DigestCB",
+    "ExportCB",
+    "ImportCB",
+    "OrderCB",
+    "SaleCB",
+]
 
 
 class OrderCB(CallbackData, prefix="ord"):
@@ -46,3 +56,33 @@ class DeliveryCB(CallbackData, prefix="dlv"):
 
 class DigestCB(CallbackData, prefix="dig"):
     action: str  # "orders" | "count" | "checklist" | "delivery"
+
+
+class SaleCB(CallbackData, prefix="sal"):
+    """The hand-typed sale (DECISIONS 28).
+
+    `value` is overloaded by action and always an integer, because a menu item name
+    does not fit in 64 bytes and a category name may not either: `chan` carries the
+    index into `MANUAL_SALE_CHANNELS`, `cat` the index into the category list the
+    view produced (with `page`), `pick` a menu item id, `qty` a count, `void` the id of
+    the receipt's first `sale` row. Everything the handler needs to act is re-read
+    from the database by that id, never trusted from the button.
+    """
+
+    #: chan | cats | cat | pick | qty | more | price | drop | date | save | cancel | void
+    action: str
+    value: int = 0
+    page: int = 0
+
+
+class CashCB(CallbackData, prefix="csh"):
+    action: str  # today | yesterday | other | cancel
+
+
+class ImportCB(CallbackData, prefix="imp"):
+    action: str  # write | cancel | platform
+    value: str = ""  # platform: DELIVEROO | JUST_EAT
+
+
+class ExportCB(CallbackData, prefix="exp"):
+    action: str  # today | week | month | all

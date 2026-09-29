@@ -112,6 +112,38 @@ class Settings(BaseSettings):
     drift_warn_max_pct: float = 15.0
     drift_consecutive_counts_required: int = 2
 
+    # --- browser ordering agents (docs/agents/BROWSER-ORDERING.md) ----------
+    # A separate process (`cafeops browser-worker`) is the only thing that opens a
+    # browser. The API and the scheduler only queue `browser_job` rows. Off by
+    # default: with it off, "Stage basket" is refused with a reason, not silently
+    # ignored, and the scheduler queues nothing.
+    browser_worker_enabled: bool = False
+    # Persistent Chromium profiles, one directory per supplier. Unset resolves to
+    # `<database directory>/browser`. Cookies live here, never in the database.
+    browser_data_dir: Path | None = None
+    browser_headless: bool = True
+    # Fernet key (urlsafe base64, 32 bytes) protecting a Playwright storage state at
+    # rest in `supplier_session.storage_state_enc`. Unset means import/export of a
+    # sign-in is refused; the profile directory still works on its own.
+    browser_session_key: str | None = None
+    # The model that drives the browser toolset. Distinct from `agent_model` (narration)
+    # because it is a different job with a different cost, and it is written to every
+    # job row so a basket can be traced to the model that staged it.
+    browser_model: str = "claude-opus-5-5"
+    browser_max_tokens: int = 4096
+    # Hard ceilings per job. A browser agent that loops spends money on tokens AND can
+    # wander into a checkout; both stop here. Actions count scripted and model steps.
+    browser_max_model_calls: int = 40
+    browser_max_actions: int = 150
+    browser_max_minutes: int = 12
+    # Screenshots are resized to fit this on the long side before they go to the
+    # model (vision tokens) and to media_asset (disk).
+    browser_screenshot_max_px: int = 1280
+    browser_worker_poll_seconds: int = 5
+    # A RUNNING job whose heartbeat is older than this is treated as orphaned by a
+    # dead worker and FAILED so the order page stops saying "staging".
+    browser_heartbeat_stale_seconds: int = 120
+
     # --- Sasha's Corner Rewards (docs/loyalty/CONTRACT.md §7) ---------------
     #: The public site's origin. Recovery links, unsubscribe links and the web card URL
     #: staff show as a QR are built on it. No trailing slash.
@@ -158,6 +190,52 @@ class Settings(BaseSettings):
         default="https://sashascorner.co.uk",
         validation_alias=AliasChoices("CAFEOPS_SITE_PUBLIC_URL", "SITE_PUBLIC_URL"),
     )
+
+    # --- Order online (docs/shop/CONTRACT.md §9) ------------------------------
+    #: Stripe Checkout for "pay online". All three optional: without the secret key the
+    #: shop reports `pay_online: false` whatever the admin setting says (§3.6).
+    stripe_secret_key: str | None = None
+    stripe_publishable_key: str | None = None
+    stripe_webhook_secret: str | None = None
+    #: Where the ordering app lives (`/order/...` links in Stripe redirects and
+    #: notifications). Empty defaults to `site_public_url` (see `shop_url`).
+    shop_public_url: str = Field(
+        default="",
+        validation_alias=AliasChoices("CAFEOPS_SHOP_PUBLIC_URL", "SHOP_PUBLIC_URL"),
+    )
+
+    #: K-Series Order & Pay (CONTRACT §3b, `integrations/pos/lightspeed.py`): the
+    #: business LOCATION id (not the business id above) and the webhook endpoint id the
+    #: Order & Pay API needs on every pushed order. Unset: the sink reports not
+    #: configured and nothing is pushed.
+    lightspeed_business_location_id: int | None = None
+    lightspeed_online_order_endpoint_id: str | None = None
+    #: The merchant-configured payment method code an already-paid online order is
+    #: recorded under on the till ("ONLINE" is a placeholder to confirm in the back office).
+    lightspeed_payment_method_code: str | None = None
+
+    #: Web Push for order status (CONTRACT §3c). `cafeops shop vapid-keys` prints a pair;
+    #: the subject is a `mailto:` the push services may contact. Unset: no push, the
+    #: status page polls as before.
+    vapid_public_key: str | None = None
+    vapid_private_key: str | None = None
+    vapid_subject: str = "mailto:hello@sashascorner.co.uk"
+
+    @property
+    def push_configured(self) -> bool:
+        return bool(self.vapid_public_key and self.vapid_private_key)
+
+    @property
+    def shop_url(self) -> str:
+        return (self.shop_public_url or self.site_public_url).rstrip("/")
+
+    @property
+    def stripe_configured(self) -> bool:
+        return bool(self.stripe_secret_key)
+
+    @property
+    def telegram_configured(self) -> bool:
+        return bool(self.telegram_bot_token and self.telegram_owner_chat_id)
 
     @property
     def loyalty_key(self) -> bytes:

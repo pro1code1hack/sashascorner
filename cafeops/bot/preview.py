@@ -35,8 +35,20 @@ from aiogram.client.session.base import BaseSession
 from aiogram.methods import TelegramMethod
 from aiogram.methods.answer_callback_query import AnswerCallbackQuery
 from aiogram.methods.edit_message_text import EditMessageText
+from aiogram.methods.get_file import GetFile
+from aiogram.methods.send_document import SendDocument
 from aiogram.methods.send_message import SendMessage
-from aiogram.types import CallbackQuery, Chat, InlineKeyboardMarkup, Message, Update, User
+from aiogram.types import (
+    BufferedInputFile,
+    CallbackQuery,
+    Chat,
+    Document,
+    File,
+    InlineKeyboardMarkup,
+    Message,
+    Update,
+    User,
+)
 from sqlalchemy.orm import Session, sessionmaker
 
 from cafeops.bot import formatters as fmt
@@ -82,6 +94,12 @@ class RecordingSession(BaseSession):
     def __init__(self) -> None:
         super().__init__()
         self.sent: list[Sent] = []
+        #: Files "uploaded" by the preview, by file id. `GetFile` answers with a path
+        #: ending in the id and `stream_content` serves the bytes -- so `bot.download`
+        #: in the files handler runs unchanged, against nothing on the network.
+        self.files: dict[str, bytes] = {}
+        #: Documents the bot sent, as (filename, bytes), for the flow to inspect.
+        self.documents: list[tuple[str, bytes]] = []
 
     async def close(self) -> None:
         return None
@@ -94,8 +112,8 @@ class RecordingSession(BaseSession):
         chunk_size: int = 65536,
         raise_for_status: bool = True,
     ) -> AsyncGenerator[bytes, None]:
-        # Never used by these flows; present because BaseSession declares it abstract.
-        yield b""
+        file_id = url.rsplit("/", 1)[-1]
+        yield self.files.get(file_id, b"")
 
     async def make_request(
         self, bot: Bot, method: TelegramMethod[Any], timeout: int | None = None
@@ -122,6 +140,26 @@ class RecordingSession(BaseSession):
             )
         if isinstance(method, AnswerCallbackQuery):
             return True
+        if isinstance(method, GetFile):
+            return File(
+                file_id=method.file_id,
+                file_unique_id=method.file_id,
+                file_path=f"preview/{method.file_id}",
+            )
+        if isinstance(method, SendDocument):
+            name, data = "document", b""
+            if isinstance(method.document, BufferedInputFile):
+                name, data = method.document.filename or name, method.document.data
+            self.documents.append((name, data))
+            self.sent.append(
+                Sent(kind="document", text=f"[{name}, {len(data)} bytes]\n{method.caption or ''}")
+            )
+            return Message(
+                message_id=len(self.sent),
+                date=datetime.now(UTC),
+                chat=Chat(id=int(method.chat_id), type="private"),
+                caption=method.caption,
+            )
         return True
 
 
@@ -201,6 +239,30 @@ class Preview:
             )
         return self.session.sent[before:]
 
+    async def send_document(self, filename: str, data: bytes) -> list[Sent]:
+        """Send a file as the owner, the way the phone would, and return what came back."""
+        file_id = f"preview-file-{self._next()}"
+        self.session.files[file_id] = data
+        before = len(self.session.sent)
+        message = Message(
+            message_id=self._next(),
+            date=datetime.now(UTC),
+            chat=Chat(id=self.chat_id, type="private"),
+            from_user=self._user(),
+            document=Document(
+                file_id=file_id,
+                file_unique_id=file_id,
+                file_name=filename,
+                file_size=len(data),
+                mime_type="text/csv",
+            ),
+        )
+        with _owner(self.chat_id):
+            await self.dispatcher.feed_update(
+                self.bot, Update(update_id=self._next(), message=message)
+            )
+        return self.session.sent[before:]
+
     async def tap(self, callback_data: str) -> list[Sent]:
         """Press an inline button by its callback payload."""
         before = len(self.session.sent)
@@ -239,7 +301,9 @@ def render(sent: Sequence[Sent], *, show_buttons: bool = True) -> str:
     """The captured conversation, as it would look on the phone."""
     blocks: list[str] = []
     for item in sent:
-        head = "--- sent ---" if item.kind == "send" else "--- edited in place ---"
+        head = {"send": "--- sent ---", "document": "--- sent a file ---"}.get(
+            item.kind, "--- edited in place ---"
+        )
         block = [head, item.text]
         if show_buttons and item.buttons:
             block.append("")
@@ -367,6 +431,83 @@ async def flow_stranger(preview: Preview) -> list[Sent]:
         preview.user_id = preview.chat_id
 
 
+async def flow_sale(
+    preview: Preview,
+    *,
+    search: str = "latte",
+    qty: str = "2",
+    price: str | None = None,
+    void: bool = True,
+) -> list[Sent]:
+    """Cash sale: channel, search by name, first match, quantity, save, then void.
+
+    Driven by the real payloads off the real keyboards, so a renamed button or a
+    changed callback shape shows up here as a flow that stops early.
+    """
+    out = await preview.say("/sale")
+    button = preview.find_button(out, fmt.BTN_SALE_CASH)
+    if not button:
+        return out
+    out += await preview.tap(button)
+    found = await preview.say(search)
+    out += found
+    pick = next(
+        (data for label, data in found[-1].flat_buttons if data.startswith("sal:pick")), None
+    )
+    if not pick:
+        return out
+    out += await preview.tap(pick)
+    out += await preview.say(qty)
+    if price is not None:
+        other = preview.find_button(out, fmt.BTN_SALE_PRICE)
+        if other:
+            out += await preview.tap(other)
+            out += await preview.say(price)
+    save = preview.find_button(out, fmt.BTN_SALE_SAVE)
+    if save:
+        out += await preview.tap(save)
+    if void:
+        undo = preview.find_button(out, fmt.BTN_SALE_VOID)
+        if undo:
+            out += await preview.tap(undo)
+    return out
+
+
+async def flow_cash(preview: Preview, *, amount: str = "85.50") -> list[Sent]:
+    out = await preview.say("/cash")
+    today = preview.find_button(out, fmt.BTN_CASH_TODAY)
+    if today:
+        out += await preview.tap(today)
+    out += await preview.say(amount)
+    return out
+
+
+async def flow_export(preview: Preview) -> list[Sent]:
+    out = await preview.say("/export")
+    week = preview.find_button(out, fmt.BTN_EXPORT_WEEK)
+    if week:
+        out += await preview.tap(week)
+    return out
+
+
+async def flow_import(preview: Preview, *, csv_text: str | None = None) -> list[Sent]:
+    """Send a small transactions CSV, read the dry run, press «Записать»."""
+    if csv_text is None:
+        today = datetime.now(UTC).astimezone(settings.tz).date().isoformat()
+        csv_text = (
+            "date,time,channel,item,size,qty,unit price,receipt\n"
+            f"{today},10:15,deliveroo,Latte,M,2,4.50,A1\n"
+            f"{today},10:15,deliveroo,Latte,S,1,,A1\n"
+            f"{today},,cash,Not a real item,,1,,\n"
+        )
+    out = await preview.say("/import")
+    out += await preview.send_document("orders.csv", csv_text.encode("utf-8"))
+    write = preview.find_button(out, fmt.BTN_IMPORT_WRITE)
+    if write:
+        out += await preview.tap(write)
+    return out
+
+
 FLOWS = {
     "start": flow_start,
     "digest": flow_digest,
@@ -374,5 +515,9 @@ FLOWS = {
     "count": flow_count,
     "checklist": flow_checklist,
     "delivery": flow_delivery,
+    "sale": flow_sale,
+    "cash": flow_cash,
+    "export": flow_export,
+    "import": flow_import,
     "stranger": flow_stranger,
 }
