@@ -83,6 +83,14 @@ __all__ = [
 _DEFAULT_TOKEN_URL = "https://auth.lsk.lightspeed.app/realms/k-series/protocol/openid-connect/token"
 
 _RETRYABLE_STATUS = {429, 500, 502, 503, 504}
+#: For a write: only the statuses that say the request was not acted on.
+_RETRYABLE_UNSENT_STATUS = {429}
+#: Transport failures that happen before a byte of the request reached the server.
+_NEVER_SENT: tuple[type[httpx.TransportError], ...] = (
+    httpx.ConnectError,
+    httpx.ConnectTimeout,
+    httpx.PoolTimeout,
+)
 #: Longest we will obey a `Retry-After`. Beyond this, give up and let the next run
 #: take the window -- `jobs/daily_sync.OVERLAP_DAYS` means nothing is lost by waiting.
 _MAX_RETRY_AFTER = 60.0
@@ -326,18 +334,34 @@ class LightspeedClient:
     # -- request plumbing: retry, backoff, rate limiting ---------------------
 
     async def _request(
-        self, method: str, path: str, *, params: Mapping[str, Any] | None = None
+        self,
+        method: str,
+        path: str,
+        *,
+        params: Mapping[str, Any] | None = None,
+        json_body: Any = None,
+        replay_safe: bool = True,
+        add_business_id: bool = True,
     ) -> httpx.Response:
         """One request, with retries, backoff and a single mid-flight token refresh.
 
         The token is fetched **inside** the loop, not once above it: a retry can be
         preceded by up to `_MAX_RETRY_AFTER` seconds of sleep, and a token that was
         valid when the loop began need not be valid when the last attempt goes out.
+
+        `replay_safe=False` is for a write (a POST that creates an order or applies a
+        payment): it is retried only where the server provably did not act on it -- a
+        429, a 401 (replayed once with a fresh token), or a connection that was never
+        established. A 5xx or a read timeout after the request went out is NOT
+        replayed: the till may have taken it, and a second payment is worse than a
+        failed push a person retries. Every transport failure that is not retried
+        surfaces as `LightspeedAPIError`, never as a bare `httpx` exception.
         """
         self._require_configured()
         business_id = self._settings.lightspeed_business_id
         query = dict(params or {})
-        query.setdefault("businessId", business_id)
+        if add_business_id:
+            query.setdefault("businessId", business_id)
 
         attempt = 0
         max_attempts = self._max_attempts
@@ -349,12 +373,16 @@ class LightspeedClient:
             headers = {"Authorization": f"Bearer {token}", "Accept": "application/json"}
             await self._rate_limiter.wait()
             try:
-                response = await self._http.request(method, path, params=query, headers=headers)
+                response = await self._http.request(
+                    method, path, params=query or None, headers=headers, json=json_body
+                )
             except httpx.TransportError as exc:
                 # A connection reset mid-page is retried, not fatal: the page has no
                 # side effects, so re-reading it is free and losing the window is not.
+                # A write is retried only when it never left (see the docstring).
                 last_error = f"{type(exc).__name__}: {exc}"
-                if attempt >= max_attempts:
+                never_sent = isinstance(exc, _NEVER_SENT)
+                if attempt >= max_attempts or not (replay_safe or never_sent):
                     break
                 await asyncio.sleep(self._backoff(attempt))
                 continue
@@ -369,7 +397,8 @@ class LightspeedClient:
                 await self._ensure_access_token(force=True)
                 continue
 
-            if response.status_code not in _RETRYABLE_STATUS:
+            retryable = _RETRYABLE_STATUS if replay_safe else _RETRYABLE_UNSENT_STATUS
+            if response.status_code not in retryable:
                 if response.status_code >= 400:
                     raise LightspeedAPIError(
                         f"{method} {path} failed: HTTP {response.status_code} "
@@ -386,9 +415,28 @@ class LightspeedClient:
             # and bought nothing.
             await asyncio.sleep(self._retry_delay(response, attempt))
 
-        raise LightspeedAPIError(
-            f"{method} {path} failed after {max_attempts} attempt(s): {last_error}"
+        raise LightspeedAPIError(f"{method} {path} failed after {attempt} attempt(s): {last_error}")
+
+    async def post_json(self, path: str, payload: Mapping[str, Any]) -> dict[str, Any]:
+        """POST a JSON body through the same token, rate limit and retry loop as every
+        read, with the write-safe retry policy (`_request(replay_safe=False)`).
+
+        Returns the JSON object the server answered with (a non-object body comes back
+        as `{"status": <text>}`). Raises `LightspeedNotConfiguredError` without
+        credentials and `LightspeedAPIError` for everything else -- an HTTP error, or
+        a transport failure -- so a caller has exactly two exceptions to handle.
+        """
+        response = await self._request(
+            "POST", path, json_body=dict(payload), replay_safe=False, add_business_id=False
         )
+        try:
+            data = response.json()
+        except ValueError as exc:
+            raise LightspeedAPIError(
+                f"POST {path}: the response was not JSON: {response.text[:200]}",
+                status_code=response.status_code,
+            ) from exc
+        return dict(data) if isinstance(data, dict) else {"status": str(data)}
 
     # -- pagination -----------------------------------------------------------
 

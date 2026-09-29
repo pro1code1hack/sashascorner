@@ -129,8 +129,11 @@ class RecordingSession(BaseSession):
                 text=method.text,
             )
         if isinstance(method, EditMessageText):
+            # aiogram 3.31 made `EditMessageText.text` optional (Telegram allows an
+            # edit that only swaps the keyboard); this bot always passes text, so an
+            # empty capture is the honest reading of "nothing was sent".
             self.sent.append(
-                Sent(kind="edit", text=method.text, buttons=_buttons(method.reply_markup))
+                Sent(kind="edit", text=method.text or "", buttons=_buttons(method.reply_markup))
             )
             return Message(
                 message_id=len(self.sent),

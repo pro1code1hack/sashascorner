@@ -13,27 +13,33 @@ import { goToRoute, useSetup } from '../../lib/shell-api'
 import type { SetupResponse, SetupStep, SetupWarning } from '../../lib/types/shell'
 
 function CopyBlock({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false)
+  const [state, setState] = useState<'idle' | 'copied' | 'failed'>('idle')
   return (
-    <div className="mt-2 flex min-w-0 items-center gap-2">
-      <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap rounded-control bg-canvas px-2.5 py-1.5 font-mono text-sm text-ink">
-        {text}
-      </code>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={async () => {
-          try {
-            await navigator.clipboard.writeText(text)
-            setCopied(true)
-            setTimeout(() => setCopied(false), 2000)
-          } catch {
-            /* no clipboard permission: the text is selectable */
-          }
-        }}
-      >
-        {copied ? 'Copied' : 'Copy'}
-      </Button>
+    <div className="mt-2 flex min-w-0 flex-col gap-1">
+      <div className="flex min-w-0 items-center gap-2">
+        <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap rounded-control bg-canvas px-2.5 py-1.5 font-mono text-sm text-ink">
+          {text}
+        </code>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(text)
+              setState('copied')
+              setTimeout(() => setState('idle'), 2000)
+            } catch {
+              setState('failed')
+            }
+          }}
+        >
+          {state === 'copied' ? 'Copied' : 'Copy'}
+        </Button>
+      </div>
+      {/* Always mounted, so "Copied" is announced, not just drawn on the button. */}
+      <p role="status" aria-live="polite" className={cx('text-sm text-ink-2', state !== 'failed' && 'sr-only')}>
+        {state === 'copied' ? 'Command copied.' : state === 'failed' ? 'This browser would not copy it: select the command and copy it by hand.' : ''}
+      </p>
     </div>
   )
 }

@@ -164,6 +164,10 @@ class StripeProvider:
             "line_items": line_items,
             "metadata": {"order_code": order.code},
             "payment_intent_data": {"description": f"Sasha's Corner order SC-{order.code}"},
+            # Stripe's minimum is 30 minutes, which is also when `expire_pending_payments`
+            # cancels an unpaid order: the checkout page dies with the order, so a late
+            # payment cannot land on a cancelled one.
+            "expires_at": int(time.time()) + 30 * 60,
         }
         if order.discount_pence > 0:
             # One-off coupon for the free drink, so the customer pays what the order says.

@@ -7,7 +7,21 @@
  */
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ActiveFilters, Empty, ErrorBox, FilterBar, FilterSelect, FilterToggle, Loading, SearchInput, StatusTag, cx } from '../../components/ui'
+import {
+  ActiveFilters,
+  Button,
+  Empty,
+  ErrorBox,
+  FilterBar,
+  FilterSelect,
+  FilterToggle,
+  Input,
+  LinkButton,
+  Loading,
+  SearchInput,
+  StatusTag,
+  cx,
+} from '../../components/ui'
 import type { ActiveFilterChip, FilterOption } from '../../components/ui'
 import { gbp } from '../../lib/format'
 import { href } from '../../lib/router'
@@ -93,6 +107,14 @@ export function History() {
   if (receipt !== 'all') chips.push({ key: 'r', label: receipt === 'with' ? 'Has a receipt' : 'No receipt yet', onRemove: () => setReceipt('all') })
   if (from) chips.push({ key: 'f', label: `From ${dayMonth(from)}`, onRemove: () => setFrom('') })
   if (to) chips.push({ key: 't', label: `To ${dayMonth(to)}`, onRemove: () => setTo('') })
+  const clearAll = () => {
+    setSupplier('all')
+    setStatus('all')
+    setReceipt('all')
+    setFrom('')
+    setTo('')
+    setQ('')
+  }
   const shownTotal = rows.filter((o) => o.status !== 'CANCELLED').reduce((n, o) => n + total(o), 0)
 
   return (
@@ -113,25 +135,20 @@ export function History() {
         <FilterToggle active={receipt === 'without'} onToggle={() => setReceipt(receipt === 'without' ? 'all' : 'without')}>
           No receipt yet
         </FilterToggle>
+        {/* The kit Input (focus ring, sizing) with its label beside it; `max` and
+            `min` keep the range the right way round. */}
         <label className="flex items-center gap-1.5 text-sm text-ink-2">
           From
-          <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="h-[34px] rounded-full border border-line-control bg-surface px-3 text-base text-ink" />
+          <Input type="date" size="sm" value={from} max={to || undefined} onChange={(e) => setFrom(e.target.value)} className="w-auto rounded-full" />
         </label>
         <label className="flex items-center gap-1.5 text-sm text-ink-2">
           to
-          <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="h-[34px] rounded-full border border-line-control bg-surface px-3 text-base text-ink" />
+          <Input type="date" size="sm" value={to} min={from || undefined} onChange={(e) => setTo(e.target.value)} className="w-auto rounded-full" />
         </label>
       </FilterBar>
       <ActiveFilters
         chips={chips}
-        onClearAll={() => {
-          setSupplier('all')
-          setStatus('all')
-          setReceipt('all')
-          setFrom('')
-          setTo('')
-          setQ('')
-        }}
+        onClearAll={clearAll}
         summary={
           <>
             {rows.length} of {all.length} orders · <span className="fig">{gbp(shownTotal)}</span> excluding cancelled
@@ -139,7 +156,21 @@ export function History() {
         }
       />
       {rows.length === 0 ? (
-        <Empty>{all.length === 0 ? 'No orders yet.' : 'No orders match these filters.'}</Empty>
+        all.length === 0 ? (
+          <Empty action={<LinkButton href={href('/orders/drafts')}>See what needs ordering</LinkButton>}>No orders yet.</Empty>
+        ) : (
+          <Empty
+            action={
+              <Button
+                onClick={clearAll}
+              >
+                Clear the filters
+              </Button>
+            }
+          >
+            No orders match these filters.
+          </Empty>
+        )
       ) : (
         <div className="overflow-hidden rounded-card-lg bg-surface shadow-raised">
           <div className={cx('hidden gap-3 border-b border-line px-3.5 py-2 text-label font-bold uppercase tracking-[.06em] text-ink-3 compact:grid', COLS)}>
@@ -172,11 +203,9 @@ function OrderRow({ o }: { o: PurchaseOrder }) {
     <li className="border-b border-line-row last:border-b-0">
       <a
         href={href(orderPath(o.po_id))}
-        className={cx(
-          'grid grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-x-3 px-3.5 py-2.5 text-ink no-underline hover:bg-canvas-2',
-          COLS,
-          o.status === 'CANCELLED' && 'opacity-60',
-        )}
+        // A cancelled order keeps full contrast; its StatusTag (and the phone
+        // sub-line) says "Cancelled" in words.
+        className={cx('grid grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-x-3 px-3.5 py-2.5 text-ink no-underline hover:bg-canvas-2', COLS)}
       >
         <ReceiptThumb url={o.receipt_url} />
         <span className="min-w-0">
@@ -189,6 +218,7 @@ function OrderRow({ o }: { o: PurchaseOrder }) {
           <span className="block truncate text-sm text-ink-2 compact:hidden">
             {dayMonth(o.created_at)} · arrives {dayMonth(o.target_delivery_date)} · {label}
             {canReceive ? ' · ready to receive' : ''}
+            {o.receipt_url ? '' : ' · no receipt yet'}
           </span>
         </span>
         <span className="hidden text-base compact:block">{dayMonth(o.created_at)}</span>

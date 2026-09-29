@@ -53,10 +53,16 @@ from cafeops.services.loyalty.common import (
 )
 from cafeops.services.loyalty.consent import set_marketing_opt_in
 from cafeops.services.loyalty.errors import LoyaltyError
-from cafeops.services.loyalty.join import JoinRequest, check_birthday, clean_first_name, join
+from cafeops.services.loyalty.join import (
+    JoinRequest,
+    check_birthday,
+    clean_first_name,
+    contact_taken,
+    join,
+)
 from cafeops.services.loyalty.messaging import Outgoing
 from cafeops.services.loyalty.recovery import web_card_url
-from cafeops.services.loyalty.redeem import redeem, unredeem
+from cafeops.services.loyalty.redeem import online_order_code, redeem, unredeem
 from cafeops.services.loyalty.stamping import (
     _apply,
     credit_referrer,
@@ -205,19 +211,43 @@ def _undo_target(
         )
         .order_by(LoyaltyStampEvent.created_at.desc(), LoyaltyStampEvent.id.desc())
     )
-    reward = session.scalar(
-        select(LoyaltyReward)
-        .where(
-            LoyaltyReward.card_id == card.id,
-            LoyaltyReward.redeemed_at.is_not(None),
-            LoyaltyReward.voided_at.is_(None),
-        )
-        .order_by(LoyaltyReward.redeemed_at.desc(), LoyaltyReward.id.desc())
+    # A free drink given on a collected online order is never the target: `unredeem`
+    # refuses it (its sale is the paid web line, not a £0 loyalty one), so offering it
+    # as "Undo last" would be a button that always fails. It is skipped, and the next
+    # newest thing is what Undo reverses.
+    reward = next(
+        (
+            r
+            for r in session.scalars(
+                select(LoyaltyReward)
+                .where(
+                    LoyaltyReward.card_id == card.id,
+                    LoyaltyReward.redeemed_at.is_not(None),
+                    LoyaltyReward.voided_at.is_(None),
+                )
+                .order_by(LoyaltyReward.redeemed_at.desc(), LoyaltyReward.id.desc())
+            )
+            if online_order_code(session, r) is None
+        ),
+        None,
     )
     if reward is not None and reward.redeemed_at is not None:
         if event is None or reward.redeemed_at >= event.created_at:
             return None, reward
     return event, None
+
+
+def _newest_online_redemption(session: Session, card: LoyaltyCard) -> str | None:
+    """The code of the newest online order a reward on this card was redeemed on."""
+    for reward in session.scalars(
+        select(LoyaltyReward)
+        .where(LoyaltyReward.card_id == card.id, LoyaltyReward.redeemed_at.is_not(None))
+        .order_by(LoyaltyReward.redeemed_at.desc(), LoyaltyReward.id.desc())
+    ):
+        code = online_order_code(session, reward)
+        if code is not None:
+            return code
+    return None
 
 
 def _event_blocked(session: Session, event: LoyaltyStampEvent) -> bool:
@@ -529,11 +559,8 @@ class MemberPatch:
 
 
 def _taken(session: Session, member_id: int, cond: ColumnElement[bool]) -> bool:
-    """Another member holds this contact. Erased members hold none, so they never count."""
-    return (
-        session.scalar(select(LoyaltyMember.id).where(cond, LoyaltyMember.id != member_id))
-        is not None
-    )
+    """Another member holds this contact (one rule, in `join.contact_taken`)."""
+    return contact_taken(session, member_id, cond)
 
 
 def patch_member(session: Session, member_id: int, patch: MemberPatch) -> None:
@@ -661,7 +688,14 @@ def undo_last(session: Session, member_id: int) -> str:
         unredeem(session, card, reward, now=now, who="the back office")
         return "the free drink"
     if event is None:
-        raise LoyaltyError(409, "nothing_to_undo", "There is nothing on this card to undo.")
+        detail = "There is nothing on this card to undo."
+        online = _newest_online_redemption(session, card)
+        if online is not None:
+            detail += (
+                f" The free drink given on online order {online} was paid for and "
+                "collected, so it can't be undone from the card."
+            )
+        raise LoyaltyError(409, "nothing_to_undo", detail)
     reverse_with_referral(
         session,
         card,

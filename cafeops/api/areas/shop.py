@@ -8,8 +8,12 @@ What stands in for auth:
   `/me`, which needs one;
 - an order's status page needs the order's own `access_token` (`?t=` or
   `X-Order-Token`); wrong code and wrong token are the same 404;
-- placing an order is rate-limited per client IP (10 an hour) and carries a honeypot;
+- placing an order is rate-limited per client IP (20 a minute, 60 an hour, counting
+  only orders actually placed and honeypot hits: the café's Wi-Fi is one IP, and a
+  409 `price_changed` retry must not lock the whole room out) and carries a honeypot;
   catalogue reads are limited too (60 a minute), which is plenty;
+- placing an order needs a signed-in Rewards card unless the owner allows guest orders
+  (`shop_settings.guest_orders`); the refusal is 401 `sign_in_required` (§10.J);
 - the payment webhook is verified by the provider's own signature scheme.
 
 Thin like every area router: parse, hand the work to a view on a worker thread, return,
@@ -30,7 +34,10 @@ from cafeops.api.areas import shop_views as views
 from cafeops.api.areas.shop_schemas import (
     CatalogueOut,
     ConfigOut,
+    MemberOut,
+    MeOrdersOut,
     MeOut,
+    MePatchIn,
     OrderOut,
     PlacedOut,
     PlaceOrderIn,
@@ -57,22 +64,32 @@ TokenQuery = Annotated[str | None, Query(alias="t", max_length=64)]
 CACHE_30S = {"Cache-Control": "public, max-age=30"}
 
 _LIMITERS: dict[str, RateLimiter] = {
-    "orders": RateLimiter(per_minute=5, per_hour=10),
+    #: Counted on 201 and on honeypot hits only (`_check` + `_count`), not per attempt.
+    "orders": RateLimiter(per_minute=20, per_hour=60),
     "read": RateLimiter(per_minute=60, per_hour=1500),
     "me": RateLimiter(per_minute=30, per_hour=600),
 }
 
 
-def _limit(kind: str, ip: str) -> None:
-    limiter = _LIMITERS[kind]
-    wait = limiter.retry_after(ip)
+def _check(kind: str, ip: str) -> None:
+    wait = _LIMITERS[kind].retry_after(ip)
     if wait is not None:
         raise ShopError(429, "rate_limited", f"Too many tries. Wait {wait} seconds.")
-    limiter.record_failure(ip)
 
 
-def _honeypot(value: str) -> None:
+def _count(kind: str, ip: str) -> None:
+    _LIMITERS[kind].record_failure(ip)
+
+
+def _limit(kind: str, ip: str) -> None:
+    """Check, then count this attempt (reads and `/me`)."""
+    _check(kind, ip)
+    _count(kind, ip)
+
+
+def _honeypot(value: str, ip: str) -> None:
     if value.strip():
+        _count("orders", ip)
         raise ShopError(400, "rejected", "Something went wrong. Please try again.")
 
 
@@ -121,7 +138,10 @@ async def quote(body: QuoteIn, request: Request, x_card_token: CardToken = None)
     "/orders",
     response_model=PlacedOut,
     status_code=status.HTTP_201_CREATED,
-    summary="Place an order. 409 price_changed carries the fresh quote.",
+    summary=(
+        "Place an order. 401 sign_in_required without a Rewards card (unless guests may "
+        "order); 409 price_changed carries the fresh quote."
+    ),
 )
 async def place_order(
     body: PlaceOrderIn,
@@ -130,12 +150,13 @@ async def place_order(
     x_card_token: CardToken = None,
     user_agent: Annotated[str | None, Header()] = None,
 ) -> PlacedOut:
-    _honeypot(body.website)
     ip = client_ip(request)
-    _limit("orders", ip)
+    _check("orders", ip)
+    _honeypot(body.website, ip)
     placed, order_id = await in_session(
         lambda s: views.place_order_view(s, body, x_card_token, client_ip=ip, user_agent=user_agent)
     )
+    _count("orders", ip)
     if placed.status == "NEW":
         background.add_task(_after_new_order, order_id)
     return placed
@@ -208,6 +229,42 @@ async def me(
 ) -> MeOut:
     _limit("me", client_ip(request))
     return await in_session(lambda s: views.me_view(s, x_card_token, card_id))
+
+
+@open_router.get(
+    "/me/orders",
+    response_model=MeOrdersOut,
+    summary="The signed-in member's orders, newest first, paged (§10.J).",
+)
+async def me_orders(
+    request: Request,
+    x_card_token: CardToken = None,
+    card_id: Annotated[str | None, Query(max_length=36)] = None,
+    page: Annotated[int, Query(ge=1, le=10_000)] = 1,
+    page_size: Annotated[int, Query(ge=1, le=50)] = 10,
+) -> MeOrdersOut:
+    _limit("me", client_ip(request))
+    return await in_session(
+        lambda s: views.me_orders_view(s, x_card_token, card_id, page=page, page_size=page_size)
+    )
+
+
+@open_router.patch(
+    "/me",
+    response_model=MemberOut,
+    summary=(
+        "Edit my profile: name, email, phone, birthday, news and offers. Any subset; "
+        "loyalty's own rules apply (contact uniqueness, one contact kept)."
+    ),
+)
+async def me_patch(
+    body: MePatchIn,
+    request: Request,
+    x_card_token: CardToken = None,
+    card_id: Annotated[str | None, Query(max_length=36)] = None,
+) -> MemberOut:
+    _limit("me", client_ip(request))
+    return await in_session(lambda s: views.me_patch_view(s, x_card_token, card_id, body))
 
 
 @open_router.post(

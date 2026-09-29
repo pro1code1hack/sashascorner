@@ -7,6 +7,9 @@ import { shopApi, shopError } from '../api';
 import { gbp } from '../format';
 import { paths, route } from '../router';
 import { basket, config } from '../store';
+import { member, signedIn } from '../member';
+import { accountHref } from '../account/SignInWall';
+import { useTitle } from '../views/useTitle';
 import type { OrderView } from '../types';
 import { Button, Notice, Sheet } from '../ui';
 import { EmptyState, PageHead, SectionLabel, Statement, displayCode, loadOrderToken, localTime, saveOrderToken, takePending, useShopData } from '../checkout/common';
@@ -21,6 +24,7 @@ type State = 'loading' | 'ok' | 'notoken' | 'notfound' | 'error';
 export function Status() {
   useShopData();
   const code = route.value.params.code ?? '';
+  useTitle(`Order ${displayCode(code)}`, true);
   const [paid] = useState(() => route.value.query.get('paid') === '1');
   const [token] = useState<string | null>(() => {
     const t = route.value.query.get('t');
@@ -295,6 +299,18 @@ export function Status() {
         <p style="margin-top:12px">
           {order.collection_note || `Collect from ${cafe ? `${cafe.address_line}, ${cafe.postcode}` : '23 Commercial Street, DD1 3DD'}. Say your name or show the order code.`}
         </p>
+        {signedIn.value && member.value ? (
+          <p class="sd-muted" style="margin-top:10px">
+            Signed in as {member.value.first_name} · stamps added when you collect
+          </p>
+        ) : !signedIn.value && config.value && !config.value.require_account ? (
+          <p class="sd-muted" style="margin-top:10px">
+            <a class="sd-link" href={accountHref('join', null)}>
+              Create an account
+            </a>{' '}
+            to earn stamps on your next order.
+          </p>
+        ) : null}
       </section>
 
       <section class="sd-sec" aria-labelledby="sd-lines">

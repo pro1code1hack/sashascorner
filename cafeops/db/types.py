@@ -44,10 +44,6 @@ QTY_PRECISION = 18
 QTY_SCALE = 6
 
 
-#: The integer factor a value is multiplied by for SQLite storage.
-_SCALE_FACTOR = Decimal(10) ** QTY_SCALE
-
-
 class Qty(TypeDecorator[Decimal]):
     """An exact Decimal quantity that survives SQLite AND compares correctly."""
 
@@ -122,6 +118,10 @@ class UTCDateTime(TypeDecorator[datetime]):
     def process_result_value(self, value: Any, dialect: Dialect) -> datetime | None:
         if value is None:
             return None
+        if not isinstance(value, datetime):
+            # The impl's own result processor has already run, so anything but a
+            # datetime here is a driver returning something this column never stored.
+            raise TypeError(f"expected datetime from the driver, got {type(value)!r}")
         if value.tzinfo is None:
             return value.replace(tzinfo=UTC)
         return value.astimezone(UTC)

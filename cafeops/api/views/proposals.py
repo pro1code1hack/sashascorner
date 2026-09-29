@@ -29,6 +29,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from cafeops.api.params import HTTP_422
 from cafeops.api.schemas import (
     MaterialiseIn,
     MaterialiseResponse,
@@ -147,9 +148,8 @@ def materialise_proposal_view(
 ) -> MaterialiseResponse:
     """Confirm one proposal into real composition rows.
 
-    `materialise_proposal` commits its own transaction, so this must not be
-    wrapped in an outer commit that could roll part of it back -- the same
-    arrangement as `apply_edit_view`.
+    `materialise_proposal` only flushes; `runtime.in_session` owns the commit, the
+    same arrangement as `apply_edit_view` (ARCHITECTURE 8Y).
     """
     try:
         report = materialise_proposal(
@@ -161,7 +161,7 @@ def materialise_proposal_view(
         )
     except AmbiguousProposal as exc:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=HTTP_422,
             detail={"message": str(exc)},
         ) from None
     except ProposalNotFound:
@@ -178,7 +178,7 @@ def materialise_proposal_view(
         ) from None
     except ProposalHasConflicts as exc:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=HTTP_422,
             detail={"message": str(exc)},
         ) from None
 

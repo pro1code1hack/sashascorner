@@ -93,7 +93,7 @@ from cafeops.domain.types import (
     Tier,
     Unit,
 )
-from cafeops.domain.units import convert
+from cafeops.domain.units import convert, pounds
 
 __all__ = [
     "DEFAULT_FREE_DELIVERY_TOP_UP_MULTIPLE",
@@ -133,13 +133,6 @@ DEFAULT_FREE_DELIVERY_TOP_UP_MULTIPLE = Decimal("3")
 
 class OrderingError(ValueError):
     """Supplier or par data that cannot produce an honest order size."""
-
-
-def pounds(pence: int) -> str:
-    """Integer pence -> "£12.34". Integer arithmetic only (invariant 8)."""
-    sign = "-" if pence < 0 else ""
-    whole, part = divmod(abs(pence), 100)
-    return f"{sign}£{whole}.{part:02d}"
 
 
 def _shown(qty: Decimal) -> str:

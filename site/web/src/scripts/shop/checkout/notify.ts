@@ -85,10 +85,13 @@ export async function subscribeToOrder(code: string, token: string, cfg: PushCon
 export async function unsubscribeFromOrder(code: string, token: string): Promise<Outcome> {
   try {
     const sub = await currentSubscription();
-    await fetch(orderUrl(code, token), {
+    // The API reads the endpoint from the query string; without it every device on the
+    // order would be unsubscribed, not just this one.
+    const url = new URL(orderUrl(code, token), location.origin);
+    if (sub) url.searchParams.set('endpoint', sub.endpoint);
+    await fetch(url.toString(), {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-Order-Token': token },
-      body: JSON.stringify(sub ? { endpoint: sub.endpoint, keys: sub.toJSON().keys ?? {} } : {}),
+      headers: { Accept: 'application/json', 'X-Order-Token': token },
       credentials: 'same-origin',
     });
     if (sub) await sub.unsubscribe();

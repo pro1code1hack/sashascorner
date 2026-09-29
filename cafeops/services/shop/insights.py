@@ -19,11 +19,13 @@ from __future__ import annotations
 from collections import defaultdict
 from collections.abc import Iterable
 from dataclasses import dataclass, field
-from datetime import UTC, date, datetime, time, timedelta
+from datetime import date, datetime, timedelta
+from decimal import ROUND_HALF_EVEN, Decimal
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
+from cafeops.clock import local_day_bounds, local_today, utcnow
 from cafeops.config import settings
 from cafeops.db.models.shop import (
     DiningOption,
@@ -151,10 +153,6 @@ class ShopInsights:
 # --------------------------------------------------------------------------
 
 
-def _day_start_utc(day: date) -> datetime:
-    return datetime.combine(day, time.min, tzinfo=settings.tz).astimezone(UTC)
-
-
 def _local(at: datetime) -> datetime:
     return at.astimezone(settings.tz)
 
@@ -184,7 +182,10 @@ class _Window:
     def avg_basket(self) -> int | None:
         if not self.collected:
             return None
-        return round(self.revenue / len(self.collected))
+        # Integer pence, exact (invariant 11). Half-even, which is what the `round(float)`
+        # this replaced did, so the figure is unchanged.
+        mean = Decimal(self.revenue) / len(self.collected)
+        return int(mean.quantize(Decimal(1), rounding=ROUND_HALF_EVEN))
 
 
 def _window(orders: Iterable[ShopOrder]) -> _Window:
@@ -202,7 +203,7 @@ def resolve_window(
     *, since: date | None, until: date | None, days: int, today: date | None = None
 ) -> tuple[date, date]:
     """`from`/`to` win; otherwise the last `days` days ending today (local)."""
-    today = today or datetime.now(settings.tz).date()
+    today = today or local_today(settings.tz)
     if since is not None and until is not None:
         if until < since:
             since, until = until, since
@@ -222,14 +223,13 @@ def shop_insights(
     days: int = 30,
     now: datetime | None = None,
 ) -> ShopInsights:
-    now = now or datetime.now(UTC)
+    now = now or utcnow()
     since, until = resolve_window(since=since, until=until, days=days, today=_local(now).date())
     length = (until - since).days + 1
     prev_until = since - timedelta(days=1)
     prev_since = prev_until - timedelta(days=length - 1)
 
-    start = _day_start_utc(prev_since)
-    end = _day_start_utc(until + timedelta(days=1))
+    start, end = local_day_bounds(prev_since, until, tz=settings.tz)
     rows = list(
         session.scalars(
             select(ShopOrder)
@@ -238,7 +238,7 @@ def shop_insights(
             .order_by(ShopOrder.requested_at, ShopOrder.id)
         )
     )
-    cut = _day_start_utc(since)
+    cut = local_day_bounds(since, tz=settings.tz)[0]
     current = _window(o for o in rows if o.requested_at >= cut)
     previous = _window(o for o in rows if o.requested_at < cut)
 

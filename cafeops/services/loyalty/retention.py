@@ -19,11 +19,12 @@ What erasure does, in one function so all three paths agree:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, datetime, time
+from datetime import datetime
 
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
+from cafeops.clock import local_day_bounds, local_today
 from cafeops.config import settings
 from cafeops.db.models import LoyaltyCard, LoyaltyMember, LoyaltyOtp, LoyaltyReward
 from cafeops.domain.loyalty import RETENTION_MONTHS, months_before
@@ -78,9 +79,8 @@ def erase_member(session: Session, member_id: int, *, why: str) -> None:
 
 def retention_cutoff(now: datetime) -> datetime:
     """Start of the local day 24 calendar months ago."""
-    local = now.astimezone(settings.tz).date()
-    cutoff = months_before(local, RETENTION_MONTHS)
-    return datetime.combine(cutoff, time.min, tzinfo=settings.tz).astimezone(UTC)
+    cutoff = months_before(local_today(settings.tz, now=now), RETENTION_MONTHS)
+    return local_day_bounds(cutoff, tz=settings.tz)[0]
 
 
 @dataclass(frozen=True, slots=True)

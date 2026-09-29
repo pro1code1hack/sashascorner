@@ -8,7 +8,8 @@
  * closure) goes to everyone with a card.
  */
 import { useId, useState } from 'react'
-import { Button, Checkbox, ConfirmTwiceButton, Field, Input, Segmented, Textarea, WarnBox, cx } from '../../../components/ui'
+import { Button, Checkbox, ConfirmTwiceButton, Field, Input, Segmented, StatusLine, Textarea, WarnBox, cx } from '../../../components/ui'
+import type { Outcome } from '../../../components/ui'
 import { loyaltyApi, useInvalidateLoyalty } from '../../../lib/loyalty-api'
 import type { LoyaltyCampaignSegment, LoyaltyCampaignsResponse } from '../../../lib/types/loyalty'
 import { people, segmentPhrase, weekdayDateTime } from './words'
@@ -44,7 +45,7 @@ export function Composer({ data }: { data: LoyaltyCampaignsResponse }) {
   const [when, setWhen] = useState<'now' | 'later'>('now')
   const [at, setAt] = useState('')
   const [pending, setPending] = useState(false)
-  const [result, setResult] = useState<{ bad: boolean; text: string } | null>(null)
+  const [result, setResult] = useState<Outcome | null>(null)
 
   const text = message.trim()
   const n = reach(data, segment, promo)
@@ -82,12 +83,12 @@ export function Composer({ data }: { data: LoyaltyCampaignsResponse }) {
     })
     setPending(false)
     if (r.kind !== 'ok') {
-      setResult({ bad: true, text: r.message })
+      setResult({ kind: 'error', text: r.message })
       return
     }
     const c = r.data
     setResult({
-      bad: false,
+      kind: 'ok',
       text:
         c.status === 'sent'
           ? `Sent to ${people(c.recipients ?? 0)}.`
@@ -111,7 +112,7 @@ export function Composer({ data }: { data: LoyaltyCampaignsResponse }) {
       {/* The lock screen: dark on purpose, it is a picture of the phone, not the app. */}
       <div className="rounded-card bg-ink px-3.5 py-3 text-white" aria-label="Lock screen preview">
         <div className="flex items-start gap-3">
-          <span className="grid size-9 flex-none place-items-center rounded-[9px] bg-surface text-base font-extrabold text-ink" aria-hidden="true">
+          <span className="grid size-9 flex-none place-items-center rounded-sm bg-surface text-base font-extrabold text-ink" aria-hidden="true">
             S
           </span>
           <div className="min-w-0 flex-1">
@@ -224,12 +225,19 @@ export function Composer({ data }: { data: LoyaltyCampaignsResponse }) {
         </WarnBox>
       )}
 
-      {limitReached ? (
+      {/* Sending pushes a lock-screen notification that cannot be taken back: always two taps. */}
+      {when === 'now' ? (
         <ConfirmTwiceButton
           variant="primary"
           size="lg"
           className="w-full"
-          armedLabel="Tap again to send anyway"
+          armedLabel={
+            limitReached
+              ? 'Tap again to send anyway'
+              : n === null
+                ? 'Tap again to send it'
+                : `Tap again to send to ${people(n)}`
+          }
           onConfirm={submit}
           disabled={!ready}
           pending={pending}
@@ -243,11 +251,7 @@ export function Composer({ data }: { data: LoyaltyCampaignsResponse }) {
         </Button>
       )}
 
-      {result && (
-        <p role="status" className={cx('text-sm', result.bad ? 'text-bad-ink' : 'text-ok-ink')}>
-          {result.text}
-        </p>
-      )}
+      <StatusLine outcome={result} />
     </section>
   )
 }

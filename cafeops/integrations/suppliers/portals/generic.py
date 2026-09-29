@@ -34,6 +34,26 @@ things:
     forbidden_controls  [..regex..]               optional, ADDED to the defaults
     subtotal_labels     [..regex..]               optional, tried before the defaults
     hints         "free text for the model"       optional, appended to agent_hints()
+    prefers_headed      true|false                optional (default false), Tier 2
+
+Tier 0 without code (`cart_link`), for a shop whose basket can be built from a URL:
+
+    cart_link_template  "https://shop.example/cart/{items}"   `{items}` is expanded
+    cart_item_key       "sku" | "variant_id_from_url"          what identifies a line:
+                                                               its SKU, or the
+                                                               `?variant=<id>` in its
+                                                               product URL
+    cart_item_format    "{id}:{qty}"                           optional, per item
+    cart_item_sep       ","                                    optional, between items
+
+Tier 1 without code (`quick_order`), for a shop with a product-code order pad:
+
+    quick_order_url          "https://shop.example/quick-order"   enables the pad
+    quick_order_submit_names [..regex..]      optional, tried before the defaults
+    quick_order_hints        "free text"      optional, replaces the generated hints
+
+Both are optional; without them the generic adapter has no Tier 0 / Tier 1: it is not
+a `base.QuickOrderCapable` (no `quick_order_url` attribute) and `cart_link` returns None.
 
 What the generic adapter scripts: the sign-in check from the header, an add by
 product URL (quantity input + "Add to basket" button, verified by reading the
@@ -44,9 +64,10 @@ basket), and the basket via the shared best-effort reader. Every doubt raises
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 from dataclasses import replace
 from typing import Any
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Page
@@ -54,6 +75,7 @@ from playwright.sync_api import TimeoutError as PlaywrightTimeout
 
 from cafeops.integrations.suppliers.portals._common import (
     LOCATOR_TIMEOUT_MS,
+    QUICK_ORDER_SUBMIT_NAMES,
     SUBTOTAL_LABELS,
     HeuristicPortal,
     dismiss_cookie_banner,
@@ -62,6 +84,8 @@ from cafeops.integrations.suppliers.portals._common import (
     find_row,
     first_visible,
     goto,
+    quick_order_generic,
+    quick_order_hints_text,
     set_quantity,
     wait_settled,
 )
@@ -69,8 +93,10 @@ from cafeops.integrations.suppliers.portals.base import (
     DEFAULT_FORBIDDEN_CONTROLS,
     DEFAULT_FORBIDDEN_URLS,
     BasketLine,
+    CartLinkPlan,
     PortalPolicy,
     PortalStepFailed,
+    QuickOrderResult,
     SupplierPortal,
     portal_for_supplier,
     register_portal,
@@ -151,10 +177,48 @@ class GenericPortal(HeuristicPortal):
             self.subtotal_labels = extra + SUBTOTAL_LABELS
         else:
             self.policy = _UNCONFIGURED_POLICY
+        self._configure_tiers()
+
+    #: Tier 0 template (module docstring); empty when the shop has none.
+    cart_link_template: str = ""
+    cart_item_key: str = "sku"
+    cart_item_format: str = "{id}:{qty}"
+    cart_item_sep: str = ","
+
+    def _configure_tiers(self) -> None:
+        """Read the optional Tier 0 / Tier 1 / Tier 2 keys. Misconfiguration raises
+        `ValueError` here, at bind time, never on the first job."""
+        cfg = self.config
+        self.prefers_headed = bool(cfg.get("prefers_headed", False))
+        template = str(cfg.get("cart_link_template") or "").strip()
+        if template:
+            if "{items}" not in template:
+                raise ValueError("cart_link_template must contain '{items}'")
+            host = urlparse(template).hostname or ""
+            if not self.policy.host_allowed(host):
+                raise ValueError(f"cart_link_template host {host!r} is not in hosts")
+            key = str(cfg.get("cart_item_key") or "sku")
+            if key not in ("sku", "variant_id_from_url"):
+                raise ValueError("cart_item_key must be 'sku' or 'variant_id_from_url'")
+            self.cart_link_template = template
+            self.cart_item_key = key
+            self.cart_item_format = str(cfg.get("cart_item_format") or "{id}:{qty}")
+            self.cart_item_sep = str(cfg.get("cart_item_sep") or ",")
+        pad = str(cfg.get("quick_order_url") or "").strip()
+        if pad:
+            host = urlparse(pad).hostname or ""
+            if not self.policy.host_allowed(host):
+                raise ValueError(f"quick_order_url host {host!r} is not in hosts")
+            forbidden = self.policy.url_forbidden(pad)
+            if forbidden:
+                raise ValueError(f"quick_order_url matches forbidden pattern {forbidden!r}")
+            # Set only when configured, so `isinstance(portal, QuickOrderCapable)` is
+            # the capability check (base.QuickOrderCapable).
+            self.quick_order_url = pad
 
     # -- guards --------------------------------------------------------------
 
-    def bind(self, supplier: Any) -> GenericPortal | None:
+    def bind(self, supplier: Any) -> GenericPortal:
         """Registry hook: a per-supplier instance from `channel_config` when this is
         the unconfigured default and the config is complete; else this instance."""
         if self.configured:
@@ -183,6 +247,94 @@ class GenericPortal(HeuristicPortal):
     def read_basket(self, page: Page) -> tuple[tuple[dict[str, Any], ...], int | None]:
         self._require_configured()
         return super().read_basket(page)
+
+    # -- tier 0: the basket as a URL -----------------------------------------
+
+    def _cart_item_id(self, line: BasketLine) -> tuple[str | None, str]:
+        if self.cart_item_key == "variant_id_from_url":
+            if not line.product_url:
+                return None, "no product URL to take ?variant= from"
+            variant = parse_qs(urlparse(line.product_url).query).get("variant", [None])[0]
+            if not variant:
+                return None, "product URL has no ?variant=<id>"
+            return str(variant).strip(), "variant from the product URL"
+        sku = (line.sku or "").strip()
+        if not sku:
+            return None, "no SKU"
+        return sku, "SKU"
+
+    def cart_link(self, lines: Sequence[BasketLine]) -> CartLinkPlan | None:
+        """`channel_config.cart_link_template` with `{items}` expanded to the lines
+        (module docstring). None when the shop has no template or there are no
+        lines; a line without its identifier is `uncovered` with the reason."""
+        if not self.cart_link_template or not lines:
+            return None
+        items: dict[str, int] = {}
+        covered: list[int] = []
+        uncovered: dict[int, str] = {}
+        refs: dict[int, str] = {}
+        for line in lines:
+            item_id, note = self._cart_item_id(line)
+            if item_id is None:
+                uncovered[line.po_line_id] = note
+                continue
+            if line.packs_wanted < 1:
+                uncovered[line.po_line_id] = "quantity is zero"
+                continue
+            items[item_id] = items.get(item_id, 0) + line.packs_wanted
+            covered.append(line.po_line_id)
+            refs[line.po_line_id] = f"{note} {item_id}" if note == "SKU" else f"variant {item_id}"
+        if items:
+            expanded = self.cart_item_sep.join(
+                self.cart_item_format.format(id=i, qty=q) for i, q in items.items()
+            )
+            url = self.cart_link_template.replace("{items}", expanded)
+        else:
+            url = self.policy.basket_url
+        count = len(items)
+        return CartLinkPlan(
+            url=url,
+            covered=tuple(covered),
+            uncovered=uncovered,
+            label=f"{self.label} cart link, {count} item{'' if count == 1 else 's'}",
+            refs=refs,
+        )
+
+    # -- tier 1: the product-code pad ----------------------------------------
+
+    def quick_order(self, page: Page, lines: Sequence[BasketLine]) -> QuickOrderResult:
+        """The shared pad driver at `channel_config.quick_order_url`. Raises
+        `PortalStepFailed` when no pad is configured (the runner should not have
+        called it: `quick_order_url` is the capability check)."""
+        self._require_configured()
+        pad = getattr(self, "quick_order_url", None)
+        if not pad:
+            raise PortalStepFailed("no quick-order pad configured for this shop")
+        extra = tuple(str(p) for p in self.config.get("quick_order_submit_names", ()))
+        return quick_order_generic(
+            page,
+            self.policy,
+            str(pad),
+            lines,
+            submit_names=(*extra, *QUICK_ORDER_SUBMIT_NAMES),
+            read_basket=self.read_basket,
+        )
+
+    def quick_order_hints(self) -> str:
+        custom = str(self.config.get("quick_order_hints") or "").strip()
+        if custom:
+            return custom
+        pad = getattr(self, "quick_order_url", None)
+        if not pad:
+            return "This shop has no quick-order pad configured; add each line by product."
+        return quick_order_hints_text(
+            label=f"{self.label} ({self.policy.allowed_hosts[0]})",
+            pad_url=str(pad),
+            basket_url=self.policy.basket_url,
+            columns="a product code box and a quantity box per row",
+            submit="the button under the pad called 'Add to basket' / 'Add to cart' / "
+            "'Find products' / 'Add all'",
+        )
 
     # -- add -----------------------------------------------------------------
 

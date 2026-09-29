@@ -17,8 +17,9 @@
  * Nothing is deleted (sizes and items are taken off, never removed), and
  * who-changed-what is not shown here (owner's instruction).
  */
-import { useEffect, useMemo, useState } from 'react'
-import { Button, ErrorBox, IconButton, InfoPanel, Input, Loading, Select, SizeTile, TitleInput, Toggle, cx } from '../../components/ui'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Button, ErrorBox, IconButton, InfoPanel, Input, Loading, Select, SizeTile, StatusLine, TitleInput, Toggle, cx } from '../../components/ui'
+import type { Outcome } from '../../components/ui'
 import { fromInt, fromMoney, mul, parseDec, sub } from '../../lib/dec'
 import { menuApi, useFetchMenuItem, useIngredients, useInvalidateMenu, useMenuItem, useMenuItems } from '../../lib/menu-api'
 import { useOperator } from '../../lib/operator'
@@ -94,17 +95,8 @@ export function ItemPage({ menuItemId }: { menuItemId: number }) {
           {detail.error && <ErrorBox error={detail.error} what="this item" />}
           {d && g && (
             <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_420px]">
-              <aside className="flex flex-col gap-4 xl:sticky xl:top-4 xl:order-last">
-                <Panel>
-                  <div className="grid gap-4 sm:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-1">
-                    <PhotoSlot menuItemId={d.size.menu_item_id} url={g.photo_url} name={g.name} tall />
-                    <Actions detail={d} />
-                  </div>
-                </Panel>
-                <Panel>
-                  <ShopPreview menuItemId={d.size.menu_item_id} />
-                </Panel>
-              </aside>
+              {/* Main column first in the DOM (figures before actions for a screen
+                  reader); the side column keeps its place on screen with `order`. */}
               <div className="flex min-w-0 flex-col gap-4">
                 <Panel>
                   <Details key={g.anchor_id} detail={d} categories={list.data?.categories ?? []} />
@@ -128,6 +120,20 @@ export function ItemPage({ menuItemId }: { menuItemId: number }) {
                   />
                 </Panel>
               </div>
+              <aside className="order-first flex flex-col gap-4 xl:sticky xl:top-4 xl:order-none" aria-labelledby="mi-side">
+                <Panel>
+                  <h2 id="mi-side" className="sr-only">
+                    Photo and actions
+                  </h2>
+                  <div className="grid gap-4 sm:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-1">
+                    <PhotoSlot menuItemId={d.size.menu_item_id} url={g.photo_url} name={g.name} tall />
+                    <Actions detail={d} />
+                  </div>
+                </Panel>
+                <Panel>
+                  <ShopPreview menuItemId={d.size.menu_item_id} />
+                </Panel>
+              </aside>
             </div>
           )}
         </div>
@@ -151,7 +157,7 @@ function Details({ detail, categories }: { detail: MenuItemDetail; categories: M
   const [note, setNote] = useState(group.note ?? '')
   const [operator] = useOperator()
   const [busy, setBusy] = useState(false)
-  const [msg, setMsg] = useState<string | null>(null)
+  const [outcome, setOutcome] = useState<Outcome | null>(null)
   const invalidate = useInvalidateMenu()
   useEffect(() => {
     setName(group.name)
@@ -165,9 +171,9 @@ function Details({ detail, categories }: { detail: MenuItemDetail; categories: M
     const r = await menuApi.group(group.anchor_id, { actor: operator, ...body })
     setBusy(false)
     if (r.kind === 'ok') {
-      setMsg(null)
+      setOutcome({ kind: 'ok', text: 'active' in body ? (body.active ? 'Back on the menu.' : 'Taken off the menu.') : 'Saved.' })
       await invalidate()
-    } else setMsg(r.message)
+    } else setOutcome({ kind: 'error', text: r.message })
   }
   const names = [...new Set([...categories.map((c) => c.name).filter(Boolean), group.category ?? ''])]
     .filter(Boolean)
@@ -196,12 +202,7 @@ function Details({ detail, categories }: { detail: MenuItemDetail; categories: M
           </label>
         </div>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-          <Toggle
-            checked={group.is_active}
-            onChange={(v) => save({ active: v })}
-            disabled={operator === null || busy}
-            label={group.is_active ? 'On the menu' : 'Off the menu'}
-          />
+          <Toggle checked={group.is_active} onChange={(v) => save({ active: v })} disabled={operator === null || busy} label="On the menu" />
           {group.season_name && <span className="text-sm text-ink-2">Seasonal: {group.season_name}</span>}
           {!group.on_till && (
             <span className="text-sm text-ink-2">Not on the till yet: sales are not counted until it is matched in Lightspeed.</span>
@@ -239,11 +240,7 @@ function Details({ detail, categories }: { detail: MenuItemDetail; categories: M
             {name.trim() !== group.name && <span className="text-sm text-ink-2">Renaming changes it here only; the till keeps its own name.</span>}
           </div>
         )}
-        {msg && (
-          <p role="alert" className="text-sm text-bad-ink">
-            {msg}
-          </p>
-        )}
+        <StatusLine outcome={outcome} />
     </div>
   )
 }
@@ -272,7 +269,7 @@ function SizesSection({ group, current }: { group: MenuGroup; current: MenuSize 
   useEffect(() => setPrices(initialPrices), [initialPrices])
   useEffect(() => setTimes(initialTimes), [initialTimes])
   const [timesEst, setTimesEst] = useState(group.sizes.some((s) => s.prep_is_estimate))
-  const [msg, setMsg] = useState<string | null>(null)
+  const [outcome, setOutcome] = useState<Outcome | null>(null)
   const [applying, setApplying] = useState(false)
   const [savingTimes, setSavingTimes] = useState(false)
 
@@ -310,9 +307,9 @@ function SizesSection({ group, current }: { group: MenuGroup; current: MenuSize 
         <h2 id="mi-sizes" className="text-xl font-extrabold tracking-[-.01em]">
           Sizes, prices and time to make
         </h2>
-        <span className="text-sm text-ink-2">Labour at the loaded hourly rate. Margins under 60% are marked.</span>
+        <span className="text-sm text-ink-2">Staff time at £14.50/hour. Margins under 60% are marked.</span>
       </div>
-      <div className={cx('hidden gap-3 border-b border-line pb-1.5 text-label font-bold uppercase tracking-[.06em] text-ink-3 sm:grid', SIZE_GRID)}>
+      <div aria-hidden="true" className={cx('hidden gap-3 border-b border-line pb-1.5 text-label font-bold uppercase tracking-[.06em] text-ink-3 sm:grid', SIZE_GRID)}>
         <span>Size</span>
         <span>Price</span>
         <span className="text-right">Ingredients</span>
@@ -336,6 +333,7 @@ function SizesSection({ group, current }: { group: MenuGroup; current: MenuSize 
             )}
           >
             <span className="col-span-2 flex items-center gap-2 font-extrabold sm:col-span-1">
+              <span className="sr-only">Size </span>
               {sizeLabel(s.size_code)}
               {!s.active && <span className="text-xs font-bold text-ink-2">off</span>}
             </span>
@@ -355,7 +353,7 @@ function SizesSection({ group, current }: { group: MenuGroup; current: MenuSize 
                 }
               />
             </label>
-            <Fig label="Ingredients" est={s.cost.is_estimate} title={s.cost.is_missing ? (s.cost.note ?? 'cost unknown') : undefined}>
+            <Fig label="Ingredients" est={s.cost.is_estimate} note={s.cost.is_missing ? (s.cost.note ?? 'cost unknown') : undefined}>
               {s.cost.is_missing || s.cost.pence === null ? 'unknown' : costText(s.cost)}
             </Fig>
             <Fig label="Margin" est={s.cost.is_estimate} alert={m !== null && m < 60}>
@@ -388,9 +386,9 @@ function SizesSection({ group, current }: { group: MenuGroup; current: MenuSize 
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="text-sm text-ink-2">Add a size:</span>
           {missing.map((sz) => (
-            <button
+            <Button
               key={sz}
-              type="button"
+              variant="add"
               disabled={operator === null}
               onClick={async () => {
                 if (!operator) return
@@ -403,12 +401,11 @@ function SizesSection({ group, current }: { group: MenuGroup; current: MenuSize 
                 if (r.kind === 'ok') {
                   await invalidate()
                   if (r.data.menu_item_ids[0] !== undefined) openSize(r.data.menu_item_ids[0])
-                } else setMsg(r.message)
+                } else setOutcome({ kind: 'error', text: r.message })
               }}
-              className="h-8 rounded-button border-[1.5px] border-dashed border-line-strong px-3 text-sm text-ink-2 hover:bg-canvas disabled:opacity-50"
             >
               + {sizeLabel(sz)}
-            </button>
+            </Button>
           ))}
           <span className="text-xs text-ink-2">copies this size&rsquo;s recipe and price</span>
         </div>
@@ -443,9 +440,9 @@ function SizesSection({ group, current }: { group: MenuGroup; current: MenuSize 
               const r = await menuApi.prep(current.menu_item_id, changedTimes, timesEst, operator)
               setSavingTimes(false)
               if (r.kind === 'ok') {
-                setMsg(`Saved. ${r.data.summary}`)
+                setOutcome({ kind: 'ok', text: `Saved. ${r.data.summary}` })
                 await invalidate()
-              } else setMsg(r.message)
+              } else setOutcome({ kind: 'error', text: r.message })
             }}
           >
             Save times
@@ -470,38 +467,37 @@ function SizesSection({ group, current }: { group: MenuGroup; current: MenuSize 
             const r = await menuApi.pricesApply(changedPrices, operator)
             setApplying(false)
             if (r.kind === 'ok') {
-              setMsg(`Prices set from today. ${r.data.pos_actions.join(' ')}`)
+              setOutcome({ kind: 'ok', text: `Prices set from today. ${r.data.pos_actions.join(' ')}` })
               await invalidate()
-            } else setMsg(r.message)
+            } else setOutcome({ kind: 'error', text: r.message })
           }}
         />
       )}
-      {msg && (
-        <p role="status" className="text-sm">
-          {msg}
-        </p>
-      )}
+      <StatusLine outcome={outcome} />
     </section>
   )
 }
 
+/** A figure cell. The label is visible on a phone and read (not hidden) above `sm`. */
 function Fig({
   label,
   children,
   est,
   alert,
-  title,
+  note,
 }: {
   label: string
   children: React.ReactNode
   est?: boolean
   alert?: boolean
-  title?: string
+  /** Why the figure is what it is ("no price for oat milk"): printed, never only a tooltip. */
+  note?: string
 }) {
   return (
-    <span className="flex items-baseline justify-between gap-2 sm:block sm:text-right" title={title}>
-      <span className="text-xs font-bold text-ink-2 sm:hidden">{label}</span>
+    <span className="flex items-baseline justify-between gap-2 sm:block sm:text-right">
+      <span className="text-xs font-bold text-ink-2 sm:sr-only">{label} </span>
       <span className={cx('fig', est && 'italic', alert && 'font-bold text-alert')}>{children}</span>
+      {note && <span className="block text-xs font-normal text-ink-2">{note}</span>}
     </span>
   )
 }
@@ -623,8 +619,11 @@ function LinesEditor({ detail }: { detail: MenuItemDetail }) {
   const [fresh, setFresh] = useState<string | null>(null)
   const [operator] = useOperator()
   const [applying, setApplying] = useState(false)
-  const [done, setDone] = useState<string | null>(null)
+  const [done, setDone] = useState<Outcome | null>(null)
   const invalidate = useInvalidateMenu()
+  // Focus after "Remove": the previous line's remove button, else "+ Add ingredient".
+  const removeRefs = useRef<Array<HTMLButtonElement | null>>([])
+  const addRef = useRef<HTMLButtonElement>(null)
   useEffect(() => {
     setLines(saved)
     setCopyAll(false)
@@ -658,15 +657,20 @@ function LinesEditor({ detail }: { detail: MenuItemDetail }) {
     try {
       const other = await fetchItem(s.menu_item_id)
       if (!other.lines.length) {
-        setDone(`Size ${sizeLabel(s.size_code)} has no ingredients to copy.`)
+        setDone({ kind: 'info', text: `Size ${sizeLabel(s.size_code)} has no ingredients to copy.` })
         return
       }
       const stamp = Date.now()
       setLines(other.lines.map((l, i) => ({ key: `c${stamp}-${i}`, ingredient_id: l.ingredient_id, qty: l.qty, unit: l.unit })))
-      setDone(`Copied ${other.lines.length} ingredients from ${sizeLabel(s.size_code)}. Adjust the amounts, then save.`)
+      setDone({ kind: 'ok', text: `Copied ${other.lines.length} ingredients from ${sizeLabel(s.size_code)}. Adjust the amounts, then save.` })
     } catch {
-      setDone(`Could not load size ${sizeLabel(s.size_code)}.`)
+      setDone({ kind: 'error', text: `Could not load size ${sizeLabel(s.size_code)}.` })
     }
+  }
+  const remove = (i: number) => {
+    const target = removeRefs.current[i - 1] ?? addRef.current
+    setLines((ls) => ls.filter((_, j) => j !== i))
+    target?.focus()
   }
 
   return (
@@ -675,14 +679,10 @@ function LinesEditor({ detail }: { detail: MenuItemDetail }) {
         <div className="flex flex-wrap items-center gap-1.5 pb-1">
           <span className="text-sm text-ink-2">Copy ingredients from</span>
           {sources.map((s) => (
-            <button
-              key={s.menu_item_id}
-              type="button"
-              onClick={() => void copyFrom(s)}
-              className="h-8 rounded-button border border-line-control px-3 text-sm font-bold text-brand-ink hover:bg-brand-wash"
-            >
+            <Button key={s.menu_item_id} variant="outline" size="md" className="font-bold text-brand-ink" onClick={() => void copyFrom(s)}>
               {sizeLabel(s.size_code)}
-            </button>
+              <span className="sr-only"> (copy its ingredients)</span>
+            </Button>
           ))}
         </div>
       )}
@@ -701,29 +701,38 @@ function LinesEditor({ detail }: { detail: MenuItemDetail }) {
         const cost = lineCost(l, ing)
         const units = ing ? compatibleUnits(ing.unit) : (['EACH'] as Unit[])
         const inRecipe = new Set(lines.filter((_, j) => j !== i).flatMap((x) => (x.ingredient_id === null ? [] : [x.ingredient_id])))
+        const who = ing?.name ?? `line ${i + 1}`
         return (
           <div
             key={l.key}
             className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-line-row pb-2 sm:grid-cols-[minmax(0,1fr)_96px_84px_80px_40px]"
           >
             <IngredientPicker
+              label={`Ingredient, ${who}`}
               value={l.ingredient_id}
               options={options}
               inRecipe={inRecipe}
               autoOpen={l.key === fresh}
               onPick={(id) => set(i, { ingredient_id: id, unit: byId.get(id)?.unit ?? null })}
             />
-            <IconButton label="Remove line" onClick={() => setLines((ls) => ls.filter((_, j) => j !== i))} className="sm:order-last" />
+            <IconButton
+              ref={(el) => {
+                removeRefs.current[i] = el
+              }}
+              label={`Remove ${who}`}
+              onClick={() => remove(i)}
+              className="sm:order-last"
+            />
             <div className="col-span-2 flex items-center gap-2 sm:contents">
               <Input
                 numeric
                 size="sm"
-                aria-label="Quantity"
+                aria-label={`Quantity of ${who}`}
                 value={l.qty}
                 onChange={(e) => QTY_INPUT.test(e.target.value) && set(i, { qty: e.target.value })}
                 className="w-[96px]"
               />
-              <Select aria-label="Unit" value={l.unit ?? ''} onChange={(e) => set(i, { unit: e.target.value as Unit })} className="w-[84px]">
+              <Select aria-label={`Unit for ${who}`} value={l.unit ?? ''} onChange={(e) => set(i, { unit: e.target.value as Unit })} className="w-[84px]">
                 {units.map((u) => (
                   <option key={u} value={u}>
                     {unitWord(u)}
@@ -731,11 +740,15 @@ function LinesEditor({ detail }: { detail: MenuItemDetail }) {
                 ))}
               </Select>
               <span className="flex-1 sm:hidden" />
-              <span
-                className={cx('fig text-right text-base font-bold', cost?.is_estimate && 'italic')}
-                title={ing && ing.unit_cost.pence !== null ? `${unitPrice(ing.unit_cost.pence)} per ${unitWord(ing.unit)}` : undefined}
-              >
+              <span className={cx('fig text-right text-base font-bold', cost?.is_estimate && 'italic')}>
+                <span className="sr-only">Cost </span>
                 {cost ? costText(cost) : ing ? 'no price' : '—'}
+                {ing && ing.unit_cost.pence !== null && (
+                  <span className="sr-only">
+                    {' '}
+                    ({unitPrice(ing.unit_cost.pence)} per {unitWord(ing.unit)})
+                  </span>
+                )}
               </span>
             </div>
           </div>
@@ -743,6 +756,7 @@ function LinesEditor({ detail }: { detail: MenuItemDetail }) {
       })}
       <div className="flex flex-wrap gap-2">
         <Button
+          ref={addRef}
           variant="add"
           onClick={() => {
             const k = `n${Date.now()}`
@@ -758,11 +772,7 @@ function LinesEditor({ detail }: { detail: MenuItemDetail }) {
           </Button>
         )}
       </div>
-      {done && (
-        <p role="status" className="text-sm">
-          {done}
-        </p>
-      )}
+      <StatusLine outcome={done} />
       {!same && (
         <div className="sticky bottom-0 z-10 -mx-1 mt-1 flex flex-wrap items-center gap-2 rounded-card border border-line bg-surface px-3 py-2.5 shadow-login">
           <span className={cx('min-w-0 flex-1 text-sm', errors.length ? 'text-bad-ink' : 'text-ink-2')}>
@@ -791,9 +801,9 @@ function LinesEditor({ detail }: { detail: MenuItemDetail }) {
               const r = await menuApi.linesApply(size.menu_item_id, body, also, operator)
               setApplying(false)
               if (r.kind === 'ok') {
-                setDone('Recipe saved.')
+                setDone({ kind: 'ok', text: 'Recipe saved.' })
                 await invalidate()
-              } else setDone(r.message)
+              } else setDone({ kind: 'error', text: r.message })
             }}
           >
             Save recipe
@@ -819,42 +829,49 @@ function Actions({ detail }: { detail: MenuItemDetail }) {
   const size = detail.size
   const [operator] = useOperator()
   const invalidate = useInvalidateMenu()
-  const [note, setNote] = useState<string | null>(null)
-  const act = async (p: Promise<{ kind: string; message?: string; data?: { menu_item_ids: number[] } }>, then?: (ids: number[]) => void) => {
+  const [note, setNote] = useState<Outcome | null>(null)
+  const act = async (
+    p: Promise<{ kind: string; message?: string; data?: { menu_item_ids: number[] } }>,
+    done: string,
+    then?: (ids: number[]) => void,
+  ) => {
     const r = await p
     if (r.kind === 'ok') {
       await invalidate()
       if (then && r.data) then(r.data.menu_item_ids)
-      setNote(null)
-    } else setNote(r.message ?? 'That did not work.')
+      setNote({ kind: 'ok', text: done })
+    } else setNote({ kind: 'error', text: r.message ?? 'That did not work.' })
   }
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-col gap-2 [&>button]:w-full">
         <Button
           disabled={operator === null}
-          onClick={() => act(menuApi.duplicate(size.menu_item_id, operator ?? ''), (ids) => ids[0] !== undefined && navigate(`/menu/${ids[0]}`))}
+          onClick={() =>
+            act(menuApi.duplicate(size.menu_item_id, operator ?? ''), 'Duplicated.', (ids) => ids[0] !== undefined && navigate(`/menu/${ids[0]}`))
+          }
         >
           Duplicate as a new item
         </Button>
         {g.sizes.length > 1 && (
-          <Button disabled={operator === null || !size.active} onClick={() => act(menuApi.removeSize(size.menu_item_id, operator ?? ''))}>
+          <Button
+            disabled={operator === null || !size.active}
+            onClick={() => act(menuApi.removeSize(size.menu_item_id, operator ?? ''), `Size ${sizeLabel(size.size_code)} taken off.`)}
+          >
             Take size {sizeLabel(size.size_code)} off
           </Button>
         )}
         <Button
           variant="danger-soft"
           disabled={operator === null}
-          onClick={() => act(menuApi.group(size.menu_item_id, { actor: operator ?? '', active: !g.is_active }))}
+          onClick={() =>
+            act(menuApi.group(size.menu_item_id, { actor: operator ?? '', active: !g.is_active }), g.is_active ? 'Taken off the menu.' : 'Back on the menu.')
+          }
         >
           {g.is_active ? 'Take off the menu' : 'Back on the menu'}
         </Button>
       </div>
-      {note && (
-        <p role="alert" className="text-sm text-bad-ink">
-          {note}
-        </p>
-      )}
+      <StatusLine outcome={note} />
       <p className="text-xs text-ink-2">Nothing is deleted: sales and prices keep pointing at every size that ever sold.</p>
     </div>
   )

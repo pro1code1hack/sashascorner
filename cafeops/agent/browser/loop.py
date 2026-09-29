@@ -26,8 +26,8 @@ from __future__ import annotations
 
 import json
 import re
-from collections.abc import Callable
-from datetime import UTC, datetime
+from collections.abc import Callable, Sequence
+from datetime import datetime
 from typing import Any
 
 from cafeops.agent.browser.policy import PolicyGuard
@@ -39,6 +39,7 @@ from cafeops.agent.browser.types import (
     ModelTaskResult,
     StepRecord,
 )
+from cafeops.clock import utcnow
 from cafeops.config import settings
 from cafeops.integrations.suppliers.portals.base import BasketLine
 
@@ -72,6 +73,10 @@ mention it in your note.
 forces one.
 7. Stop when done, when stuck, or when the task cannot be completed. Do not try the \
 same failing action more than twice.
+8. On a quick-order pad (a form of product codes and quantities): fill the codes and \
+quantities you were given, submit that form ONCE, read back which codes the site \
+accepted or rejected, and report per line. A quick-order form is not checkout: never \
+touch checkout, payment or slot booking from it.
 
 Finish by replying with ONLY a JSON object matching the result schema given in the \
 task, no prose before or after it. Prices are integer pence. Use null for anything \
@@ -112,6 +117,62 @@ _BASKET_RESULT_SCHEMA: dict[str, Any] = {
     },
     "required": ["outcome", "rows", "note"],
 }
+
+
+_QUICK_ORDER_RESULT_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "outcome": {"enum": ["done", "needs_human", "gave_up"]},
+        "lines": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "po_line_id": {"type": "integer"},
+                    "status": {"enum": ["added", "not_found", "gave_up"]},
+                    "packs_in_basket": {"type": ["integer", "null"]},
+                    "note": {"type": "string"},
+                },
+                "required": ["po_line_id", "status", "note"],
+            },
+        },
+        "note": {"type": "string"},
+    },
+    "required": ["outcome", "lines", "note"],
+}
+
+
+def quick_order_task(
+    lines: Sequence[BasketLine], portal_hints: str, quick_order_url: str, basket_url: str
+) -> ModelTask:
+    """Tier 1 fallback: the scripted quick-order pad broke, so ONE model task drives
+    the pad for every remaining coded line (docs/agents/BROWSER-ORDERING.md §10)."""
+    wanted = "\n".join(
+        f"- po_line_id {line.po_line_id}: code {line.sku!r}, {line.packs_wanted} pack(s) "
+        f"({line.ingredient_name!r}, about {line.unit_price_expected_pence} pence per pack)"
+        for line in lines
+    )
+    where = (
+        f"The quick-order page is {quick_order_url}."
+        if quick_order_url
+        else "Find the site's quick-order (product code) form from the navigation."
+    )
+    goal = (
+        f"Use the site's quick-order pad to put these {len(lines)} product codes in the "
+        f"basket at the quantities given. {where}\n{wanted}\n"
+        "Fill the codes and quantities into the pad, submit that form once, and read back "
+        "which codes the site accepted and which it rejected or did not recognise. Do not "
+        "change any other line in the basket, and do not add a code twice. "
+        f"The basket page is {basket_url}.\n\n"
+        "Result schema (reply with only this JSON object):\n"
+        + json.dumps(_QUICK_ORDER_RESULT_SCHEMA["properties"], indent=None)
+        + '\nPer line, "status": "added" when the pad accepted the code at that quantity, '
+        '"not_found" when the site said the code does not exist, "gave_up" otherwise. '
+        '"outcome": "done" when you submitted the pad and read the result (even if some '
+        'codes were rejected), "needs_human" when the site asked for a sign-in, a code or '
+        'a CAPTCHA, "gave_up" otherwise.'
+    )
+    return ModelTask(goal=goal, portal_hints=portal_hints, result_schema=_QUICK_ORDER_RESULT_SCHEMA)
 
 
 def basket_line_task(line: BasketLine, portal_hints: str, basket_url: str) -> ModelTask:
@@ -177,10 +238,6 @@ _NOT_EXECUTED = "Not executed: an earlier action in this turn failed."
 _NUDGE = "Continue; reply with only the JSON object."
 
 
-def _utcnow() -> datetime:
-    return datetime.now(UTC)
-
-
 def run_model_task(
     *,
     executor: BrowserExecutor,
@@ -191,7 +248,7 @@ def run_model_task(
     client: Any | None = None,
     model: str | None = None,
     max_tokens: int | None = None,
-    now: Callable[[], datetime] = _utcnow,
+    now: Callable[[], datetime] = utcnow,
 ) -> ModelTaskResult:
     """Run one bounded task to its JSON result, its refusal, or its budget."""
     if client is None:
@@ -363,7 +420,27 @@ def _default_client() -> Any:
             "CAFEOPS_ANTHROPIC_API_KEY is not set; the browser model loop needs it "
             "(the scripted portal steps run without it)"
         )
-    return anthropic.Anthropic(api_key=settings.anthropic_api_key)
+    return anthropic.Anthropic(
+        api_key=settings.anthropic_api_key,
+        timeout=model_call_timeout_seconds(),
+        max_retries=MODEL_MAX_RETRIES,
+    )
+
+
+#: SDK-level retries on a connection error, 429 or 5xx. Two, not the SDK's default
+#: exponential ladder unbounded by our clock: the job's own `Budget.max_seconds` is
+#: what a person was promised, and every retry spends it.
+MODEL_MAX_RETRIES = 2
+#: The ceiling for one model call. A browser-tool turn is a few seconds; a call that
+#: has not answered in two minutes is a hung connection, not a slow thought.
+MODEL_CALL_TIMEOUT_CAP_SECONDS = 120.0
+
+
+def model_call_timeout_seconds() -> float:
+    """One call's timeout: the cap, or the whole job budget if that is shorter
+    (`settings.browser_max_minutes`), so a single hung request cannot outlive the job."""
+    budget = float(settings.browser_max_minutes * 60)
+    return max(1.0, min(MODEL_CALL_TIMEOUT_CAP_SECONDS, budget))
 
 
 def _is_api_error(exc: Exception) -> bool:
@@ -506,6 +583,7 @@ __all__ = [
     "SYSTEM_PROMPT",
     "basket_line_task",
     "parse_result_text",
+    "quick_order_task",
     "read_basket_task",
     "run_model_task",
 ]

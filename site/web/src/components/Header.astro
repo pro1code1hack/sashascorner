@@ -4,7 +4,7 @@ interface Props {
 }
 const { tone } = Astro.props;
 const path = Astro.url.pathname.replace(/\.html$/, '');
-const links: { href: string; label: string; sticker?: string }[] = [
+const links: { href: string; label: string; sticker?: string; account?: boolean }[] = [
   { href: '/menu', label: 'Menu' },
   // Order ahead for takeaway / collection (the shop app). Whole cakes and the delivery
   // apps moved to /delivery, reached from the shop, the footer and the landing food tile.
@@ -13,6 +13,9 @@ const links: { href: string; label: string; sticker?: string }[] = [
   { href: '/visit', label: 'Visit' },
   // The loyalty card: a gentle highlight (its first stamp sticker), never louder than Book a table.
   { href: '/rewards', label: 'Rewards', sticker: '/stickers/slot-1.svg' },
+  // The customer's account (owner, 2026-09-29): the Rewards card lives inside it. The
+  // inline script below swaps the label for the first name when this device is signed in.
+  { href: '/account', label: 'My account', account: true },
 ];
 ---
 
@@ -39,6 +42,7 @@ const links: { href: string; label: string; sticker?: string }[] = [
                 href={l.href}
                 class:list={{ hdr__rw: !!l.sticker }}
                 aria-current={path.startsWith(l.href) ? 'page' : undefined}
+                data-hdr-account={l.account ? '' : undefined}
               >
                 {l.sticker && <img class="hdr__sticker" src={l.sticker} alt="" width="22" height="22" />}
                 {l.label}
@@ -53,6 +57,26 @@ const links: { href: string; label: string; sticker?: string }[] = [
     </a>
   </div>
 </header>
+
+<script is:inline>
+  // Signed in on this device? The Rewards card token slot (scripts/rewards/api.ts) says
+  // so, and the ordering app keeps the first name beside it (scripts/shop/member.ts).
+  // Inline so the label is right before the first paint. Nothing is fetched.
+  (function () {
+    try {
+      var id = localStorage.getItem('sc_card_last');
+      if (!id || !localStorage.getItem('sc_card_token:' + id)) return;
+      var a = document.querySelector('[data-hdr-account]');
+      if (!a) return;
+      var m = JSON.parse(localStorage.getItem('sc.shop.member.v1') || 'null');
+      var name = m && typeof m.first_name === 'string' && m.first_name.trim();
+      a.textContent = name || 'My account';
+      a.setAttribute('aria-label', name ? 'My account, ' + name : 'My account');
+    } catch (e) {
+      /* storage off: the link says My account */
+    }
+  })();
+</script>
 
 <script>
   // Mobile menu (<= 860px). A short dropdown, not a full-screen sheet, so it neither

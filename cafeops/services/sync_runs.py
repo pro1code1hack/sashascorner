@@ -25,7 +25,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
 from cafeops.config import settings
-from cafeops.db.base import SessionFactory, session_scope
+from cafeops.db.base import session_factory, session_scope
 from cafeops.db.models import SyncRun, SyncSource, SyncStatus, SyncTrigger
 
 __all__ = [
@@ -182,6 +182,27 @@ def _start(
     return row
 
 
+def _other_running(session: Session, row: SyncRun, now: datetime) -> SyncRun | None:
+    """A live RUNNING row other than `row`, read AFTER `row` was flushed.
+
+    The lock is read-then-insert (`_close_abandoned`, then `_start`), and two starters
+    -- the scheduler and a web "Sync now" in another process -- can both read "nothing
+    running" before either inserts. SQLite serialises the inserts (one writer), and
+    pysqlite opens the write transaction at the first INSERT, so the second starter's
+    re-read here sees the first one's committed row and yields to it. The first starter
+    saw only itself when it re-read, so exactly one proceeds.
+
+    A partial unique index -- `UNIQUE (status) WHERE status = 'RUNNING'` -- would make
+    this structural rather than a re-check; that is a migration, not done here.
+    """
+    for other in session.scalars(
+        select(SyncRun).where(SyncRun.status == SyncStatus.RUNNING, SyncRun.id != row.id)
+    ):
+        if now - other.started_at <= ABANDON_AFTER:
+            return other
+    return None
+
+
 def record_cli_sync(
     session: Session,
     *,
@@ -265,6 +286,16 @@ def begin_manual_sync(session: Session, *, requested_by: str | None) -> int:
         requested_by=requested_by,
         now=now,
     )
+    raced = _other_running(session, row, now)
+    if raced is not None:
+        row.status = SyncStatus.SKIPPED
+        row.finished_at = now
+        row.detail = f"another sync (run {raced.id}) started at the same moment"
+        raise SyncRefused(
+            "A sync started at the same moment. It will finish on its own; there is "
+            "only one writer.",
+            status=409,
+        )
     return row.id
 
 
@@ -288,7 +319,7 @@ def run_recorded_sync(
     from cafeops.jobs.daily_sync import run_daily_sync
     from cafeops.jobs.nightly_expand import run_nightly_expand
 
-    factory = factory or SessionFactory
+    factory = factory or session_factory()
     source = SyncSource.FIXTURES if fixtures else SyncSource.LIVE
 
     with session_scope(factory) as session:
@@ -298,6 +329,7 @@ def run_recorded_sync(
             row = _start(
                 session, trigger=trigger, source=source, requested_by=requested_by, now=now
             )
+            live = live or _other_running(session, row, now)
             if live is not None:
                 row.status = SyncStatus.SKIPPED
                 row.finished_at = now

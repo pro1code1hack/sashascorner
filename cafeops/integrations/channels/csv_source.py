@@ -45,7 +45,7 @@ from __future__ import annotations
 import csv
 import io
 from collections.abc import Iterable, Sequence
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
@@ -692,8 +692,3 @@ def _as_int(value: object) -> int | None:
     if isinstance(value, int):
         return value
     raise TypeError(f"expected an int or None, got {type(value).__name__}")
-
-
-def stamp_source(rows: Sequence[ChannelDayRow], *, source_ref: str) -> tuple[ChannelDayRow, ...]:
-    """Re-stamp `source_ref` on a set of rows. Used by the browser-agent source."""
-    return tuple(replace(row, source_ref=source_ref) for row in rows)

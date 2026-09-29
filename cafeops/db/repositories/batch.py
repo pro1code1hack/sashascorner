@@ -45,7 +45,7 @@ from sqlalchemy.orm import Session
 
 from cafeops.db.models import ExpirySource, Ingredient, MovementType, StockBatch, StockMovement
 from cafeops.db.repositories.stock import SqlStockRepository
-from cafeops.domain.stock import expiry_movements, find_expiry_losses
+from cafeops.domain.stock import expiry_movements, fifo_key, find_expiry_losses
 from cafeops.domain.types import (
     BatchSpec,
     DepletionAllocation,
@@ -55,10 +55,6 @@ from cafeops.domain.types import (
 )
 
 __all__ = ["SqlBatchRepository", "batch_spec"]
-
-#: `stock_movement.ref_type` for a write-off, matching what the Phase 0 replay wrote
-#: so `rebuild_batches` and the live sweep produce the same shaped rows.
-BATCH_REF = "stock_batch"
 
 
 def batch_spec(row: StockBatch) -> BatchSpec:
@@ -138,19 +134,11 @@ class SqlBatchRepository:
     def sort_by_expiry(self, specs: Sequence[BatchSpec], ingredient_id: int) -> list[BatchSpec]:
         """Soonest effective expiry first; no-expiry lots last, oldest-received first.
 
-        Same ordering as `domain.stock.allocate_fifo` applies internally, exposed
+        `domain.stock.fifo_key`, the ordering `allocate_fifo` applies, exposed
         because `open_batches`' ordering is a documented part of the protocol and a
         caller that reads the list without allocating must see the same order.
         """
-        open_life = self.open_life_days(ingredient_id)
-
-        def key(spec: BatchSpec) -> tuple[int, float, int]:
-            expiry = spec.effective_expiry(open_life)
-            if expiry is None:
-                return (1, spec.received_at.timestamp(), spec.batch_id)
-            return (0, expiry.timestamp(), spec.batch_id)
-
-        return sorted(specs, key=key)
+        return sorted(specs, key=fifo_key(self.open_life_days(ingredient_id)))
 
     def due_for_expiry(self, *, at: datetime, ingredient_id: int | None = None) -> list[BatchSpec]:
         """Lots past their effective expiry with stock left and not yet written off."""

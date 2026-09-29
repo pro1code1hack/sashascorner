@@ -15,9 +15,9 @@ from __future__ import annotations
 from collections.abc import Iterable, Sequence
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
-from cafeops.db.models.enums import ExpirySource
+from cafeops.domain.enums import ExpirySource
 from cafeops.domain.types import (
     BatchSpec,
     ChecklistStatus,
@@ -40,7 +40,13 @@ from cafeops.domain.types import (
     SupplierSpec,
     SupplierTerms,
     Tier,
+    Unit,
 )
+
+if TYPE_CHECKING:
+    from cafeops.db.models import TescoRouting
+    from cafeops.db.repositories.drift import DriftHistoryRow
+    from cafeops.domain.tiers import GateDecision
 
 
 @runtime_checkable
@@ -69,7 +75,7 @@ class IngredientRepository(Protocol):
         ingredient_id: int,
         *,
         pack_size: Decimal,
-        pack_unit: object,
+        pack_unit: Unit,
         pack_cost_pence: int,
         effective_from: datetime,
         source: PriceSource,
@@ -141,9 +147,8 @@ class MenuCostRepository(Protocol):
 
 @runtime_checkable
 class SaleRepository(Protocol):
-    def upsert_many(self, lines: Iterable[object]) -> tuple[int, int]:
-        """Idempotent on lightspeed_line_id. Returns (inserted, skipped)."""
-        ...
+    """Reads and the expansion bookkeeping. Sale rows are WRITTEN by
+    `services/ingest_sales.py` and `services/record_sale.py`, not through here."""
 
     def pending_expansion(self, *, limit: int | None = None) -> list[SaleLine]: ...
 
@@ -245,12 +250,15 @@ class DriftRepository(Protocol):
         """Most recent first. The auto-order gate reads this."""
         ...
 
-    def history(self, ingredient_id: int, *, limit: int = 20) -> list[object]:
+    def history(self, ingredient_id: int, *, limit: int = 10) -> list[DriftHistoryRow]:
         """Recent DriftObservation rows, newest first, for the rolling view."""
         ...
 
-    def counts_missing_observations(self, *, limit: int | None = None) -> list[int]:
-        """stock_count ids with no drift observation -- the backfill work queue."""
+    def counts_missing_observations(
+        self, *, ingredient_id: int | None = None, limit: int | None = None
+    ) -> list[tuple[int, int, Decimal, datetime]]:
+        """(stock_count_id, ingredient_id, counted_qty, counted_at) for counts with no
+        drift observation, oldest first -- the backfill work queue."""
         ...
 
 
@@ -268,7 +276,7 @@ class ParLevelRepository(Protocol):
         """
         ...
 
-    def apply_gate_decision(self, decision: object, *, at: datetime) -> bool:
+    def apply_gate_decision(self, decision: GateDecision, *, at: datetime) -> bool:
         """Apply a GateDecision from domain/tiers. The ONLY path that can enable.
 
         Returns True when the stored flag changed. Implementations must refuse a
@@ -419,10 +427,9 @@ class BatchRepository(Protocol):
         received_by: str | None = None,
     ) -> int: ...
 
-    def apply_allocations(
-        self, allocations: Sequence[DepletionAllocation], *, at: datetime
-    ) -> None:
-        """Decrement `qty_remaining` for each allocation. Never below zero."""
+    def apply_allocations(self, allocations: Sequence[DepletionAllocation], *, at: datetime) -> int:
+        """Decrement `qty_remaining` for each allocation. Never below zero. Returns how
+        many batch rows were touched."""
         ...
 
     def due_for_expiry(self, *, at: datetime) -> list[BatchSpec]:
@@ -491,7 +498,7 @@ class SourcingRepository(Protocol):
         """
         ...
 
-    def emergency_log(self, *, since: datetime | None = None) -> list[object]:
+    def emergency_log(self, *, since: datetime | None = None) -> list[TescoRouting]:
         """Routings, newest first. `TescoRouting` rows; the report, not a note."""
         ...
 
@@ -542,6 +549,7 @@ class AgentLogRepository(Protocol):
         refusal_reason: str | None = None,
         proposal_ref: str | None = None,
         model: str | None = None,
+        agent: str | None = None,
     ) -> int: ...
 
     def for_run(self, run_id: str) -> list[object]: ...

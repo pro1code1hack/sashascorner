@@ -18,9 +18,9 @@ Pure: dataclasses in, dataclasses out. No SQLAlchemy, no I/O.
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 from cafeops.domain.types import (
@@ -43,6 +43,7 @@ __all__ = [
     "depletion_movements",
     "drift_attribution",
     "expiry_movements",
+    "fifo_key",
     "find_expiry_losses",
     "reconcile_to_count",
     "reversal_movements",
@@ -178,12 +179,33 @@ def waste_factors_from(snapshots: Iterable[IngredientSnapshot]) -> dict[int, Dec
 # ==========================================================================
 
 
+def fifo_key(
+    open_life_days: int | None,
+) -> Callable[[BatchSpec], tuple[int, float, int]]:
+    """THE batch order: soonest EFFECTIVE expiry first (spec 4.1 -- by expiry, not by
+    receipt date), then no-expiry lots last, oldest-received first among them; batch
+    id breaks ties so the order is total and every run is identical.
+
+    One definition for depletion (`allocate_fifo`), count reconciliation
+    (`reconcile_to_count`) and every read that lists batches in "what goes first"
+    order (`SqlBatchRepository.sort_by_expiry`), so a list shown to a person is the
+    order stock is actually drawn in.
+    """
+
+    def key(batch: BatchSpec) -> tuple[int, float, int]:
+        expiry = batch.effective_expiry(open_life_days)
+        if expiry is None:
+            return (1, batch.received_at.timestamp(), batch.batch_id)
+        return (0, expiry.timestamp(), batch.batch_id)
+
+    return key
+
+
 def allocate_fifo(
     *,
     qty: Decimal,
     batches: Sequence[BatchSpec],
     open_life_days: int | None = None,
-    at: datetime | None = None,
 ) -> tuple[tuple[DepletionAllocation, ...], Decimal]:
     """Take `qty` from `batches`, soonest-expiring first.
 
@@ -202,18 +224,9 @@ def allocate_fifo(
     if qty <= 0:
         return (), Decimal("0")
 
-    at = at or datetime.now(UTC)
-
-    def sort_key(batch: BatchSpec) -> tuple[int, float, int]:
-        expiry = batch.effective_expiry(open_life_days)
-        if expiry is None:
-            # No expiry: consume last, but still oldest-received first among them.
-            return (1, batch.received_at.timestamp(), batch.batch_id)
-        return (0, expiry.timestamp(), batch.batch_id)
-
     remaining = qty
     allocations: list[DepletionAllocation] = []
-    for batch in sorted(batches, key=sort_key):
+    for batch in sorted(batches, key=fifo_key(open_life_days)):
         if remaining <= 0:
             break
         available = batch.qty_remaining
@@ -369,15 +382,9 @@ def reconcile_to_count(
             surplus_qty=delta, batched_before=batched, counted_qty=counted_qty
         )
 
-    def sort_key(batch: BatchSpec) -> tuple[int, float, int]:
-        expiry = batch.effective_expiry(open_life_days)
-        if expiry is None:
-            return (1, batch.received_at.timestamp(), batch.batch_id)
-        return (0, expiry.timestamp(), batch.batch_id)
-
     shortfall = -delta
     reductions: list[DepletionAllocation] = []
-    for batch in sorted(batches, key=sort_key):
+    for batch in sorted(batches, key=fifo_key(open_life_days)):
         if shortfall <= 0:
             break
         available = batch.qty_remaining

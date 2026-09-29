@@ -21,3 +21,7 @@ wheels/
 
 # Wallet signing certificates and keys (docs/loyalty/WALLET-SETUP.md). Never commit.
 secrets/
+
+# Node packages and Astro dev logs are never source.
+node_modules/
+site/web/.astro/

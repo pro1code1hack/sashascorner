@@ -5,7 +5,8 @@
  * ingredients are hidden unless the line already uses one.
  */
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
-import { cx } from '../../components/ui'
+import type { FocusEvent } from 'react'
+import { IconButton, cx } from '../../components/ui'
 import type { IngredientRow } from '../../lib/types/menu'
 import { unitPrice, unitWord } from './common/figures'
 import { IngredientThumb } from '../ingredients/Thumb'
@@ -21,14 +22,26 @@ export function IngredientPicker({
   options,
   inRecipe,
   onPick,
+  onClear,
   autoOpen = false,
+  label = 'Ingredient',
+  placeholder = 'Pick an ingredient…',
+  size = 'md',
 }: {
   value: number | null
   options: IngredientRow[]
   /** Ingredients already on other lines of this recipe, marked in the list. */
   inRecipe: Set<number>
   onPick: (id: number) => void
+  /** When the slot may be empty (a flavour fills it, a swap adds nothing): shows a clear button. */
+  onClear?: () => void
   autoOpen?: boolean
+  /** Accessible name of the control: "Milk ingredient for size S". */
+  label?: string
+  /** What the empty trigger says. */
+  placeholder?: string
+  /** `sm` matches the 38px inputs beside it in the recipe editor. */
+  size?: 'md' | 'sm'
 }) {
   const [open, setOpen] = useState(autoOpen)
   const [q, setQ] = useState('')
@@ -77,6 +90,10 @@ export function IngredientPicker({
     document.addEventListener('mousedown', close)
     return () => document.removeEventListener('mousedown', close)
   }, [open])
+  // A keyboard user who tabs out of the popover leaves it open otherwise.
+  const onBlur = (e: FocusEvent) => {
+    if (!root.current?.contains(e.relatedTarget as Node | null)) setOpen(false)
+  }
   useEffect(() => {
     list.current?.querySelector(`[data-i="${active}"]`)?.scrollIntoView({ block: 'nearest' })
   }, [active])
@@ -89,26 +106,27 @@ export function IngredientPicker({
   }
 
   return (
-    <div ref={root} className="relative min-w-0">
+    <div ref={root} className="relative flex min-w-0 items-center gap-1" onBlur={onBlur}>
       <button
         ref={trigger}
         type="button"
         aria-haspopup="listbox"
         aria-expanded={open}
+        aria-label={selected ? `${label}: ${selected.name}` : label}
         onClick={() => setOpen((v) => !v)}
         className={cx(
-          'flex h-10 w-full min-w-0 items-center gap-2 rounded-button border bg-surface px-3 text-left text-md',
+          'flex w-full min-w-0 items-center gap-2 rounded-button border bg-surface px-3 text-left',
+          size === 'md' ? 'h-10 text-md' : 'h-[38px] text-base',
           open ? 'edge-brand' : 'border-line-control hover:border-line-strong',
         )}
       >
-        <span className={cx('min-w-0 flex-1 truncate', !selected && 'text-ink-3')}>
-          {selected ? selected.name : 'Pick an ingredient…'}
-        </span>
+        <span className={cx('min-w-0 flex-1 truncate', !selected && 'text-ink-3')}>{selected ? selected.name : placeholder}</span>
         {selected?.category && <span className="flex-none text-sm text-ink-3 max-sm:hidden">{selected.category}</span>}
         <svg aria-hidden="true" width="12" height="12" viewBox="0 0 12 12" className="flex-none text-ink-2">
           <path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
         </svg>
       </button>
+      {onClear && selected && <IconButton label={`Clear ${label}`} onClick={onClear} />}
       {open && (
         <div
           className="absolute left-0 top-[calc(100%+4px)] z-40 flex w-[min(560px,calc(100vw-32px))] flex-col rounded-card border border-line bg-surface shadow-login"
@@ -117,7 +135,12 @@ export function IngredientPicker({
               e.preventDefault()
               setOpen(false)
               trigger.current?.focus()
-            } else if (e.key === 'ArrowDown') {
+              return
+            }
+            // Arrows and Enter drive the list only from the search box; on a
+            // category chip Enter must press the chip, not pick an ingredient.
+            if (e.target !== search.current) return
+            if (e.key === 'ArrowDown') {
               e.preventDefault()
               setActive((a) => Math.min(a + 1, shown.length - 1))
             } else if (e.key === 'ArrowUp') {
@@ -161,7 +184,16 @@ export function IngredientPicker({
               ))}
             </div>
           </div>
-          <ul ref={list} id={listId} role="listbox" aria-label="Ingredients" className="max-h-[min(360px,50vh)] overflow-y-auto py-1">
+          <ul
+            ref={list}
+            id={listId}
+            role="listbox"
+            aria-label="Ingredients"
+            // Options are not focusable; keep focus in the search box on a click so
+            // the blur handler above does not close the list before the pick lands.
+            onMouseDown={(e) => e.preventDefault()}
+            className="max-h-[min(360px,50vh)] overflow-y-auto py-1"
+          >
             {shown.length === 0 && <li className="px-3 py-4 text-center text-sm text-ink-2">Nothing matches “{q}”.</li>}
             {shown.map((o, i) => {
               const head = grouped && (i === 0 || (shown[i - 1]?.category ?? 'Other') !== (o.category ?? 'Other'))
@@ -229,12 +261,12 @@ function CatChip({ active, onClick, label, count }: { active: boolean; onClick: 
       aria-pressed={active}
       onClick={onClick}
       className={cx(
-        'flex h-8 flex-none items-center gap-1 whitespace-nowrap rounded-full border px-3 text-sm',
+        'flex h-9 flex-none items-center gap-1 whitespace-nowrap rounded-full border px-3 text-sm',
         active ? 'border-brand bg-brand-wash font-bold text-brand-ink' : 'border-line-control text-ink hover:bg-canvas',
       )}
     >
       {label}
-      <span className="text-xs opacity-60">{count}</span>
+      <span className={cx('fig text-xs', active ? 'text-brand-ink' : 'text-ink-2')}>{count}</span>
     </button>
   )
 }

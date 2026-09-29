@@ -24,7 +24,7 @@ from cafeops.domain.types import PackChoice, SupplierSpec
 PLACEHOLDER_TERMS: frozenset[str] = frozenset({"CakeSmiths", "Cups Direct"})
 
 
-def _weekdays(raw: object) -> tuple[int, ...]:
+def delivery_weekdays(raw: object) -> tuple[int, ...]:
     """JSON list -> ISO weekday tuple. EMPTY means "any day" (walk-in retail)."""
     if not raw:
         return ()
@@ -38,7 +38,7 @@ def _spec(row: Supplier) -> SupplierSpec:
         id=row.id,
         name=row.name,
         lead_time_days=row.lead_time_days,
-        delivery_weekdays=_weekdays(row.delivery_weekdays),
+        delivery_weekdays=delivery_weekdays(row.delivery_weekdays),
         min_order_pence=row.min_order_pence,
         order_channel=row.order_channel,
     )
@@ -121,12 +121,3 @@ class SqlSupplierRepository:
             .order_by(SupplierProduct.ingredient_id, SupplierProduct.id)
         )
         return [_pack(r) for r in rows]
-
-    def supplier_id_for_ingredient(self, ingredient_id: int) -> int | None:
-        """Which supplier stocks this ingredient. One each in the seeded data."""
-        return self.session.scalar(
-            select(SupplierProduct.supplier_id)
-            .where(SupplierProduct.ingredient_id == ingredient_id)
-            .order_by(SupplierProduct.is_preferred.desc(), SupplierProduct.id)
-            .limit(1)
-        )

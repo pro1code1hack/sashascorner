@@ -8,9 +8,12 @@ Two responsibilities, and they are the reason this module exists rather than the
 handlers querying directly:
 
 1. **Everything goes through the services layer** (spec 8). `record_count`,
-   `receive_po_line`, `record_checklist_answer`, `build_split`, `sweep_expiry` and the
-   purchase-order repository's `confirm` are the writers. Nothing here invents a
-   `stock_movement` or advances a `purchase_order` on its own.
+   `receive_po_line`, `record_checklist_answer`, `build_split`, `sweep_expiry`,
+   `web_orders.confirm_order` and `order_actions.adjust_line_packs` / `mark_order_sent`
+   are the writers -- the same ones the web calls, so the bot cannot confirm an order the
+   web would refuse. Nothing here invents a `stock_movement` or advances a
+   `purchase_order` on its own, and which status permits what is read from
+   `services/order_actions.py`, never restated here.
 
 2. **Stored codes are READ, never re-derived from prose.** `po_line.cap_reason`,
    `purchase_order.notes` and `DeliveryReceipt.warnings` are sentences written for a
@@ -23,7 +26,7 @@ handlers querying directly:
    `_confidence_by_name` split one prose blob back into per-ingredient notices by
    matching ingredient names against it. All four are **gone.** Every one of those facts
    now arrives as a code, derived at the point the sentence was written
-   (`db/models/enums.py`, `domain/types.py`): `po_line.cap_kind`, `cover_days`,
+   (`domain/enums.py`, `domain/types.py`): `po_line.cap_kind`, `cover_days`,
    `low_confidence_kind`, `forecast_history_days`, `forecast_needed_days`,
    `purchase_order.note_codes`, `DeliveryReceipt.coded_warnings`,
    `GateDecision.revoke_cause`. A reword upstream can no longer change what the owner is
@@ -36,7 +39,7 @@ handlers querying directly:
 
 from __future__ import annotations
 
-from datetime import UTC, date, datetime, time, timedelta
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from zoneinfo import ZoneInfo
 
@@ -73,7 +76,6 @@ from cafeops.config import settings
 from cafeops.db.models import (
     Ingredient,
     POLine,
-    POStatus,
     PurchaseOrder,
     SupplierProduct,
 )
@@ -88,7 +90,6 @@ from cafeops.domain.drift import DriftCause
 from cafeops.domain.tiers import GateAction
 from cafeops.domain.types import (
     ChecklistStatus,
-    OrderChannel,
     OrderNoteKind,
     PriceSource,
     Storage,
@@ -96,8 +97,14 @@ from cafeops.domain.types import (
     Unit,
 )
 from cafeops.domain.units import convert
-from cafeops.integrations.suppliers import OrderItem, adapter_for
 from cafeops.jobs.expiry_sweep import DEFAULT_SHORT_DATED_DAYS, sweep_expiry
+from cafeops.services import web_orders
+from cafeops.services.order_actions import (
+    AWAITING_DELIVERY,
+    CONFIRMABLE,
+    adjust_line_packs,
+)
+from cafeops.services.order_dispatch import dispatch_confirmed_order, stages_basket
 from cafeops.services.read_stock import StockReading, read_on_hand
 from cafeops.services.receive_delivery import (
     DeliveryReceipt,
@@ -114,7 +121,6 @@ from cafeops.services.record_count import explain_drift_history, gate_status, re
 
 __all__ = [
     "COUNT_OVERDUE_DAYS",
-    "OrderNotAdjustable",
     "adjust_packs",
     "build_checklist",
     "build_count_session",
@@ -156,21 +162,6 @@ DIGEST_REVOCATION_WINDOW_DAYS = 7
 #: A tier A ingredient uncounted for this long is due. The weekly full count and the
 #: twice-weekly express count both aim at keeping this at zero.
 COUNT_OVERDUE_DAYS = 7
-
-#: Statuses a DRAFT can still be edited and confirmed from.
-_CONFIRMABLE: tuple[POStatus, ...] = (POStatus.DRAFT, POStatus.PENDING_CONFIRM)
-
-#: Statuses where stock is expected through the door.
-_AWAITING_DELIVERY: tuple[POStatus, ...] = (POStatus.CONFIRMED, POStatus.SENT)
-
-
-class OrderNotAdjustable(ValueError):
-    """The order has moved past the point where +/- means anything.
-
-    Raised rather than silently ignored: a confirmed order whose packs quietly changed
-    under a stale keyboard is an order nobody approved (invariant 1).
-    """
-
 
 # ==========================================================================
 # Stored code -> notice. No parsing. See the module docstring.
@@ -351,6 +342,7 @@ def _order_view(session: Session, order: PurchaseOrder) -> OrderView:
         requires_human_completion=True,
         routing_reason_present=bool(order.routing_reason),
         notes=_note_kinds(order.note_codes),
+        stages_basket=stages_basket(order.supplier),
     )
 
 
@@ -363,7 +355,7 @@ def build_order_view(session: Session, po_id: int) -> OrderView:
 
 def list_draft_orders(session: Session, *, supplier_id: int | None = None) -> list[OrderView]:
     """Every order still waiting for a human. Invariant 1's queue."""
-    stmt = select(PurchaseOrder).where(PurchaseOrder.status.in_(list(_CONFIRMABLE)))
+    stmt = select(PurchaseOrder).where(PurchaseOrder.status.in_(list(CONFIRMABLE)))
     if supplier_id is not None:
         stmt = stmt.where(PurchaseOrder.supplier_id == supplier_id)
     orders = list(
@@ -372,7 +364,9 @@ def list_draft_orders(session: Session, *, supplier_id: int | None = None) -> li
     return [_order_view(session, order) for order in orders]
 
 
-def adjust_packs(session: Session, *, po_line_id: int, delta: int) -> OrderView:
+def adjust_packs(
+    session: Session, *, po_id: int, po_line_id: int, delta: int, actor: str
+) -> OrderView:
     """The inline +/- button. Moves `final_packs`, never `suggested_packs`.
 
     Both are kept because the difference is the record of what the human decided
@@ -381,96 +375,64 @@ def adjust_packs(session: Session, *, po_line_id: int, delta: int) -> OrderView:
 
     Persisted immediately rather than held in FSM state: a bot restart between the tap
     and the confirm must not silently revert a decision, and `po_line.final_packs` is
-    already the column the confirmation reads.
+    already the column the confirmation reads. The write, the status rule and the total
+    are `order_actions.adjust_line_packs`'s; an order past `CONFIRMABLE` raises its
+    `OrderActionRefused` (a stale keyboard must not change an approved order).
     """
     line = session.get(POLine, po_line_id)
     if line is None:
         raise LookupError(f"po_line {po_line_id} not found")
-    order = session.get(PurchaseOrder, line.po_id)
-    if order is None:  # pragma: no cover - FK guarantees it
-        raise LookupError(f"purchase order {line.po_id} not found")
-    if order.status not in _CONFIRMABLE:
-        raise OrderNotAdjustable(
-            f"purchase order {order.id} is {order.status.value}: packs can only be "
-            "adjusted while it is still waiting for a human"
-        )
-    line.final_packs = max(0, line.final_packs + delta)
-    order.total_pence = sum(row.final_packs * row.unit_price_pence for row in order.lines)
-    session.flush()
+    order = adjust_line_packs(
+        session,
+        po_id=po_id,
+        line_id=po_line_id,
+        packs=max(0, line.final_packs + delta),
+        actor=actor,
+    )
     return _order_view(session, order)
 
 
 def confirm_order(session: Session, *, po_id: int, confirmed_by: str) -> OrderView:
     """INVARIANT 1. `confirmed_by` is recorded or nothing moves.
 
-    The repository refuses an empty name and `ck_po_confirmed_requires_human` refuses
-    the row underneath it. Neither is worked around here: if the name is missing, the
-    write is supposed to fail.
+    `web_orders.confirm_order` is the one confirmation path: it refuses a blank name, an
+    order past `CONFIRMABLE`, and an order whose every line is at zero, with an
+    `OrderActionRefused`. None of that is worked around here. The packs confirmed are the
+    ones the +/- buttons already persisted.
     """
-    repo = SqlPurchaseOrderRepository(session)
-    lines = repo.get_lines(po_id)
-    repo.confirm(
-        po_id,
+    lines = SqlPurchaseOrderRepository(session).get_lines(po_id)
+    web_orders.confirm_order(
+        session,
+        po_id=po_id,
         confirmed_by=confirmed_by,
-        at=datetime.now(UTC),
         final_packs={line.id: line.final_packs for line in lines},
     )
-    session.flush()
     return build_order_view(session, po_id)
 
 
-def dispatch_order(session: Session, *, po_id: int) -> DispatchView:
-    """Hand a CONFIRMED order to its channel. `adapter_for`, never a supplier `if`.
+def dispatch_order(session: Session, *, po_id: int, sent_by: str) -> DispatchView:
+    """Hand a CONFIRMED order to its channel, through `services/order_dispatch`.
 
-    Nothing here decides whether a person still has to act -- every adapter answers
-    that itself, and all four say yes (`ARCHITECTURE.md` 4). The formatter reads
-    `requires_human_completion` and says "basket ready", never "ordered".
+    Nothing is sent. A website supplier's basket is staged and the order stays
+    CONFIRMED until a person checks out and marks it sent; a MANUAL order becomes a
+    shopping list and is marked sent, signed by `sent_by`. The formatter says "basket
+    ready" or "queued", never "ordered".
     """
-    order = session.get(PurchaseOrder, po_id)
-    if order is None:
-        raise LookupError(f"purchase order {po_id} not found")
-    if order.status is not POStatus.CONFIRMED:
-        raise ValueError(
-            f"purchase order {po_id} is {order.status.value}; only a CONFIRMED order can "
-            "be dispatched (invariant 1)"
-        )
-
-    repo = SqlPurchaseOrderRepository(session)
-    items: list[OrderItem] = []
-    for line in repo.get_lines(po_id):
-        if line.final_packs <= 0:
-            continue
-        product = session.get(SupplierProduct, line.supplier_product_id)
-        ingredient = session.get(Ingredient, line.ingredient_id)
-        if product is None or ingredient is None:  # pragma: no cover
-            continue
-        items.append(
-            OrderItem(
-                ingredient_name=ingredient.name,
-                sku=product.sku,
-                packs=line.final_packs,
-                pack_size=product.pack_size,
-                unit_price_pence=line.unit_price_pence,
-                product_url=product.product_url,
-            )
-        )
-
-    adapter = adapter_for(order.supplier.order_channel)
-    prepared = adapter.prepare(po_id, order.supplier, tuple(items))
-    result = adapter.dispatch(prepared)
-    if result.succeeded and order.status is POStatus.CONFIRMED:
-        repo.mark_sent(po_id, at=result.dispatched_at)
-        session.flush()
+    out = dispatch_confirmed_order(session, po_id=po_id, sent_by=sent_by, via="telegram")
     return DispatchView(
-        po_id=po_id,
-        supplier_name=order.supplier.name,
-        channel=result.channel,
-        succeeded=result.succeeded,
-        requires_human_completion=result.requires_human_completion,
-        target_url=prepared.target_url,
-        instruction_steps=sum(1 for row in prepared.instructions.splitlines() if row.strip()),
-        items=len(items),
-        total_pence=prepared.total_pence,
+        po_id=out.po_id,
+        supplier_name=out.supplier_name,
+        channel=out.channel,
+        succeeded=out.sent,
+        requires_human_completion=out.requires_human_completion,
+        target_url=out.target_url,
+        instruction_steps=out.instruction_steps,
+        items=out.items,
+        total_pence=out.total_pence,
+        stages_basket=out.staged is not None or out.staging_refused is not None,
+        staged_job_id=None if out.staged is None else out.staged.job_id,
+        staged_basket_url=None if out.staged is None else out.staged.basket_url,
+        staging_refused=out.staging_refused,
     )
 
 
@@ -647,7 +609,7 @@ def build_delivery_orders(
     order nobody confirmed was never placed), so offering one here would build a flow
     whose only outcome is a refusal.
     """
-    stmt = select(PurchaseOrder).where(PurchaseOrder.status.in_(list(_AWAITING_DELIVERY)))
+    stmt = select(PurchaseOrder).where(PurchaseOrder.status.in_(list(AWAITING_DELIVERY)))
     if po_id is not None:
         # Narrowed, not replaced: a DRAFT named by id is still not receivable, and
         # offering it would build a flow whose only outcome is `receive_po_line`
@@ -984,19 +946,6 @@ def build_digest(
 # ==========================================================================
 # Shared helpers the jobs also use
 # ==========================================================================
-
-
-def local_midnight(day: date, tz: ZoneInfo | None = None) -> datetime:
-    """Local midnight as a UTC instant. The day boundary the whole system uses."""
-    tz = tz or settings.tz
-    return datetime.combine(day, time(0, 0), tzinfo=tz).astimezone(UTC)
-
-
-def order_channel_of(session: Session, supplier_id: int) -> OrderChannel:
-    terms = SqlSourcingRepository(session).terms(supplier_id)
-    if terms is None:
-        raise LookupError(f"supplier {supplier_id} has no terms")
-    return terms.order_channel
 
 
 def lookup_ingredient(session: Session, *, name: str) -> IngredientRefView | None:

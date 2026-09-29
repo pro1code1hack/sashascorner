@@ -18,7 +18,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from cafeops.db.base import Base
 from cafeops.db.models._common import Qty, UTCDateTime, enum_col, utcnow
-from cafeops.db.models.enums import CapKind, ChecklistStatus, LowConfidenceKind, POStatus
+from cafeops.domain.enums import CapKind, ChecklistStatus, LowConfidenceKind, POStatus
 
 if TYPE_CHECKING:
     from cafeops.db.models.ingredient import Ingredient

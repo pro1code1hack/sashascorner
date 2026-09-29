@@ -42,10 +42,12 @@ from cafeops.api.areas.shell_schemas import (
     SyncStartedOut,
     TelegramNotice,
 )
-from cafeops.api.runtime import in_session
+from cafeops.api.params import parse_before
+from cafeops.api.runtime import in_session, in_session_committing
 from cafeops.api.security import ApiAuth, client_ip
 from cafeops.db.base import session_scope
 from cafeops.db.models import SyncTrigger
+from cafeops.services import agent_proposals as proposals
 from cafeops.services import auth as auth_service
 from cafeops.services.sync_runs import SyncRefused, begin_manual_sync, run_recorded_sync
 
@@ -144,25 +146,20 @@ async def change_password(
     ua = request.headers.get("user-agent")
     session_id = getattr(request.state, "auth_session_id", None)
 
-    def work() -> auth_service.PasswordChanged | auth_service.PasswordChangeRefused:
-        with session_scope() as session:
-            try:
-                return auth_service.change_password(
-                    session,
-                    current_password=body.current_password,
-                    new_password=body.new_password,
-                    client_ip=ip,
-                    user_agent=ua,
-                    session_id=session_id,
-                    actor=body.actor,
-                )
-            except auth_service.PasswordChangeRefused as exc:
-                # Returned, not raised, so session_scope COMMITS the refusal's audit row.
-                return exc
-
-    result = await asyncio.to_thread(work)
-    if isinstance(result, auth_service.PasswordChangeRefused):
-        raise HTTPException(status_code=result.status, detail={"message": result.message})
+    # A refusal is committed before it propagates, so its audit row stands; the app
+    # answers with the refusal's own status.
+    result = await in_session_committing(
+        lambda session: auth_service.change_password(
+            session,
+            current_password=body.current_password,
+            new_password=body.new_password,
+            client_ip=ip,
+            user_agent=ua,
+            session_id=session_id,
+            actor=body.actor,
+        ),
+        refusals=(auth_service.PasswordChangeRefused,),
+    )
     notice = await _telegram_notice(body.actor, result.revoked_sessions)
     response.headers["Cache-Control"] = "no-store"
     return PasswordChangeOut(
@@ -236,16 +233,12 @@ async def _run_sync(run_id: int, requested_by: str | None) -> None:
 async def sync_now(body: SyncIn | None = None) -> SyncStartedOut:
     requested_by = body.requested_by if body is not None else None
 
-    def work() -> int | SyncRefused:
-        with session_scope() as session:
-            try:
-                return begin_manual_sync(session, requested_by=requested_by or "web")
-            except SyncRefused as exc:
-                return exc
-
-    result = await asyncio.to_thread(work)
-    if isinstance(result, SyncRefused):
-        raise HTTPException(status_code=result.status, detail={"message": result.message})
+    # Committed even when refused: closing an abandoned run on the way to "a sync is
+    # already running" is a real change.
+    result = await in_session_committing(
+        lambda session: begin_manual_sync(session, requested_by=requested_by or "web"),
+        refusals=(SyncRefused,),
+    )
     task = asyncio.create_task(_run_sync(result, requested_by or "web"))
     _SYNC_TASKS.add(task)
     task.add_done_callback(_SYNC_TASKS.discard)
@@ -283,15 +276,21 @@ async def agent_proposals(
     summary="Accept: runs the kind's own service. 409 if already decided.",
 )
 async def accept_proposal(proposal_id: int, body: DecisionIn) -> DecisionOut:
-    return await in_session(
-        lambda session: views.decide_view(
-            session,
-            proposal_id=proposal_id,
-            accept=True,
-            decided_by=body.decided_by,
-            note=body.note,
+    try:
+        return await in_session(
+            lambda session: views.decide_view(
+                session,
+                proposal_id=proposal_id,
+                accept=True,
+                decided_by=body.decided_by,
+                note=body.note,
+            )
         )
-    )
+    except proposals.ProposalApplyFailed as exc:
+        # The attempt was rolled back by `in_session`; the failure is recorded on its
+        # own so the proposal cannot stay WAITING after a change was tried.
+        failed = exc
+        return await in_session(lambda session: views.apply_failed_view(session, failed))
 
 
 @router.post(
@@ -318,7 +317,7 @@ async def agent_runs(
     limit: Annotated[int, Query(ge=1, le=100)] = 30,
     before: Annotated[str | None, Query(description="ISO timestamp; rows older than it.")] = None,
 ) -> AgentRunsOut:
-    cutoff = views.parse_before(before)
+    cutoff = parse_before(before)
     return await in_session(
         lambda session: views.runs_view(session, agent=agent, limit=limit, before=cutoff)
     )

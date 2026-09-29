@@ -17,8 +17,8 @@ from datetime import date
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from cafeops.db.models.enums import PaymentBasis, PaymentSourceKind
 from cafeops.db.models.payment import PaymentDay
+from cafeops.domain.enums import PaymentBasis, PaymentSourceKind
 from cafeops.integrations.payments.base import PaymentReport
 from cafeops.services.finance.takings import resolve_takings
 

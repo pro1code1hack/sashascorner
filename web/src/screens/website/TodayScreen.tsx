@@ -3,90 +3,29 @@
  * moved into the back office (owner, 2026-09-28).
  *
  * No KPI tiles: today's bookings as a list with Arrived / No-show on each row, the
- * seats taken per slot as quiet bars, the next seven days as one compact row, and
+ * seats taken per slot as quiet bars, the next seven days as one row list, and
  * three plain notes (messages, photos, menu). Dates and times from the site are the
- * café's own (Europe/London) date and HH:MM; they are never shifted.
+ * café's own (Europe/London) date and HH:MM; they are never shifted (./dates.ts).
  */
-import { useEffect, useRef, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { Button, ErrorBox, Loading, PageBody, PageHeader, Pill, cx } from '../../components/ui'
-import type { PillTone } from '../../components/ui'
+import { useEffect, useState } from 'react'
+import { Button, Empty, ErrorBox, LinkButton, Loading, PageBody, PageHeader, Pill, SectionHead, StatusLine, cx } from '../../components/ui'
+import type { Outcome, PillTone } from '../../components/ui'
+import { useIsDocked } from '../../lib/media'
 import { href } from '../../lib/router'
 import type { Booking, BookingDay, BookingStatus, SiteSettings, SiteSummary } from '../../lib/types/website'
-import { WEBSITE_KEY, siteGet, siteWrite, useInvalidateWebsite, useWebsiteSummary } from '../../lib/website-api'
+import { siteWrite, useInvalidateWebsite, useSiteSettings, useWebsiteSummary } from '../../lib/website-api'
+import { STATUS_LABEL, count, holds, useBookingDay } from './bookings-parts'
+import { clock, longDate, nowMinutes, shortDate, toMinutes, todayISO, weekday } from './dates'
 import { WebsiteGate } from './shared'
 
 /* ------------------------------------------------------------- words --- */
 
-const WD = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-const WD_LONG = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-const MON_LONG = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-
-const STATUS_LABEL: Record<BookingStatus, string> = {
-  confirmed: 'Booked',
-  arrived: 'Arrived',
-  no_show: 'No-show',
-  cancelled: 'Cancelled',
-}
 const STATUS_TONE: Record<BookingStatus, PillTone> = {
   confirmed: 'brand',
   arrived: 'ok',
   no_show: 'warn',
   cancelled: 'muted',
 }
-
-/** Today in Dundee, as YYYY-MM-DD. */
-function todayISO(): string {
-  const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date())
-  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? ''
-  return `${get('year')}-${get('month')}-${get('day')}`
-}
-
-/** Minutes since midnight now, in Dundee. */
-function nowMinutes(): number {
-  const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date())
-  const get = (t: string) => Number(parts.find((p) => p.type === t)?.value ?? 0)
-  return get('hour') * 60 + get('minute')
-}
-
-function ymd(iso: string): [number, number, number] {
-  const [y = 1970, m = 1, d = 1] = iso.split('-').map(Number)
-  return [y, m, d]
-}
-
-/** Monday = 0, like the site API. */
-function weekday(iso: string): number {
-  const [y, m, d] = ymd(iso)
-  return (new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7
-}
-
-/** "Monday 28 September" (+ the year when it isn't this year). */
-function longDate(iso: string): string {
-  const [y, m, d] = ymd(iso)
-  const thisYear = Number(todayISO().slice(0, 4))
-  return `${WD_LONG[weekday(iso)]} ${d} ${MON_LONG[m - 1]}${y !== thisYear ? ` ${y}` : ''}`
-}
-
-/** "18:30" -> "6.30pm", the café's own style. */
-function clock(hhmm: string | null | undefined): string {
-  if (!hhmm) return ''
-  const [h = 0, m = 0] = hhmm.split(':').map(Number)
-  const suffix = h >= 12 ? 'pm' : 'am'
-  const h12 = h % 12 === 0 ? 12 : h % 12
-  return m === 0 ? `${h12}${suffix}` : `${h12}.${String(m).padStart(2, '0')}${suffix}`
-}
-
-function toMinutes(hhmm: string): number {
-  const [h = 0, m = 0] = hhmm.split(':').map(Number)
-  return h * 60 + m
-}
-
-const count = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`
-const holds = (b: Booking) => b.status === 'confirmed' || b.status === 'arrived'
-
-/** A link that looks like the kit's secondary button. */
-const LINK_BUTTON =
-  'inline-flex h-10 items-center justify-center whitespace-nowrap rounded-control border border-line-control bg-surface px-3.5 text-base font-semibold text-ink no-underline hover:bg-canvas'
 
 /* ------------------------------------------------------------ screen --- */
 
@@ -96,11 +35,7 @@ export function TodayScreen() {
       <PageHeader
         title="Today"
         subtitle="who is coming, and what needs you"
-        actions={
-          <a className={LINK_BUTTON} href={href('/website/bookings', { add: 1 })}>
-            Add booking
-          </a>
-        }
+        actions={<LinkButton className="min-h-11" href={href('/website/bookings', { add: 1 })}>Add booking</LinkButton>}
       />
       <PageBody>
         <WebsiteGate>
@@ -124,21 +59,15 @@ function useMinuteTick(): number {
 function TodayBody() {
   const summary = useWebsiteSummary()
   const date = summary.data?.today.date ?? todayISO()
-  const day = useQuery({
-    queryKey: [...WEBSITE_KEY, 'bookings', 'day', date],
-    queryFn: () => siteGet<BookingDay>(`/bookings/day?date=${date}`),
-  })
-  const settings = useQuery({
-    queryKey: [...WEBSITE_KEY, 'settings'],
-    queryFn: () => siteGet<SiteSettings>('/settings'),
-    staleTime: 5 * 60 * 1000,
-  })
+  // The same query (key and all) that Bookings reads, so a status change on either reaches both.
+  const day = useBookingDay(date)
+  const settings = useSiteSettings()
 
   const failed = summary.error ?? day.error ?? settings.error
   if (failed) {
     return (
       <div className="flex flex-col items-start gap-3">
-        <ErrorBox error={failed} what="Today’s bookings didn’t load" />
+        <ErrorBox error={failed} what="today’s bookings" />
         <Button
           size="md"
           pending={summary.isFetching || day.isFetching || settings.isFetching}
@@ -157,7 +86,7 @@ function TodayBody() {
   if (!summary.data || !day.data || !settings.data) return <Loading what="Loading today" />
 
   return (
-    <div className="grid items-start gap-7 lg:grid-cols-[minmax(0,1.7fr)_minmax(260px,1fr)] lg:gap-8">
+    <div className="mx-auto grid w-full max-w-[1100px] items-start gap-7 compact:grid-cols-[minmax(0,1.7fr)_minmax(260px,1fr)] compact:gap-8">
       <TodaySection summary={summary.data} day={day.data} settings={settings.data} />
       <aside className="flex min-w-0 flex-col gap-6.5">
         <WeekRow summary={summary.data} settings={settings.data} />
@@ -169,14 +98,12 @@ function TodayBody() {
 
 /* ------------------------------------------------------------- today --- */
 
-type Notice = { tone: 'ok' | 'bad'; text: string; undo?: () => void } | null
-
 function TodaySection({ summary, day, settings }: { summary: SiteSummary; day: BookingDay; settings: SiteSettings }) {
   const today = summary.today.date || day.date
   const now = useMinuteTick()
   const invalidate = useInvalidateWebsite()
   const [pending, setPending] = useState<number | null>(null)
-  const [notice, setNotice] = useState<Notice>(null)
+  const [outcome, setOutcome] = useState<Outcome | null>(null)
 
   // Open / closed, always in words.
   const hours = settings.cafe.hours.find((x) => x.weekday === weekday(today))
@@ -202,45 +129,44 @@ function TodaySection({ summary, day, settings }: { summary: SiteSummary; day: B
 
   async function setStatus(b: Booking, status: BookingStatus) {
     setPending(b.id)
-    setNotice(null)
+    setOutcome(null)
     const r = await siteWrite<Booking>(`/bookings/${b.id}`, { status }, 'PATCH')
     setPending(null)
     if (r.kind !== 'ok') {
-      setNotice({ tone: 'bad', text: r.message })
+      setOutcome({ kind: 'error', text: r.message })
       return
     }
     await invalidate()
     const from = b.status
-    setNotice({
-      tone: 'ok',
+    setOutcome({
+      kind: 'ok',
       text: `${b.name}: ${STATUS_LABEL[status].toLowerCase()}.`,
-      undo: () => {
-        setNotice(null)
-        void siteWrite<Booking>(`/bookings/${b.id}`, { status: from }, 'PATCH').then(async (u) => {
-          if (u.kind === 'ok') {
-            await invalidate()
-            setNotice({ tone: 'ok', text: `${b.name}: back to ${STATUS_LABEL[from].toLowerCase()}.` })
-          } else setNotice({ tone: 'bad', text: u.message })
-        })
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          setOutcome(null)
+          void siteWrite<Booking>(`/bookings/${b.id}`, { status: from }, 'PATCH').then(async (u) => {
+            if (u.kind === 'ok') {
+              await invalidate()
+              setOutcome({ kind: 'ok', text: `${b.name}: back to ${STATUS_LABEL[from].toLowerCase()}.` })
+            } else setOutcome({ kind: 'error', text: u.message })
+          })
+        },
       },
     })
   }
 
-  const big = (n: number) => <span className="fig text-4xl font-extrabold tracking-[-.02em] text-ink">{n}</span>
-
   return (
     <section aria-labelledby="today-h" className="min-w-0">
-      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1.5">
-        <h2 id="today-h" className="text-2xl font-extrabold tracking-[-.01em]">
-          {longDate(today)}
-        </h2>
-        {openLine && <Pill tone={openLine.tone}>{openLine.text}</Pill>}
-      </div>
+      <SectionHead size="panel" right={openLine && <Pill tone={openLine.tone}>{openLine.text}</Pill>}>
+        <span id="today-h">{longDate(today)}</span>
+      </SectionHead>
 
       <p className="mt-3 mb-4 text-xl text-ink">
         {live.length ? (
           <>
-            {big(covers)} {covers === 1 ? 'guest' : 'guests'} in {big(live.length)} {live.length === 1 ? 'booking' : 'bookings'}.{' '}
+            <span className="fig font-bold">{count(covers, 'guest')}</span> in{' '}
+            <span className="fig font-bold">{count(live.length, 'booking')}</span>.{' '}
             <span className="whitespace-nowrap text-ink-2">{waiting ? `${waiting} still to arrive.` : 'Everyone booked has arrived.'}</span>
           </>
         ) : day.closed ? (
@@ -250,7 +176,7 @@ function TodaySection({ summary, day, settings }: { summary: SiteSummary; day: B
         )}
       </p>
 
-      <NoticeLine notice={notice} />
+      <StatusLine outcome={outcome} className="mb-3" />
 
       {shown.length ? (
         <ul aria-label="Today’s bookings" className="border-t border-line">
@@ -259,9 +185,19 @@ function TodaySection({ summary, day, settings }: { summary: SiteSummary; day: B
           ))}
         </ul>
       ) : (
-        <p className="border-y border-line py-6 text-center text-md text-ink-2">
-          {day.closed ? 'Closed today.' : 'Nobody has booked for today. Walk-ins only.'}
-        </p>
+        <div className="border-y border-line">
+          <Empty
+            action={
+              !day.closed && (
+                <LinkButton className="min-h-11" href={href('/website/bookings', { add: 1 })}>
+                  Add a phone booking
+                </LinkButton>
+              )
+            }
+          >
+            {day.closed ? 'Closed today.' : 'Nobody has booked for today. Walk-ins only.'}
+          </Empty>
+        </div>
       )}
 
       {cancelled > 0 && (
@@ -275,30 +211,6 @@ function TodaySection({ summary, day, settings }: { summary: SiteSummary; day: B
 
       {!day.closed && <SlotBars day={day} />}
     </section>
-  )
-}
-
-/** The last write's outcome, with Undo after a status change. */
-function NoticeLine({ notice }: { notice: Notice }) {
-  return (
-    <div aria-live="polite">
-      {notice && (
-        <p
-          role={notice.tone === 'bad' ? 'alert' : 'status'}
-          className={cx(
-            'mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-control px-3 py-2 text-base',
-            notice.tone === 'bad' ? 'bg-bad-wash text-bad-ink' : 'bg-canvas text-ink',
-          )}
-        >
-          <span>{notice.text}</span>
-          {notice.undo && (
-            <Button variant="link" onClick={notice.undo} className="min-h-6">
-              Undo
-            </Button>
-          )}
-        </p>
-      )}
-    </div>
   )
 }
 
@@ -322,10 +234,10 @@ function BookingRow({ b, busy, onStatus }: { b: Booking; busy: boolean; onStatus
       <div className="col-start-2 flex flex-wrap items-center gap-2 sm:col-start-3 sm:justify-end">
         {b.status === 'confirmed' ? (
           <>
-            <Button pending={busy} pendingLabel="Saving…" onClick={() => onStatus('arrived')} aria-label={`Mark ${b.name} arrived`}>
+            <Button className="min-h-11" pending={busy} pendingLabel="Saving…" onClick={() => onStatus('arrived')} aria-label={`Mark ${b.name} arrived`}>
               Arrived
             </Button>
-            <Button variant="ghost" disabled={busy} onClick={() => onStatus('no_show')} aria-label={`Mark ${b.name} as a no-show`}>
+            <Button variant="ghost" className="min-h-11" disabled={busy} onClick={() => onStatus('no_show')} aria-label={`Mark ${b.name} as a no-show`}>
               No-show
             </Button>
           </>
@@ -335,6 +247,7 @@ function BookingRow({ b, busy, onStatus }: { b: Booking; busy: boolean; onStatus
             {(b.status === 'arrived' || b.status === 'no_show') && (
               <Button
                 variant="ghost"
+                className="min-h-11"
                 pending={busy}
                 pendingLabel="Saving…"
                 onClick={() => onStatus('confirmed')}
@@ -350,15 +263,12 @@ function BookingRow({ b, busy, onStatus }: { b: Booking; busy: boolean; onStatus
   )
 }
 
-/** One quiet bar per slot: seats taken against capacity. Folded by default on a phone. */
+/** One quiet bar per slot: seats taken against capacity. Folded by default below the docked width. */
 function SlotBars({ day }: { day: BookingDay }) {
-  const ref = useRef<HTMLDetailsElement>(null)
-  const [open, setOpen] = useState(true)
-  useEffect(() => {
-    if (ref.current && window.matchMedia('(max-width: 759.98px)').matches) ref.current.open = false
-  }, [])
+  const docked = useIsDocked()
+  const [open, setOpen] = useState(docked)
   return (
-    <details ref={ref} open className="mt-5" onToggle={(e) => setOpen(e.currentTarget.open)}>
+    <details open={open} className="mt-5" onToggle={(e) => setOpen(e.currentTarget.open)}>
       <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
         <span className="text-label font-bold tracking-[.06em] text-ink-2 uppercase">Seats taken by time</span>
         <span className="text-base text-ink-2">{open ? 'Hide ▴' : 'Show ▾'}</span>
@@ -393,45 +303,36 @@ function SlotBars({ day }: { day: BookingDay }) {
 
 /* -------------------------------------------------------------- side --- */
 
+/** The next seven days as one list: day · bookings · guests. Each row opens that day on Bookings. */
 function WeekRow({ summary, settings }: { summary: SiteSummary; settings: SiteSettings }) {
   const closures = new Set(settings.closures.map((c) => c.date))
   return (
     <section aria-labelledby="week-h">
-      <h2 id="week-h" className="text-lg font-extrabold tracking-[-.01em]">
-        Next 7 days
-      </h2>
-      <ol className="mt-2.5 grid grid-cols-7 gap-1">
+      <SectionHead>
+        <span id="week-h">Next 7 days</span>
+      </SectionHead>
+      <ol className="mt-2 border-t border-line">
         {summary.week.map((d, i) => {
           const hw = settings.cafe.hours.find((x) => x.weekday === weekday(d.date))
           const closed = closures.has(d.date) || !hw || hw.closed === true
-          const spoken = `${i === 0 ? 'Today' : longDate(d.date)}: ${closed ? 'closed' : `${count(d.bookings, 'booking')}, ${count(d.covers, 'guest')}`}`
           return (
-            <li key={d.date} className="min-w-0">
+            <li key={d.date}>
               <a
                 href={href('/website/bookings', { date: d.date })}
                 aria-current={i === 0 ? 'date' : undefined}
                 className={cx(
-                  'flex min-h-[76px] flex-col items-center gap-0.5 rounded-button border px-0.5 pt-2.5 pb-2 text-ink no-underline transition-colors hover:border-brand',
-                  i === 0 ? 'border-brand-line bg-brand-wash' : 'border-line bg-surface',
+                  'flex min-h-11 items-center gap-3 border-b border-line px-1 py-2 text-base text-ink no-underline hover:bg-canvas-2',
+                  i === 0 && 'font-bold',
                 )}
               >
-                <span className="sr-only">{spoken}</span>
-                <span aria-hidden="true" className={cx('text-label font-bold tracking-[.06em] uppercase', i === 0 ? 'text-brand-ink' : 'text-ink-2')}>
-                  {i === 0 ? 'Today' : WD[weekday(d.date)]}
-                </span>
+                <span className="w-24 flex-none">{i === 0 ? 'Today' : shortDate(d.date)}</span>
                 {closed ? (
-                  <span aria-hidden="true" className="pt-2 text-xs text-ink-2">
-                    Closed
-                  </span>
+                  <span className="text-ink-2">Closed</span>
                 ) : (
-                  <>
-                    <span aria-hidden="true" className="fig text-2xl leading-7 font-extrabold">
-                      {d.bookings}
-                    </span>
-                    <span aria-hidden="true" className="fig text-xs text-ink-2">
-                      {d.covers} ppl
-                    </span>
-                  </>
+                  <span className="fig min-w-0 flex-1">
+                    {count(d.bookings, 'booking')}
+                    <span className="text-ink-2"> · {count(d.covers, 'guest')}</span>
+                  </span>
                 )}
               </a>
             </li>
@@ -452,7 +353,7 @@ function Notes({ summary }: { summary: SiteSummary }) {
       ? [`${count(m.warnings, 'thing')} to check on the menu page`]
       : []
   const row = 'flex min-h-14 items-center gap-2.5 border-b border-line px-1 py-2.5 text-md text-ink no-underline hover:bg-canvas-2'
-  const num = (x: number) => <span className="fig text-xl font-extrabold">{x}</span>
+  const num = (x: number) => <span className="fig font-bold">{x}</span>
   const go = (
     <span aria-hidden="true" className="text-2xl text-ink-3">
       ›

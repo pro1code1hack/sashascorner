@@ -27,12 +27,13 @@ import logging
 import threading
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 
 import httpx
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
+from cafeops.clock import utcnow
 from cafeops.db.models.loyalty import WalletPushOutbox
 from cafeops.db.models.wallet import WalletAppleRegistration, WalletGoogleObject
 from cafeops.integrations.wallet import apns, google
@@ -77,12 +78,8 @@ class _Outcome:
     notes: list[str] = field(default_factory=list)
 
 
-def _now() -> datetime:
-    return datetime.now(UTC)
-
-
 def _claim(factory: SessionFactoryT, limit: int) -> list[_Row]:
-    now = _now()
+    now = utcnow()
     claimed: list[_Row] = []
     with factory() as session:
         due = session.scalars(
@@ -180,7 +177,7 @@ def _google(
             )
             session.add(obj)
         if error is None:
-            obj.last_synced_at = _now()
+            obj.last_synced_at = utcnow()
         obj.last_error = error
         session.commit()
 
@@ -202,7 +199,7 @@ def _deliver(factory: SessionFactoryT, card_id: str, rows: list[_Row]) -> _Outco
 
 
 def _record(factory: SessionFactoryT, rows: list[_Row], out: _Outcome) -> None:
-    now = _now()
+    now = utcnow()
     with factory() as session:
         for row in rows:
             obj = session.get(WalletPushOutbox, row.id)
@@ -247,9 +244,9 @@ async def kick() -> None:
     """Drain now, off the event loop. Never raises: the stamp is already committed and
     the till must not see a wallet error (SPEC: "failure never blocks the till")."""
     try:
-        from cafeops.db.base import SessionFactory
+        from cafeops.db.base import session_factory
 
-        await asyncio.to_thread(drain_outbox_sync, SessionFactory)
+        await asyncio.to_thread(drain_outbox_sync, session_factory())
     except Exception:
         log.exception("wallet outbox kick failed; the scheduler job will retry")
 

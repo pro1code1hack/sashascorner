@@ -14,18 +14,22 @@ The job owns three things the sources deliberately do not:
    and nothing downstream can detect it.
 3. **Saying when provenances got mixed.** The repository records it; this reports it.
 
-Nothing commits. The caller owns the transaction, so a report that half-resolves
-lands whole or not at all.
+`sync_channel` and `sync_all_channels` do not commit: the caller owns the transaction,
+so a report that half-resolves lands whole or not at all. `sync_channels_separately`
+is the scheduler's entry point and commits once per channel, so one channel's
+unreachable source neither rolls back nor hides the channels that did import.
 """
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, sessionmaker
 
+from cafeops.db.base import session_scope
 from cafeops.db.repositories.channel import (
     ProvenanceChange,
     SqlChannelRepository,
@@ -40,6 +44,8 @@ from cafeops.integrations.channels.base import (
     ChannelSource,
     ChannelSourceUnavailable,
 )
+
+log = logging.getLogger("cafeops.jobs.channel_sync")
 
 #: Default window when the caller does not say. Long enough for a weekday pattern.
 DEFAULT_WINDOW_DAYS = 14
@@ -263,3 +269,60 @@ def sync_all_channels(
         )
         for channel in channels
     ]
+
+
+@dataclass(frozen=True, slots=True)
+class ChannelOutcome:
+    """One channel's night: a committed report, or why nothing was committed for it."""
+
+    channel: SalesChannelName
+    report: ChannelSyncReport | None
+    #: None when `report` was committed; otherwise what stopped this channel.
+    error: str | None = None
+
+    def summary(self) -> str:
+        if self.report is not None:
+            return self.report.summary()
+        return f"{self.channel.value}: nothing imported ({self.error})"
+
+
+def sync_channels_separately(
+    factory: sessionmaker[Session] | None,
+    *,
+    since: date,
+    until: date,
+    primary: ChannelSource,
+    fallback: ChannelSource | None = None,
+    channels: Sequence[SalesChannelName] = tuple(SalesChannelName),
+) -> list[ChannelOutcome]:
+    """`sync_channel` per channel, each in its own `session_scope` (committed on
+    success, rolled back on failure), with an explicit outcome per channel.
+
+    `ChannelSourceUnavailable` is the expected failure (spec 9: the browser source
+    will break) and is reported as a warning line. Anything else -- a report whose
+    columns are wrong -- is logged with its traceback and reported the same way, so
+    one bad export does not stop the other platform importing.
+    """
+    outcomes: list[ChannelOutcome] = []
+    for channel in channels:
+        try:
+            with session_scope(factory) as session:
+                report = sync_channel(
+                    session,
+                    channel=channel,
+                    since=since,
+                    until=until,
+                    primary=primary,
+                    fallback=fallback,
+                )
+        except ChannelSourceUnavailable as exc:
+            outcomes.append(ChannelOutcome(channel, None, f"no source reachable: {exc}"))
+            continue
+        except Exception as exc:
+            log.exception("channel_sync %s: import failed and was rolled back", channel.value)
+            outcomes.append(
+                ChannelOutcome(channel, None, f"failed, rolled back: {type(exc).__name__}: {exc}")
+            )
+            continue
+        outcomes.append(ChannelOutcome(channel, report))
+    return outcomes

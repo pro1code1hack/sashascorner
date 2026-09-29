@@ -20,6 +20,16 @@ optionally `?variant=<id>`; the product form's `Quantity` box and "Add to cart" 
 page (`input[name="updates[]"]`), basket read. Delegated: lines without a product
 URL, product pages with unchosen variants, anything the script cannot confirm.
 
+Tier 0 (`cart_link`): Shopify's documented cart permalinks
+(https://shopify.dev/docs/apps/build/checkout/create-cart-permalinks) --
+`https://<host>/cart/<variant_id>:<qty>,<variant_id>:<qty>` -- stage the basket
+from a URL. The variant id comes from `?variant=` in the product URL when it has
+one, else from the store's public product JSON (`/products/<handle>.js`, one
+unauthenticated httpx GET per product, matched by SKU). A product with several
+variants and no way to pick one is left `uncovered` with the variant titles so a
+person chooses. Opening the link lands on the cart, never on checkout (the
+permalink's `/checkout` form is a different URL and is refused by policy).
+
 `ShopifyPortal` is written so another Shopify supplier can subclass it with a
 different `policy`; it is kept in this module because Cups Direct is the only one
 today.
@@ -28,6 +38,7 @@ today.
 from __future__ import annotations
 
 import re
+from collections.abc import Callable, Sequence
 from dataclasses import replace
 from typing import Any
 from urllib.parse import parse_qs, urlparse
@@ -41,18 +52,21 @@ from cafeops.integrations.suppliers.portals._common import (
     HeuristicPortal,
     detect_needs_human,
     dismiss_cookie_banner,
+    fetch_product_json,
     find_add_button,
     find_quantity_control,
     first_visible,
     goto,
     parse_int,
     set_quantity,
+    shopify_variant_id,
     wait_settled,
 )
 from cafeops.integrations.suppliers.portals.base import (
     DEFAULT_FORBIDDEN_CONTROLS,
     DEFAULT_FORBIDDEN_URLS,
     BasketLine,
+    CartLinkPlan,
     PortalPolicy,
     PortalStepFailed,
     register_portal,
@@ -69,6 +83,9 @@ class ShopifyPortal(HeuristicPortal):
 
     supports_scripted_add = True
     subtotal_labels = (r"sub[- ]?total", r"estimated total", r"\btotal\b")
+    #: How `cart_link` fetches a product's public JSON; None means httpx
+    #: (`_common.fetch_product_json`). Injectable so the fake shop can serve it.
+    product_json_fetch: Callable[[str], Any] | None = None
 
     # -- plumbing ------------------------------------------------------------
 
@@ -92,6 +109,64 @@ class ShopifyPortal(HeuristicPortal):
         if not isinstance(data, dict) or "items" not in data:
             raise PortalStepFailed(f"{path} has no items list; not a Shopify cart")
         return data
+
+    # -- tier 0: the basket as a URL -----------------------------------------
+
+    def cart_link(self, lines: Sequence[BasketLine]) -> CartLinkPlan | None:
+        """Cart permalink for `lines` (module docstring). Product JSON is fetched at
+        most once per product URL per call; a fetch that fails, a URL off this shop,
+        or a variant that cannot be chosen goes to `uncovered` with the reason. The
+        same variant on two lines is merged. None only when there are no lines."""
+        if not lines:
+            return None
+        memo: dict[str, tuple[str, Any]] = {}
+        fetch = self.product_json_fetch or fetch_product_json
+
+        def cached_fetch(url: str) -> Any:
+            if url not in memo:
+                try:
+                    memo[url] = ("ok", fetch(url))
+                except Exception as exc:  # re-raised below; shopify_variant_id reports it
+                    memo[url] = ("err", exc)
+            kind, value = memo[url]
+            if kind == "err":
+                raise value
+            return value
+
+        items: dict[str, int] = {}
+        covered: list[int] = []
+        uncovered: dict[int, str] = {}
+        refs: dict[int, str] = {}
+        for line in lines:
+            if not line.product_url:
+                uncovered[line.po_line_id] = "no product URL"
+                continue
+            host = urlparse(line.product_url).hostname or ""
+            if not self.policy.host_allowed(host):
+                uncovered[line.po_line_id] = f"product URL host {host!r} is not this shop"
+                continue
+            if line.packs_wanted < 1:
+                uncovered[line.po_line_id] = "quantity is zero"
+                continue
+            variant, note = shopify_variant_id(line.product_url, line.sku, fetch=cached_fetch)
+            if variant is None:
+                uncovered[line.po_line_id] = note
+                continue
+            items[variant] = items.get(variant, 0) + line.packs_wanted
+            covered.append(line.po_line_id)
+            refs[line.po_line_id] = f"variant {variant}"
+        if items:
+            url = f"{self._origin()}/cart/" + ",".join(f"{v}:{q}" for v, q in items.items())
+        else:
+            url = self.policy.basket_url
+        count = len(items)
+        return CartLinkPlan(
+            url=url,
+            covered=tuple(covered),
+            uncovered=uncovered,
+            label=f"{self.label} cart link, {count} item{'' if count == 1 else 's'}",
+            refs=refs,
+        )
 
     # -- sign-in -------------------------------------------------------------
 

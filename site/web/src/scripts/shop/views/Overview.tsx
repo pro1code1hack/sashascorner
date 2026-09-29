@@ -47,9 +47,9 @@ export function Overview() {
           )}
           <p class="sh-hero__account">
             {signedIn ? (
-              <a href={paths.account()}>Your Rewards card is signed in. Stamps count online too.</a>
+              <a href={paths.account()}>You're signed in. Stamps count online too.</a>
             ) : (
-              <a href={paths.account()}>Sign in or join Rewards to collect stamps on online orders.</a>
+              <a href={paths.account()}>Sign in or create an account to collect stamps on online orders.</a>
             )}
           </p>
         </div>

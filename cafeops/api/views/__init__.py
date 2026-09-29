@@ -8,11 +8,12 @@ Every function here takes a `Session` and returns a Pydantic model. They run ins
    a lazy attribute touched by the router would raise. Returning finished models makes
    that impossible rather than unlikely.
 
-Nothing here writes, with one exception the spec requires: `templates.apply_edit`, the
-composition editor's commit. Every other function reads. In particular
-`orders.draft_orders` computes a full ordering run and persists none of it -- invariant
-1 says a purchase order needs a human in Telegram, and there is no endpoint in this
-API that creates, confirms or sends one.
+The writes here are few and each goes through a service: `templates.apply_edit` (the
+composition editor's commit), `proposals.materialise_proposal` (import review) and the
+two `confirm` views (supplier terms, shelf life). Everything else reads. In particular
+`orders.draft_orders` computes a full ordering run and persists none of it. Creating a
+DRAFT order and confirming it (by a named person, invariant 1) are routes in
+`api/areas/stock.py` over `services/web_orders.py`; nothing in this API sends one.
 """
 
 from __future__ import annotations

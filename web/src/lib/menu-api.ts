@@ -230,7 +230,9 @@ export const menuApi = {
   /** `null` clears an item's own time so the recipe's time applies again. */
   prep: (id: number, seconds: Record<number, number | null>, isEstimate: boolean, actor: string) =>
     send<PrepWrite>(`/api/menu-items/${id}/prep`, { seconds, is_estimate: isEstimate, actor }),
-  clearPhoto: (id: number) => send<PhotoResult>(`/api/menu-items/${id}/photo/clear`, {}),
+  /** Same operator header as uploadPhoto, so the log says who removed it. */
+  clearPhoto: (id: number, actor: string | null) =>
+    send<PhotoResult>(`/api/menu-items/${id}/photo/clear`, {}, { headers: actor ? { 'X-Operator': actor } : {} }),
   /** Raw body; the server decides the type from the bytes, not this header. */
   uploadPhoto: (id: number, blob: Blob, actor: string | null) =>
     send<PhotoResult>(`/api/menu-items/${id}/photo`, undefined, {

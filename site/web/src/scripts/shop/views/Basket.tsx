@@ -9,6 +9,8 @@ import { basket, catalogue, config, lineTotal, loadCatalogue, loadError, online,
 import type { Dining } from '../types';
 import { BottomBar, Button, Loading, Notice, Segmented, Sheet, SkeletonLines, Stepper } from '../ui';
 import { useTitle } from './useTitle';
+import { needsSignIn, signedIn } from '../member';
+import { SignInWall, accountHref } from '../account/SignInWall';
 
 export function Basket() {
   useTitle('My order');
@@ -20,6 +22,9 @@ export function Basket() {
   const count = basket.count();
   const closed = cfg ? !cfg.enabled : false;
   const both = cfg ? cfg.dining.takeaway && cfg.dining.eat_in : true;
+  // The sign-in wall: an account is needed to place an order, not to fill a basket.
+  void signedIn.value;
+  const wall = !closed && !!cat && lines.length > 0 && needsSignIn();
   const diningOptions: { value: Dining; label: string }[] = [
     { value: 'takeaway', label: 'Takeaway' },
     { value: 'eat_in', label: 'Eat in' },
@@ -119,6 +124,7 @@ export function Basket() {
             <p class="sh-muted sh-total__note">
               {online.value ? 'Rewards discounts and the collection time are chosen at checkout.' : 'Checkout needs a connection. Your order is saved on this device.'}
             </p>
+            {wall && <SignInWall />}
             {cat.basket_upsells.map((u) => (
               <UpsellRow upsell={u} cat={cat} key={u.heading} />
             ))}
@@ -131,9 +137,9 @@ export function Basket() {
           <Button tone="paper" onClick={() => setConfirm(true)}>
             Cancel order
           </Button>
-          <Button tone="caramel" class="sh-bar__cta" disabled={closed || !cat || !online.value} onClick={() => go(paths.checkout())}>
-            <span class="sh-bar__label">Checkout</span>
-            <span class="num">{gbp(total)}</span>
+          <Button tone="caramel" class="sh-bar__cta" disabled={closed || !cat || !online.value} onClick={() => go(wall ? accountHref('signin') : paths.checkout())}>
+            <span class="sh-bar__label">{wall ? 'Sign in to order' : 'Checkout'}</span>
+            {!wall && <span class="num">{gbp(total)}</span>}
             <span class="sr-only">, {plural(count, 'item')}</span>
           </Button>
         </BottomBar>

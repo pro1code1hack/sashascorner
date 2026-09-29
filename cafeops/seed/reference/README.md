@@ -80,7 +80,7 @@ uv run cafeops seed-reference --dir PATH --show 50           # another folder; m
 ```
 
 Code: `cafeops/seed/reference_csv.py` (parse + validate), `cafeops/services/reference_seed.py`
-(one function per section), command in `cafeops/cli.py`. Schema: migration `c4d2e8a91f07`.
+(one function per section), command in `cafeops/cli/seed.py`. Schema: migration `c4d2e8a91f07`.
 
 **Validation first.** Every file is parsed before anything is written; any error stops the
 run and lists all of them as `file:row: problem` (bad unit/storage, `3.50` in a pence

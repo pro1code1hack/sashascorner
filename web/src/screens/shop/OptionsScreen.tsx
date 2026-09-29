@@ -6,7 +6,7 @@
  * kcal, default, available, the linked ops modifier so stock depletes the right
  * milk, a photo for photo tiles). One PUT saves the whole group, options included.
  */
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import {
   Button,
   Checkbox,
@@ -17,6 +17,7 @@ import {
   Field,
   FilterChip,
   FilterChipRow,
+  IconButton,
   Input,
   Loading,
   MoneyInput,
@@ -81,14 +82,15 @@ export function OptionsScreen() {
             <PageBody className="compact:px-5">
               <div className="flex flex-col gap-3">
                 <p className="text-sm text-ink-2">
-                  A group shows on every product in the categories it applies to, plus any product it is attached to on its own (Shop menu › product). Groups appear in this order on the item page.
+                  A group shows on every product in the categories it applies to, plus any product it is attached to on its own (Menu items › the item › Online ordering). Groups appear in this order on the item page.
                 </p>
                 <OutcomeLine outcome={order.outcome} />
                 {groups.length === 0 ? (
                   <Empty action={<Button onClick={() => setOpen('new')}>New group</Button>}>No option groups yet. Milk, Extras and Customise are the usual three.</Empty>
                 ) : (
                   <div className="overflow-hidden rounded-card-lg bg-surface shadow-raised">
-                    <div className={cx(LIST_HEAD, COLS)}>
+                    {/* Visual column heads only; each row's cells carry their own hidden labels. */}
+                    <div className={cx(LIST_HEAD, COLS)} aria-hidden="true">
                       <span>Group</span>
                       <span>Kind</span>
                       <span>Rule</span>
@@ -135,12 +137,15 @@ function GroupRow({ g, cat, open, onOpen, mover }: { g: GroupAdmin; cat: Catalog
   const names = g.applies_to_categories.map((slug) => cat.categories.find((c) => c.slug === slug)?.name ?? slug)
   const attached = g.product_ids.length
   return (
-    <li className={cx('grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 border-b border-line-row px-3.5 py-2.5 last:border-b-0', COLS, open && 'bg-brand-wash', !g.active && 'opacity-70')}>
+    // An inactive group keeps full contrast; the pill says it is not shown.
+    <li className={cx('grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 border-b border-line-row px-3.5 py-2.5 last:border-b-0', COLS, open && 'bg-brand-wash')}>
       <span className="min-w-0">
-        <button type="button" onClick={onOpen} className="block max-w-full truncate text-left text-md font-bold text-ink hover:underline">
-          {g.name}
-          {!g.active && <span className="font-normal text-ink-2"> · inactive</span>}
-        </button>
+        <span className="flex min-w-0 items-center gap-2">
+          <button type="button" onClick={onOpen} className="block min-w-0 truncate text-left text-md font-bold text-ink hover:underline">
+            {g.name}
+          </button>
+          {!g.active && <Pill tone="muted">Not shown</Pill>}
+        </span>
         <span className="block truncate text-sm text-ink-2">
           {g.options.length === 0 ? 'No options' : g.options.map((o) => `${o.name}${o.price_delta_pence ? ` +${gbp(o.price_delta_pence)}` : ''}`).join(', ')}
         </span>
@@ -148,16 +153,22 @@ function GroupRow({ g, cat, open, onOpen, mover }: { g: GroupAdmin; cat: Catalog
           {KIND_WORD[g.kind]} · {ruleWord(g)} · {names.length ? names.join(', ') : attached ? `${plural(attached, 'product')} only` : 'nothing yet'}
         </span>
         <span className="hidden truncate text-sm text-ink-2 compact:block wide:hidden">
+          <span className="sr-only">Applies to </span>
           {names.length ? names.join(', ') : attached ? `${plural(attached, 'product')} only` : 'applies to nothing yet'}
           {names.length > 0 && attached > 0 ? ` + ${attached}` : ''}
         </span>
       </span>
       <span className="hidden text-base compact:block">
+        <span className="sr-only">Kind </span>
         {KIND_WORD[g.kind]}
         <span className="block text-sm text-ink-2">{LAYOUT_WORD[g.layout]}{g.collapsed ? ' · folded' : ''}</span>
       </span>
-      <span className="hidden text-base compact:block">{ruleWord(g)}</span>
+      <span className="hidden text-base compact:block">
+        <span className="sr-only">Rule </span>
+        {ruleWord(g)}
+      </span>
       <span className="hidden min-w-0 truncate text-base wide:block">
+        <span className="sr-only">Applies to </span>
         {names.length ? names.join(', ') : <span className="text-ink-2">{attached ? `${plural(attached, 'product')} only` : 'nothing yet'}</span>}
         {names.length > 0 && attached > 0 && <span className="text-ink-2"> + {attached}</span>}
       </span>
@@ -204,9 +215,15 @@ function blankOption(): OptionDraft {
   return { key: `n${seq}`, name: '', description: '', price: '', kcal: '', is_default: false, available: true, modifier_id: '', photo_url: null }
 }
 
+/** What stopped a save, per field, so each message sits under its own control. */
+type OptionErrors = { name?: string; price?: string; kcal?: string }
+type GroupErrors = { name?: string; minmax?: string; options: Record<string, OptionErrors> }
+const NO_ERRORS: GroupErrors = { options: {} }
+
 function GroupEditor({ g, cat, onClose }: { g: GroupAdmin | null; cat: CatalogueAdmin; onClose: () => void }) {
   const w = useWrite()
   const mods = useShopModifiers()
+  const root = useRef<HTMLDivElement>(null)
   const [name, setName] = useState(g?.name ?? '')
   const [prompt, setPrompt] = useState(g?.prompt ?? '')
   const [kind, setKind] = useState<OptionKind>(g?.kind ?? 'SINGLE')
@@ -218,52 +235,53 @@ function GroupEditor({ g, cat, onClose }: { g: GroupAdmin | null; cat: Catalogue
   const [active, setActive] = useState(g?.active ?? true)
   const [cats, setCats] = useState<string[]>(g?.applies_to_categories ?? [])
   const [options, setOptions] = useState<OptionDraft[]>(() => (g ? [...g.options].sort((a, b) => a.sort_order - b.sort_order).map(draftOf) : [blankOption()]))
-  const [error, setError] = useState<string | null>(null)
+  const [errors, setErrors] = useState<GroupErrors>(NO_ERRORS)
 
-  const patch = (key: string, p: Partial<OptionDraft>) => setOptions((os) => os.map((o) => (o.key === key ? { ...o, ...p } : o)))
+  // Editing an option clears what was said about it; the next Save checks again.
+  const patch = (key: string, p: Partial<OptionDraft>) => {
+    setOptions((os) => os.map((o) => (o.key === key ? { ...o, ...p } : o)))
+    setErrors((e) => (e.options[key] ? { ...e, options: Object.fromEntries(Object.entries(e.options).filter(([k]) => k !== key)) } : e))
+  }
   const setDefault = (key: string, on: boolean) =>
     setOptions((os) => os.map((o) => (o.key === key ? { ...o, is_default: on } : kind === 'SINGLE' && on ? { ...o, is_default: false } : o)))
 
   const save = () => {
-    if (name.trim() === '') {
-      setError('The group needs a name.')
-      return
-    }
-    const minV = intOrNull(minSel) ?? 0
+    const next: GroupErrors = { options: {} }
+    if (name.trim() === '') next.name = 'The group needs a name.'
+    const minRaw = intOrNull(minSel)
     const maxV = intOrNull(maxSel)
-    if (minV === undefined || maxV === undefined) {
-      setError('Minimum and maximum are whole numbers.')
-      return
-    }
+    const minV = minRaw ?? 0
+    if (minRaw === undefined || maxV === undefined) next.minmax = 'Whole numbers.'
     const outs: OptionIn[] = []
     for (const [i, o] of options.entries()) {
-      if (o.name.trim() === '') {
-        setError(`Option ${i + 1} needs a name.`)
-        return
-      }
+      const oe: OptionErrors = {}
+      if (o.name.trim() === '') oe.name = 'Needs a name.'
       const price = poundsToPence(o.price)
-      if (price.kind === 'bad') {
-        setError(`${o.name}: ${price.message}`)
-        return
-      }
+      if (price.kind === 'bad') oe.price = price.message
       const kcal = intOrNull(o.kcal)
-      if (kcal === undefined) {
-        setError(`${o.name}: kcal is a whole number.`)
-        return
+      if (kcal === undefined) oe.kcal = 'A whole number.'
+      if (Object.keys(oe).length > 0) {
+        next.options[o.key] = oe
+        continue
       }
       outs.push({
         ...(o.id !== undefined ? { id: o.id } : {}),
         name: o.name.trim(),
         description: o.description.trim() || null,
         price_delta_pence: price.kind === 'value' ? price.value : 0,
-        kcal,
+        kcal: kcal ?? null,
         is_default: o.is_default,
         available: o.available,
         modifier_id: o.modifier_id === '' ? null : Number(o.modifier_id),
         sort_order: i,
       })
     }
-    setError(null)
+    setErrors(next)
+    if (next.name || next.minmax || Object.keys(next.options).length > 0) {
+      // The first field that is wrong gets focus, so the message is heard where it applies.
+      window.requestAnimationFrame(() => root.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus())
+      return
+    }
     const body: GroupIn = {
       name: name.trim(),
       prompt: prompt.trim() || null,
@@ -271,7 +289,7 @@ function GroupEditor({ g, cat, onClose }: { g: GroupAdmin | null; cat: Catalogue
       layout,
       required,
       min_select: minV,
-      max_select: maxV,
+      max_select: maxV ?? null,
       collapsed,
       applies_to_categories: cats,
       active,
@@ -292,13 +310,21 @@ function GroupEditor({ g, cat, onClose }: { g: GroupAdmin | null; cat: Catalogue
   }
 
   return (
-    <>
+    <div ref={root} className="contents">
       <div className="flex flex-wrap gap-x-4 gap-y-2">
-        <Toggle checked={active} onChange={setActive} label={active ? 'Active' : 'Inactive (not shown)'} />
+        <Toggle checked={active} onChange={setActive} label="Shown to customers" />
         <Toggle checked={collapsed} onChange={setCollapsed} label="Starts folded" />
       </div>
-      <Field label="Name">
-        <Input value={name} maxLength={80} onChange={(e) => setName(e.target.value)} placeholder="Milk" />
+      <Field label="Name" error={errors.name}>
+        <Input
+          value={name}
+          maxLength={80}
+          onChange={(e) => {
+            setName(e.target.value)
+            setErrors((er) => (er.name ? { ...er, name: undefined } : er))
+          }}
+          placeholder="Milk"
+        />
       </Field>
       <Field label="Prompt" hint="Under the name: “Choose your milk”.">
         <Input value={prompt} maxLength={160} onChange={(e) => setPrompt(e.target.value)} />
@@ -322,10 +348,10 @@ function GroupEditor({ g, cat, onClose }: { g: GroupAdmin | null; cat: Catalogue
         <Checkbox checked={required} onChange={setRequired} label="Required" className="h-10" />
         {kind === 'MULTI' && (
           <>
-            <Field label="At least" className="w-24">
+            <Field label="At least" className="w-24" error={errors.minmax && intOrNull(minSel) === undefined ? errors.minmax : undefined}>
               <Input size="sm" numeric inputMode="numeric" value={minSel} onChange={(e) => setMinSel(e.target.value)} />
             </Field>
-            <Field label="At most" hint="Blank: no limit." className="w-24">
+            <Field label="At most" hint="Blank: no limit." className="w-24" error={errors.minmax && intOrNull(maxSel) === undefined ? errors.minmax : undefined}>
               <Input size="sm" numeric inputMode="numeric" value={maxSel} onChange={(e) => setMaxSel(e.target.value)} />
             </Field>
           </>
@@ -358,6 +384,7 @@ function GroupEditor({ g, cat, onClose }: { g: GroupAdmin | null; cat: Catalogue
             kind={kind}
             layout={layout}
             mods={mods.data ?? []}
+            errors={errors.options[o.key]}
             onChange={(p) => patch(o.key, p)}
             onDefault={(on) => setDefault(o.key, on)}
             onMove={(to) => setOptions((os) => moved(os, i, to))}
@@ -367,11 +394,6 @@ function GroupEditor({ g, cat, onClose }: { g: GroupAdmin | null; cat: Catalogue
       </div>
 
       <div className="mt-auto flex flex-col gap-2">
-        {error && (
-          <p role="alert" className="text-sm text-bad-ink">
-            {error}
-          </p>
-        )}
         <OutcomeLine outcome={w.outcome} />
         <div className="flex flex-wrap gap-2">
           {g && (
@@ -387,7 +409,7 @@ function GroupEditor({ g, cat, onClose }: { g: GroupAdmin | null; cat: Catalogue
           </Button>
         </div>
       </div>
-    </>
+    </div>
   )
 }
 
@@ -398,6 +420,7 @@ function OptionEditor({
   kind,
   layout,
   mods,
+  errors,
   onChange,
   onDefault,
   onMove,
@@ -409,6 +432,7 @@ function OptionEditor({
   kind: OptionKind
   layout: OptionLayout
   mods: ModifierRef[]
+  errors?: OptionErrors
   onChange: (p: Partial<OptionDraft>) => void
   onDefault: (on: boolean) => void
   onMove: (to: number) => void
@@ -418,19 +442,19 @@ function OptionEditor({
   return (
     <div className="flex flex-col gap-2 rounded-card border border-line-soft bg-canvas-2 px-3 py-2.5">
       <div className="flex items-start gap-2">
-        <Field label={`Option ${index + 1}`} className="flex-1">
+        <Field label={`Option ${index + 1}`} className="flex-1" error={errors?.name}>
           <Input size="sm" value={o.name} maxLength={80} placeholder="Oat milk" onChange={(e) => onChange({ name: e.target.value })} />
         </Field>
-        <MoveButtons name={name} mover={{ enabled: true, index, count, move: (_from, to) => onMove(to) }} idBase={domId('sho', o.key)} />
-        <Button variant="ghost" size="sm" aria-label={`Remove ${name}`} onClick={onRemove} className="mt-[18px]">
-          <span aria-hidden="true">×</span>
-        </Button>
+        <span className="mt-[18px] flex items-start gap-1">
+          <MoveButtons name={name} mover={{ enabled: true, index, count, move: (_from, to) => onMove(to) }} idBase={domId('sho', o.key)} />
+          <IconButton label={`Remove ${name}`} onClick={onRemove} />
+        </span>
       </div>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-        <Field label="Extra price">
+        <Field label="Extra price" error={errors?.price}>
           <MoneyInput size="sm" value={o.price} placeholder="0.00" onChange={(e) => onChange({ price: e.target.value })} />
         </Field>
-        <Field label="Kcal">
+        <Field label="Kcal" error={errors?.kcal}>
           <Input size="sm" numeric inputMode="numeric" value={o.kcal} onChange={(e) => onChange({ kcal: e.target.value })} />
         </Field>
         <Field label="Depletes stock as" hint={mods.length === 0 ? 'No modifiers in Menu items.' : undefined} className="col-span-2 sm:col-span-1">
@@ -450,7 +474,7 @@ function OptionEditor({
       </Field>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
         <Checkbox checked={o.is_default} onChange={onDefault} label={kind === 'SINGLE' ? 'Picked by default' : 'Ticked by default'} />
-        <Toggle checked={o.available} onChange={(on) => onChange({ available: on })} label={<span className="text-sm">{o.available ? 'Available' : 'Unavailable'}</span>} />
+        <Toggle checked={o.available} onChange={(on) => onChange({ available: on })} label={<span className="text-sm">Available</span>} />
         {o.photo_url && <Pill tone="neutral">Has photo</Pill>}
       </div>
       {layout === 'PHOTO_TILES' && (

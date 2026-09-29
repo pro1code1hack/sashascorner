@@ -27,22 +27,24 @@ import {
   PageHeader,
   SearchInput,
   Select,
+  StatusLine,
   Textarea,
   cx,
 } from '../../components/ui'
-import type { ActiveFilterChip } from '../../components/ui'
+import type { ActiveFilterChip, Outcome } from '../../components/ui'
 import { useOperator } from '../../lib/operator'
 import { navigate, useLocation } from '../../lib/router'
 import { KEYS, stockApi, supplierWrites } from '../../lib/stock-api'
 import type { OrderChannel, Supplier, SupplierCreateIn } from '../../lib/types/stock'
 import { WEEKDAYS } from '../stock/fmt'
-import { useWrite, OutcomeLine } from '../stock/writes'
+import { useWrite } from '../stock/writes'
 import { SupplierPage } from './SupplierPage'
 import { EMPTY_TERMS, TermsFields, daysText, isBlank, parseTerms } from './terms'
 import type { TermsDraft } from './terms'
-import { CHANNELS, KINDS, channelLabel, emailError } from './vocab'
+import { CHANNELS, KINDS, channelLabel, emailError, fromWrite } from './vocab'
 
-export type Saved = { tone: 'ok' | 'bad'; text: string } | null
+/** What the header's status line says after a write: the kit's Outcome, or nothing. */
+export type Saved = Outcome | null
 
 type TermsFilter = 'all' | 'guess' | 'confirmed'
 
@@ -130,16 +132,7 @@ export function SuppliersScreen() {
       <PageHeader
         title="Suppliers"
         subtitle="who we buy from, and on what terms"
-        saved={
-          saved && (
-            <span
-              role={saved.tone === 'bad' ? 'alert' : 'status'}
-              className={saved.tone === 'bad' ? 'text-bad-ink' : 'text-ink-2'}
-            >
-              {saved.text}
-            </span>
-          )
-        }
+        saved={<StatusLine outcome={saved} />}
         actions={
           <Button
             variant="primary"
@@ -240,7 +233,7 @@ export function SuppliersScreen() {
                 existing={list}
                 onDone={(id, text) => {
                   setAdding(false)
-                  if (text) setSaved({ tone: 'ok', text })
+                  if (text) setSaved({ kind: 'ok', text })
                   if (id !== null) {
                     clearAll()
                     navigate(`/suppliers/${id}`)
@@ -315,7 +308,7 @@ function SupplierTabs({
                 >
                   <span className="truncate">{s.name}</span>
                   {s.terms_are_placeholders && (
-                    <span className="flex-none text-xs font-bold text-alert" title="Terms are a guess">
+                    <span className="flex-none text-xs font-bold text-warn-ink">
                       <span aria-hidden="true">●</span>
                       <span className="sr-only">(terms are a guess)</span>
                     </span>
@@ -546,9 +539,8 @@ function AddSupplier({
         <Button type="button" variant="ghost" onClick={() => onDone(null)}>
           Cancel
         </Button>
-        {tried && !ok && <span className="text-sm text-bad-ink">Fix the fields marked above.</span>}
       </div>
-      <OutcomeLine outcome={w.outcome} />
+      <StatusLine outcome={tried && !ok ? { kind: 'error', text: 'Fix the fields marked above.' } : fromWrite(w.outcome)} />
     </form>
   )
 }

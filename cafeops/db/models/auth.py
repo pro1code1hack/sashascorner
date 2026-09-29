@@ -24,7 +24,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from cafeops.db.base import Base
 from cafeops.db.models._common import UTCDateTime, enum_col, utcnow
-from cafeops.db.models.enums import AuthEvent
+from cafeops.domain.enums import AuthEvent
 
 
 class AuthCredential(Base):

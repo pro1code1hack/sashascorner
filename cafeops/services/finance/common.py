@@ -7,15 +7,16 @@ basis points (integers). No float ever touches a figure (invariant 11).
 from __future__ import annotations
 
 import calendar
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, timedelta
 
 from sqlalchemy.orm import Session
 
-from cafeops.config import settings
 from cafeops.db.models.finance import FinanceSetting
+from cafeops.services.actor import require_actor
 
 __all__ = [
     "UNSET",
+    "WEEKDAY_ABBR",
     "FinanceConflict",
     "FinanceRefused",
     "Period",
@@ -25,13 +26,11 @@ __all__ = [
     "clean_text",
     "editor",
     "finance_settings",
-    "local_today",
     "month_key",
     "month_label",
     "month_long",
     "month_range",
     "month_start",
-    "now_utc",
     "ordinal",
     "parse_month",
     "parse_period",
@@ -60,17 +59,11 @@ class Unset:
 
 UNSET = Unset()
 
+#: Monday-first weekday abbreviations, indexed by `date.weekday()`. The one copy.
+WEEKDAY_ABBR: tuple[str, ...] = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+
 #: A reporting period: one month (its first day) or everything (None).
 Period = date | None
-
-
-def now_utc() -> datetime:
-    return datetime.now(UTC)
-
-
-def local_today() -> date:
-    """The cafe's trading day, Europe/London."""
-    return datetime.now(settings.tz).date()
 
 
 def month_start(d: date) -> date:
@@ -157,8 +150,16 @@ def require_pence(value: int | None, field: str, *, allow_zero: bool = True) -> 
 
 def editor(operator: str | None) -> str:
     """Who edited a row. Never None after a person's edit: the workbook importer reads a
-    non-null `updated_by` as "edited in the app, leave it alone"."""
-    return clean_text(operator) or "web app (no name given)"
+    non-null `updated_by` as "edited in the app, leave it alone".
+
+    Deliberately NOT `services.actor.require_actor`'s refusal: an unnamed finance edit is
+    accepted and signed "web app (no name given)" -- an owner decision for the money
+    screens, kept as it was. A given name follows the actor rule (trimmed, 120 chars).
+    """
+    try:
+        return require_actor(operator)
+    except ValueError:
+        return "web app (no name given)"
 
 
 def finance_settings(session: Session) -> FinanceSetting:

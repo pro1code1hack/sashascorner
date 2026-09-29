@@ -31,7 +31,7 @@ from datetime import date
 from pathlib import Path
 from typing import Protocol
 
-from cafeops.db.models.enums import PaymentSourceKind
+from cafeops.domain.enums import PaymentSourceKind
 from cafeops.integrations.payments.base import (
     PaymentReport,
     PaymentSourceUnavailable,

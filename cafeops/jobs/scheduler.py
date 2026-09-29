@@ -39,21 +39,27 @@ import logging
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from sqlalchemy.orm import Session, sessionmaker
 
 from cafeops.bot import formatters as fmt
+from cafeops.bot.deps import run_sync_factory
 from cafeops.bot.notify import Notifier, notifier_for_settings
 from cafeops.bot.views import build_digest, build_order_view
 from cafeops.config import settings
-from cafeops.db.base import SessionFactory, session_scope
-from cafeops.jobs.drift_report import run_drift_report
+from cafeops.db.base import session_factory, session_scope
+from cafeops.jobs.drift_report import DriftReport, run_drift_report
 from cafeops.jobs.expiry_sweep import sweep_expiry
 from cafeops.jobs.nightly_expand import run_nightly_expand
 from cafeops.jobs.pre_delivery_orders import run_pre_delivery_orders, schedules
+from cafeops.logging_setup import configure_logging
+from cafeops.services.waste_proposals import propose_waste_factors
+
+if TYPE_CHECKING:
+    from cafeops.jobs.channel_sync import ChannelOutcome
 
 __all__ = ["JobTimes", "build_scheduler", "describe_schedule", "main", "run"]
 
@@ -99,19 +105,6 @@ class JobTimes:
     drift_minute: int = 0
 
 
-def _run_sync[T](
-    fn: Callable[..., T], factory: sessionmaker[Session] | None = None, **kwargs: Any
-) -> T:
-    with session_scope(factory or SessionFactory) as session:
-        return fn(session, **kwargs)
-
-
-async def _to_thread[T](
-    fn: Callable[..., T], factory: sessionmaker[Session] | None = None, **kwargs: Any
-) -> T:
-    return await asyncio.to_thread(_run_sync, fn, factory, **kwargs)
-
-
 # ==========================================================================
 # The jobs, as the scheduler calls them
 # ==========================================================================
@@ -150,14 +143,14 @@ async def job_daily_sync(factory: sessionmaker[Session] | None = None) -> None:
 
 
 async def job_nightly_expand(factory: sessionmaker[Session] | None = None) -> None:
-    report = await _to_thread(run_nightly_expand, factory)
+    report = await run_sync_factory(factory)(run_nightly_expand)
     log.info(report.summary())
     for warning in report.warnings:
         log.warning(warning)
 
 
 async def job_expiry_sweep(factory: sessionmaker[Session] | None = None) -> None:
-    report = await _to_thread(sweep_expiry, factory)
+    report = await run_sync_factory(factory)(sweep_expiry)
     log.info(report.summary())
 
 
@@ -179,22 +172,30 @@ async def job_pre_delivery_orders(
     order already open sends nothing: the owner has already been told about it, and a
     second notification for the same basket is how a queue gets ignored.
     """
-    report = await _to_thread(run_pre_delivery_orders, factory, supplier_ids=supplier_ids)
+    report = await run_sync_factory(factory)(run_pre_delivery_orders, supplier_ids=supplier_ids)
     log.info(report.summary())
     for warning in report.warnings:
         log.warning(warning)
-    created = [outcome.po_id for outcome in report.created]
+    created = [outcome.po_id for outcome in report.created if outcome.po_id]
     if not created:
         return
-    if settings.browser_worker_enabled:
-        # docs/agents/BROWSER-ORDERING.md 4.1: suppliers with channel_config.auto_stage
-        # get a STAGE_BASKET job queued for each draft this run wrote. Queued only; the
-        # worker fills the basket and a person pays.
-        await _to_thread(_auto_stage_drafts, factory, po_ids=[p for p in created if p])
-    views = [await _to_thread(build_order_view, factory, po_id=po_id) for po_id in created if po_id]
+    run = run_sync_factory(factory)
+    # Notify FIRST. The drafts are already committed, and a later run sends nothing for
+    # them by design (see above) -- so anything that fails after this point must not be
+    # able to swallow the one message the owner gets about these baskets.
+    views = [await run(build_order_view, po_id=po_id) for po_id in created]
     text = fmt.job_new_drafts(views)
     if text:
         await (notifier or notifier_for_settings()).send(text)
+    if settings.browser_worker_enabled:
+        # docs/agents/BROWSER-ORDERING.md 4.1: suppliers with channel_config.auto_stage
+        # get a STAGE_BASKET job queued for each draft this run wrote. Queued only; the
+        # worker fills the basket and a person pays. Best effort: a failure here leaves
+        # the drafts as they are (a person can press "Stage basket") and is logged.
+        try:
+            await run(_auto_stage_drafts, po_ids=created)
+        except Exception:
+            log.exception("auto-stage failed for PO(s) %s; the drafts stand unstaged", created)
 
 
 def _auto_stage_drafts(session: Session, *, po_ids: list[int]) -> None:
@@ -221,14 +222,29 @@ def _auto_stage_drafts(session: Session, *, po_ids: list[int]) -> None:
 async def job_digest(
     factory: sessionmaker[Session] | None = None, notifier: Notifier | None = None
 ) -> None:
-    view = await _to_thread(build_digest, factory)
+    view = await run_sync_factory(factory)(build_digest)
     await (notifier or notifier_for_settings()).send(fmt.digest(view))
 
 
 async def job_drift_report(
     factory: sessionmaker[Session] | None = None, notifier: Notifier | None = None
 ) -> None:
-    report = await _to_thread(run_drift_report, factory)
+    def _report_and_propose(session: Session) -> DriftReport:
+        # One transaction: the observations the report backfills are the ones the
+        # proposals are computed from.
+        report = run_drift_report(session)
+        run = propose_waste_factors(session, at=report.generated_at)
+        if run.proposed:
+            log.info(
+                "drift: %d waste-factor proposal(s) put in the review queue (run %s)",
+                len(run.proposed),
+                run.run_id,
+            )
+        if run.already_waiting:
+            log.info("drift: already waiting, not re-proposed: %s", ", ".join(run.already_waiting))
+        return report
+
+    report = await run_sync_factory(factory)(_report_and_propose)
     log.info(report.summary())
     for warning in report.warnings:
         log.warning(warning)
@@ -424,7 +440,7 @@ def _read_schedules(factory: sessionmaker[Session] | None) -> list[Any]:
     suppliers' terms are invented anyway (`ARCHITECTURE.md` 8F.4) -- they will be edited by
     a human who can restart a systemd unit.
     """
-    with session_scope(factory or SessionFactory) as session:
+    with session_scope(factory or session_factory()) as session:
         return schedules(session)
 
 
@@ -497,15 +513,12 @@ async def run(times: JobTimes | None = None) -> None:
 
 
 def main() -> None:
-    logging.basicConfig(level=logging.INFO)
+    configure_logging()
     log.info("cafeops scheduler, %s", datetime.now(UTC).isoformat())
     asyncio.run(run())
 
 
-#: Every job, by the name the CLI uses to fire one by hand.
-async def job_channel_sync(
-    factory: sessionmaker[Session] | None = None, notifier: Notifier | None = None
-) -> None:
+async def job_channel_sync(factory: sessionmaker[Session] | None = None) -> None:
     """Pull Deliveroo and Just Eat figures for the trailing window.
 
     Registered because `jobs/channel_sync.py` existed but nothing ever called it, so
@@ -517,48 +530,39 @@ async def job_channel_sync(
     state and must not turn into a nightly alert nobody reads. And the whole job is
     tolerant of the source being unavailable: spec 4.6 says the browser agent will break,
     and spec 9 says falling back to CSV is expected behaviour, not an incident.
+
+    One transaction per channel (`sync_channels_separately`): a channel whose source is
+    unreachable is rolled back on its own and reported as such, while the channels that
+    did import are committed and reported as imported -- never one log line claiming
+    "nothing to import" over a half-committed night.
     """
-    from cafeops.integrations.channels import (
-        ChannelSourceUnavailable,
-        build_source,
-    )
-    from cafeops.jobs.channel_sync import default_window, sync_all_channels
+    from cafeops.integrations.channels import build_source
+    from cafeops.jobs.channel_sync import default_window, sync_channels_separately
 
     since, until = default_window()
 
-    def _run() -> list[object]:
+    def _run() -> list[ChannelOutcome]:
         try:
             primary, fallback = build_source()
         except ValueError as exc:
             log.warning("channel_sync: %s", exc)
             return []
-        with session_scope(factory) as session:
-            try:
-                return list(
-                    sync_all_channels(
-                        session,
-                        since=since,
-                        until=until,
-                        primary=primary,
-                        fallback=fallback,
-                    )
-                )
-            except ChannelSourceUnavailable as exc:
-                log.warning("channel_sync: no source reachable: %s", exc)
-                return []
+        return sync_channels_separately(
+            factory, since=since, until=until, primary=primary, fallback=fallback
+        )
 
-    reports = await asyncio.to_thread(_run)
-    if not reports:
-        log.info("channel_sync %s..%s: nothing to import", since, until)
+    outcomes = await asyncio.to_thread(_run)
+    if not outcomes:
+        log.info("channel_sync %s..%s: no source configured, nothing imported", since, until)
         return
-    for report in reports:
-        # Explicit rather than a getattr-with-lambda default: the lambda captured the
-        # loop variable late, so every fallback line would have described the LAST
-        # report. ruff's B023 caught it, and it would have been a quietly wrong log.
-        summarise = getattr(report, "summary", None)
-        log.info(summarise() if callable(summarise) else str(report))
+    for outcome in outcomes:
+        if outcome.error is None:
+            log.info("channel_sync: %s", outcome.summary())
+        else:
+            log.warning("channel_sync: %s", outcome.summary())
 
 
+#: Every job, by the name the CLI uses to fire one by hand.
 JOBS: dict[str, Callable[..., Awaitable[None]]] = {
     "daily_sync": job_daily_sync,
     "nightly_expand": job_nightly_expand,

@@ -19,7 +19,7 @@ from sqlalchemy.types import JSON
 
 from cafeops.db.base import Base
 from cafeops.db.models._common import UTCDateTime, enum_col, utcnow
-from cafeops.db.models.enums import ProposalConfidence, ProposalKind, ProposalStatus
+from cafeops.domain.enums import ProposalConfidence, ProposalKind, ProposalStatus
 
 
 class AgentProposal(Base):

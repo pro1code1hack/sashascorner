@@ -19,8 +19,14 @@ import {
   FilterToggle,
   Loading,
   PageHeader,
+  Pill,
   SearchInput,
-  cx,
+  THead,
+  TBody,
+  Table,
+  Td,
+  Th,
+  Tr,
 } from '../../components/ui'
 import type { ActiveFilterChip, FilterOption } from '../../components/ui'
 import { cmp, fromMoney } from '../../lib/dec'
@@ -30,8 +36,6 @@ import type { IngredientRow, Unit } from '../../lib/types/menu'
 import { MONEY_INPUT, gbp, poundsToPence, qtyText, unitPrice, unitWord } from '../menu/common/figures'
 import { CreateIngredient, IngredientDetailPane } from './Detail'
 import { IngredientThumb } from './Thumb'
-
-const ROW_GRID = 'compact:grid-cols-[44px_minmax(0,1fr)_150px_170px_70px_90px]'
 
 type SortKey = 'az' | 'za' | 'unit-desc' | 'unit-asc' | 'pack-desc' | 'pack-asc' | 'most' | 'least' | 'sups' | 'life'
 
@@ -190,9 +194,9 @@ export function IngredientsScreen() {
       <PageHeader
         title="Ingredients & prices"
         subtitle="what things cost"
-        saved={data.isFetching ? 'Loading…' : 'Saved'}
+        saved={data.isFetching ? 'Loading…' : undefined}
         actions={
-          <Button variant="primary" className="rounded-[18px] px-[18px] text-lg" onClick={() => go({ create: true })}>
+          <Button variant="primary" size="lg" onClick={() => go({ create: true })}>
             + Add ingredient
           </Button>
         }
@@ -284,11 +288,15 @@ export function IngredientsScreen() {
           {data.isLoading && <Loading what="Loading ingredients" />}
           {data.error && <ErrorBox error={data.error} what="ingredients" />}
           {data.data && shown.length === 0 && (
-            <Empty roomy>
-              Nothing matches these filters.{' '}
-              <button type="button" className="font-bold text-brand-ink underline" onClick={() => setF(EMPTY)}>
-                Clear them
-              </button>
+            <Empty
+              roomy
+              action={
+                <Button variant="secondary" onClick={() => setF(EMPTY)}>
+                  Clear filters
+                </Button>
+              }
+            >
+              Nothing matches these filters.
             </Empty>
           )}
           {shown.length > 0 && <ListView rows={shown} onOpen={(i) => go({ id: i })} />}
@@ -317,71 +325,88 @@ export function IngredientsScreen() {
   )
 }
 
+/**
+ * A real table (header cells carry scope, rows are keyboard-operable). Pack,
+ * Keeps and Used in hide on a phone; from `compact` the name column keeps at
+ * least 160px and the card scrolls sideways inside itself rather than squeezing
+ * the name to nothing.
+ */
+const PHONE_HIDDEN = 'hidden compact:table-cell'
+
 function ListView({ rows, onOpen }: { rows: IngredientRow[]; onOpen: (id: number) => void }) {
   return (
     <div className="overflow-hidden rounded-card-lg bg-surface shadow-raised">
-      <div className={cx('hidden gap-3 border-b border-line px-3.5 py-2 text-label font-bold uppercase tracking-[.06em] text-ink-3 compact:grid', ROW_GRID)}>
-        <span />
-        <span>Ingredient</span>
-        <span className="text-right">Cost / unit</span>
-        <span className="text-right">Pack</span>
-        <span className="text-right">Keeps</span>
-        <span className="text-right">Used in</span>
-      </div>
-      <ul>
-        {rows.map((r) => {
-          const preferred = r.suppliers.find((s) => s.is_preferred) ?? r.suppliers[0]
-          const more = r.suppliers.length > 1 ? ` +${r.suppliers.length - 1}` : ''
-          return (
-            <li key={r.ingredient_id} className="border-b border-line-row last:border-b-0">
-              <button
-                type="button"
-                onClick={() => onOpen(r.ingredient_id)}
-                className={cx(
-                  'grid w-full grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-x-3 px-3.5 py-2.5 text-left text-ink hover:bg-canvas-2',
-                  ROW_GRID,
-                  r.retired && 'opacity-60',
-                )}
-              >
-                <IngredientThumb
-                  url={r.photo_url}
-                  name={r.name}
-                  fallback={
-                    <span aria-hidden="true" className="text-lg font-extrabold text-ink-3">
-                      {r.name.trim().charAt(0).toUpperCase()}
-                    </span>
-                  }
-                />
-                <span className="min-w-0">
-                  <span className="block truncate text-md font-bold">{r.name}</span>
-                  <span className="block truncate text-sm text-ink-2">
+      <div className="px-3.5">
+        <Table label="Ingredients">
+        <THead>
+          <tr>
+            <Th width={52}>
+              <span className="sr-only">Photo</span>
+            </Th>
+            <Th style={{ minWidth: 160 }}>Ingredient</Th>
+            <Th numeric>Cost / unit</Th>
+            <Th numeric className={PHONE_HIDDEN}>
+              Pack
+            </Th>
+            <Th numeric className={PHONE_HIDDEN}>
+              Keeps
+            </Th>
+            <Th numeric className={PHONE_HIDDEN}>
+              Used in
+            </Th>
+          </tr>
+        </THead>
+        <TBody>
+          {rows.map((r) => {
+            const preferred = r.suppliers.find((s) => s.is_preferred) ?? r.suppliers[0]
+            const more = r.suppliers.length > 1 ? ` +${r.suppliers.length - 1}` : ''
+            return (
+              <Tr key={r.ingredient_id} onClick={() => onOpen(r.ingredient_id)} className="border-line-row [&>td]:py-2.5">
+                <Td>
+                  <IngredientThumb
+                    url={r.photo_url}
+                    name={r.name}
+                    decorative
+                    fallback={
+                      <span aria-hidden="true" className="text-lg font-extrabold text-ink-2">
+                        {r.name.trim().charAt(0).toUpperCase()}
+                      </span>
+                    }
+                  />
+                </Td>
+                <Td>
+                  <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                    <span className="text-md font-bold">{r.name}</span>
+                    {r.retired && <Pill tone="muted">Retired</Pill>}
+                  </span>
+                  <span className="block text-sm text-ink-2">
                     {r.category ?? 'Other'}
                     {preferred ? ` · ${preferred.name}${more}` : ' · no supplier'}
                     {r.storage !== 'AMBIENT' ? ` · ${(STORAGE_LABEL[r.storage] ?? r.storage).toLowerCase()}` : ''}
-                    {r.retired ? ' · retired' : ''}
                   </span>
-                </span>
-                <span className={cx('fig whitespace-nowrap text-right text-base', r.unit_cost.is_estimate && 'italic')}>
+                </Td>
+                <Td numeric est={r.unit_cost.is_estimate}>
                   {r.unit_cost.pence === null ? (
                     <span className="text-ink-2">no price</span>
                   ) : (
                     `${unitPrice(r.unit_cost.pence)} / ${unitWord(r.unit)}`
                   )}
-                </span>
-                <span className={cx('fig hidden truncate text-right text-base compact:block', r.unit_cost.is_estimate && 'italic')}>
+                </Td>
+                <Td numeric est={r.unit_cost.is_estimate} className={PHONE_HIDDEN}>
                   {r.pack ? `${packKey(r)} · ${gbp(r.pack.pack_cost_pence)}` : <span className="text-ink-2">—</span>}
-                </span>
-                <span className="fig hidden text-right text-base compact:block">
+                </Td>
+                <Td numeric className={PHONE_HIDDEN}>
                   {r.shelf_life_days === null ? <span className="text-ink-2">—</span> : `${r.shelf_life_days}d`}
-                </span>
-                <span className="fig hidden text-right text-base compact:block">
+                </Td>
+                <Td numeric className={PHONE_HIDDEN}>
                   {r.used_in_count} {r.used_in_count === 1 ? 'item' : 'items'}
-                </span>
-              </button>
-            </li>
-          )
-        })}
-      </ul>
+                </Td>
+              </Tr>
+            )
+          })}
+        </TBody>
+        </Table>
+      </div>
       <p className="border-t border-line px-3.5 py-2 text-xs text-ink-2">
         <em>Italic</em> costs are estimates. Keeps is the unopened shelf life.
       </p>

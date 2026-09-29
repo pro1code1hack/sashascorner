@@ -16,6 +16,13 @@ What is delegated: lines without a product URL (search), product pages whose buy
 box the script does not recognise (variations, "See all buying options", sold-out),
 and cart pages that do not show `.sc-list-item` rows.
 
+Tier 0 (`cart_link`): Amazon's documented add-to-cart form
+(https://webservices.amazon.com/paapi5/documentation/add-to-cart-form.html) builds
+the basket from a URL -- `/gp/aws/cart/add.html?ASIN.1=<asin>&Quantity.1=<packs>&
+ASIN.2=...` -- so an all-Amazon order needs no browser at all: the owner opens the
+link and the basket is staged in whatever account that browser holds. Nothing on
+that page buys anything; the policy still forbids `/gp/buy/` and "Buy now".
+
 Amazon shows a CAPTCHA ("Enter the characters you see below") to automation it does
 not like; that raises `PortalNeedsHuman` and a person clears it in the headed
 profile. Buying paths are refused by policy: `/gp/buy/`, `/checkout`, `/buy-now`,
@@ -26,18 +33,21 @@ profile. Buying paths are refused by policy: `/gp/buy/`, `/checkout`, `/buy-now`
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 from dataclasses import replace
 from typing import Any
-from urllib.parse import urlparse
+from urllib.parse import urlencode, urlparse
 
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import Locator, Page
 from playwright.sync_api import TimeoutError as PlaywrightTimeout
 
 from cafeops.integrations.suppliers.portals._common import (
+    ASIN_IN_URL,
     EMPTY_BASKET_TEXT,
     LOCATOR_TIMEOUT_MS,
     HeuristicPortal,
+    asin_from_url,
     basket_rows_generic,
     click_increment,
     detect_needs_human,
@@ -57,12 +67,13 @@ from cafeops.integrations.suppliers.portals.base import (
     DEFAULT_FORBIDDEN_CONTROLS,
     DEFAULT_FORBIDDEN_URLS,
     BasketLine,
+    CartLinkPlan,
     PortalPolicy,
     PortalStepFailed,
     register_portal,
 )
 
-ASIN_IN_URL = re.compile(r"/(?:dp|gp/product|gp/aw/d)/([A-Z0-9]{10})(?=[/?#]|$)", re.I)
+CART_ADD_URL = "https://www.amazon.co.uk/gp/aws/cart/add.html"
 _HELLO_SIGN_IN = re.compile(r"hello,?\s*sign in|sign in", re.I)
 _INCREASE = re.compile(r"increase quantity", re.I)
 
@@ -137,10 +148,48 @@ class AmazonPortal(HeuristicPortal):
 
     @staticmethod
     def _asin(url: str | None) -> str | None:
-        if not url:
+        return asin_from_url(url)
+
+    # -- tier 0: the basket as a URL -----------------------------------------
+
+    def cart_link(self, lines: Sequence[BasketLine]) -> CartLinkPlan | None:
+        """The add-to-cart form URL for `lines` (module docstring). The ASIN comes
+        from the product URL (`/dp/`, `/gp/product/`, `/gp/aw/d/`) or, when the URL
+        has none, from a bare ten-character `sku`; a line with neither is
+        `uncovered` with that reason. The same ASIN on two lines is merged (the form
+        takes one quantity per ASIN). None only when there are no lines."""
+        if not lines:
             return None
-        m = ASIN_IN_URL.search(url)
-        return m.group(1).upper() if m else None
+        slots: dict[str, int] = {}
+        covered: list[int] = []
+        uncovered: dict[int, str] = {}
+        refs: dict[int, str] = {}
+        for line in lines:
+            asin = asin_from_url(line.product_url, line.sku)
+            if not asin:
+                uncovered[line.po_line_id] = (
+                    "no ASIN: the product URL has no /dp/<ASIN> and the SKU is not one"
+                )
+                continue
+            if line.packs_wanted < 1:
+                uncovered[line.po_line_id] = "quantity is zero"
+                continue
+            slots[asin] = slots.get(asin, 0) + line.packs_wanted
+            covered.append(line.po_line_id)
+            refs[line.po_line_id] = f"ASIN {asin}"
+        params: list[tuple[str, str]] = []
+        for n, (asin, qty) in enumerate(slots.items(), start=1):
+            params.append((f"ASIN.{n}", asin))
+            params.append((f"Quantity.{n}", str(qty)))
+        url = f"{CART_ADD_URL}?{urlencode(params)}" if params else self.policy.basket_url
+        count = len(slots)
+        return CartLinkPlan(
+            url=url,
+            covered=tuple(covered),
+            uncovered=uncovered,
+            label=f"Amazon add-to-cart link, {count} item{'' if count == 1 else 's'}",
+            refs=refs,
+        )
 
     def _cart_items(self, page: Page) -> Locator:
         return page.locator(
@@ -347,4 +396,4 @@ class AmazonPortal(HeuristicPortal):
         )
 
 
-__all__ = ["ASIN_IN_URL", "AmazonPortal"]
+__all__ = ["ASIN_IN_URL", "CART_ADD_URL", "AmazonPortal"]

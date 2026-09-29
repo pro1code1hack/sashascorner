@@ -22,7 +22,6 @@ import {
   Th,
   THead,
   Tr,
-  cx,
 } from '../../components/ui'
 import { Pagination } from '../../components/ui/Pagination'
 import { useLoyaltyMembers } from '../../lib/loyalty-api'
@@ -193,13 +192,12 @@ function contactLine(m: LoyaltyMemberRow): string {
   return m.marketing_opt_in ? `${who} · offers` : who
 }
 
-/** "5/8" and the dots. A free drink waiting reads as a full card, in green. */
+/** "5/8" and the dots. A free drink waiting reads as a full card (the dots say it; no green text). */
 function StampsCell({ m }: { m: LoyaltyMemberRow }) {
   const shown = m.reward_available ? Math.max(m.stamps_current, m.stamps_required) : m.stamps_current
-  const full = shown >= m.stamps_required
   return (
     <span className="inline-flex items-center gap-2 whitespace-nowrap">
-      <span className={cx('fig font-bold', full ? 'text-ok-ink' : 'text-ink')}>
+      <span className="fig font-bold text-ink">
         {Math.min(shown, m.stamps_required)}/{m.stamps_required}
       </span>
       <StampDots current={shown} required={m.stamps_required} />

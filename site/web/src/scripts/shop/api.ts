@@ -5,7 +5,7 @@
 // Dev only: `?mock=1` answers from ./mock.ts instead of the network. The branch is
 // behind `import.meta.env.DEV`, so a production build never ships mock.ts.
 import { forgetToken, humanError, lastCard, saveToken, type ApiError, type ApiResult } from '../rewards/api';
-import type { Catalogue, Me, OrderView, PlacedOrder, PlaceOrderBody, Quote, QuoteBody, ShopConfig, SlotsResponse } from './types';
+import type { Catalogue, MeK, MeMember, MePatch, MyOrdersPage, OrderView, PlacedOrder, PlaceOrderBody, Quote, QuoteBody, ShopConfig, SlotsResponse } from './types';
 
 export type { ApiError, ApiResult };
 export { humanError };
@@ -36,7 +36,7 @@ export const session = {
 };
 
 export async function request<T>(
-  method: 'GET' | 'POST',
+  method: 'GET' | 'POST' | 'PATCH',
   path: string,
   opts: { body?: unknown; headers?: Record<string, string> } = {},
 ): Promise<ApiResult<T>> {
@@ -102,7 +102,11 @@ export const shopApi = {
     request<OrderView>('GET', `/api/shop/orders/${encodeURIComponent(code)}`, { headers: { 'X-Order-Token': token } }),
   cancel: (code: string, token: string) =>
     request<OrderView>('POST', `/api/shop/orders/${encodeURIComponent(code)}/cancel`, { headers: { 'X-Order-Token': token } }),
-  me: () => request<Me>('GET', '/api/shop/me'),
+  me: () => request<MeK>('GET', '/api/shop/me'),
+  // Profile (Agent K; backend Agent J). Both carry the card token like everything else.
+  myOrders: (page = 1, pageSize = 10) => request<MyOrdersPage>('GET', `/api/shop/me/orders${q({ page: String(page), page_size: String(pageSize) })}`),
+  // J answers with the `member` block alone; the mock with the whole /me. Both are handled.
+  updateMe: (body: MePatch) => request<MeK | MeMember>('PATCH', '/api/shop/me', { body }),
 };
 
 /** Shop-specific wording on top of the loyalty translations. */
@@ -112,5 +116,6 @@ export function shopError(r: Pick<ApiResult<unknown>, 'status' | 'error'>): stri
   if (code === 'price_changed') return 'Prices changed while you were ordering. Your order has been updated: please check it and try again.';
   if (code === 'slot_full') return 'That collection time has just filled up. Please pick another.';
   if (code === 'bad_transition') return r.error?.detail || 'That order can no longer be changed.';
+  if (code === 'sign_in_required') return 'Sign in with your Rewards card to place your order.';
   return humanError(r);
 }

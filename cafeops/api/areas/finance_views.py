@@ -58,7 +58,7 @@ from cafeops.api.areas.finance_schemas import (
     TransactionVoidIn,
 )
 from cafeops.config import settings
-from cafeops.db.models.enums import (
+from cafeops.domain.enums import (
     DirectorEntryType,
     ExpenseKind,
     ExpenseMethod,

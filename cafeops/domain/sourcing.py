@@ -53,7 +53,7 @@ from cafeops.domain.types import (
     SupplierTerms,
     Unit,
 )
-from cafeops.domain.units import IncompatibleUnitsError, convert
+from cafeops.domain.units import IncompatibleUnitsError, convert, pounds
 
 __all__ = [
     "DEFAULT_POLICY",
@@ -85,14 +85,6 @@ def _shown(qty: Decimal) -> str:
     if "." in text:
         text = text.rstrip("0").rstrip(".")
     return text or "0"
-
-
-def _pounds(pence: Decimal | int) -> str:
-    """Integer pence -> "£12.34". Money never becomes a float (invariant 11)."""
-    value = pence if isinstance(pence, int) else int(pence.to_integral_value())
-    sign = "-" if value < 0 else ""
-    whole, part = divmod(abs(value), 100)
-    return f"{sign}£{whole}.{part:02d}"
 
 
 def _per_unit(price: Decimal, unit: Unit) -> str:
@@ -302,7 +294,7 @@ def choose_source(
             reasons.append(
                 f"{_supplier_label(option, terms)} is cheaper at "
                 f"{_per_unit(price, unit)} against {_per_unit(preferred_unit_price, unit)} "
-                f"({_pounds(saving_total)} on this line), but it was NOT taken: {blocker}"
+                f"({pounds(saving_total)} on this line), but it was NOT taken: {blocker}"
             )
             if cheaper_rejected is None:
                 cheaper_rejected, forgone = option, saving_total
@@ -312,8 +304,8 @@ def choose_source(
             # next to a 24% saving, and a reason the reader has to decode is a reason
             # they will overrule.
             failed = (
-                f"the saving is {_pounds(saving_total)} on this line, under the "
-                f"{_pounds(policy.material_saving_pence)} floor"
+                f"the saving is {pounds(saving_total)} on this line, under the "
+                f"{pounds(policy.material_saving_pence)} floor"
                 if saving_total < Decimal(policy.material_saving_pence)
                 else (
                     f"the gap is {saving_pct.quantize(_PENCE)}% per {unit.value}, under the "
@@ -323,7 +315,7 @@ def choose_source(
             reasons.append(
                 f"{_supplier_label(option, terms)} is cheaper at "
                 f"{_per_unit(price, unit)} against {_per_unit(preferred_unit_price, unit)} "
-                f"({saving_pct.quantize(_PENCE)}%, {_pounds(saving_total)} on this line), "
+                f"({saving_pct.quantize(_PENCE)}%, {pounds(saving_total)} on this line), "
                 f"but NOT materially cheaper: {failed}. The preferred supplier keeps the "
                 "line rather than splitting the order, a second delivery and a second "
                 "invoice to check for small change"
@@ -336,7 +328,7 @@ def choose_source(
             f"{_per_unit(price, unit)}, against {_supplier_label(preferred, terms)} at "
             f"{_per_unit(preferred_unit_price, unit)} -- "
             f"{saving_pct.quantize(_PENCE)}% cheaper per {unit.value}, "
-            f"{_pounds(saving_total)} on this line. Materially cheaper and no other "
+            f"{pounds(saving_total)} on this line. Materially cheaper and no other "
             "supplier's minimum is broken by moving it."
         )
         chosen_terms = terms.get(option.supplier_id)
@@ -450,11 +442,11 @@ def _switch_blocker(
     if remaining >= losing.min_order_pence:
         return None
     return (
-        f"moving it would leave {losing.name}'s order at {_pounds(remaining)} against its "
-        f"{_pounds(losing.min_order_pence)} minimum, so that whole order would not ship. "
+        f"moving it would leave {losing.name}'s order at {pounds(remaining)} against its "
+        f"{pounds(losing.min_order_pence)} minimum, so that whole order would not ship. "
         f"The saving is real and the cost of taking it lands on everything else "
         f"{losing.name} supplies -- spec 4.4 says surface this, not resolve it: either "
-        f"accept the {_pounds(losing.min_order_pence - remaining)} shortfall on "
+        f"accept the {pounds(losing.min_order_pence - remaining)} shortfall on "
         f"{losing.name}, move more lines at once, or renegotiate the minimum"
     )
 

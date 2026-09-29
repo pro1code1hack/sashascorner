@@ -4,7 +4,8 @@
  */
 import { useRef, useState } from 'react'
 import type { KeyboardEvent, PointerEvent as RPointerEvent } from 'react'
-import { Button, IconButton, cx } from '../../../components/ui'
+import { Button, IconButton, Pill, StatusLine, cx } from '../../../components/ui'
+import type { Outcome } from '../../../components/ui'
 import { usePhotos } from './context'
 import { FocalEditor } from './FocalEditor'
 import { Img } from './Img'
@@ -30,7 +31,17 @@ export function SlotCard({ slot }: { slot: Slot }) {
     if (done.length) p.place(slot.key, done.map((m) => m.id))
   }
 
-  const statusText = busy ? st.text : dirty ? 'Not saved yet' : (st?.text ?? '')
+  // What the footer says: a refusal, then "Saving…", then the unsaved state (a pill, not coloured text), then the last "Saved at…".
+  const footer: Outcome | null =
+    st?.tone === 'bad'
+      ? { kind: 'error', text: st.text }
+      : busy
+        ? { kind: 'info', text: st.text }
+        : dirty
+          ? { kind: 'info', text: <Pill tone="warn">Not saved yet</Pill> }
+          : st?.text
+            ? { kind: 'ok', text: st.text }
+            : null
 
   return (
     <article
@@ -142,15 +153,7 @@ export function SlotCard({ slot }: { slot: Slot }) {
             Undo changes
           </Button>
         )}
-        <p
-          role="status"
-          className={cx(
-            'min-w-0 flex-1 text-base',
-            st?.tone === 'bad' ? 'text-bad-ink' : dirty && !busy ? 'font-semibold text-warn-ink' : 'text-ink-2',
-          )}
-        >
-          {st?.tone === 'bad' ? st.text : statusText}
-        </p>
+        <StatusLine outcome={footer} className="min-w-0 flex-1 text-base" />
       </footer>
     </article>
   )

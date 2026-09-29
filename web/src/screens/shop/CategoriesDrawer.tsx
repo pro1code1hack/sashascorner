@@ -6,7 +6,7 @@
  * under it and its photo. Opening a row expands its editor inside the drawer.
  */
 import { useMemo, useState } from 'react'
-import { Button, Drawer, Empty, ErrorBox, Field, Input, Loading, Textarea, Toggle, cx } from '../../components/ui'
+import { Button, Drawer, Empty, ErrorBox, Field, Input, Loading, Textarea, Toggle } from '../../components/ui'
 import { LIVE } from '../../lib/api'
 import { SHOP_KEY, catalogueWrites, useShopCatalogue } from '../../lib/shop-api'
 import type { CategoryAdmin } from '../../lib/types/shop'
@@ -58,7 +58,8 @@ function Body() {
 function CategoryRow({ c, open, onToggle, mover }: { c: CategoryAdmin; open: boolean; onToggle: () => void; mover: { enabled: boolean; index: number; count: number; move: (from: number, to: number) => void } }) {
   const w = useWrite()
   return (
-    <li className={cx('border-b border-line-row py-2 last:border-b-0', !c.visible && 'opacity-70')}>
+    // A hidden category keeps full contrast; the sub-line says it is hidden.
+    <li className="border-b border-line-row py-2 last:border-b-0">
       <div className="flex items-center gap-2.5">
         <button type="button" onClick={onToggle} aria-expanded={open} aria-label={`${open ? 'Close' : 'Edit'} ${c.name}`} className="rounded-control">
           <Thumb url={c.photo_url} className="size-9" />
@@ -70,6 +71,7 @@ function CategoryRow({ c, open, onToggle, mover }: { c: CategoryAdmin; open: boo
           <span className="block truncate text-xs text-ink-2">
             {plural(c.product_count, 'product')}
             {c.name !== c.ops_name ? ` · ${c.ops_name} in Menu items` : ''}
+            {!c.visible ? ' · hidden online' : ''}
           </span>
         </span>
         <Toggle checked={c.visible} disabled={w.pending} onChange={(on) => void w.run(() => catalogueWrites.category(c.id, { visible: on }), { invalidate: [SHOP_KEY] })} label={<span className="sr-only">Shown online: {c.name}</span>} />

@@ -7,17 +7,18 @@ The reads that already existed stay where they were (`GET /api/stock`, `/api/sto
 `/api/orders/draft`, `/api/suppliers`, and the two confirmations) and were extended in
 place; this module adds the writes and two reads.
 
-**There is still no route that creates, confirms or sends a purchase order** (DECISIONS 1,
-invariant 1). Orders here can only be listed, cancelled, marked sent once a human has
-confirmed them in Telegram, and received. A shop run records stock and a routing, never
-an order.
+**Orders are created and confirmed here, by a named person** (DECISIONS 18 and 28,
+invariant 1). `POST /api/orders/from-draft` writes a DRAFT from today's ordering run
+(recomputed server-side); `POST /api/orders/{id}/confirm` needs the confirming person's
+name. Nothing is ever *sent* to a supplier by this API: "mark sent" records that a person
+did. A shop run records stock and a routing, never an order.
 """
 
 from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Header, HTTPException, Query, Request, status
+from fastapi import APIRouter, Header, Query, Request
 
 from cafeops.api.areas import stock_views as views
 from cafeops.api.areas.stock_schemas import (
@@ -55,10 +56,11 @@ from cafeops.api.areas.stock_schemas import (
     WriteOffIn,
     WriteOffOut,
 )
+from cafeops.api.params import enum_list
 from cafeops.api.runtime import in_session
 from cafeops.api.security import ApiAuth
+from cafeops.api.uploads import read_bounded_body
 from cafeops.db.models import POStatus
-from cafeops.services.media_store import MAX_BYTES
 
 router = APIRouter(dependencies=[ApiAuth])
 
@@ -145,22 +147,6 @@ async def change_tier(ingredient_id: int, body: TierIn) -> TierOut:
 # --------------------------------------------------------------------------
 
 
-def _statuses(raw: str | None) -> tuple[POStatus, ...] | None:
-    if raw is None or not raw.strip():
-        return None
-    out: list[POStatus] = []
-    for part in raw.split(","):
-        token = part.strip().upper()
-        try:
-            out.append(POStatus[token])
-        except KeyError:
-            raise HTTPException(
-                status_code=422,
-                detail=f"{part!r}: expected one of {', '.join(s.name for s in POStatus)}",
-            ) from None
-    return tuple(out)
-
-
 @router.get(
     "/api/orders",
     response_model=OrdersListResponse,
@@ -172,7 +158,7 @@ async def list_orders(
     supplier_id: Annotated[int | None, Query()] = None,
     limit: Annotated[int, Query(ge=1, le=500)] = 200,
 ) -> OrdersListResponse:
-    statuses = _statuses(status)
+    statuses = enum_list(status, POStatus)
     return await in_session(
         lambda session: views.orders_view(
             session, statuses=statuses, supplier_id=supplier_id, limit=limit
@@ -280,14 +266,10 @@ async def upload_receipt(
     po_id: int,
     request: Request,
     x_operator: Annotated[str | None, Header()] = None,
-    content_length: Annotated[int | None, Header()] = None,
 ) -> PurchaseOrderOut:
-    if content_length is not None and content_length > MAX_BYTES:
-        raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail="that photo is over 2 MB; resize it and try again",
-        )
-    data = await request.body()
+    data = await read_bounded_body(
+        request, detail="that photo is over 2 MB; resize it and try again"
+    )
     return await in_session(
         lambda session: views.receipt_upload_view(session, po_id=po_id, data=data, actor=x_operator)
     )

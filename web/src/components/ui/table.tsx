@@ -131,7 +131,7 @@ export function Tr({ children, selected, flagged, onClick, label, className }: T
       onKeyDown={onKey}
       tabIndex={onClick ? 0 : undefined}
       aria-label={label}
-      aria-selected={onClick ? Boolean(selected) : undefined}
+      aria-current={selected ? true : undefined}
       className={cx(
         'border-b',
         density === 'comfortable' ? 'border-line-row' : 'border-line',

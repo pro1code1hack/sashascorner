@@ -39,7 +39,7 @@ from cafeops.services.loyalty.common import available_rewards, default_program, 
 from cafeops.services.loyalty.errors import LoyaltyError
 from cafeops.services.loyalty.join import find_member_by_contact
 from cafeops.services.loyalty.pos import member_receipts
-from cafeops.services.loyalty.programs import ProgramChange, apply_change, program_by_slug
+from cafeops.services.loyalty.programs import program_by_slug
 from cafeops.services.loyalty.staff_auth import verify_manager_pin
 from cafeops.services.loyalty.stamping import adjust
 from cafeops.services.loyalty.wallets import wallet_kind_by_card
@@ -53,13 +53,11 @@ __all__ = [
     "MemberPage",
     "MemberRow",
     "PosReceiptRow",
-    "ProgramUpdate",
     "RewardRow",
     "adjust_member",
     "member_brief",
     "member_detail",
     "members_page",
-    "update_program",
 ]
 
 Segment = Literal["all", "lapsed_30", "reward_ready", "opted_in", "new_30", "no_wallet"]
@@ -555,50 +553,6 @@ def adjust_member(
     manager = verify_manager_pin(session, manager_pin, limiter_key=f"ip:{client_ip}")
     adjust(session, card_id=card.id, delta=delta, reason=reason, manager=manager)
     return member_detail(session, member_id)
-
-
-@dataclass(frozen=True, slots=True)
-class ProgramUpdate:
-    name: str | None = None
-    stamps_required: int | None = None
-    max_stamps_per_scan: int | None = None
-    reward_text: str | None = None
-    reward_max_price_pence: int | None = None
-    clear_price_cap: bool = False
-    birthday_reward: bool | None = None
-    referral_stamps: int | None = None
-    active: bool | None = None
-
-
-def update_program(
-    session: Session, change: ProgramUpdate, *, manager_pin: str, client_ip: str
-) -> LoyaltyProgram:
-    """Edit the default programme. Manager PIN, because every figure here is money.
-
-    `stamps_required` can be raised freely (every card is below the old target, so below
-    the new one). Lowering it is refused while any live card already holds the new target
-    or more: that card would sit at "8 of 6" with no reward issued, because rewards are
-    issued by a stamp, never retroactively. The rules themselves are
-    `programs.apply_change`, shared with the phase-3 editor.
-    """
-    verify_manager_pin(session, manager_pin, limiter_key=f"ip:{client_ip}")
-    program = default_program(session)
-    apply_change(
-        session,
-        program,
-        ProgramChange(
-            name=change.name,
-            stamps_required=change.stamps_required,
-            max_stamps_per_scan=change.max_stamps_per_scan,
-            reward_text=change.reward_text,
-            reward_max_price_pence=change.reward_max_price_pence,
-            clear_price_cap=change.clear_price_cap,
-            birthday_reward=change.birthday_reward,
-            referral_stamps=change.referral_stamps,
-            active=change.active,
-        ),
-    )
-    return program
 
 
 @dataclass(frozen=True, slots=True)

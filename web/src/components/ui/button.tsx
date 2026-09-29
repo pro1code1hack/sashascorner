@@ -3,7 +3,7 @@
  * <div onClick> is not keyboard accessible.
  */
 import { forwardRef, useEffect, useRef, useState } from 'react'
-import type { ButtonHTMLAttributes, ReactNode } from 'react'
+import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode } from 'react'
 import { cx } from './cx'
 
 export type ButtonVariant =
@@ -133,6 +133,44 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   )
 })
 
+/**
+ * A link that looks like a button (a `<a href>` for navigation: "Open order", "View on
+ * the website"). Same variants and sizes as Button; never use it for an action.
+ */
+export interface LinkButtonProps extends AnchorHTMLAttributes<HTMLAnchorElement> {
+  variant?: ButtonVariant
+  size?: ButtonSize
+  block?: boolean
+  /** Opens a new tab; adds `rel` and an sr-only "(opens in a new tab)" cue. */
+  newTab?: boolean
+}
+
+export const LinkButton = forwardRef<HTMLAnchorElement, LinkButtonProps>(function LinkButton(
+  { variant = 'secondary', size, block = false, newTab = false, className, children, ...rest },
+  ref,
+) {
+  const s = size ?? DEFAULT_SIZE[variant]
+  return (
+    <a
+      ref={ref}
+      target={newTab ? '_blank' : undefined}
+      rel={newTab ? 'noopener noreferrer' : undefined}
+      className={cx(
+        'inline-flex items-center justify-center gap-1.5 whitespace-nowrap no-underline select-none',
+        'transition-[background-color,border-color,color]',
+        variantClass(variant, s),
+        variant === 'primary' && 'hover:text-white',
+        block && 'w-full',
+        className,
+      )}
+      {...rest}
+    >
+      {children}
+      {newTab && <span className="sr-only"> (opens in a new tab)</span>}
+    </a>
+  )
+})
+
 export interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   /** Required: the accessible name, since the glyph is aria-hidden. */
   label: string
@@ -155,7 +193,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
       className={cx(
         'relative grid flex-none place-items-center rounded-control text-lg leading-none transition-colors disabled:opacity-50',
         size === 36 ? 'size-9' : 'size-10',
-        tone === 'wash' ? 'bg-wash text-ink-2 hover:bg-line' : 'text-ink-3 hover:bg-wash hover:text-ink-2',
+        tone === 'wash' ? 'bg-wash text-ink-2 hover:bg-line' : 'text-ink-2 hover:bg-wash hover:text-ink',
         className,
       )}
       {...rest}

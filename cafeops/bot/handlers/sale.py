@@ -25,7 +25,7 @@ from aiogram.types import CallbackQuery, Message
 from cafeops.bot import formatters as fmt
 from cafeops.bot import money_views as mv
 from cafeops.bot.callbacks import SaleCB
-from cafeops.bot.deps import owner_name, parse_money, parse_past_day, parse_qty
+from cafeops.bot.deps import RunSync, owner_name, parse_money, parse_past_day, parse_qty
 from cafeops.bot.keyboards import (
     sale_basket_kb,
     sale_categories_kb,
@@ -37,7 +37,7 @@ from cafeops.bot.keyboards import (
 )
 from cafeops.bot.states import SaleFlow
 from cafeops.bot.viewmodels import BasketView
-from cafeops.db.models.enums import MANUAL_SALE_CHANNELS
+from cafeops.domain.enums import MANUAL_SALE_CHANNELS
 from cafeops.services.record_sale import SaleRefused
 
 router = Router(name="sale")
@@ -48,7 +48,7 @@ def _who(event: Message | CallbackQuery) -> str:
     return owner_name(user.id if user else None, user.username if user else None)
 
 
-async def _basket(state: FSMContext, run_sync: Any) -> BasketView:
+async def _basket(state: FSMContext, run_sync: RunSync) -> BasketView:
     data = await state.get_data()
     basket: BasketView = await run_sync(
         mv.basket_view,
@@ -59,7 +59,7 @@ async def _basket(state: FSMContext, run_sync: Any) -> BasketView:
     return basket
 
 
-async def _show_categories(message: Message, state: FSMContext, run_sync: Any) -> None:
+async def _show_categories(message: Message, state: FSMContext, run_sync: RunSync) -> None:
     await state.set_state(SaleFlow.picking)
     basket = await _basket(state, run_sync)
     page = await run_sync(mv.menu_page, category_index=None)
@@ -69,7 +69,7 @@ async def _show_categories(message: Message, state: FSMContext, run_sync: Any) -
     )
 
 
-async def _show_basket(message: Message, state: FSMContext, run_sync: Any) -> None:
+async def _show_basket(message: Message, state: FSMContext, run_sync: RunSync) -> None:
     await state.set_state(SaleFlow.picking)
     basket = await _basket(state, run_sync)
     await message.answer(fmt.sale_basket(basket), reply_markup=sale_basket_kb(basket))
@@ -86,7 +86,7 @@ async def sale(message: Message, state: FSMContext) -> None:
 
 @router.callback_query(SaleCB.filter(F.action == "chan"))
 async def choose_channel(
-    query: CallbackQuery, callback_data: SaleCB, state: FSMContext, run_sync: Any
+    query: CallbackQuery, callback_data: SaleCB, state: FSMContext, run_sync: RunSync
 ) -> None:
     await query.answer()
     if callback_data.value >= len(MANUAL_SALE_CHANNELS) or not isinstance(query.message, Message):
@@ -102,14 +102,14 @@ async def choose_channel(
 
 @router.callback_query(SaleCB.filter(F.action == "cats"), SaleFlow.picking)
 @router.callback_query(SaleCB.filter(F.action == "cats"), SaleFlow.awaiting_qty)
-async def back_to_categories(query: CallbackQuery, state: FSMContext, run_sync: Any) -> None:
+async def back_to_categories(query: CallbackQuery, state: FSMContext, run_sync: RunSync) -> None:
     await query.answer()
     if isinstance(query.message, Message):
         await _show_categories(query.message, state, run_sync)
 
 
 @router.callback_query(SaleCB.filter(F.action == "more"), SaleFlow.picking)
-async def add_more(query: CallbackQuery, state: FSMContext, run_sync: Any) -> None:
+async def add_more(query: CallbackQuery, state: FSMContext, run_sync: RunSync) -> None:
     await query.answer()
     if isinstance(query.message, Message):
         await _show_categories(query.message, state, run_sync)
@@ -117,7 +117,7 @@ async def add_more(query: CallbackQuery, state: FSMContext, run_sync: Any) -> No
 
 @router.callback_query(SaleCB.filter(F.action == "cat"), SaleFlow.picking)
 async def open_category(
-    query: CallbackQuery, callback_data: SaleCB, state: FSMContext, run_sync: Any
+    query: CallbackQuery, callback_data: SaleCB, state: FSMContext, run_sync: RunSync
 ) -> None:
     await query.answer()
     if not isinstance(query.message, Message):
@@ -130,7 +130,7 @@ async def open_category(
 
 
 @router.message(SaleFlow.picking, F.text, ~F.text.startswith("/"))
-async def search(message: Message, run_sync: Any) -> None:
+async def search(message: Message, run_sync: RunSync) -> None:
     q = (message.text or "").strip()
     found = await run_sync(mv.menu_search, q=q)
     text = fmt.sale_search_results(q, len(found))
@@ -142,7 +142,7 @@ async def search(message: Message, run_sync: Any) -> None:
 
 @router.callback_query(SaleCB.filter(F.action == "pick"), SaleFlow.picking)
 async def pick(
-    query: CallbackQuery, callback_data: SaleCB, state: FSMContext, run_sync: Any
+    query: CallbackQuery, callback_data: SaleCB, state: FSMContext, run_sync: RunSync
 ) -> None:
     await query.answer()
     if not isinstance(query.message, Message):
@@ -156,7 +156,7 @@ async def pick(
     await query.message.answer(fmt.sale_qty_prompt(item), reply_markup=sale_qty_kb())
 
 
-async def _add_line(message: Message, state: FSMContext, run_sync: Any, qty: str) -> None:
+async def _add_line(message: Message, state: FSMContext, run_sync: RunSync, qty: str) -> None:
     data = await state.get_data()
     item_id = data.get("pending_item")
     if item_id is None:
@@ -170,7 +170,7 @@ async def _add_line(message: Message, state: FSMContext, run_sync: Any, qty: str
 
 @router.callback_query(SaleCB.filter(F.action == "qty"), SaleFlow.awaiting_qty)
 async def qty_button(
-    query: CallbackQuery, callback_data: SaleCB, state: FSMContext, run_sync: Any
+    query: CallbackQuery, callback_data: SaleCB, state: FSMContext, run_sync: RunSync
 ) -> None:
     await query.answer()
     if isinstance(query.message, Message) and callback_data.value > 0:
@@ -178,7 +178,7 @@ async def qty_button(
 
 
 @router.message(SaleFlow.awaiting_qty, F.text, ~F.text.startswith("/"))
-async def qty_typed(message: Message, state: FSMContext, run_sync: Any) -> None:
+async def qty_typed(message: Message, state: FSMContext, run_sync: RunSync) -> None:
     qty = parse_qty(message.text or "")
     if qty is None or qty <= 0 or qty != qty.to_integral_value():
         await message.answer(fmt.err_bad_count())
@@ -190,7 +190,7 @@ async def qty_typed(message: Message, state: FSMContext, run_sync: Any) -> None:
 
 
 @router.callback_query(SaleCB.filter(F.action == "drop"), SaleFlow.picking)
-async def drop_last(query: CallbackQuery, state: FSMContext, run_sync: Any) -> None:
+async def drop_last(query: CallbackQuery, state: FSMContext, run_sync: RunSync) -> None:
     await query.answer()
     data = await state.get_data()
     lines: list[dict[str, Any]] = list(data.get("lines", []))
@@ -202,7 +202,7 @@ async def drop_last(query: CallbackQuery, state: FSMContext, run_sync: Any) -> N
 
 
 @router.callback_query(SaleCB.filter(F.action == "price"), SaleFlow.picking)
-async def change_price(query: CallbackQuery, state: FSMContext, run_sync: Any) -> None:
+async def change_price(query: CallbackQuery, state: FSMContext, run_sync: RunSync) -> None:
     await query.answer()
     if not isinstance(query.message, Message):
         return
@@ -215,7 +215,7 @@ async def change_price(query: CallbackQuery, state: FSMContext, run_sync: Any) -
 
 
 @router.message(SaleFlow.awaiting_price, F.text, ~F.text.startswith("/"))
-async def price_typed(message: Message, state: FSMContext, run_sync: Any) -> None:
+async def price_typed(message: Message, state: FSMContext, run_sync: RunSync) -> None:
     pence = parse_money(message.text or "")
     if pence is None:
         await message.answer(fmt.err_bad_money())
@@ -237,7 +237,7 @@ async def change_date(query: CallbackQuery, state: FSMContext) -> None:
 
 
 @router.message(SaleFlow.awaiting_date, F.text, ~F.text.startswith("/"))
-async def date_typed(message: Message, state: FSMContext, run_sync: Any) -> None:
+async def date_typed(message: Message, state: FSMContext, run_sync: RunSync) -> None:
     day = parse_past_day(message.text or "")
     if day is None:
         await message.answer(fmt.err_bad_past_day())
@@ -250,7 +250,7 @@ async def date_typed(message: Message, state: FSMContext, run_sync: Any) -> None
 
 
 @router.callback_query(SaleCB.filter(F.action == "save"), SaleFlow.picking)
-async def save(query: CallbackQuery, state: FSMContext, run_sync: Any) -> None:
+async def save(query: CallbackQuery, state: FSMContext, run_sync: RunSync) -> None:
     await query.answer()
     if query.message is None:
         return
@@ -283,7 +283,7 @@ async def cancel(query: CallbackQuery, state: FSMContext) -> None:
 
 
 @router.callback_query(SaleCB.filter(F.action == "void"))
-async def void(query: CallbackQuery, callback_data: SaleCB, run_sync: Any) -> None:
+async def void(query: CallbackQuery, callback_data: SaleCB, run_sync: RunSync) -> None:
     """Stateless on purpose: the button sits in the chat and may be pressed later."""
     await query.answer()
     if query.message is None:

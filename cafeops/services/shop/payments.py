@@ -23,6 +23,7 @@ the till") because the app never held that money.
 
 from __future__ import annotations
 
+import hmac
 import logging
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -38,11 +39,13 @@ from cafeops.db.models import (
     OrderStatus,
     PaymentStatus,
     ShopOrder,
+    ShopOrderEvent,
     ShopPaymentCustomer,
     ShopPaymentMethod,
     ShopSettings,
 )
 from cafeops.domain.shop import display_code
+from cafeops.domain.units import pounds
 from cafeops.integrations.payments.providers import registry
 from cafeops.integrations.payments.providers.base import (
     PaymentCustomer,
@@ -57,7 +60,6 @@ from cafeops.services.shop.orders import mark_paid, record_event, transition
 __all__ = [
     "PaymentSummary",
     "WebhookOutcome",
-    "chosen_provider",
     "ensure_customer",
     "handle_webhook",
     "online_payment_offered",
@@ -81,10 +83,6 @@ class WebhookOutcome:
     kind: str
     order_id: int | None
     detail: str
-
-
-def chosen_provider(shop: ShopSettings) -> PaymentProvider | None:
-    return registry.provider(shop.payment_provider)
 
 
 def online_payment_offered(shop: ShopSettings) -> bool:
@@ -196,9 +194,14 @@ def handle_webhook(
     provider = registry.provider(provider_key)
     if provider is None or provider.key != provider_key.strip().lower():
         raise ShopError(404, "unknown_provider", "No such payment provider.")
-    if provider.key == "lightspeed" and not settings.lightspeed_configured:
-        # No documented signature scheme: refuse rather than trust anything unsigned.
-        raise ShopError(403, "bad_signature", "Lightspeed notifications are not enabled.")
+    if provider.key == "lightspeed":
+        # Lightspeed documents no signature scheme, so the route is closed unless a shared
+        # secret is set AND presented: anyone holding a checkout reference could otherwise
+        # mark an unpaid order paid.
+        secret = settings.lightspeed_webhook_secret
+        given = headers.get("x-lightspeed-secret") or headers.get("X-Lightspeed-Secret") or ""
+        if not secret or not hmac.compare_digest(given, secret):
+            raise ShopError(403, "bad_signature", "Lightspeed notifications are not enabled.")
     try:
         event = provider.parse_webhook(headers, body)
     except PaymentProviderError as exc:
@@ -217,9 +220,15 @@ def handle_webhook(
     if event.payment_intent and not order.payment_intent:
         order.payment_intent = event.payment_intent[:120]
     stamp = f"{provider.key}:{event.raw_id or event.kind}"
-    already = any(
-        e.kind in ("paid", "payment_failed", "refunded") and e.detail and stamp in e.detail
-        for e in order.events
+    already = (
+        session.scalar(
+            select(ShopOrderEvent.id).where(
+                ShopOrderEvent.order_id == order.id,
+                ShopOrderEvent.kind.in_(("paid", "payment_failed", "refunded")),
+                ShopOrderEvent.detail.contains(stamp),
+            )
+        )
+        is not None
     )
     if already:
         return WebhookOutcome("duplicate", order.id, "already applied")
@@ -230,17 +239,47 @@ def handle_webhook(
                 session,
                 order,
                 "payment_mismatch",
-                f"{provider.key} reports £{event.amount_pence / 100:.2f}, order is "
-                f"£{order.total_pence / 100:.2f} ({stamp})",
+                f"{provider.key} reports {pounds(event.amount_pence)}, order is "
+                f"{pounds(order.total_pence)} ({stamp})",
                 actor=provider.key,
                 at=now,
             )
+        if order.status in (OrderStatus.CANCELLED, OrderStatus.REJECTED):
+            # The customer paid after we gave up on the order (the 30-minute expiry, or
+            # staff cancelled it). The money is real: say so, and flag the refund.
+            order.payment_status = PaymentStatus.PAID
+            order.paid_at = now
+            if event.ref and not order.payment_ref:
+                order.payment_ref = event.ref
+            record_event(
+                session,
+                order,
+                "paid",
+                f"paid after the order was cancelled ({stamp})",
+                actor=provider.key,
+                at=now,
+            )
+            record_event(
+                session,
+                order,
+                "refund_needed",
+                "Paid online after the order was cancelled; refund it with the payment "
+                "provider from the order page.",
+                actor="system",
+                at=now,
+            )
+            return WebhookOutcome("paid", order.id, "paid after cancellation; refund needed")
         mark_paid(session, order, actor=provider.key, now=now, payment_ref=event.ref)
-        # `mark_paid` wrote the "paid" event; stamp it so a redelivery is a no-op.
-        for e in reversed(order.events):
-            if e.kind == "paid":
-                e.detail = f"{e.detail or ''} ({stamp})"[:400]
-                break
+        # `mark_paid` wrote the "paid" event through the session, not through the loaded
+        # collection; read it back so the redelivery stamp actually lands on it.
+        session.flush()
+        paid_event = session.scalar(
+            select(ShopOrderEvent)
+            .where(ShopOrderEvent.order_id == order.id, ShopOrderEvent.kind == "paid")
+            .order_by(ShopOrderEvent.id.desc())
+        )
+        if paid_event is not None and stamp not in (paid_event.detail or ""):
+            paid_event.detail = f"{paid_event.detail or ''} ({stamp})"[:400]
         return WebhookOutcome("paid", order.id, "order is NEW and paid")
     if event.kind == "failed":
         if order.status is OrderStatus.PENDING_PAYMENT:
@@ -320,12 +359,12 @@ def refund_order(
     why = f" ({reason.strip()})" if reason and reason.strip() else ""
     if result.ok:
         order.payment_status = PaymentStatus.REFUNDED
-        pounds = f"£{order.total_pence / 100:.2f}"
+        total = pounds(order.total_pence)
         record_event(
             session,
             order,
             "refunded",
-            f"{pounds} refunded with {provider.display_name}{why}: {result.ref or result.detail}",
+            f"{total} refunded with {provider.display_name}{why}: {result.ref or result.detail}",
             actor=actor,
             at=now,
         )

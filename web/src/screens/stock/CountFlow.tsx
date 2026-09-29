@@ -7,9 +7,9 @@
  * server's: drift, verdict and the gate's sentence come back from
  * `POST /api/stock/{id}/counts` and are shown on the next card.
  */
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { Button, Stepper, cx } from '../../components/ui'
+import { Button, StatusLine, Stepper, cx } from '../../components/ui'
 import { add, cmp, fromInt, parseDec, sub, toFixed } from '../../lib/dec'
 import type { Dec } from '../../lib/dec'
 import { useOperator } from '../../lib/operator'
@@ -57,16 +57,26 @@ export function CountFlow({
 
   const id = queue[i]
   const row = id === undefined ? undefined : byId.get(id)
+  // When the queue runs out the input that had focus unmounts; focus moves to
+  // "Back to stock" instead of falling to <body>.
+  const doneRef = useRef<HTMLButtonElement>(null)
+  const finished = row === undefined
+  useEffect(() => {
+    if (finished) doneRef.current?.focus()
+  }, [finished])
 
   if (row === undefined) {
     return (
       <div className="min-h-0 flex-1 overflow-y-auto p-6">
-        <p className="px-4 py-15 text-center text-lg">
-          Count finished: {counted} {counted === 1 ? 'ingredient' : 'ingredients'} counted.{' '}
-          <button type="button" className="underline" onClick={finish}>
+        <div className="flex flex-col items-center gap-3 px-4 py-15 text-center">
+          <p role="status" className="text-lg">
+            Count finished: {counted} {counted === 1 ? 'ingredient' : 'ingredients'} counted.
+          </p>
+          {last && <p className="text-sm text-ink-2">{last}</p>}
+          <Button ref={doneRef} variant="primary" onClick={finish}>
             Back to stock
-          </button>
-        </p>
+          </Button>
+        </div>
       </div>
     )
   }
@@ -134,9 +144,9 @@ export function CountFlow({
           <span>
             Counting · {i + 1} of {queue.length}
           </span>
-          <button type="button" className="underline" onClick={finish}>
+          <Button variant="link" className="min-h-10" onClick={finish}>
             Stop for now
-          </button>
+          </Button>
         </div>
         <h2 className="mt-1 text-3xl font-extrabold tracking-[-.01em]">{row.name}</h2>
         <p className="mb-4 text-base text-ink-2">
@@ -176,20 +186,25 @@ export function CountFlow({
         <div
           aria-live="polite"
           className={cx(
-            'my-3.5 min-h-[52px] text-md',
+            'mt-3.5 min-h-[52px] text-md',
             msg?.tone === 'alert' ? 'text-alert' : msg?.tone === 'ink-2' ? 'text-ink-2' : 'text-ink',
           )}
         >
-          {refusal !== null ? <span className="text-bad-ink">{refusal}</span> : msg?.text}
+          {msg?.text}
         </div>
+        {/* Always mounted: the refusal (assertive) or the last save (polite). */}
+        <StatusLine
+          className="mb-3.5"
+          outcome={refusal !== null ? { kind: 'error', text: refusal } : last ? { kind: 'ok', text: last } : null}
+        />
         <div className="flex gap-2.5">
-          <Button size="lg" className="flex-1 rounded-[20px]" onClick={next}>
+          <Button size="lg" className="flex-1" onClick={next}>
             Skip
           </Button>
           <Button
             variant="primary"
             size="lg"
-            className="flex-[2] rounded-[20px]"
+            className="flex-[2]"
             disabled={v === null || val.trim() === ''}
             pending={pending}
             pendingLabel="Saving…"
@@ -202,7 +217,6 @@ export function CountFlow({
           Least-trusted first, so stopping halfway still does the useful part. The expected figure shows only after you
           type.
         </p>
-        {last && <p className="mt-2 text-sm text-ink-2">{last}</p>}
       </div>
       {upNext.length > 0 && (
         <div className="mx-auto mt-3.5 flex max-w-[560px] flex-wrap items-center gap-1.5">

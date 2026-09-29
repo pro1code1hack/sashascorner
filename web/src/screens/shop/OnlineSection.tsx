@@ -12,8 +12,8 @@
  * menu everywhere"): `description` is the item's line there, `visible` shows or
  * hides it, `featured` is its signature mark, `sort_order` its place.
  */
-import { useMemo, useState } from 'react'
-import { Button, Field, FilterChip, FilterChipRow, Input, Pill, Select, Textarea, Toggle, cx } from '../../components/ui'
+import { useId, useMemo, useState } from 'react'
+import { Button, Field, FilterChip, FilterChipRow, Input, LinkButton, Pill, Select, Textarea, Toggle, cx } from '../../components/ui'
 import { LIVE } from '../../lib/api'
 import { gbp } from '../../lib/format'
 import { href } from '../../lib/router'
@@ -80,6 +80,7 @@ export function OnlineSection({ menuItemId, itemName }: { menuItemId: number; it
 
 function Editor({ p }: { p: ProductByMenuItem }) {
   const w = useWrite()
+  const ids = useId()
   const cat = useShopCatalogue()
   const groups = useMemo(() => [...(cat.data?.option_groups ?? [])].sort((a, b) => a.sort_order - b.sort_order), [cat.data])
   const sizes = p.sizes.filter((s) => s.active)
@@ -100,7 +101,8 @@ function Editor({ p }: { p: ProductByMenuItem }) {
   const [nutrition, setNutrition] = useState<Record<string, string>>(() => Object.fromEntries(NUTRITION_FIELDS.map(([k]) => [k, p.nutrition?.[k] ?? ''])))
   const [defaultSize, setDefaultSize] = useState<SizeCode | ''>(p.default_size ?? '')
   const [groupIds, setGroupIds] = useState<number[]>(p.option_group_ids)
-  const [error, setError] = useState<string | null>(null)
+  // What stopped the save, with the field it is about, so the message sits under it.
+  const [error, setError] = useState<{ field: 'kcal'; text: string } | null>(null)
   const [openMore, setOpenMore] = useState(Boolean(p.ingredients_text || (p.nutrition && Object.keys(p.nutrition).length)))
 
   const allergenVocab = vocab(cat.data?.allergens.length ? cat.data.allergens : ALLERGENS, allergens)
@@ -112,14 +114,14 @@ function Editor({ p }: { p: ProductByMenuItem }) {
     for (const c of sizeCodes) {
       const v = intOrNull(kcalBySize[c] ?? '')
       if (v === undefined) {
-        setError('Kcal per size is a whole number.')
+        setError({ field: 'kcal', text: `${p.sizes.find((s) => s.code === c)?.label || c}: kcal is a whole number.` })
         return
       }
       if (v !== null) kbs[c] = v
     }
     const kcalV = intOrNull(kcal)
     if (kcalV === undefined) {
-      setError('Kcal is a whole number.')
+      setError({ field: 'kcal', text: 'Overall kcal is a whole number.' })
       return
     }
     setError(null)
@@ -150,8 +152,8 @@ function Editor({ p }: { p: ProductByMenuItem }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap gap-x-5 gap-y-2">
-        <Toggle checked={available} onChange={setAvailable} label={available ? 'On sale today' : 'Sold out today'} />
-        <Toggle checked={visible} onChange={setVisible} label={visible ? 'Shown online and on the website menu' : 'Hidden online and on the website menu'} />
+        <Toggle checked={available} onChange={setAvailable} label="On sale today" />
+        <Toggle checked={visible} onChange={setVisible} label="Shown online and on the website menu" />
         <Toggle checked={featured} onChange={setFeatured} label="Featured · Signature on the website" />
       </div>
       {!p.ops_active && <p className="text-sm text-ink-2">This item is off the menu, so the shop does not list it whatever these say.</p>}
@@ -170,22 +172,44 @@ function Editor({ p }: { p: ProductByMenuItem }) {
       </Field>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="Kcal per size" hint="Size tiles show the difference from the size picked first.">
+        {/* Several inputs, so a fieldset (one Field would hand them all the same id). */}
+        <fieldset className="flex min-w-0 flex-col gap-1" aria-describedby={cx(`${ids}-kcal-hint`, error?.field === 'kcal' && `${ids}-kcal-err`)}>
+          <legend className="mb-1 text-xs font-bold text-ink-2">Kcal per size</legend>
           <div className="flex flex-wrap gap-2">
             {sizeCodes.map((c) => (
               <label key={c} className="flex w-24 flex-col gap-1 text-xs text-ink-2">
                 {p.sizes.find((s) => s.code === c)?.label || c}
-                <Input size="sm" numeric inputMode="numeric" value={kcalBySize[c] ?? ''} onChange={(e) => setKcalBySize({ ...kcalBySize, [c]: e.target.value })} />
+                <Input
+                  size="sm"
+                  numeric
+                  inputMode="numeric"
+                  aria-invalid={(error?.field === 'kcal' && intOrNull(kcalBySize[c] ?? '') === undefined) || undefined}
+                  value={kcalBySize[c] ?? ''}
+                  onChange={(e) => setKcalBySize({ ...kcalBySize, [c]: e.target.value })}
+                />
               </label>
             ))}
             {sizeCodes.length !== 1 && (
               <label className="flex w-24 flex-col gap-1 text-xs text-ink-2">
                 Overall
-                <Input size="sm" numeric inputMode="numeric" value={kcal} onChange={(e) => setKcal(e.target.value)} />
+                <Input
+                  size="sm"
+                  numeric
+                  inputMode="numeric"
+                  aria-invalid={(error?.field === 'kcal' && intOrNull(kcal) === undefined) || undefined}
+                  value={kcal}
+                  onChange={(e) => setKcal(e.target.value)}
+                />
               </label>
             )}
           </div>
-        </Field>
+          <p id={`${ids}-kcal-hint`} className="text-xs text-ink-2">
+            Size tiles show the difference from the size picked first.
+          </p>
+          <p id={`${ids}-kcal-err`} role="alert" className="text-sm text-bad-ink">
+            {error?.field === 'kcal' ? error.text : ''}
+          </p>
+        </fieldset>
         <Field label="Size picked first" hint="Blank: the cheapest.">
           <Select value={defaultSize} onChange={(e) => setDefaultSize(e.target.value as SizeCode | '')}>
             <option value="">Cheapest</option>
@@ -230,18 +254,23 @@ function Editor({ p }: { p: ProductByMenuItem }) {
           </span>
         )}
         {groups.map((g) => {
-          const auto = byCategory.has(g.id)
-          const on = auto || groupIds.includes(g.id)
+          // A group that comes with the category cannot be switched off here: it is a
+          // plain label, not a pressable chip that does nothing.
+          if (byCategory.has(g.id))
+            return (
+              <Pill key={g.id} tone="brand">
+                {g.name} · by category{!g.active ? ' · not shown' : ''}
+              </Pill>
+            )
           return (
-            <FilterChip key={g.id} active={on} onClick={() => !auto && setGroupIds((ids) => (ids.includes(g.id) ? ids.filter((x) => x !== g.id) : [...ids, g.id]))}>
+            <FilterChip key={g.id} active={groupIds.includes(g.id)} onClick={() => setGroupIds((ids) => (ids.includes(g.id) ? ids.filter((x) => x !== g.id) : [...ids, g.id]))}>
               {g.name}
-              {auto ? ' · by category' : ''}
-              {!g.active ? ' · inactive' : ''}
+              {!g.active ? ' · not shown' : ''}
             </FilterChip>
           )
         })}
         <span className="w-full text-xs text-ink-2">
-          Groups marked “by category” apply to every product in this category; tick a group to add it to this product on its own. Edit them in{' '}
+          Groups marked “by category” apply to every product in this category; press a group to add it to this product on its own. Edit them in{' '}
           <a href={href('/shop/options')}>Option groups</a>.
         </span>
       </FilterChipRow>
@@ -255,7 +284,8 @@ function Editor({ p }: { p: ProductByMenuItem }) {
             <Field label="Ingredients" hint="Plain text on the Ingredients tab.">
               <Textarea rows={3} maxLength={600} className="min-h-0" value={ingredients} onChange={(e) => setIngredients(e.target.value)} />
             </Field>
-            <Field label="Nutrition per serving" hint="A blank shows as “—”, never 0.">
+            <fieldset className="flex min-w-0 flex-col gap-1" aria-describedby={`${ids}-nut-hint`}>
+              <legend className="mb-1 text-xs font-bold text-ink-2">Nutrition per serving</legend>
               <div className="grid grid-cols-2 gap-2">
                 {NUTRITION_FIELDS.map(([k, label]) => (
                   <label key={k} className="flex flex-col gap-1 text-xs text-ink-2">
@@ -264,7 +294,10 @@ function Editor({ p }: { p: ProductByMenuItem }) {
                   </label>
                 ))}
               </div>
-            </Field>
+              <p id={`${ids}-nut-hint`} className="text-xs text-ink-2">
+                A blank shows as “—”, never 0.
+              </p>
+            </fieldset>
           </div>
         )}
       </div>
@@ -273,11 +306,7 @@ function Editor({ p }: { p: ProductByMenuItem }) {
         <Button variant="primary" pending={w.pending} pendingLabel="Saving…" onClick={save}>
           Save online details
         </Button>
-        {error && (
-          <span role="alert" className="text-sm text-bad-ink">
-            {error}
-          </span>
-        )}
+        {error && <span className="text-sm text-bad-ink">Not saved: see Kcal per size.</span>}
         <OutcomeLine outcome={w.outcome} />
       </div>
     </div>
@@ -301,11 +330,12 @@ export function ShopPreview({ menuItemId }: { menuItemId: number }) {
       <h3 id="shop-preview-h" className="text-label font-bold uppercase tracking-[.06em] text-ink-3">
         In the shop
       </h3>
-      <div className={cx('overflow-hidden rounded-card border border-line bg-surface', !p.available && 'opacity-70')}>
+      {/* Sold out keeps full contrast: the solid band over the photo says it. */}
+      <div className="overflow-hidden rounded-card border border-line bg-surface">
         <div className="relative aspect-[4/3] w-full">
           <PhotoView url={p.photo_url} placeholder={p.name.charAt(0)} className="absolute inset-0" />
           {p.badge && <span className="absolute left-2 top-2 rounded-full bg-ink px-2 py-0.5 text-xs font-bold uppercase tracking-[.04em] text-white">{p.badge}</span>}
-          {!p.available && <span className="absolute inset-x-0 bottom-0 bg-scrim px-2 py-1 text-center text-xs font-bold uppercase tracking-[.04em] text-white">Sold out</span>}
+          {!p.available && <span className="absolute inset-x-0 bottom-0 bg-ink px-2 py-1 text-center text-xs font-bold uppercase tracking-[.04em] text-white">Sold out</span>}
         </div>
         <div className="flex flex-col gap-0.5 px-3 py-2">
           <span className="text-md font-extrabold uppercase tracking-[.02em]">{p.name}</span>
@@ -322,12 +352,12 @@ export function ShopPreview({ menuItemId }: { menuItemId: number }) {
       <div className="flex flex-wrap items-center gap-2 text-sm">
         {listed ? <Pill tone="brand">Listed</Pill> : <Pill tone="muted">Not listed</Pill>}
         {p.featured && <Pill tone="neutral">Featured</Pill>}
-        <a href={url} target="_blank" rel="noreferrer" className="ml-auto underline underline-offset-2">
+        <LinkButton variant="link" newTab href={url} className="ml-auto">
           View in the shop
-        </a>
-        <a href={menuUrl} target="_blank" rel="noreferrer" className="underline underline-offset-2">
+        </LinkButton>
+        <LinkButton variant="link" newTab href={menuUrl}>
           View on the website menu
-        </a>
+        </LinkButton>
       </div>
       {p.effective_option_groups.length > 0 && <p className="text-sm text-ink-2">Options: {p.effective_option_groups.map((g) => g.name).join(', ')} · {plural(p.sizes.filter((s) => s.active).length, 'size')}</p>}
     </section>

@@ -26,11 +26,12 @@ The rules, and why each is a hard stop rather than a warning:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, datetime, time, timedelta
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from cafeops.clock import local_day_bounds, local_today
 from cafeops.config import settings
 from cafeops.db.models import (
     CampaignSegment,
@@ -142,8 +143,8 @@ def segment_members(
 
 
 def _month_start(now: datetime) -> datetime:
-    local = now.astimezone(settings.tz).date().replace(day=1)
-    return datetime.combine(local, time.min, tzinfo=settings.tz).astimezone(UTC)
+    first = local_today(settings.tz, now=now).replace(day=1)
+    return local_day_bounds(first, tz=settings.tz)[0]
 
 
 @dataclass(frozen=True, slots=True)
@@ -248,10 +249,9 @@ def cancel_campaign(session: Session, campaign_id: int) -> LoyaltyCampaign:
 def promos_this_month(session: Session, *, now: datetime | None = None) -> int:
     """Promotions sent this calendar month, or scheduled to go out in it (not cancelled)."""
     now = now or now_utc()
-    start = _month_start(now)
-    local = now.astimezone(settings.tz).date()
-    nxt = (local.replace(day=28) + timedelta(days=4)).replace(day=1)
-    end = datetime.combine(nxt, time.min, tzinfo=settings.tz).astimezone(UTC)
+    first = local_today(settings.tz, now=now).replace(day=1)
+    last = (first.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+    start, end = local_day_bounds(first, last, tz=settings.tz)
     rows = session.scalars(
         select(LoyaltyCampaign).where(
             LoyaltyCampaign.is_promo.is_(True), LoyaltyCampaign.cancelled_at.is_(None)

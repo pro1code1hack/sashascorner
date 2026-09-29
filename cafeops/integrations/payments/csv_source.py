@@ -27,7 +27,7 @@ from datetime import date
 from pathlib import Path
 
 from cafeops.config import settings
-from cafeops.db.models.enums import PaymentMethod, PaymentSourceKind
+from cafeops.domain.enums import PaymentMethod, PaymentSourceKind
 from cafeops.integrations.channels.columns import (
     FieldParseError,
     normalise_header,
@@ -88,9 +88,8 @@ METHOD_WORDS: dict[str, PaymentMethod] = {
 
 def payments_dir() -> Path:
     """Where exports are looked for. `CAFEOPS_PAYMENTS_CSV_DIR`, or the fixtures."""
-    raw = getattr(settings, "payments_csv_dir", None)
-    if raw:
-        return Path(str(raw))
+    if settings.payments_csv_dir is not None:
+        return settings.payments_csv_dir
     return Path(__file__).parent / "fixtures"
 
 

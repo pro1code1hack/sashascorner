@@ -18,8 +18,6 @@ plainly which of the two is the source of truth.
 
 from __future__ import annotations
 
-from typing import Any
-
 from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
@@ -27,7 +25,8 @@ from aiogram.types import CallbackQuery, Message
 
 from cafeops.bot import formatters as fmt
 from cafeops.bot.callbacks import CountCB
-from cafeops.bot.deps import owner_name, parse_qty
+from cafeops.bot.deps import RunSync, owner_name, parse_qty
+from cafeops.bot.handlers.common import accessible
 from cafeops.bot.keyboards import count_kb
 from cafeops.bot.states import CountFlow
 from cafeops.bot.viewmodels import CountItemView, CountSessionKind
@@ -38,7 +37,7 @@ router = Router(name="count")
 
 
 async def _start(
-    message: Message, state: FSMContext, run_sync: Any, kind: CountSessionKind
+    message: Message, state: FSMContext, run_sync: RunSync, kind: CountSessionKind
 ) -> None:
     items: list[CountItemView] = await run_sync(build_count_session, kind=kind)
     if not items:
@@ -57,7 +56,7 @@ async def _start(
     await _ask(message, state, run_sync)
 
 
-async def _ask(message: Message, state: FSMContext, run_sync: Any) -> None:
+async def _ask(message: Message, state: FSMContext, run_sync: RunSync) -> None:
     """Re-read the item from the database each time rather than caching the list.
 
     A count written thirty seconds ago changes the next item's basis if the two share a
@@ -87,17 +86,17 @@ async def _ask(message: Message, state: FSMContext, run_sync: Any) -> None:
 
 
 @router.message(Command("count"))
-async def count_full(message: Message, state: FSMContext, run_sync: Any) -> None:
+async def count_full(message: Message, state: FSMContext, run_sync: RunSync) -> None:
     await _start(message, state, run_sync, CountSessionKind.FULL)
 
 
 @router.message(Command("count_a"))
-async def count_express(message: Message, state: FSMContext, run_sync: Any) -> None:
+async def count_express(message: Message, state: FSMContext, run_sync: RunSync) -> None:
     await _start(message, state, run_sync, CountSessionKind.EXPRESS_A)
 
 
 @router.message(CountFlow.awaiting_qty)
-async def counted(message: Message, state: FSMContext, run_sync: Any) -> None:
+async def counted(message: Message, state: FSMContext, run_sync: RunSync) -> None:
     data = await state.get_data()
     queue: list[int] = data["queue"]
     index: int = data["index"]
@@ -133,12 +132,12 @@ async def counted(message: Message, state: FSMContext, run_sync: Any) -> None:
 
 
 @router.callback_query(CountCB.filter(F.action == "skip"), CountFlow.awaiting_qty)
-async def skip(query: CallbackQuery, state: FSMContext, run_sync: Any) -> None:
+async def skip(query: CallbackQuery, state: FSMContext, run_sync: RunSync) -> None:
     data = await state.get_data()
     await state.update_data(index=data["index"] + 1, skipped=data["skipped"] + 1)
     await query.answer()
-    if query.message is not None:
-        await _ask(query.message, state, run_sync)
+    if (message := accessible(query.message)) is not None:
+        await _ask(message, state, run_sync)
 
 
 @router.callback_query(CountCB.filter(F.action == "stop"), CountFlow.awaiting_qty)

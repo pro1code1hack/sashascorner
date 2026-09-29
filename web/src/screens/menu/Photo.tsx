@@ -6,7 +6,8 @@
  */
 import { useRef, useState } from 'react'
 import type { DragEvent } from 'react'
-import { Button, cx } from '../../components/ui'
+import { Button, StatusLine, cx } from '../../components/ui'
+import type { Outcome } from '../../components/ui'
 import { menuApi, mediaSrc, useInvalidateMenu } from '../../lib/menu-api'
 import { useOperator } from '../../lib/operator'
 
@@ -79,19 +80,22 @@ export function PhotoSlot({
   const input = useRef<HTMLInputElement>(null)
   const [operator] = useOperator()
   const [busy, setBusy] = useState(false)
-  const [message, setMessage] = useState<string | null>(null)
+  const [outcome, setOutcome] = useState<Outcome | null>(null)
   const [over, setOver] = useState(false)
   const invalidate = useInvalidateMenu()
 
   const upload = async (file: File | undefined) => {
     if (!file) return
-    setMessage(null)
+    const replacing = url !== null
+    setOutcome({ kind: 'info', text: 'Uploading…' })
     setBusy(true)
     try {
       const blob = await shrink(file).catch(() => file)
       const r = await menuApi.uploadPhoto(menuItemId, blob, operator)
-      if (r.kind === 'ok') await invalidate()
-      else setMessage(r.message)
+      if (r.kind === 'ok') {
+        await invalidate()
+        setOutcome({ kind: 'ok', text: replacing ? 'Photo replaced.' : 'Photo added.' })
+      } else setOutcome({ kind: 'error', text: r.message })
     } finally {
       setBusy(false)
     }
@@ -115,6 +119,8 @@ export function PhotoSlot({
         onDragLeave={() => setOver(false)}
         onDrop={onDrop}
         aria-label={url ? `Replace the photo of ${name}` : `Add a photo of ${name}`}
+        aria-busy={busy || undefined}
+        disabled={busy}
         className={cx(
           'relative w-full flex-none overflow-hidden rounded-card',
           tall ? 'aspect-[4/3]' : 'h-[170px]',
@@ -134,28 +140,25 @@ export function PhotoSlot({
           e.target.value = ''
         }}
       />
-      {(url || message) && (
-        <div className="flex items-center gap-2">
-          {message && (
-            <span role="alert" className="flex-1 text-sm text-bad-ink">
-              {message}
-            </span>
-          )}
-          {url && (
-            <Button
-              variant="link"
-              className="ml-auto"
-              onClick={async () => {
-                const r = await menuApi.clearPhoto(menuItemId)
-                if (r.kind === 'ok') await invalidate()
-                else setMessage(r.message)
-              }}
-            >
-              Remove photo
-            </Button>
-          )}
-        </div>
-      )}
+      <div className="flex items-start gap-2">
+        <StatusLine outcome={outcome} className="min-w-0 flex-1" />
+        {url && (
+          <Button
+            variant="link"
+            className="ml-auto flex-none"
+            disabled={busy}
+            onClick={async () => {
+              const r = await menuApi.clearPhoto(menuItemId, operator)
+              if (r.kind === 'ok') {
+                await invalidate()
+                setOutcome({ kind: 'ok', text: 'Photo removed.' })
+              } else setOutcome({ kind: 'error', text: r.message })
+            }}
+          >
+            Remove photo
+          </Button>
+        )}
+      </div>
     </div>
   )
 }

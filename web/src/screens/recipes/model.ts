@@ -21,6 +21,17 @@ import { penceToPounds, poundsToPence, qtyOut, sameQty } from '../menu/common/fi
 
 export const ROLES: ComponentRole[] = ['COFFEE', 'MILK', 'BASE', 'FLAVOUR', 'TOPPING', 'PACKAGING', 'SUNDRY']
 
+/** The word on screen for each backend role enum. One map, used by every recipe view. */
+export const ROLE_LABEL: Record<ComponentRole, string> = {
+  COFFEE: 'Coffee',
+  MILK: 'Milk',
+  BASE: 'Base',
+  FLAVOUR: 'Flavour',
+  TOPPING: 'Topping',
+  PACKAGING: 'Packaging',
+  SUNDRY: 'Sundry',
+}
+
 export interface DComp {
   key: string
   id: number | null

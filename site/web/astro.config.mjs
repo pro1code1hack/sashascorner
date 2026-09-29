@@ -39,7 +39,7 @@ const lastmodFor = (url) => {
 };
 // /order/checkout, /order/account and /order/status/<code> are routes inside the order-ahead
 // app (one static page, /order): a basket, a sign-in and a private order are not for search.
-const NOT_IN_SITEMAP = [/\/book\/manage/, /\/admin/, /\/404$/, /\/c(\/|$)/, /\/staff(\/|$)/, /\/order\/(checkout|account|status)(\/|$)/];
+const NOT_IN_SITEMAP = [/\/book\/manage/, /\/admin/, /\/404$/, /\/c(\/|$)/, /\/staff(\/|$)/, /\/order\/(checkout|account|status)(\/|$)/, /\/account(\/|$)/];
 
 // ---- dev proxy to cafeops (Rewards, the staff scanner, Apple Wallet's web service) ----
 // CAFEOPS_API_URL wins. Without it, `astro dev` looks for a running cafeops API on the

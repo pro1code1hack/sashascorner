@@ -3,11 +3,14 @@
  * Tags are attribution slugs: lower-case letters, digits, - and _, 40 at most (the
  * server cleans them the same way, services/loyalty/join._clean_src).
  */
-import { useEffect, useRef, useState } from 'react'
-import { Input, cx } from '../../../components/ui'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Button, Field, Input, LinkButton, Segmented, StatusLine } from '../../../components/ui'
+import type { Outcome } from '../../../components/ui'
 import { sourceLabel } from '../members/bits'
+import { qrModules, qrSvgPath } from './qr'
 
 const PRESETS = ['counter-qr', 'window-sticker', 'instagram', 'website'] as const
+type Choice = (typeof PRESETS)[number] | 'custom'
 
 export function cleanTag(raw: string): string {
   return raw
@@ -16,7 +19,6 @@ export function cleanTag(raw: string): string {
     .replace(/[^a-z0-9_-]/g, '')
     .slice(0, 40)
 }
-
 
 async function copyText(text: string): Promise<boolean> {
   try {
@@ -42,77 +44,85 @@ async function copyText(text: string): Promise<boolean> {
 }
 
 export function JoiningLink({ joinUrl, sources }: { joinUrl: string; sources: { source: string; members: number }[] }) {
-  const [tag, setTag] = useState<string>('counter-qr')
+  const [choice, setChoice] = useState<Choice>('counter-qr')
   const [custom, setCustom] = useState('')
-  const [copied, setCopied] = useState<'ok' | 'failed' | null>(null)
+  const [outcome, setOutcome] = useState<Outcome | null>(null)
   const timer = useRef<number | null>(null)
   useEffect(() => () => {
     if (timer.current) window.clearTimeout(timer.current)
   }, [])
 
-  const usingCustom = !(PRESETS as readonly string[]).includes(tag)
-  const effective = usingCustom ? cleanTag(custom) : tag
+  const effective = choice === 'custom' ? cleanTag(custom) : choice
   const url = effective ? `${joinUrl}?src=${effective}` : joinUrl
 
   const copy = async () => {
     const ok = await copyText(url)
-    setCopied(ok ? 'ok' : 'failed')
+    setOutcome(
+      ok
+        ? { kind: 'ok', text: 'Link copied.' }
+        : { kind: 'error', text: 'The browser would not copy it. Select the link and copy it by hand.' },
+    )
     if (timer.current) window.clearTimeout(timer.current)
-    timer.current = window.setTimeout(() => setCopied(null), 2500)
+    timer.current = window.setTimeout(() => setOutcome(null), 4000)
   }
+
+  // The QR for the counter: drawn here (qr.ts), so printing one needs no service.
+  const qr = useMemo(() => {
+    try {
+      const { d, size } = qrSvgPath(qrModules(url))
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" shape-rendering="crispEdges"><rect width="100%" height="100%" fill="white"/><path d="${d}" fill="black"/></svg>`
+      return { d, size, file: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}` }
+    } catch {
+      return null
+    }
+  }, [url])
 
   const known = [...sources].sort((a, b) => b.members - a.members)
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Where the link goes">
-        {[...PRESETS, 'custom'].map((p) => {
-          const on = p === 'custom' ? usingCustom : tag === p
-          return (
-            <button
-              key={p}
-              type="button"
-              role="radio"
-              aria-checked={on}
-              onClick={() => setTag(p === 'custom' ? '' : p)}
-              className={cx(
-                'h-8 rounded-full px-3 text-sm transition-colors',
-                on ? 'bg-brand-wash font-bold text-brand-ink' : 'border border-line-control bg-surface font-medium text-ink hover:bg-canvas',
-              )}
-            >
-              {p === 'custom' ? 'Your own tag' : p}
-            </button>
-          )
-        })}
-      </div>
-      {usingCustom && (
-        <Input
-          size="sm"
-          value={custom}
-          onChange={(e) => setCustom(cleanTag(e.target.value))}
-          placeholder="flyer-uni"
-          aria-label="Your own tag: letters, digits and dashes"
-          maxLength={40}
-        />
+      <Segmented<Choice>
+        label="Where the link goes"
+        className="h-auto! max-w-full flex-wrap"
+        value={choice}
+        onChange={setChoice}
+        options={[...PRESETS.map((p) => ({ value: p, label: sourceLabel(p) })), { value: 'custom' as const, label: 'Your own tag' }]}
+      />
+      {choice === 'custom' && (
+        <Field label="Your own tag" hint="Letters, digits and dashes, like flyer-uni.">
+          <Input size="sm" value={custom} onChange={(e) => setCustom(cleanTag(e.target.value))} placeholder="flyer-uni" maxLength={40} />
+        </Field>
       )}
       <div className="flex min-w-0 items-center gap-2 rounded-control border border-line-control bg-canvas-2 py-1.5 pl-3 pr-1.5">
-        <code className="min-w-0 flex-1 truncate font-mono text-sm text-ink" title={url}>
-          {url}
-        </code>
-        <button
-          type="button"
-          onClick={() => void copy()}
-          className="h-8 flex-none rounded-[8px] px-2.5 text-sm font-bold text-brand-ink hover:bg-brand-wash"
-        >
-          {copied === 'ok' ? 'Copied' : 'Copy'}
-        </button>
+        <span className="fig min-w-0 flex-1 break-all text-sm text-ink">{url}</span>
+        <Button size="sm" variant="ghost" className="flex-none font-bold text-brand-ink" onClick={() => void copy()}>
+          Copy
+        </Button>
       </div>
-      <span className="sr-only" role="status">
-        {copied === 'ok' ? 'Link copied' : copied === 'failed' ? 'Could not copy; select the link and copy it by hand' : ''}
-      </span>
-      {copied === 'failed' && <p className="text-sm text-bad-ink">The browser would not copy it. Select the link and copy it by hand.</p>}
+      <StatusLine outcome={outcome} />
+      {qr && (
+        <div className="flex flex-wrap items-center gap-4">
+          <svg
+            viewBox={`0 0 ${qr.size} ${qr.size}`}
+            width={132}
+            height={132}
+            shapeRendering="crispEdges"
+            role="img"
+            aria-label={`QR code for ${url}`}
+            className="flex-none rounded-xs border border-line bg-surface"
+          >
+            <path d={qr.d} className="fill-ink" />
+          </svg>
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <p className="text-sm text-ink-2">Scanning it opens this link, tag and all. Print it at least 3 cm wide.</p>
+            <LinkButton variant="outline" size="sm" href={qr.file} download={`join-${effective || 'untagged'}.svg`} className="self-start">
+              Download the QR code
+            </LinkButton>
+          </div>
+        </div>
+      )}
       <div>
-        <div className="mb-1 text-label font-bold uppercase tracking-[.06em] text-ink-3">Members by tag</div>
+        <div className="mb-1 text-label font-bold uppercase tracking-[.06em] text-ink-2">Members by tag</div>
         {known.length === 0 ? (
           <p className="text-sm text-ink-2">Nobody has joined through a tagged link yet.</p>
         ) : (

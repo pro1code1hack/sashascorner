@@ -7,6 +7,7 @@ single writer; making repositories async would buy nothing and cost clarity.
 
 from __future__ import annotations
 
+import functools
 from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import Any
@@ -80,8 +81,27 @@ def create_db_engine(
     return engine
 
 
-engine: Engine = create_db_engine()
-SessionFactory = sessionmaker(bind=engine, expire_on_commit=False, future=True)
+@functools.cache
+def get_engine() -> Engine:
+    """The process-wide engine, built on first use rather than at import.
+
+    Importing a model must not open a database: the domain package, the CLI's `--help`
+    and every tool that only wants the types would otherwise read `.env` and create an
+    engine as a side effect of an `import`.
+    """
+    return create_db_engine()
+
+
+@functools.cache
+def session_factory() -> sessionmaker[Session]:
+    """The process-wide `sessionmaker`, bound to `get_engine()` on first use."""
+    return sessionmaker(bind=get_engine(), expire_on_commit=False, future=True)
+
+
+def new_session() -> Session:
+    """A fresh session from the process-wide factory. The caller owns commit and close;
+    prefer `session_scope` unless the unit of work genuinely needs manual control."""
+    return session_factory()()
 
 
 @contextmanager
@@ -90,7 +110,7 @@ def session_scope(factory: sessionmaker[Session] | None = None) -> Iterator[Sess
 
     Keep the body short -- SQLite has one writer.
     """
-    session = (factory or SessionFactory)()
+    session = (factory or session_factory())()
     try:
         yield session
         session.commit()

@@ -10,13 +10,15 @@
  */
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
-import { Button, Checkbox, EstNote, ErrorBox, Loading, Table, TBody, Td, Th, THead, Tr } from '../../components/ui'
+import { Button, Checkbox, EstNote, ErrorBox, Loading, StatusLine, Table, TBody, Td, Th, THead, Tr } from '../../components/ui'
+import type { Outcome } from '../../components/ui'
 import { api } from '../../lib/api'
 import { recipeApi, useInvalidateMenu } from '../../lib/menu-api'
 import { useOperator } from '../../lib/operator'
-import type { ProposalPreview } from '../../lib/types/menu'
+import type { ComponentRole, ProposalPreview } from '../../lib/types/menu'
 import { costText, pctText, qtyText, sizeLabel } from '../menu/common/figures'
 import { usePreview } from '../menu/common/usePreview'
+import { ROLE_LABEL } from './model'
 
 export function ProposalView({ proposalId, onConfirmed }: { proposalId: string; onConfirmed: (templateId: number | null) => void }) {
   const all = useQuery({ queryKey: ['menu', 'proposals'], queryFn: api.proposals })
@@ -35,8 +37,18 @@ export function ProposalView({ proposalId, onConfirmed }: { proposalId: string; 
 
   const preview = pv.key === key ? pv.data : null
   const blocked = preview?.blocked_reason ?? (p.is_hollow ? p.blocked_reason : null)
+  // One always-mounted status line says where the preview is; the panel itself
+  // is not a live region (it would re-announce its button on every preview).
+  const previewOutcome: Outcome | null =
+    pv.status.kind === 'loading'
+      ? { kind: 'info', text: 'Working it out…' }
+      : 'message' in pv.status
+        ? { kind: 'error', text: pv.status.message }
+        : pv.status.kind === 'ready'
+          ? { kind: 'ok', text: 'Preview ready.' }
+          : null
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-8 pt-5 sm:px-[22px]">
+    <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-8 pt-5 sm:px-5.5">
       <h2 className="text-3xl font-extrabold tracking-[-.01em]">{p.name}</h2>
       <p className="mb-4 mt-1 text-base text-ink-2">
         Detected in the imported workbook, not confirmed. {p.menu_item_count} menu items across {p.base_item_names.length} base
@@ -64,7 +76,7 @@ export function ProposalView({ proposalId, onConfirmed }: { proposalId: string; 
             <TBody>
               {p.components.map((c, i) => (
                 <Tr key={i}>
-                  <Td secondary>{c.role}</Td>
+                  <Td secondary>{ROLE_LABEL[c.role as ComponentRole] ?? c.role}</Td>
                   <Td>{c.ingredient_name ?? 'filled by a flavour'}</Td>
                   {p.sizes.map((s) => (
                     <Td key={s} numeric>
@@ -102,10 +114,9 @@ export function ProposalView({ proposalId, onConfirmed }: { proposalId: string; 
         </div>
       )}
 
-      <section className="max-w-[720px] rounded-card border border-line bg-surface p-3.5" aria-live="polite">
+      <section className="max-w-[720px] rounded-card border border-line bg-surface p-3.5" aria-busy={pv.status.kind === 'loading' || undefined}>
         <h3 className="text-lg font-extrabold">What confirming does</h3>
-        {pv.status.kind === 'loading' && <p className="text-base text-ink-2">Working it out…</p>}
-        {'message' in pv.status && <p className="text-sm text-bad-ink">{pv.status.message}</p>}
+        <StatusLine outcome={previewOutcome} className="mt-1" />
         {blocked && <p className="mt-1 text-sm font-bold text-bad-ink">{blocked}</p>}
         {preview && !preview.blocked_reason && (
           <>
@@ -160,11 +171,7 @@ export function ProposalView({ proposalId, onConfirmed }: { proposalId: string; 
         <p className="mb-3 mt-2 text-sm text-ink-2">
           Confirming applies from today. Past sales keep the one-off recipes they were sold with.
         </p>
-        {message && (
-          <p role="alert" className="mb-2 text-sm text-bad-ink">
-            {message}
-          </p>
-        )}
+        <StatusLine outcome={message === null ? null : { kind: 'error', text: message }} className="mb-2" />
         <Button
           variant="primary"
           size="sm"
@@ -184,8 +191,6 @@ export function ProposalView({ proposalId, onConfirmed }: { proposalId: string; 
         >
           Confirm this recipe
         </Button>
-        <div className="mt-2">
-        </div>
       </section>
     </div>
   )

@@ -8,7 +8,8 @@
  * weight: the estimate is italic, the count upright, and a row with no count
  * shows "—" rather than a ledger sum dressed as an estimate (invariant 6, C9).
  */
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import type { KeyboardEvent } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   ActiveFilters,
@@ -51,6 +52,13 @@ const FILTERS: ReadonlyArray<{ id: StockFilter; label: string }> = [
 ]
 
 type Tab = 'shelf' | 'attention' | 'buy'
+const TABS: ReadonlyArray<readonly [Tab, string]> = [
+  ['shelf', 'On the shelf'],
+  ['attention', 'Needs attention'],
+  ['buy', 'What to buy'],
+]
+const tabId = (t: Tab) => `stock-tab-${t}`
+const panelId = (t: Tab) => `stock-panel-${t}`
 const catOf = (r: StockRow) => r.category ?? 'Uncategorised'
 
 const STORAGE_LABEL: Record<string, string> = { AMBIENT: 'Ambient', CHILLED: 'Chilled', FROZEN: 'Frozen' }
@@ -95,8 +103,44 @@ export function StockScreen() {
   const suppliers = ingredients.data?.suppliers ?? []
   const [queue, setQueue] = useState<number[] | null>(null)
 
+  // When a count ends (finished or stopped), the flow unmounts with the focused
+  // input inside it; focus goes back to the button that started it, or to the
+  // current tab when that button is not on screen.
+  const countRef = useRef<HTMLButtonElement>(null)
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([])
+  const wasCounting = useRef(false)
+  useEffect(() => {
+    if (wasCounting.current && queue === null) {
+      const i = TABS.findIndex(([t]) => t === tab)
+      ;(countRef.current ?? tabRefs.current[i])?.focus()
+    }
+    wasCounting.current = queue !== null
+  }, [queue, tab])
+  const onTabKey = (e: KeyboardEvent<HTMLButtonElement>, i: number) => {
+    let n: number
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') n = (i + 1) % TABS.length
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') n = (i - 1 + TABS.length) % TABS.length
+    else if (e.key === 'Home') n = 0
+    else if (e.key === 'End') n = TABS.length - 1
+    else return
+    e.preventDefault()
+    const next = TABS[n]
+    if (next === undefined) return
+    setTab(next[0])
+    tabRefs.current[n]?.focus()
+  }
+
   const rows = useMemo(() => q.data?.rows ?? [], [q.data])
   const byId = useMemo(() => new Map(rows.map((r) => [r.ingredient_id, r])), [rows])
+  const attentionCount = useMemo(
+    () =>
+      new Set(
+        (['soon', 'out', 'drift', 'count', 'low'] as const).flatMap((f) =>
+          rows.filter((r) => matches(r, f)).map((r) => r.ingredient_id),
+        ),
+      ).size,
+    [rows],
+  )
 
   const categories = useMemo(() => {
     const m = new Map<string, number>()
@@ -197,35 +241,40 @@ export function StockScreen() {
     />
   )
   const countButton = (
-    <Button variant="primary" onClick={() => startCount()} disabled={!q.data}>
+    <Button ref={countRef} variant="primary" onClick={() => startCount()} disabled={!q.data}>
       {queue !== null ? 'Counting…' : shown.length < rows.length && stF !== 'all' ? 'Count these' : 'Start a count'}
     </Button>
   )
+  const clearAll = () => {
+    setCat('all')
+    setTierF('all')
+    pickFilter('all')
+    setSearch('')
+    setMore(NO_MORE)
+  }
 
   if (itemId !== null) return <StockItemPage id={itemId} back={href('/stock', { tab: tab === 'shelf' ? undefined : tab })} />
-  const attentionCount = new Set(
-    (['soon', 'out', 'drift', 'count', 'low'] as const).flatMap((f) => rows.filter((r) => matches(r, f)).map((r) => r.ingredient_id)),
-  ).size
 
   return (
     <>
       <PageHeader title="Stock" subtitle="what is on the shelf: worked out from sales, checked by counting" />
-      <div role="tablist" aria-label="Stock views" className="flex flex-none gap-1 border-b border-line-soft px-4 sm:px-5">
-        {(
-          [
-            ['shelf', 'On the shelf'],
-            ['attention', 'Needs attention'],
-            ['buy', 'What to buy'],
-          ] as const
-        ).map(([id, label]) => (
+      <div role="tablist" aria-label="Stock views" className="flex flex-none gap-0.5 border-b border-line-soft px-4 sm:px-5">
+        {TABS.map(([id, label], i) => (
           <button
             key={id}
+            ref={(el) => {
+              tabRefs.current[i] = el
+            }}
             type="button"
             role="tab"
+            id={tabId(id)}
             aria-selected={tab === id}
+            aria-controls={panelId(id)}
+            tabIndex={tab === id ? 0 : -1}
             onClick={() => setTab(id)}
+            onKeyDown={(e) => onTabKey(e, i)}
             className={cx(
-              '-mb-px border-b-2 px-3 py-2.5 text-base transition-[color]',
+              '-mb-px whitespace-nowrap border-b-2 px-2.5 py-2.5 text-base transition-[color] sm:px-3',
               tab === id ? 'border-brand font-bold text-brand-ink' : 'border-transparent font-medium text-ink-2 hover:text-ink',
             )}
           >
@@ -237,12 +286,16 @@ export function StockScreen() {
         ))}
       </div>
 
+      <div
+        role="tabpanel"
+        id={panelId(tab)}
+        aria-labelledby={tabId(tab)}
+        className="flex min-h-0 min-w-0 flex-1 flex-col"
+      >
       {queue !== null ? (
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <CountFlow queue={queue} byId={byId} onDone={() => setQueue(null)} />
-        </div>
+        <CountFlow queue={queue} byId={byId} onDone={() => setQueue(null)} />
       ) : tab === 'attention' ? (
-        <div role="tabpanel" aria-label="Needs attention" className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <>
           {q.isPending ? (
             <Loading what="Working out stock" />
           ) : q.isError ? (
@@ -259,13 +312,11 @@ export function StockScreen() {
               }}
             />
           )}
-        </div>
+        </>
       ) : tab === 'buy' ? (
-        <div role="tabpanel" aria-label="What to buy" className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <BuyList stockRows={rows} />
-        </div>
+        <BuyList stockRows={rows} />
       ) : (
-        <div role="tabpanel" aria-label="On the shelf" className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <>
           <div className="flex flex-none flex-col gap-2 border-b border-line bg-surface px-4 pb-2.5 pt-3 sm:px-5">
             <FilterBar
               label="Filter stock"
@@ -355,13 +406,7 @@ export function StockScreen() {
             </FilterChipRow>
             <ActiveFilters
               chips={activeChips}
-              onClearAll={() => {
-                setCat('all')
-                setTierF('all')
-                pickFilter('all')
-                setSearch('')
-                setMore(NO_MORE)
-              }}
+              onClearAll={clearAll}
               summary={q.data ? `${shown.length} of ${rows.length} ingredients` : undefined}
             />
           </div>
@@ -382,14 +427,17 @@ export function StockScreen() {
           ) : (
             <div className="flex min-h-0 min-w-0 flex-1 flex-col">
               {shown.length === 0 ? (
-                <Empty>Nothing in this view.</Empty>
+                <Empty action={activeChips.length > 0 ? <Button onClick={clearAll}>Clear filters</Button> : undefined}>
+                  {activeChips.length > 0 ? 'Nothing matches these filters.' : 'Nothing on the stock list yet.'}
+                </Empty>
               ) : (
                 <StockList rows={shown} selected={null} onSelect={(id) => navigate(`/stock/${id}`)} groupBy={grouped ? catOf : undefined} />
               )}
             </div>
           )}
-        </div>
+        </>
       )}
+      </div>
     </>
   )
 }
@@ -398,13 +446,8 @@ function SoonLine({ rows, summary, onShow }: { rows: StockRow[]; summary: StockS
   const n =
     summary.short_dated_batches ??
     rows.reduce((a, r) => a + r.batches.filter((b) => b.days_left !== null && b.days_left <= 3).length, 0)
-  if (n === 0) {
-    return (
-      <button type="button" onClick={onShow} className="min-h-6 text-left font-semibold text-ink-2 hover:text-ink">
-        Nothing goes out of date in the next 3 days
-      </button>
-    )
-  }
+  // Plain text: a button here would filter to an empty list.
+  if (n === 0) return <span>Nothing goes out of date in the next 3 days</span>
   const value = summary.expiring_value_pence
   return (
     <button type="button" onClick={onShow} className="min-h-6 text-left font-semibold text-bad-ink hover:underline">
@@ -420,7 +463,10 @@ function WasteLine({ w }: { w: WrittenOff }) {
     <span>
       Written off this month:{' '}
       {v.pence === null ? (
-        <span title={v.note ?? undefined}>value unknown</span>
+        <span>
+          value unknown
+          {v.note && ` (${v.note})`}
+        </span>
       ) : (
         <span className={v.is_estimate ? 'fig italic' : 'fig'}>{gbp(v.pence)}</span>
       )}{' '}

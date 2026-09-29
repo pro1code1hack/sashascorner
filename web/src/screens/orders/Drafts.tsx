@@ -20,7 +20,9 @@ import {
   DashedPanel,
   Empty,
   ErrorBox,
+  Field,
   Input,
+  LinkButton,
   Loading,
   MoneyInput,
   StatusTag,
@@ -55,7 +57,7 @@ export function Drafts() {
       {guesses > 0 && (
         <WarnBox className="mb-3.5">
           {guesses} of {total} suppliers’ terms are guesses. Delivery days, lead times and minimums below are built on
-          them; confirm each on its <a href="#/suppliers">supplier page</a>.
+          them; confirm each on its <a href={href('/suppliers')}>supplier page</a>.
         </WarnBox>
       )}
       {baskets.length === 0 ? (
@@ -165,32 +167,34 @@ function Basket({ s }: { s: SupplierOrder }) {
           {(s.top_up_candidates ?? []).length === 0 ? (
             <p className="mt-1 text-sm text-ink-2">Nothing on this supplier keeps well enough to top up with.</p>
           ) : (
-            <ul className="mt-2 flex flex-wrap gap-2" aria-label="Could top up with">
-              {(s.top_up_candidates ?? []).map((c) => (
-                <li
-                  key={c.ingredient_id}
-                  className="rounded-button border-[1.5px] border-dashed border-line-strong px-3.5 py-1.5 text-sm text-ink"
-                >
-                  + {c.name} · {gbp(c.pack_price_pence)}
-                </li>
-              ))}
-            </ul>
+            // Suggestions, not buttons: plain text, so they don't look like the dashed
+            // "add" button. Topping up happens on the order page once it's created.
+            <>
+              <ul className="mt-1 list-disc pl-5 text-sm text-ink" aria-label="Could top up with">
+                {(s.top_up_candidates ?? []).map((c) => (
+                  <li key={c.ingredient_id}>
+                    {c.name} <span className="fig text-ink-2">· {gbp(c.pack_price_pence)} a pack</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-1 text-sm text-ink-2">Create the order, then add packs on its page.</p>
+            </>
           )}
         </div>
       )}
       <div className="flex flex-wrap items-center gap-2 border-t border-line-row py-2 pl-[70px] pr-3.5">
         <p className="min-w-0 flex-1 text-sm text-ink-2">
-        {p?.status === 'PENDING_CONFIRM'
-          ? 'Waiting to be confirmed. Open it to set the packs and confirm.'
-          : p?.status === 'DRAFT'
-            ? 'Draft: open it to set the packs and confirm. Nothing is ordered until then.'
-            : p?.status === 'CONFIRMED'
-              ? `Confirmed by ${p.confirmed_by ?? 'someone'}. Open the order to receive it when it arrives.`
-              : p?.status === 'SENT'
-                ? `Sent${p.sent_by ? ` by ${p.sent_by}` : ''}. Open the order to receive it when it arrives.`
-                : s.supplier.terms_are_placeholders
-                  ? 'Terms are a guess.'
-                  : 'Terms confirmed.'}
+          {p?.status === 'PENDING_CONFIRM'
+            ? 'Waiting to be confirmed. Open it to set the packs and confirm.'
+            : p?.status === 'DRAFT'
+              ? 'Draft: open it to set the packs and confirm. Nothing is ordered until then.'
+              : p?.status === 'CONFIRMED'
+                ? `Confirmed${p.confirmed_by ? ` by ${p.confirmed_by}` : ''}. Open the order to receive it when it arrives.`
+                : p?.status === 'SENT'
+                  ? `Sent${p.sent_by ? ` by ${p.sent_by}` : ''}. Open the order to receive it when it arrives.`
+                  : s.supplier.terms_are_placeholders
+                    ? 'Terms are a guess.'
+                    : 'Terms confirmed.'}
         </p>
         <BasketAction s={s} />
       </div>
@@ -204,9 +208,9 @@ function BasketAction({ s }: { s: SupplierOrder }) {
   const p = s.persisted ?? null
   if (p) {
     return (
-      <a href={href(orderPath(p.po_id))} className="inline-flex h-8 items-center rounded-button border border-line-strong px-3 text-sm font-bold text-brand-ink no-underline hover:bg-canvas">
+      <LinkButton variant="outline" href={href(orderPath(p.po_id))}>
         {p.status === 'DRAFT' || p.status === 'PENDING_CONFIRM' ? 'Open to confirm ›' : 'Open order ›'}
-      </a>
+      </LinkButton>
     )
   }
   return (
@@ -262,7 +266,8 @@ function DraftLine({ l }: { l: OrderLine }) {
     <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-x-3 border-t border-line-row py-2 pl-[70px] pr-3.5 compact:grid-cols-[minmax(0,1fr)_110px_90px]">
       <div className="min-w-0">
         <div className="text-md">{l.ingredient_name}</div>
-        <div className={cx('text-sm', why.reason ? 'text-ink-2 italic' : 'text-ink-2')}>{why.text}</div>
+        {/* Upright: italic means an estimate, and a withheld forecast is the absence of one. */}
+        <div className="text-sm text-ink-2">{why.text}</div>
         {cap && <div className="text-sm text-bad-ink">{cap}</div>}
       </div>
       <div className="fig whitespace-nowrap text-center text-base">
@@ -377,37 +382,49 @@ function ShopRunBox({ lines, premium }: { lines: EmergencyLine[]; premium: strin
       </div>
       {open && (
         <div className="mt-2.5 flex flex-col gap-2 border-t border-line pt-2.5">
-          <label className="flex flex-col gap-1 text-xs font-bold text-ink-2">
-            Where
+          <Field label="Where">
             <Input size="sm" value={where} onChange={(e) => setWhere(e.target.value)} />
-          </label>
-          {lines.map((l) => (
-            <div key={l.ingredient_id} className="grid grid-cols-[minmax(0,1fr)_90px_110px] items-end gap-2 text-base">
-              <span className="truncate pb-2">{l.ingredient_name}</span>
-              <label className="flex flex-col gap-1 text-xs text-ink-2">
-                Bought
-                <Input
-                  size="xs"
-                  numeric
-                  value={qtys[l.ingredient_id] ?? ''}
-                  onChange={(e) => setQtys({ ...qtys, [l.ingredient_id]: e.target.value })}
-                />
-              </label>
-              <label className="flex flex-col gap-1 text-xs text-ink-2">
-                Paid (if known)
-                <MoneyInput
-                  size="xs"
-                  value={paid[l.ingredient_id] ?? ''}
-                  onChange={(e) => setPaid({ ...paid, [l.ingredient_id]: e.target.value })}
-                />
-              </label>
-            </div>
-          ))}
-          {bad.map((b) => (
-            <p key={b} className="text-sm text-bad-ink">
-              {b}
-            </p>
-          ))}
+          </Field>
+          {lines.map((l) => {
+            const pq = (paid[l.ingredient_id] ?? '').trim()
+            const pp = pq === '' ? null : poundsToPence(pq)
+            return (
+              <div
+                key={l.ingredient_id}
+                className="grid grid-cols-2 items-start gap-x-2 gap-y-1 text-base compact:grid-cols-[minmax(0,1fr)_100px_130px]"
+              >
+                <span className="col-span-2 min-w-0 compact:col-span-1 compact:truncate compact:pt-6">{l.ingredient_name}</span>
+                <Field
+                  label={
+                    <>
+                      Bought<span className="sr-only"> of {l.ingredient_name}</span>
+                    </>
+                  }
+                >
+                  <Input
+                    size="sm"
+                    numeric
+                    value={qtys[l.ingredient_id] ?? ''}
+                    onChange={(e) => setQtys({ ...qtys, [l.ingredient_id]: e.target.value })}
+                  />
+                </Field>
+                <Field
+                  label={
+                    <>
+                      Paid (if known)<span className="sr-only"> for {l.ingredient_name}</span>
+                    </>
+                  }
+                  error={pp && pp.kind === 'bad' ? pp.message : undefined}
+                >
+                  <MoneyInput
+                    size="sm"
+                    value={paid[l.ingredient_id] ?? ''}
+                    onChange={(e) => setPaid({ ...paid, [l.ingredient_id]: e.target.value })}
+                  />
+                </Field>
+              </div>
+            )
+          })}
           {operator === null && <OperatorNeeded what="log a shop run" />}
           <div className="flex gap-2">
             <Button

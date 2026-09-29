@@ -25,6 +25,7 @@ from sqlalchemy import Select, select
 from sqlalchemy.orm import Session
 
 from cafeops.db.models import Supplier, SupplierProduct, TescoRouting
+from cafeops.db.repositories.supplier import delivery_weekdays
 from cafeops.domain.types import SourcingOption, SupplierTerms
 
 __all__ = ["SqlSourcingRepository"]
@@ -35,21 +36,12 @@ __all__ = ["SqlSourcingRepository"]
 _REASON_MAX = 400
 
 
-def _weekdays(raw: object) -> tuple[int, ...]:
-    """JSON list -> ISO weekday tuple. EMPTY means "any day" (walk-in retail)."""
-    if not raw:
-        return ()
-    if not isinstance(raw, list):
-        raise ValueError(f"supplier.delivery_weekdays must be a JSON list, got {raw!r}")
-    return tuple(sorted({int(day) for day in raw}))
-
-
-def _terms(row: Supplier) -> SupplierTerms:
+def supplier_terms(row: Supplier) -> SupplierTerms:
     return SupplierTerms(
         supplier_id=row.id,
         name=row.name,
         lead_time_days=row.lead_time_days,
-        delivery_weekdays=_weekdays(row.delivery_weekdays),
+        delivery_weekdays=delivery_weekdays(row.delivery_weekdays),
         min_order_pence=row.min_order_pence,
         order_channel=row.order_channel,
         cutoff_time=row.cutoff_time,
@@ -132,13 +124,13 @@ class SqlSourcingRepository:
 
     def terms(self, supplier_id: int) -> SupplierTerms | None:
         row = self.session.get(Supplier, supplier_id)
-        return None if row is None else _terms(row)
+        return None if row is None else supplier_terms(row)
 
     def all_terms(self) -> list[SupplierTerms]:
         """Active suppliers only: an archived one is out of ordering and out of the
         "N of M suppliers' terms are guesses" count. `terms()` still reads it by id."""
         return [
-            _terms(r)
+            supplier_terms(r)
             for r in self.session.scalars(
                 select(Supplier).where(Supplier.archived_at.is_(None)).order_by(Supplier.name)
             )

@@ -21,9 +21,11 @@ from datetime import date
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from cafeops.db.models.enums import ExpenseGroup, ExpenseKind, PaymentBasis, PaymentMethod
+from cafeops.clock import local_today
+from cafeops.config import settings
 from cafeops.db.models.finance import Expense, ExpenseCategory, TradingDay
 from cafeops.db.models.payment import PaymentDay
+from cafeops.domain.enums import ExpenseGroup, ExpenseKind, PaymentBasis, PaymentMethod
 from cafeops.services.finance.channels_month import (
     CHANNELS,
     channel_label,
@@ -142,7 +144,9 @@ def period_figures(session: Session, period: Period) -> PeriodFigures:
         if months:
             since, until = months[0], month_range(months[-1])[1]
         else:
-            since = until = date.today()  # noqa: DTZ011 -- an empty window, never read
+            # No data yet: an empty window, and it IS read (`resolve_takings` below), so it
+            # is the cafe's day rather than the machine's.
+            since = until = local_today(settings.tz)
         label, short = "Everything so far", "Total"
         key = "all"
     else:

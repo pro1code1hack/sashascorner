@@ -8,12 +8,14 @@ internet can write to. Money is integer pence; times are ISO-8601 UTC with offse
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date as Date  # `SlotsOut.date` is a field name; see there
+from datetime import datetime
 from typing import Any, Literal
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from cafeops.api.schemas import In, Out
+from cafeops.services.shop.push import endpoint_refusal
 
 # --------------------------------------------------------------------------
 # config
@@ -50,6 +52,15 @@ class PushConfigOut(Out):
     vapid_public_key: str | None
 
 
+class UpdatesOut(Out):
+    """Which customer-update channels actually work: the setting is on AND the channel
+    is configured on the server (§3c). The checkout shows only what can happen."""
+
+    email: bool
+    push: bool
+    sms: bool
+
+
 class ConfigOut(Out):
     enabled: bool
     closed_message: str
@@ -66,6 +77,14 @@ class ConfigOut(Out):
     cafe: CafeOut
     loyalty: LoyaltyBlurbOut
     push: PushConfigOut
+    require_account: bool = Field(
+        description="§10.J: placing an order needs a signed-in Rewards card "
+        "(`POST /orders` answers 401 sign_in_required without one). Quote stays open."
+    )
+    sms_notify: Literal["off", "ready", "all"] = Field(
+        description="The SMS setting, reported as 'off' when Twilio is not configured."
+    )
+    updates: UpdatesOut
 
 
 # --------------------------------------------------------------------------
@@ -186,12 +205,14 @@ class SlotOut(Out):
 
 
 class SlotsOut(Out):
-    date: date
+    # The JSON field is `date` (the shop app reads it), which inside this class body
+    # shadows the type of the same name -- hence the aliased import at the top.
+    date: Date
     open: bool
     reason: str | None
     asap: AsapOut
     slots: list[SlotOut]
-    days: list[date]
+    days: list[Date]
 
 
 # --------------------------------------------------------------------------
@@ -381,6 +402,18 @@ class MePaymentOut(Out):
     saved_methods: list[SavedMethodOut]
 
 
+class MemberOut(Out):
+    """The member's own profile (§10.J). What `PATCH /me` edits."""
+
+    first_name: str
+    email: str | None
+    phone: str | None
+    birthday_day: int | None
+    birthday_month: int | None
+    marketing_opt_in: bool
+    member_since: datetime
+
+
 class MeOut(Out):
     first_name: str
     email: str | None
@@ -391,6 +424,62 @@ class MeOut(Out):
     reward: MeRewardOut | None
     recent_orders: list[RecentOrderOut]
     payment: MePaymentOut | None
+    member: MemberOut
+
+
+class MeOrderOptionOut(Out):
+    group: str
+    name: str
+
+
+class MeOrderLineOut(Out):
+    name: str
+    size_label: str
+    qty: int
+    options: list[MeOrderOptionOut]
+
+
+class ReorderOut(Out):
+    lines: list[RecentLineOut] = Field(
+        description="Only lines whose product, size and options are still in the catalogue."
+    )
+    complete: bool = Field(description="False when a line was dropped.")
+
+
+class MeOrderOut(Out):
+    """One of the member's past orders (§10.J), newest first on `/me/orders`."""
+
+    code: str
+    status: str
+    status_label: str
+    placed_at: datetime
+    placed_local: str
+    requested_local: str
+    dining: Literal["takeaway", "eat_in"]
+    table: str | None
+    total_pence: int
+    lines: list[MeOrderLineOut]
+    reorder: ReorderOut
+
+
+class MeOrdersOut(Out):
+    items: list[MeOrderOut]
+    total: int
+    page: int
+    page_size: int
+
+
+class MePatchIn(In):
+    """Any subset of the member's profile; a field left out is left alone. `email` /
+    `phone` sent as null clear that contact (one of the two must remain);
+    `birthday_day` and `birthday_month` go together, both null removes the birthday."""
+
+    first_name: str | None = Field(default=None, max_length=80)
+    email: str | None = Field(default=None, max_length=254)
+    phone: str | None = Field(default=None, max_length=40)
+    birthday_day: int | None = Field(default=None, ge=1, le=31)
+    birthday_month: int | None = Field(default=None, ge=1, le=12)
+    marketing_opt_in: bool | None = None
 
 
 class PushKeysIn(In):
@@ -399,8 +488,20 @@ class PushKeysIn(In):
 
 
 class PushSubscribeIn(In):
+    """`endpoint` must be a real browser push service (FCM, Apple, Mozilla, WNS): the
+    server POSTs to it later, so anything else is a request forgery waiting to happen
+    (`services/shop/push.endpoint_refusal`)."""
+
     endpoint: str = Field(min_length=12, max_length=500, pattern=r"^https://")
     keys: PushKeysIn
+
+    @field_validator("endpoint")
+    @classmethod
+    def _push_service_only(cls, value: str) -> str:
+        refusal = endpoint_refusal(value)
+        if refusal is not None:
+            raise ValueError(refusal)
+        return value
 
 
 class PushSubscribedOut(Out):

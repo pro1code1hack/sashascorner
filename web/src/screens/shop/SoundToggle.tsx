@@ -47,7 +47,9 @@ export function SoundToggle({ alert }: { alert: ShopAlert }) {
         )}
       >
         <Speaker off={!alert.soundOn} />
-        {alert.soundOn ? (alert.armed ? 'Sound on' : 'Sound on · click to arm') : 'Sound off'}
+        {/* The name stays "Sound" and aria-pressed carries on/off, so the state is not said twice or flipped. */}
+        Sound<span aria-hidden="true">{alert.soundOn ? ' on' : ' off'}</span>
+        {alert.soundOn && !alert.armed && <span> · tap once to enable</span>}
       </button>
     </span>
   )
@@ -57,7 +59,7 @@ export function SoundToggle({ alert }: { alert: ShopAlert }) {
 export function SoundBar({ alert }: { alert: ShopAlert }) {
   if (alert.soundOn) return null
   return (
-    <div role="status" className="flex flex-none flex-wrap items-center gap-x-3 gap-y-1 border-b border-line-soft bg-canvas-2 px-5 py-2 text-sm text-ink-2">
+    <div className="flex flex-none flex-wrap items-center gap-x-3 gap-y-1 border-b border-line-soft bg-canvas-2 px-5 py-2 text-sm text-ink-2">
       <span>Sound alerts are off. The board still updates every 15 seconds; turn sound on to hear a chime when an order arrives.</span>
       <Button size="sm" onClick={() => void alert.turnOn()}>
         Turn on

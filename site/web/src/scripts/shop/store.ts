@@ -72,6 +72,27 @@ function writeBasket() {
   }
 }
 
+// A sentence for the next screen when it is a full page load away (the /account
+// island's "Order again" lands on /order/basket): kept for one visit in sessionStorage.
+const NOTICE_KEY = 'sc.shop.notice.v1';
+function takeStashed(key: string): string | null {
+  try {
+    const v = sessionStorage.getItem(key);
+    if (v) sessionStorage.removeItem(key);
+    return v;
+  } catch {
+    return null;
+  }
+}
+/** Shows `text` as the basket notice on the next load of the shop (see `basket.notice`). */
+export function stashNotice(text: string): void {
+  try {
+    sessionStorage.setItem(NOTICE_KEY, text);
+  } catch {
+    /* storage off: the notice is lost, the basket itself is right */
+  }
+}
+
 const initial = readBasket();
 knownVersion = initial.version;
 const MAX_QTY = 20;
@@ -87,7 +108,7 @@ export const basket = {
   lines: signal<BasketLine[]>(initial.lines),
   dining: signal<Dining>(initial.dining),
   /** A sentence for the customer after the catalogue changed under their basket. */
-  notice: signal<string | null>(null),
+  notice: signal<string | null>(takeStashed(NOTICE_KEY)),
   MAX_QTY,
   add(line: BasketLine): void {
     const l = cleanLine(line);
@@ -266,6 +287,18 @@ function cacheCatalogue(c: Catalogue) {
   }
 }
 
+/**
+ * Words for a config answer that is not 2xx. A network failure, timeout or 5xx already
+ * read right; a 4xx (a 422 mid-deploy was seen) must not surface as "check the form":
+ * to the customer it is the same thing, the shop cannot be reached right now.
+ */
+function configError(r: { status: number; error: { error: string; detail?: string } | null }): string {
+  if (r.status === 0 || r.status >= 500) return shopError(r);
+  if (r.status === 429) return shopError(r);
+  // The overview's block already says "We can't reach the shop right now."; this is the line under it.
+  return "The ordering system answered with an error. Please try again in a minute, or order at the counter.";
+}
+
 let inflight: Promise<void> | null = null;
 /** Loads config and catalogue (cached copy first, so the shop paints at once). */
 export function loadCatalogue(): Promise<void> {
@@ -289,7 +322,7 @@ export function loadCatalogue(): Promise<void> {
     }
     // The shop is "reachable" when config answered; a stale cached catalogue can still
     // paint the menu, but the customer is told the shop itself could not be reached.
-    loadError.value = cfg.ok ? (cat.ok || catalogue.value ? null : shopError(cat)) : shopError(cfg);
+    loadError.value = cfg.ok ? (cat.ok || catalogue.value ? null : shopError(cat)) : configError(cfg);
   })().finally(() => {
     inflight = null;
     loading.value = false;

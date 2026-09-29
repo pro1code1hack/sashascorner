@@ -500,7 +500,8 @@ export interface IngredientWrite {
 
 /* ------------------------------------------------- menu item sales --- */
 
-export type SaleChannel = 'EPOS' | 'DELIVEROO' | 'JUST_EAT' | 'OTHER'
+/** CASH = paid in cash, not rung through the till (DECISIONS 28); WEB = online order (click & collect). */
+export type SaleChannel = 'EPOS' | 'CASH' | 'DELIVEROO' | 'JUST_EAT' | 'WEB' | 'OTHER'
 export interface ItemSale {
   sale_id: number
   sold_at: string

@@ -6,11 +6,10 @@
  * (services/receive_delivery.py), so "Receive" is what moves stock on the shelf.
  * A receipt photo is evidence only: it changes no quantity, price or status.
  */
-import { useEffect, useMemo, useRef, useState } from 'react'
-import type { ButtonHTMLAttributes, ReactNode } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { OperatorNeeded } from '../../components/shell/Operator'
-import { Button, Input, cx } from '../../components/ui'
+import { Button, Field, Input, LinkButton, cx } from '../../components/ui'
 import { mustDec } from '../../lib/dec'
 import { mediaSrc } from '../../lib/menu-api'
 import { useOperator } from '../../lib/operator'
@@ -29,11 +28,14 @@ export function orderWhat(o: PurchaseOrder): string {
 
 export const orderPath = (id: number) => `/orders/${id}`
 
-/** Small square receipt thumbnail for list rows; a dashed empty slot when none. */
+/** Small square receipt thumbnail for list rows; a dashed empty slot when none.
+ *  The state is said in text (sr-only), not in a hover-only `title`; the list row
+ *  prints "no receipt yet" in words where it matters. */
 export function ReceiptThumb({ url }: { url: string | null | undefined }) {
   return (
-    <span className="relative size-11 flex-none overflow-hidden rounded-control" title={url ? 'Receipt attached' : 'No receipt yet'}>
+    <span className="relative size-11 flex-none overflow-hidden rounded-control">
       <PhotoView url={url ?? null} placeholder="" className="absolute inset-0" />
+      <span className="sr-only">{url ? 'Receipt attached.' : 'No receipt yet.'}</span>
     </span>
   )
 }
@@ -71,14 +73,18 @@ export function ReceiptSlot({ o }: { o: PurchaseOrder }) {
       >
         <PhotoView
           url={url}
-          placeholder={w.pending ? 'Uploading…' : 'Drop a photo of the receipt or delivery note, or click to choose one'}
+          placeholder={
+            w.pending ? 'Uploading…' : 'Drop a photo of the receipt or delivery note, or click to choose one (any photo: JPEG, PNG, HEIC, WebP)'
+          }
           className="absolute inset-0"
         />
       </button>
       <input
         ref={input}
         type="file"
-        accept="image/webp,image/jpeg,image/png"
+        // Any photo the browser can decode: `shrink` re-encodes it to WebP/JPEG
+        // before upload, so an iPhone HEIC photo is fine too.
+        accept="image/*"
         className="sr-only"
         tabIndex={-1}
         onChange={(e) => {
@@ -88,9 +94,9 @@ export function ReceiptSlot({ o }: { o: PurchaseOrder }) {
       />
       <div className="flex flex-wrap items-center gap-2 text-sm text-ink-2">
         {url && (
-          <a href={mediaSrc(url) ?? undefined} target="_blank" rel="noreferrer">
+          <LinkButton variant="link" href={mediaSrc(url) ?? undefined} newTab>
             Open full size
-          </a>
+          </LinkButton>
         )}
         {url && o.receipt_uploaded_by && <span>added by {o.receipt_uploaded_by}</span>}
         {url && (
@@ -162,33 +168,49 @@ export function ReceiveSheet({ o, onDone }: { o: PurchaseOrder; onDone: () => vo
         const assumed = days === null ? '' : addDays(todayIso(), days)
         const edited = dates[l.po_line_id] !== undefined
         return (
-          <div key={l.po_line_id} className="grid grid-cols-[minmax(0,1fr)_80px_150px] items-end gap-2 border-b border-line py-1.5 text-base">
-            <span className="truncate pb-1.5">
+          // Phone: the name on its own line, then packs and use-by side by side at
+          // full input height; from `compact` the three sit in one row.
+          <div
+            key={l.po_line_id}
+            className="grid grid-cols-2 items-end gap-x-2 gap-y-1.5 border-b border-line py-2 text-base compact:grid-cols-[minmax(0,1fr)_96px_170px] compact:py-1.5"
+          >
+            <span className="col-span-2 min-w-0 compact:col-span-1 compact:truncate compact:pb-2">
               {l.ingredient_name}{' '}
               <span className="text-sm text-ink-2">
                 · ordered {l.final_packs} × {fmtQ(l.pack_size, l.pack_unit)}
                 {l.received_qty !== null ? `, ${fmtQ(l.received_qty, l.unit)} in already` : ''}
               </span>
             </span>
-            <label className="flex flex-col gap-1 text-xs text-ink-2">
-              Packs
+            <Field
+              label={
+                <>
+                  Packs<span className="sr-only"> of {l.ingredient_name}</span>
+                </>
+              }
+            >
               <Input
-                size="xs"
+                size="sm"
                 numeric
                 value={packs[l.po_line_id] ?? ''}
                 onChange={(e) => setPacks({ ...packs, [l.po_line_id]: e.target.value })}
               />
-            </label>
-            <label className="flex flex-col gap-1 text-xs text-ink-2">
-              Use by{!edited && assumed ? ' (assumed)' : ''}
+            </Field>
+            <Field
+              label={
+                <>
+                  Use by{!edited && assumed ? ' (assumed)' : ''}
+                  <span className="sr-only"> for {l.ingredient_name}</span>
+                </>
+              }
+            >
               <Input
-                size="xs"
+                size="sm"
                 type="date"
                 value={dates[l.po_line_id] ?? assumed}
-                className={cx(!edited && 'italic')}
+                est={!edited && assumed !== ''}
                 onChange={(e) => setDates({ ...dates, [l.po_line_id]: e.target.value })}
               />
-            </label>
+            </Field>
           </div>
         )
       })}
@@ -200,7 +222,6 @@ export function ReceiveSheet({ o, onDone }: { o: PurchaseOrder; onDone: () => vo
       <div className="mt-2.5 flex gap-2">
         <Button
           variant="primary"
-          size="sm"
           disabled={operator === null || lines.length === 0}
           pending={w.pending}
           pendingLabel="Receiving…"
@@ -208,56 +229,11 @@ export function ReceiveSheet({ o, onDone }: { o: PurchaseOrder; onDone: () => vo
         >
           Receive
         </Button>
-        <Button variant="ghost" size="sm" onClick={onDone}>
+        <Button variant="ghost" onClick={onDone}>
           Close
         </Button>
       </div>
       <OutcomeLine outcome={w.outcome} className="mt-2" />
     </div>
-  )
-}
-
-/** The design's small outline action chip (§2.3): 12px, radius 12. */
-export function ActionChip({
-  danger = false,
-  armed = false,
-  ...rest
-}: ButtonHTMLAttributes<HTMLButtonElement> & { danger?: boolean; armed?: boolean }) {
-  return (
-    <button
-      type="button"
-      className={cx(
-        'h-7 whitespace-nowrap rounded-button border px-3 text-xs disabled:opacity-50',
-        danger
-          ? cx('border-alert font-bold text-bad-ink hover:bg-alert-wash', armed ? 'bg-alert-wash' : 'bg-surface')
-          : 'border-line-strong bg-surface hover:bg-canvas',
-      )}
-      {...rest}
-    />
-  )
-}
-
-/** Cancel with no preview: the first tap arms it for 4 seconds, the second fires. */
-export function ArmChip({ children, onConfirm, disabled }: { children: ReactNode; onConfirm: () => void; disabled?: boolean }) {
-  const [armed, setArmed] = useState(false)
-  useEffect(() => {
-    if (!armed) return
-    const t = setTimeout(() => setArmed(false), 4000)
-    return () => clearTimeout(t)
-  }, [armed])
-  return (
-    <ActionChip
-      disabled={disabled}
-      danger
-      armed={armed}
-      onClick={() => {
-        if (armed) {
-          setArmed(false)
-          onConfirm()
-        } else setArmed(true)
-      }}
-    >
-      {armed ? 'Tap again to cancel' : children}
-    </ActionChip>
   )
 }

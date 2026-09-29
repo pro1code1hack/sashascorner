@@ -22,8 +22,8 @@ contract's first rule: **nothing outranks what the owner entered.**
 
 Each section is one function and one transaction. With `commit=False` it reads only
 and reports what it would do; with `commit=True` it writes, runs the rollup and
-commits once. Every decision is made against current state, so a second commit
-reports only skips.
+flushes; the caller's transaction commits (one `unit_of_work` per section). Every
+decision is made against current state, so a second commit reports only skips.
 
 Quantities are compared as loaded `Decimal`s in Python, never in SQL (ARCHITECTURE
 8E).
@@ -64,8 +64,8 @@ from cafeops.db.models import (
     Supplier,
     SupplierProduct,
 )
-from cafeops.db.models.enums import PriceSource, SizeCode, Storage, Tier, Unit
-from cafeops.domain.units import IncompatibleUnitsError, convert
+from cafeops.domain.enums import PriceSource, SizeCode, Storage, Tier, Unit
+from cafeops.domain.units import IncompatibleUnitsError, convert, pounds
 from cafeops.jobs.cost_rollup import rollup_for_ingredient, rollup_menu_items
 from cafeops.services.media_store import sniff_image, store_image
 from cafeops.services.menu_catalog import LineIn, stage_manual_lines
@@ -268,11 +268,13 @@ def size_row(rows: Sequence[MenuItem], size: str) -> MenuItem | None:
 
 
 def _finish(session: Session, report: SectionReport, commit: bool) -> SectionReport:
+    """Close a section. `commit` means "these writes are meant to persist": they are
+    flushed and the report says so. The caller's transaction commits them (or, on a
+    dry run, rolls back whatever a section staged) -- a service never ends the
+    caller's transaction (ARCHITECTURE: services flush, callers commit)."""
     if commit:
-        session.commit()
+        session.flush()
         report.committed = True
-    else:
-        session.rollback()
     return report
 
 
@@ -302,10 +304,6 @@ def _qty(v: Decimal) -> str:
     return text
 
 
-def _gbp(p: int) -> str:
-    return f"£{p // 100}.{p % 100:02d}"
-
-
 def _at(day: date) -> datetime:
     return datetime(day.year, day.month, day.day, 12, tzinfo=UTC)
 
@@ -319,20 +317,16 @@ def seed_ingredients(
     session: Session, rows: Sequence[IngredientRow], *, commit: bool
 ) -> SectionReport:
     report = SectionReport("ingredients")
-    try:
-        existing = _ingredients(session)
-        for row in rows:
-            ing = existing.get(row.name)
-            if ing is None:
-                _new_ingredient(session, report, row, commit=commit)
-            else:
-                _fill_ingredient(report, ing, row, commit=commit)
-        if commit:
-            session.flush()
-        return _finish(session, report, commit)
-    except Exception:
-        session.rollback()
-        raise
+    existing = _ingredients(session)
+    for row in rows:
+        ing = existing.get(row.name)
+        if ing is None:
+            _new_ingredient(session, report, row, commit=commit)
+        else:
+            _fill_ingredient(report, ing, row, commit=commit)
+    if commit:
+        session.flush()
+    return _finish(session, report, commit)
 
 
 def _new_ingredient(
@@ -476,138 +470,131 @@ def seed_prices(
     """`planned`: ingredients the ingredients section will create (dry run only)."""
     report = SectionReport("prices")
     at = datetime.now(UTC)
-    try:
-        suppliers = {s.name: s for s in session.scalars(select(Supplier))}
-        ings = _ingredients(session)
-        #: ingredient id -> [(row, starred)] for choosing the recipe price.
-        chosen: dict[int, list[tuple[ProductRow, bool, Supplier]]] = {}
-        starred_now: set[int] = set()
-        for row in rows:
-            key = f"{row.supplier} / {row.ingredient} / {row.sku}"
-            supplier = suppliers.get(row.supplier)
-            if supplier is None:
-                report.add("skip", key, "supplier not in the database")
-                continue
-            if supplier.archived_at is not None:
-                report.add("skip", key, "supplier is archived")
-                continue
-            ing = ings.get(row.ingredient)
-            if ing is None:
-                if row.ingredient in planned and not commit:
-                    report.add(
-                        "insert",
-                        key,
-                        f"{_qty(row.pack_size)} {row.pack_unit.value} at "
-                        f"{_gbp(row.price_pence)} ★ (ingredient created by the "
-                        "ingredients section first)",
-                    )
-                    report.add("insert", f"{row.ingredient} price", "ESTIMATE from the new link")
-                else:
-                    report.add("skip", key, "ingredient not in the database")
-                continue
-            try:
-                convert(row.pack_size, row.pack_unit, ing.unit)
-            except IncompatibleUnitsError:
-                report.add("skip", key, "pack unit cannot convert to the ingredient's unit")
-                continue
-            product = session.scalar(
-                select(SupplierProduct).where(
-                    SupplierProduct.supplier_id == supplier.id,
-                    SupplierProduct.ingredient_id == ing.id,
-                    SupplierProduct.sku == row.sku,
-                )
-            )
-            if product is None:
-                starred = not _has_star(session, ing.id) and ing.id not in starred_now
-                if starred:
-                    starred_now.add(ing.id)
+    suppliers = {s.name: s for s in session.scalars(select(Supplier))}
+    ings = _ingredients(session)
+    #: ingredient id -> [(row, starred)] for choosing the recipe price.
+    chosen: dict[int, list[tuple[ProductRow, bool, Supplier]]] = {}
+    starred_now: set[int] = set()
+    for row in rows:
+        key = f"{row.supplier} / {row.ingredient} / {row.sku}"
+        supplier = suppliers.get(row.supplier)
+        if supplier is None:
+            report.add("skip", key, "supplier not in the database")
+            continue
+        if supplier.archived_at is not None:
+            report.add("skip", key, "supplier is archived")
+            continue
+        ing = ings.get(row.ingredient)
+        if ing is None:
+            if row.ingredient in planned and not commit:
                 report.add(
                     "insert",
                     key,
-                    f"{_qty(row.pack_size)} {row.pack_unit.value} at {_gbp(row.price_pence)}"
-                    + (" inc VAT" if row.vat_included else "")
-                    + (" ★" if starred else ""),
+                    f"{_qty(row.pack_size)} {row.pack_unit.value} at "
+                    f"{pounds(row.price_pence)} ★ (ingredient created by the "
+                    "ingredients section first)",
                 )
-                if commit:
-                    session.add(
-                        SupplierProduct(
-                            supplier_id=supplier.id,
-                            ingredient_id=ing.id,
-                            sku=row.sku,
-                            pack_size=row.pack_size,
-                            pack_unit=row.pack_unit,
-                            price_pence=row.price_pence,
-                            is_preferred=starred,
-                            product_url=row.product_url,
-                            moq_packs=1,
-                            last_seen_price_at=_at(row.fetched_on),
-                        )
-                    )
-                    session.flush()
-                chosen.setdefault(ing.id, []).append((row, starred, supplier))
-                continue
-            if product.archived_at is not None:
-                report.add("skip", key, "link was archived by a person")
-                continue
-            if (
-                product.is_preferred
-                and ing.current_cost_source in _OWNER_SOURCES
-                and product.price_pence != row.price_pence
-            ):
-                report.add("skip", key, "★ link priced from an invoice or supplier feed")
-                continue
-            diffs: list[str] = []
-            if product.pack_size != row.pack_size or product.pack_unit is not row.pack_unit:
-                diffs.append(
-                    f"pack {_qty(product.pack_size)} {product.pack_unit.value}→"
-                    f"{_qty(row.pack_size)} {row.pack_unit.value}"
-                )
-            if product.price_pence != row.price_pence:
-                diffs.append(f"price {_gbp(product.price_pence)}→{_gbp(row.price_pence)}")
-            if product.product_url != row.product_url:
-                diffs.append("url")
-            seen = _at(row.fetched_on)
-            newer = product.last_seen_price_at is None or product.last_seen_price_at < seen
-            if diffs or newer:
-                if not diffs:
-                    diffs.append(f"last seen {row.fetched_on.isoformat()}")
-                report.add("update", key, ", ".join(diffs))
-                if commit:
-                    product.pack_size = row.pack_size
-                    product.pack_unit = row.pack_unit
-                    product.price_pence = row.price_pence
-                    product.product_url = row.product_url
-                    if newer:
-                        product.last_seen_price_at = seen
+                report.add("insert", f"{row.ingredient} price", "ESTIMATE from the new link")
             else:
-                report.add("skip", key, "link already up to date")
-            chosen.setdefault(ing.id, []).append((row, product.is_preferred, supplier))
-
-        recost: list[int] = []
-        for ing_id, candidates in chosen.items():
-            ing = session.get(Ingredient, ing_id)
-            if ing is None:  # pragma: no cover - loaded above
-                continue
-            if _record_estimate(
-                session, report, ing, candidates, at=at, actor=actor, commit=commit
-            ):
-                recost.append(ing_id)
-        if commit:
-            session.flush()
-            costed = 0
-            for ing_id in recost:
-                costed += rollup_for_ingredient(
-                    session, ing_id, at=at, trigger=f"researched price ({actor})"
-                ).costed
-            if recost:
-                report.notes.append(
-                    f"cost rollup: {len(recost)} new recipe price(s), {costed} item costings "
-                    "refreshed"
+                report.add("skip", key, "ingredient not in the database")
+            continue
+        try:
+            convert(row.pack_size, row.pack_unit, ing.unit)
+        except IncompatibleUnitsError:
+            report.add("skip", key, "pack unit cannot convert to the ingredient's unit")
+            continue
+        product = session.scalar(
+            select(SupplierProduct).where(
+                SupplierProduct.supplier_id == supplier.id,
+                SupplierProduct.ingredient_id == ing.id,
+                SupplierProduct.sku == row.sku,
+            )
+        )
+        if product is None:
+            starred = not _has_star(session, ing.id) and ing.id not in starred_now
+            if starred:
+                starred_now.add(ing.id)
+            report.add(
+                "insert",
+                key,
+                f"{_qty(row.pack_size)} {row.pack_unit.value} at {pounds(row.price_pence)}"
+                + (" inc VAT" if row.vat_included else "")
+                + (" ★" if starred else ""),
+            )
+            if commit:
+                session.add(
+                    SupplierProduct(
+                        supplier_id=supplier.id,
+                        ingredient_id=ing.id,
+                        sku=row.sku,
+                        pack_size=row.pack_size,
+                        pack_unit=row.pack_unit,
+                        price_pence=row.price_pence,
+                        is_preferred=starred,
+                        product_url=row.product_url,
+                        moq_packs=1,
+                        last_seen_price_at=_at(row.fetched_on),
+                    )
                 )
-        return _finish(session, report, commit)
-    except Exception:
-        session.rollback()
-        raise
+                session.flush()
+            chosen.setdefault(ing.id, []).append((row, starred, supplier))
+            continue
+        if product.archived_at is not None:
+            report.add("skip", key, "link was archived by a person")
+            continue
+        if (
+            product.is_preferred
+            and ing.current_cost_source in _OWNER_SOURCES
+            and product.price_pence != row.price_pence
+        ):
+            report.add("skip", key, "★ link priced from an invoice or supplier feed")
+            continue
+        diffs: list[str] = []
+        if product.pack_size != row.pack_size or product.pack_unit is not row.pack_unit:
+            diffs.append(
+                f"pack {_qty(product.pack_size)} {product.pack_unit.value}→"
+                f"{_qty(row.pack_size)} {row.pack_unit.value}"
+            )
+        if product.price_pence != row.price_pence:
+            diffs.append(f"price {pounds(product.price_pence)}→{pounds(row.price_pence)}")
+        if product.product_url != row.product_url:
+            diffs.append("url")
+        seen = _at(row.fetched_on)
+        newer = product.last_seen_price_at is None or product.last_seen_price_at < seen
+        if diffs or newer:
+            if not diffs:
+                diffs.append(f"last seen {row.fetched_on.isoformat()}")
+            report.add("update", key, ", ".join(diffs))
+            if commit:
+                product.pack_size = row.pack_size
+                product.pack_unit = row.pack_unit
+                product.price_pence = row.price_pence
+                product.product_url = row.product_url
+                if newer:
+                    product.last_seen_price_at = seen
+        else:
+            report.add("skip", key, "link already up to date")
+        chosen.setdefault(ing.id, []).append((row, product.is_preferred, supplier))
+
+    recost: list[int] = []
+    for ing_id, candidates in chosen.items():
+        ing = session.get(Ingredient, ing_id)
+        if ing is None:  # pragma: no cover - loaded above
+            continue
+        if _record_estimate(session, report, ing, candidates, at=at, actor=actor, commit=commit):
+            recost.append(ing_id)
+    if commit:
+        session.flush()
+        costed = 0
+        for ing_id in recost:
+            costed += rollup_for_ingredient(
+                session, ing_id, at=at, trigger=f"researched price ({actor})"
+            ).costed
+        if recost:
+            report.notes.append(
+                f"cost rollup: {len(recost)} new recipe price(s), {costed} item costings refreshed"
+            )
+    return _finish(session, report, commit)
 
 
 def _record_estimate(
@@ -730,65 +717,61 @@ def seed_menu(
     overlay row would replace both)."""
     report = SectionReport("menu")
     now = datetime.now(UTC)
-    try:
-        names = set(session.scalars(select(MenuItem.name).distinct()))
-        refs = {r.item_name: r for r in session.scalars(select(MenuItemReference))}
-        site = _has_table(session, "site_menu_item_meta")
-        meta: dict[str, str | None] = {}
-        if site:
-            meta = {
-                str(n): d
-                for n, d in session.execute(
-                    select(_SITE_ITEM_META.c.item_name, _SITE_ITEM_META.c.description)
-                )
-            }
-        for row in rows:
-            if row.name not in names:
-                report.add("skip", row.name, "menu item not in the database")
-                continue
-            _reference(session, report, refs.get(row.name), row, now=now, commit=commit)
-            if not row.description:
-                continue
-            key = f"{row.name} (website blurb)"
-            if not site:
-                report.add("skip", key, "website tables not migrated")
-            elif row.name in meta:
-                current = (meta[row.name] or "").strip()
-                if current:
-                    report.add("skip", key, "website already has a description")
-                else:
-                    report.add("update", key, row.description)
-                    if commit:
-                        session.execute(
-                            _SITE_ITEM_META.update()
-                            .where(_SITE_ITEM_META.c.item_name == row.name)
-                            .values(
-                                description=row.description,
-                                updated_at=now.replace(tzinfo=None),
-                            )
-                        )
-            elif row.name in board_described:
-                report.add("skip", key, "the menu board supplies this item's text")
+    names = set(session.scalars(select(MenuItem.name).distinct()))
+    refs = {r.item_name: r for r in session.scalars(select(MenuItemReference))}
+    site = _has_table(session, "site_menu_item_meta")
+    meta: dict[str, str | None] = {}
+    if site:
+        meta = {
+            str(n): d
+            for n, d in session.execute(
+                select(_SITE_ITEM_META.c.item_name, _SITE_ITEM_META.c.description)
+            )
+        }
+    for row in rows:
+        if row.name not in names:
+            report.add("skip", row.name, "menu item not in the database")
+            continue
+        _reference(session, report, refs.get(row.name), row, now=now, commit=commit)
+        if not row.description:
+            continue
+        key = f"{row.name} (website blurb)"
+        if not site:
+            report.add("skip", key, "website tables not migrated")
+        elif row.name in meta:
+            current = (meta[row.name] or "").strip()
+            if current:
+                report.add("skip", key, "website already has a description")
             else:
-                report.add("insert", key, row.description)
+                report.add("update", key, row.description)
                 if commit:
                     session.execute(
-                        _SITE_ITEM_META.insert().values(
-                            item_name=row.name,
+                        _SITE_ITEM_META.update()
+                        .where(_SITE_ITEM_META.c.item_name == row.name)
+                        .values(
                             description=row.description,
-                            signature=False,
-                            hidden=False,
-                            position=None,
-                            use_ops_note=False,
                             updated_at=now.replace(tzinfo=None),
                         )
                     )
-        if commit:
-            session.flush()
-        return _finish(session, report, commit)
-    except Exception:
-        session.rollback()
-        raise
+        elif row.name in board_described:
+            report.add("skip", key, "the menu board supplies this item's text")
+        else:
+            report.add("insert", key, row.description)
+            if commit:
+                session.execute(
+                    _SITE_ITEM_META.insert().values(
+                        item_name=row.name,
+                        description=row.description,
+                        signature=False,
+                        hidden=False,
+                        position=None,
+                        use_ops_note=False,
+                        updated_at=now.replace(tzinfo=None),
+                    )
+                )
+    if commit:
+        session.flush()
+    return _finish(session, report, commit)
 
 
 def _reference(
@@ -802,7 +785,7 @@ def _reference(
 ) -> None:
     key = f"{row.name} (reference)"
     tags = list(row.tags) or None
-    bench = f", benchmark {_gbp(row.benchmark_price_pence)}" if row.benchmark_price_pence else ""
+    bench = f", benchmark {pounds(row.benchmark_price_pence)}" if row.benchmark_price_pence else ""
     if ref is None:
         report.add("insert", key, f"tags {'|'.join(row.tags) or '-'}{bench}")
         if commit:
@@ -855,72 +838,66 @@ def seed_recipes(
 ) -> SectionReport:
     report = SectionReport("recipes")
     at = datetime.now(UTC)
-    try:
-        items = _items_by_name(session)
-        ings = _ingredients(session)
-        groups: dict[tuple[str, str], list[RecipeRow]] = {}
-        for row in rows:
-            groups.setdefault((row.menu_item, row.size), []).append(row)
-        touched: list[int] = []
-        for (name, size), lines in groups.items():
-            key = f"{name} {size}"
-            members = items.get(name)
-            if not members:
-                report.add("skip", key, "menu item not in the database")
-                continue
-            target = size_row(members, size)
-            if target is None:
-                report.add("skip", key, "menu item has no such size")
-                continue
-            if target.template_id is not None:
-                report.add("skip", key, "made from a template (has a recipe)")
-                continue
-            open_lines = session.scalars(
-                select(ManualRecipeLine.id).where(
-                    ManualRecipeLine.menu_item_id == target.id,
-                    ManualRecipeLine.effective_from <= at,
-                    or_(
-                        ManualRecipeLine.effective_to.is_(None),
-                        ManualRecipeLine.effective_to > at,
-                    ),
-                )
-            ).all()
-            if open_lines:
-                report.add("skip", key, "already has recipe lines")
-                continue
-            missing = [ln.ingredient for ln in lines if ln.ingredient not in ings]
-            pending = [m for m in missing if m in planned and not commit]
-            if len(pending) != len(missing):
-                report.add("skip", key, "needs an ingredient that is not in the database")
-                continue
-            detail = ", ".join(f"{ln.ingredient} {_qty(ln.qty)}" for ln in lines)
-            report.add("insert", key, detail + (" (after new ingredients)" if pending else ""))
-            if not commit:
-                continue
-            target.manual_recipe = True
-            flag = target.data_quality_flag
-            if not flag:
-                target.data_quality_flag = RECIPE_FLAG
-            elif RECIPE_FLAG not in flag:
-                target.data_quality_flag = f"{flag}; {RECIPE_FLAG}"[:200]
-            session.flush()
-            stage_manual_lines(
-                session,
-                target.id,
-                [LineIn(ingredient_id=ings[ln.ingredient].id, qty=ln.qty) for ln in lines],
-                actor=actor,
-                effective_from=at,
+    items = _items_by_name(session)
+    ings = _ingredients(session)
+    groups: dict[tuple[str, str], list[RecipeRow]] = {}
+    for row in rows:
+        groups.setdefault((row.menu_item, row.size), []).append(row)
+    touched: list[int] = []
+    for (name, size), lines in groups.items():
+        key = f"{name} {size}"
+        members = items.get(name)
+        if not members:
+            report.add("skip", key, "menu item not in the database")
+            continue
+        target = size_row(members, size)
+        if target is None:
+            report.add("skip", key, "menu item has no such size")
+            continue
+        if target.template_id is not None:
+            report.add("skip", key, "made from a template (has a recipe)")
+            continue
+        open_lines = session.scalars(
+            select(ManualRecipeLine.id).where(
+                ManualRecipeLine.menu_item_id == target.id,
+                ManualRecipeLine.effective_from <= at,
+                or_(
+                    ManualRecipeLine.effective_to.is_(None),
+                    ManualRecipeLine.effective_to > at,
+                ),
             )
-            touched.append(target.id)
-        if commit and touched:
-            rolled = rollup_menu_items(
-                session, touched, at=at, trigger=f"researched recipes ({actor})"
-            )
-            report.notes.append(f"cost rollup: {rolled.costed} menu item(s) costed")
-        return _finish(session, report, commit)
-    except Exception:
-        session.rollback()
-        raise
+        ).all()
+        if open_lines:
+            report.add("skip", key, "already has recipe lines")
+            continue
+        missing = [ln.ingredient for ln in lines if ln.ingredient not in ings]
+        pending = [m for m in missing if m in planned and not commit]
+        if len(pending) != len(missing):
+            report.add("skip", key, "needs an ingredient that is not in the database")
+            continue
+        detail = ", ".join(f"{ln.ingredient} {_qty(ln.qty)}" for ln in lines)
+        report.add("insert", key, detail + (" (after new ingredients)" if pending else ""))
+        if not commit:
+            continue
+        target.manual_recipe = True
+        flag = target.data_quality_flag
+        if not flag:
+            target.data_quality_flag = RECIPE_FLAG
+        elif RECIPE_FLAG not in flag:
+            target.data_quality_flag = f"{flag}; {RECIPE_FLAG}"[:200]
+        session.flush()
+        stage_manual_lines(
+            session,
+            target.id,
+            [LineIn(ingredient_id=ings[ln.ingredient].id, qty=ln.qty) for ln in lines],
+            actor=actor,
+            effective_from=at,
+        )
+        touched.append(target.id)
+    if commit and touched:
+        rolled = rollup_menu_items(session, touched, at=at, trigger=f"researched recipes ({actor})")
+        report.notes.append(f"cost rollup: {rolled.costed} menu item(s) costed")
+    return _finish(session, report, commit)
 
 
 # --------------------------------------------------------------------------
@@ -1007,76 +984,72 @@ def seed_menu_photos(
     """
     report = SectionReport(section)
     state = _PhotoState()
-    try:
-        library = _has_table(session, "site_media")
-        if library:
-            state.library_sha = {str(s) for s in session.scalars(select(_SITE_MEDIA.c.sha256))}
+    library = _has_table(session, "site_media")
+    if library:
+        state.library_sha = {str(s) for s in session.scalars(select(_SITE_MEDIA.c.sha256))}
+    else:
+        report.notes.append("website library tables missing: photos not added to it")
+    items = _items_by_name(session)
+    assigned: set[str] = set()
+    ordered = sorted(rows, key=lambda r: r.category is not None)  # items before categories
+    for row in ordered:
+        if row.category is not None:
+            targets = [
+                name
+                for name, members in items.items()
+                if any(
+                    m.active and (m.category or "").casefold() == row.category.casefold()
+                    for m in members
+                )
+            ]
+            label = f"category:{row.category}"
         else:
-            report.notes.append("website library tables missing: photos not added to it")
-        items = _items_by_name(session)
-        assigned: set[str] = set()
-        ordered = sorted(rows, key=lambda r: r.category is not None)  # items before categories
-        for row in ordered:
-            if row.category is not None:
-                targets = [
-                    name
-                    for name, members in items.items()
-                    if any(
-                        m.active and (m.category or "").casefold() == row.category.casefold()
-                        for m in members
-                    )
-                ]
-                label = f"category:{row.category}"
-            else:
-                targets = [row.target] if row.target else []
-                label = row.target or "?"
-            given: list[str] = []
-            fill: list[MenuItem] = []
-            for name in targets:
-                members = items.get(name, [])
-                if not members:
-                    report.add("skip", name, "menu item not in the database")
-                    continue
-                if name in assigned:
-                    continue
-                if name in skip_names:
-                    report.add("skip", name, "photos.csv gives it a photo in this run")
-                    continue
-                empty = [m for m in members if m.photo_asset_id is None]
-                if not empty:
-                    if row.category is None:
-                        report.add("skip", name, "menu item already has a photo")
-                    continue
-                if fallback and len(empty) != len(members):
+            targets = [row.target] if row.target else []
+            label = row.target or "?"
+        given: list[str] = []
+        fill: list[MenuItem] = []
+        for name in targets:
+            members = items.get(name, [])
+            if not members:
+                report.add("skip", name, "menu item not in the database")
+                continue
+            if name in assigned:
+                continue
+            if name in skip_names:
+                report.add("skip", name, "photos.csv gives it a photo in this run")
+                continue
+            empty = [m for m in members if m.photo_asset_id is None]
+            if not empty:
+                if row.category is None:
                     report.add("skip", name, "menu item already has a photo")
-                    continue
-                given.append(name)
-                assigned.add(name)
-                fill.extend(empty)
-            if given or not fallback:
-                # A fallback photo nobody needs is not stored at all: it would only
-                # clutter the library the owner picks website photos from.
-                _sha, asset = _asset_for(
-                    session, report, row, state, commit=commit, actor=actor, library=library
-                )
-                if commit and asset is not None:
-                    for m in fill:
-                        m.photo_asset_id = asset.id
-            if given:
-                report.add(
-                    "update",
-                    label,
-                    f"photo {row.file.name} → "
-                    + (", ".join(given) if len(given) <= 4 else f"{len(given)} items"),
-                )
-            elif row.category is not None:
-                report.add("skip", label, "every item in the category already has a photo")
-        if commit:
-            session.flush()
-        return _finish(session, report, commit), state.jobs, frozenset(assigned)
-    except Exception:
-        session.rollback()
-        raise
+                continue
+            if fallback and len(empty) != len(members):
+                report.add("skip", name, "menu item already has a photo")
+                continue
+            given.append(name)
+            assigned.add(name)
+            fill.extend(empty)
+        if given or not fallback:
+            # A fallback photo nobody needs is not stored at all: it would only
+            # clutter the library the owner picks website photos from.
+            _sha, asset = _asset_for(
+                session, report, row, state, commit=commit, actor=actor, library=library
+            )
+            if commit and asset is not None:
+                for m in fill:
+                    m.photo_asset_id = asset.id
+        if given:
+            report.add(
+                "update",
+                label,
+                f"photo {row.file.name} → "
+                + (", ".join(given) if len(given) <= 4 else f"{len(given)} items"),
+            )
+        elif row.category is not None:
+            report.add("skip", label, "every item in the category already has a photo")
+    if commit:
+        session.flush()
+    return _finish(session, report, commit), state.jobs, frozenset(assigned)
 
 
 def seed_ingredient_photos(
@@ -1091,29 +1064,25 @@ def seed_ingredient_photos(
     ingredient has none. Not added to the website library (they are not for the site)."""
     report = SectionReport("ingredient-photos")
     state = _PhotoState()
-    try:
-        ings = _ingredients(session)
-        for row in rows:
-            _sha, asset = _asset_for(
-                session, report, row, state, commit=commit, actor=actor, library=False
-            )
-            name = row.target or ""
-            ing = ings.get(name)
-            if ing is None:
-                if name in planned and not commit:
-                    report.add("update", name, f"photo {row.file.name} (after it is created)")
-                else:
-                    report.add("skip", name, "ingredient not in the database")
-                continue
-            if ing.photo_asset_id is not None:
-                report.add("skip", name, "ingredient already has a photo")
-                continue
-            report.add("update", name, f"photo {row.file.name}")
-            if commit and asset is not None:
-                ing.photo_asset_id = asset.id
-        if commit:
-            session.flush()
-        return _finish(session, report, commit)
-    except Exception:
-        session.rollback()
-        raise
+    ings = _ingredients(session)
+    for row in rows:
+        _sha, asset = _asset_for(
+            session, report, row, state, commit=commit, actor=actor, library=False
+        )
+        name = row.target or ""
+        ing = ings.get(name)
+        if ing is None:
+            if name in planned and not commit:
+                report.add("update", name, f"photo {row.file.name} (after it is created)")
+            else:
+                report.add("skip", name, "ingredient not in the database")
+            continue
+        if ing.photo_asset_id is not None:
+            report.add("skip", name, "ingredient already has a photo")
+            continue
+        report.add("update", name, f"photo {row.file.name}")
+        if commit and asset is not None:
+            ing.photo_asset_id = asset.id
+    if commit:
+        session.flush()
+    return _finish(session, report, commit)

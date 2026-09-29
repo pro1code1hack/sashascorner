@@ -22,6 +22,7 @@ falls back to a name match so the seeded suppliers work without editing rows.
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
@@ -120,7 +121,7 @@ class BasketLine:
     line_total_seen_pence: int | None = None
     product_name_seen: str | None = None
     status: str = "pending"
-    #: Which half did it: "script" | "model" | None.
+    #: Which tier put it in the basket: "cart_link" | "quick_order" | "script" | "model" | None.
     added_by: str | None = None
     note: str = ""
 
@@ -183,6 +184,42 @@ class BasketSnapshot:
             "unexpected_lines": list(self.unexpected_lines),
             "complete": self.complete,
         }
+
+
+@dataclass(frozen=True, slots=True)
+class CartLinkPlan:
+    """Tier 0: the basket as a URL (docs/agents/BROWSER-ORDERING.md §10).
+
+    Amazon's add-to-cart form and Shopify's cart permalinks build a pre-filled basket
+    from product ids and quantities. Opening `url` in the owner's own browser IS the
+    staged basket: no automation, no stored session, no bot detection. `covered` are
+    the po_line_ids the link carries; `uncovered` maps the rest to the reason (no
+    ASIN in the URL, variant lookup failed...). A plan with nothing uncovered needs
+    no browser at all; a partial plan is opened in the worker's browser first and the
+    remaining lines are added by the other tiers.
+    """
+
+    url: str
+    covered: tuple[int, ...]
+    uncovered: dict[int, str] = field(default_factory=dict)
+    #: One line for the proposal body, e.g. "Amazon add-to-cart link, 3 items".
+    label: str = ""
+    #: Per-line identifiers the link used (po_line_id -> "ASIN B0…" / "variant 4471…").
+    refs: dict[int, str] = field(default_factory=dict)
+
+    @property
+    def complete(self) -> bool:
+        return not self.uncovered
+
+
+@dataclass(frozen=True, slots=True)
+class QuickOrderResult:
+    """Tier 1: one product-code form filled and submitted (Booker, Brakes)."""
+
+    lines: tuple[BasketLine, ...]
+    #: What the pad reported for codes it did not recognise, verbatim.
+    rejected: dict[int, str] = field(default_factory=dict)
+    note: str = ""
 
 
 class PortalStepFailed(Exception):
@@ -250,6 +287,55 @@ class SupplierPortal(Protocol):
         quantity control looks like, what "Add" is called, what NOT to touch."""
         ...
 
+    # ---- optional capabilities --------------------------------------------------
+    #
+    # Declared below as their own runtime-checkable protocols (`Bindable`,
+    # `CartLinkCapable`, `QuickOrderCapable`) and tested with `isinstance`; an adapter
+    # without the members simply is not an instance. `prefers_headed: bool` (Tier 2:
+    # the site refuses headless browsers, Tesco/Akamai) is carried by every
+    # `HeuristicPortal`; the worker launches a visible window when a display is
+    # available and otherwise reports NEEDS_HUMAN with that reason.
+
+
+@runtime_checkable
+class Bindable(Protocol):
+    """An adapter whose registered instance is a template: `bind(supplier)` returns
+    the per-supplier instance built from `supplier.channel_config` (generic, Monolith,
+    or a singleton with a per-supplier override). None or `self` when there is
+    nothing to bind."""
+
+    def bind(self, supplier: Any) -> SupplierPortal | None: ...
+
+
+@runtime_checkable
+class CartLinkCapable(Protocol):
+    """Tier 0: the basket as a URL, built without a browser.
+
+    Returns None when the portal has no such mechanism at all; a plan with
+    `uncovered` entries when only some lines could be encoded. Must not raise for a
+    line it cannot encode -- the reason goes in `uncovered`. May do a few
+    unauthenticated HTTP fetches (Shopify's public product JSON); never a sign-in."""
+
+    def cart_link(self, lines: Sequence[BasketLine]) -> CartLinkPlan | None: ...
+
+
+@runtime_checkable
+class QuickOrderCapable(Protocol):
+    """Tier 1: the product-code pad at `quick_order_url`.
+
+    `quick_order` fills every line's `sku` and quantity in ONE form, submits, and
+    reads back which codes were accepted. It raises `PortalStepFailed` when the pad is
+    not where or what it should be (the model then drives the pad with
+    `quick_order_hints()`), never for a single rejected code (that goes in
+    `rejected`). An adapter that only sets `quick_order_url` when one is configured
+    (generic) is not an instance until it is."""
+
+    quick_order_url: str
+
+    def quick_order(self, page: Page, lines: Sequence[BasketLine]) -> QuickOrderResult: ...
+
+    def quick_order_hints(self) -> str: ...
+
 
 @dataclass(slots=True)
 class PortalRegistry:
@@ -292,11 +378,10 @@ class PortalRegistry:
         # Adapters whose URLs come from the supplier row (generic, Monolith) expose
         # `bind(supplier)` and return a per-supplier instance; the registered singleton
         # is only a template. Everything else is returned as is.
-        bind = getattr(portal, "bind", None)
-        if callable(bind):
-            bound = bind(supplier)
+        if isinstance(portal, Bindable):
+            bound = portal.bind(supplier)
             if bound is not None:
-                return bound  # type: ignore[no-any-return]
+                return bound
         return portal
 
 
@@ -330,11 +415,16 @@ __all__ = [
     "REGISTRY",
     "BasketLine",
     "BasketSnapshot",
+    "Bindable",
+    "CartLinkCapable",
+    "CartLinkPlan",
     "PortalNeedsHuman",
     "PortalPolicy",
     "PortalPolicyRefusal",
     "PortalRegistry",
     "PortalStepFailed",
+    "QuickOrderCapable",
+    "QuickOrderResult",
     "SupplierPortal",
     "portal_for",
     "portal_for_supplier",

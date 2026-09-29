@@ -21,22 +21,21 @@ Neither is an order and neither spends anything, so invariant 1 is untouched.
 
 from __future__ import annotations
 
-from datetime import time
-
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from cafeops.api.params import HTTP_422
 from cafeops.api.schemas import (
     ShelfLifeIn,
     ShelfLifeResponse,
     SupplierTermsIn,
     SupplierTermsResponse,
 )
-from cafeops.api.views.orders import _supplier_out
-from cafeops.db.models.enums import PriceSource
+from cafeops.api.views.common import parse_cutoff, supplier_out
 from cafeops.db.models.supplier import Supplier
 from cafeops.db.repositories.sourcing import SqlSourcingRepository
+from cafeops.domain.enums import PriceSource
 from cafeops.services.confirm_terms import (
     ConfirmationRefused,
     SupplierTerms,
@@ -61,22 +60,9 @@ def _refuse(exc: ConfirmationRefused) -> HTTPException:
     is the whole explanation -- so they pass through unaltered.
     """
     return HTTPException(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status_code=HTTP_422,
         detail={"message": str(exc)},
     )
-
-
-def _parse_cutoff(raw: str | None) -> time | None:
-    if raw is None or raw == "":
-        return None
-    try:
-        hh, mm = raw.split(":")
-        return time(int(hh), int(mm))
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail={"message": f"cutoff_time must be HH:MM. Got {raw!r}."},
-        ) from None
 
 
 def _describe(label: str, before: object, after: object) -> str | None:
@@ -103,7 +89,7 @@ def confirm_supplier_terms_view(
                 delivery_weekdays=tuple(body.delivery_weekdays),
                 min_order_pence=body.min_order_pence,
                 delivery_fee_pence=body.delivery_fee_pence,
-                cutoff_time=_parse_cutoff(body.cutoff_time),
+                cutoff_time=parse_cutoff(body.cutoff_time),
                 free_delivery_threshold_pence=body.free_delivery_threshold_pence,
             ),
         )
@@ -145,7 +131,7 @@ def confirm_supplier_terms_view(
         name=result.name,
         was_placeholder=result.was_placeholder,
         changed=changed,
-        supplier=_supplier_out(terms),
+        supplier=supplier_out(terms),
     )
 
 
@@ -165,7 +151,7 @@ def confirm_shelf_life_view(
     source = _SOURCES.get(body.source.lower())
     if source is None:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=HTTP_422,
             detail={
                 "message": (
                     f"source must be 'supplier' or 'packaging'. Got {body.source!r}. "

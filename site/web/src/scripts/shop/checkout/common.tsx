@@ -3,7 +3,7 @@
 // page furniture. Styles: ./d.css (prefix `sd-`; C's shared components keep `sh-`).
 import type { ComponentChildren } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
-import { paths } from '../router';
+import { withKept } from '../router';
 import { catalogue, config, loadCatalogue } from '../store';
 import './d.css';
 
@@ -202,4 +202,4 @@ export function Statement({
   );
 }
 
-export const accountPath = (next?: 'checkout') => `${paths.account()}${next ? `?next=${next}` : ''}`;
+export const accountPath = (next?: 'checkout') => withKept(`/account${next ? `?next=${next}` : ''}`);

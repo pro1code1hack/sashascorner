@@ -43,7 +43,6 @@ from cafeops.db.models import (
     MenuItemPrice,
     RecipeChange,
 )
-from cafeops.db.models.enums import MenuKind, MenuPriceSource
 from cafeops.db.repositories.composition import SqlCompositionRepository
 from cafeops.db.repositories.menu_cost import SqlMenuCostRepository
 from cafeops.domain.composition import (
@@ -56,10 +55,12 @@ from cafeops.domain.composition import (
     summarise_changes,
     unit_label,
 )
+from cafeops.domain.enums import MenuKind, MenuPriceSource
 from cafeops.domain.labour import UNTIMED
 from cafeops.domain.types import SizeCode, Unit
 from cafeops.domain.units import IncompatibleUnitsError, convert
 from cafeops.jobs.cost_rollup import configured_rate_pence, rollup_menu_items, snapshots_at
+from cafeops.services.actor import require_actor
 from cafeops.services.edit_composition import require_not_retroactive
 
 __all__ = [
@@ -102,13 +103,6 @@ class LineIn:
 # --------------------------------------------------------------------------
 # Shared helpers
 # --------------------------------------------------------------------------
-
-
-def _signed(actor: str) -> str:
-    name = actor.strip()
-    if not name:
-        raise ValueError("say who is making this change (the operator name)")
-    return name[:120]
 
 
 def group_rows(session: Session, menu_item_id: int) -> list[MenuItem]:
@@ -158,7 +152,7 @@ def set_menu_price(
             price_pence=price_pence,
             effective_from=at,
             source=MenuPriceSource.MANUAL,
-            set_by=_signed(actor),
+            set_by=require_actor(actor),
             note=note,
         )
     )
@@ -457,7 +451,7 @@ def stage_manual_lines(
     never retroactive, signed in `recipe_change`. Returns the diff lines.
     """
     at = require_not_retroactive(effective_from or datetime.now(UTC))
-    actor = _signed(actor)
+    actor = require_actor(actor)
     (target,) = _manual_targets(session, menu_item_id, ())
     diff, _closed = _stage_lines(
         session, target, normalise_lines(session, lines), at=at, actor=actor
@@ -475,33 +469,29 @@ def apply_manual_lines(
     also_menu_item_ids: Sequence[int] = (),
     effective_from: datetime | None = None,
 ) -> LinesApplied:
-    """Replace a one-off item's recipe from now. One transaction; commits itself."""
+    """Replace a one-off item's recipe from now. Flushes; the caller commits."""
     at = require_not_retroactive(effective_from or datetime.now(UTC))
-    actor = _signed(actor)
+    actor = require_actor(actor)
     targets = _manual_targets(session, menu_item_id, also_menu_item_ids)
     normalised = normalise_lines(session, lines)
     result = LinesApplied(effective_from=at, menu_item_ids=[t.id for t in targets])
     all_diff: list[str] = []
-    try:
-        for target in targets:
-            diff, closed = _stage_lines(session, target, normalised, at=at, actor=actor)
-            if not diff:
-                continue
-            result.lines_closed += closed
-            result.lines_opened += len(normalised)
-            size = target.size_code.value if target.size_code else "One"
-            all_diff.extend(f"{target.name} {size}: {line}" for line in diff)
-        if not all_diff:
-            raise ValueError("there is nothing to apply: the recipe is already exactly this")
-        session.flush()
-        rollup = rollup_menu_items(
-            session, result.menu_item_ids, at=at, trigger=f"one-off recipe edit by {actor}"
-        )
-        result.rollup_items_recosted = rollup.costed
-        session.commit()
-    except Exception:
-        session.rollback()
-        raise
+    for target in targets:
+        diff, closed = _stage_lines(session, target, normalised, at=at, actor=actor)
+        if not diff:
+            continue
+        result.lines_closed += closed
+        result.lines_opened += len(normalised)
+        size = target.size_code.value if target.size_code else "One"
+        all_diff.extend(f"{target.name} {size}: {line}" for line in diff)
+    if not all_diff:
+        raise ValueError("there is nothing to apply: the recipe is already exactly this")
+    session.flush()
+    rollup = rollup_menu_items(
+        session, result.menu_item_ids, at=at, trigger=f"one-off recipe edit by {actor}"
+    )
+    result.rollup_items_recosted = rollup.costed
+    session.flush()
     result.diff = tuple(all_diff)
     return result
 
@@ -582,39 +572,35 @@ def apply_prices(
     actor: str,
     effective_from: datetime | None = None,
 ) -> PricesApplied:
-    """Set sell prices from now. Dated rows; the cache follows. Commits itself."""
+    """Set sell prices from now. Dated rows; the cache follows. Flushes; the caller commits."""
     at = require_not_retroactive(effective_from or datetime.now(UTC))
-    actor = _signed(actor)
+    actor = require_actor(actor)
     targets = _price_targets(session, prices)
     diff, pos = _price_diff(session, targets)
     if not diff:
         raise ValueError("there is nothing to apply: every price is already that")
     result = PricesApplied(effective_from=at, diff=tuple(diff), pos_actions=tuple(pos))
-    try:
-        for item_id, price in targets.items():
-            row = session.get(MenuItem, item_id)
-            if row is None:  # pragma: no cover
-                continue
-            before = row.price_pence
-            if set_menu_price(session, row, price, at=at, actor=actor):
-                result.repriced.append(item_id)
-                size = row.size_code.value if row.size_code else "One"
-                line = f"Price {size}: {gbp(before)} → {gbp(price)}"
-                session.add(
-                    RecipeChange(
-                        menu_item_id=item_id,
-                        template_id=row.template_id,
-                        change_kind="menu_price",
-                        effective_from=at,
-                        actor=actor,
-                        summary=line,
-                        lines=[line],
-                    )
+    for item_id, price in targets.items():
+        row = session.get(MenuItem, item_id)
+        if row is None:  # pragma: no cover
+            continue
+        before = row.price_pence
+        if set_menu_price(session, row, price, at=at, actor=actor):
+            result.repriced.append(item_id)
+            size = row.size_code.value if row.size_code else "One"
+            line = f"Price {size}: {gbp(before)} → {gbp(price)}"
+            session.add(
+                RecipeChange(
+                    menu_item_id=item_id,
+                    template_id=row.template_id,
+                    change_kind="menu_price",
+                    effective_from=at,
+                    actor=actor,
+                    summary=line,
+                    lines=[line],
                 )
-        session.commit()
-    except Exception:
-        session.rollback()
-        raise
+            )
+    session.flush()
     return result
 
 
@@ -650,7 +636,7 @@ def create_menu_item(
 ) -> list[int]:
     """A new one-off product: one row per size, dated price and lines from now."""
     at = datetime.now(UTC)
-    actor = _signed(actor)
+    actor = require_actor(actor)
     name = name.strip()
     if not name:
         raise ValueError("an item needs a name")
@@ -663,42 +649,38 @@ def create_menu_item(
         if not _name_free(session, name, size.size_code):
             raise ValueError(f"there is already a menu item called {name!r} at that size")
     ids: list[int] = []
-    try:
-        for size in sizes:
-            row = MenuItem(
-                name=name,
-                category=(category or "").strip() or None,
-                note=(note or "").strip() or None,
-                size_code=size.size_code,
-                selected_options={},
-                price_pence=size.price_pence,
-                active=True,
-                manual_recipe=True,
-            )
-            session.add(row)
-            session.flush()
-            set_menu_price(session, row, size.price_pence, at=at, actor=actor, note="new item")
-            lines = normalise_lines(session, size.lines)
-            if lines:
-                _write_lines(session, row.id, lines, at)
-                diff = _line_diff(session, [], lines)
-                session.add(
-                    RecipeChange(
-                        menu_item_id=row.id,
-                        change_kind="manual_lines",
-                        effective_from=at,
-                        actor=actor,
-                        summary="Created",
-                        lines=diff,
-                    )
-                )
-            ids.append(row.id)
+    for size in sizes:
+        row = MenuItem(
+            name=name,
+            category=(category or "").strip() or None,
+            note=(note or "").strip() or None,
+            size_code=size.size_code,
+            selected_options={},
+            price_pence=size.price_pence,
+            active=True,
+            manual_recipe=True,
+        )
+        session.add(row)
         session.flush()
-        rollup_menu_items(session, ids, at=at, trigger=f"menu item created by {actor}")
-        session.commit()
-    except Exception:
-        session.rollback()
-        raise
+        set_menu_price(session, row, size.price_pence, at=at, actor=actor, note="new item")
+        lines = normalise_lines(session, size.lines)
+        if lines:
+            _write_lines(session, row.id, lines, at)
+            diff = _line_diff(session, [], lines)
+            session.add(
+                RecipeChange(
+                    menu_item_id=row.id,
+                    change_kind="manual_lines",
+                    effective_from=at,
+                    actor=actor,
+                    summary="Created",
+                    lines=diff,
+                )
+            )
+        ids.append(row.id)
+    session.flush()
+    rollup_menu_items(session, ids, at=at, trigger=f"menu item created by {actor}")
+    session.flush()
     return ids
 
 
@@ -720,31 +702,27 @@ def update_group(
     system's label only; the till keeps its own name and sales still match by
     Lightspeed id.
     """
-    _signed(actor)
+    require_actor(actor)
     rows = group_rows(session, menu_item_id)
     ids = [r.id for r in rows]
-    try:
-        if name is not None:
-            new = name.strip()
-            if not new:
-                raise ValueError("an item needs a name")
-            if new != rows[0].name:
-                for row in rows:
-                    if not _name_free(session, new, row.size_code, except_ids=ids):
-                        raise ValueError(f"there is already a menu item called {new!r}")
-                for row in rows:
-                    row.name = new
-        for row in rows:
-            if set_category:
-                row.category = (category or "").strip() or None
-            if set_note:
-                row.note = (note or "").strip()[:400] or None
-            if active is not None:
-                row.active = active
-        session.commit()
-    except Exception:
-        session.rollback()
-        raise
+    if name is not None:
+        new = name.strip()
+        if not new:
+            raise ValueError("an item needs a name")
+        if new != rows[0].name:
+            for row in rows:
+                if not _name_free(session, new, row.size_code, except_ids=ids):
+                    raise ValueError(f"there is already a menu item called {new!r}")
+            for row in rows:
+                row.name = new
+    for row in rows:
+        if set_category:
+            row.category = (category or "").strip() or None
+        if set_note:
+            row.note = (note or "").strip()[:400] or None
+        if active is not None:
+            row.active = active
+    session.flush()
     return ids
 
 
@@ -759,7 +737,7 @@ def add_size(
 ) -> int:
     """Add (or bring back) a size of a one-off product, copying another size's lines."""
     at = datetime.now(UTC)
-    actor = _signed(actor)
+    actor = require_actor(actor)
     rows = group_rows(session, menu_item_id)
     if any(not r.manual_recipe for r in rows):
         raise NotManualRecipeError(
@@ -769,60 +747,56 @@ def add_size(
     source_id = copy_from_menu_item_id or menu_item_id
     if source_id not in {r.id for r in rows}:
         raise ValueError("copy the lines from a size of the same item")
-    try:
-        existing = next((r for r in rows if r.size_code == size_code), None)
-        if existing is not None:
-            if existing.active:
-                raise ValueError(f"{existing.name} already has that size")
-            existing.active = True
-            set_menu_price(session, existing, price_pence, at=at, actor=actor, note="size back on")
-            target = existing
-        else:
-            anchor = rows[0]
-            target = MenuItem(
-                name=anchor.name,
-                category=anchor.category,
-                note=anchor.note,
-                photo_asset_id=anchor.photo_asset_id,
-                size_code=size_code,
-                selected_options={},
-                price_pence=price_pence,
-                active=True,
-                manual_recipe=True,
-            )
-            session.add(target)
-            session.flush()
-            set_menu_price(session, target, price_pence, at=at, actor=actor, note="new size")
-            lines = [(r.ingredient_id, r.qty) for r in _open_lines(session, source_id, at)]
-            if lines:
-                _write_lines(session, target.id, lines, at)
-                session.add(
-                    RecipeChange(
-                        menu_item_id=target.id,
-                        change_kind="manual_lines",
-                        effective_from=at,
-                        actor=actor,
-                        summary="New size, lines copied",
-                        lines=_line_diff(session, [], lines),
-                    )
-                )
+    existing = next((r for r in rows if r.size_code == size_code), None)
+    if existing is not None:
+        if existing.active:
+            raise ValueError(f"{existing.name} already has that size")
+        existing.active = True
+        set_menu_price(session, existing, price_pence, at=at, actor=actor, note="size back on")
+        target = existing
+    else:
+        anchor = rows[0]
+        target = MenuItem(
+            name=anchor.name,
+            category=anchor.category,
+            note=anchor.note,
+            photo_asset_id=anchor.photo_asset_id,
+            size_code=size_code,
+            selected_options={},
+            price_pence=price_pence,
+            active=True,
+            manual_recipe=True,
+        )
+        session.add(target)
         session.flush()
-        rollup_menu_items(session, [target.id], at=at, trigger=f"size added by {actor}")
-        session.commit()
-    except Exception:
-        session.rollback()
-        raise
+        set_menu_price(session, target, price_pence, at=at, actor=actor, note="new size")
+        lines = [(r.ingredient_id, r.qty) for r in _open_lines(session, source_id, at)]
+        if lines:
+            _write_lines(session, target.id, lines, at)
+            session.add(
+                RecipeChange(
+                    menu_item_id=target.id,
+                    change_kind="manual_lines",
+                    effective_from=at,
+                    actor=actor,
+                    summary="New size, lines copied",
+                    lines=_line_diff(session, [], lines),
+                )
+            )
+    session.flush()
+    rollup_menu_items(session, [target.id], at=at, trigger=f"size added by {actor}")
+    session.flush()
     return target.id
 
 
 def remove_size(session: Session, menu_item_id: int, *, actor: str) -> None:
     """Take one size off the menu. Never deleted: sales and prices reference the row."""
-    _signed(actor)
+    require_actor(actor)
     row = session.get(MenuItem, menu_item_id)
     if row is None:
         raise LookupError(f"menu item {menu_item_id} not found")
     row.active = False
-    session.commit()
+    session.flush()
 
 
 def duplicate_item(session: Session, menu_item_id: int, *, actor: str) -> list[int]:
@@ -833,7 +807,7 @@ def duplicate_item(session: Session, menu_item_id: int, *, actor: str) -> list[i
     recipe would be deciding its recipe for it.
     """
     at = datetime.now(UTC)
-    actor = _signed(actor)
+    actor = require_actor(actor)
     rows = [r for r in group_rows(session, menu_item_id) if r.active] or group_rows(
         session, menu_item_id
     )
@@ -847,53 +821,47 @@ def duplicate_item(session: Session, menu_item_id: int, *, actor: str) -> list[i
     specs = composition.item_specs([r.id for r in rows], at)
     snapshots = snapshots_at(session, at)
     ids: list[int] = []
-    try:
-        for row in rows:
-            spec = specs.get(row.id)
-            lines: list[tuple[int, Decimal]] = []
-            if spec is not None:
-                recipe = resolve_recipe(spec, (), at, ingredients=snapshots)
-                merged: dict[int, Decimal] = {}
-                for line in recipe.lines:
-                    merged[line.ingredient_id] = (
-                        merged.get(line.ingredient_id, Decimal("0")) + line.qty
-                    )
-                lines = list(merged.items())
-            copy = MenuItem(
-                name=name,
-                category=row.category,
-                note=row.note,
-                photo_asset_id=row.photo_asset_id,
-                size_code=row.size_code,
-                selected_options={},
-                price_pence=row.price_pence,
-                active=True,
-                manual_recipe=True,
-            )
-            session.add(copy)
-            session.flush()
-            set_menu_price(
-                session, copy, row.price_pence, at=at, actor=actor, note=f"copy of {row.name}"
-            )
-            if lines:
-                _write_lines(session, copy.id, lines, at)
-                session.add(
-                    RecipeChange(
-                        menu_item_id=copy.id,
-                        change_kind="manual_lines",
-                        effective_from=at,
-                        actor=actor,
-                        summary=f"Copied from {row.name}",
-                        lines=_line_diff(session, [], lines),
-                    )
-                )
-            ids.append(copy.id)
+    for row in rows:
+        spec = specs.get(row.id)
+        lines: list[tuple[int, Decimal]] = []
+        if spec is not None:
+            recipe = resolve_recipe(spec, (), at, ingredients=snapshots)
+            merged: dict[int, Decimal] = {}
+            for line in recipe.lines:
+                merged[line.ingredient_id] = merged.get(line.ingredient_id, Decimal("0")) + line.qty
+            lines = list(merged.items())
+        copy = MenuItem(
+            name=name,
+            category=row.category,
+            note=row.note,
+            photo_asset_id=row.photo_asset_id,
+            size_code=row.size_code,
+            selected_options={},
+            price_pence=row.price_pence,
+            active=True,
+            manual_recipe=True,
+        )
+        session.add(copy)
         session.flush()
-        rollup_menu_items(session, ids, at=at, trigger=f"menu item duplicated by {actor}")
-        session.commit()
-    except Exception:
-        session.rollback()
-        raise
+        set_menu_price(
+            session, copy, row.price_pence, at=at, actor=actor, note=f"copy of {row.name}"
+        )
+        if lines:
+            _write_lines(session, copy.id, lines, at)
+            session.add(
+                RecipeChange(
+                    menu_item_id=copy.id,
+                    change_kind="manual_lines",
+                    effective_from=at,
+                    actor=actor,
+                    summary=f"Copied from {row.name}",
+                    lines=_line_diff(session, [], lines),
+                )
+            )
+        ids.append(copy.id)
+    session.flush()
+    rollup_menu_items(session, ids, at=at, trigger=f"menu item duplicated by {actor}")
+    session.flush()
     return ids
 
 
@@ -906,11 +874,7 @@ def create_category(session: Session, *, name: str, kind: MenuKind) -> int:
     top = session.scalar(select(MenuCategory.sort_order).order_by(MenuCategory.sort_order.desc()))
     row = MenuCategory(name=clean, kind=kind, sort_order=(top or 0) + 1)
     session.add(row)
-    try:
-        session.commit()
-    except Exception:
-        session.rollback()
-        raise
+    session.flush()
     return row.id
 
 
@@ -921,7 +885,7 @@ def attach_photo(session: Session, menu_item_id: int, asset_id: int | None) -> l
         raise LookupError(f"media asset {asset_id} not found")
     for row in rows:
         row.photo_asset_id = asset_id
-    session.commit()
+    session.flush()
     return [r.id for r in rows]
 
 
@@ -952,7 +916,7 @@ def set_prep_seconds(
     the change is still logged as a `RecipeChange` and every touched size is
     recosted in the same transaction.
     """
-    actor = _signed(actor)
+    actor = require_actor(actor)
     if not seconds:
         raise ValueError("there is nothing to apply: no sizes given")
     rows = [session.get(MenuItem, i) for i in seconds]
@@ -967,38 +931,32 @@ def set_prep_seconds(
             raise ValueError("a prep time is between 1 and 3600 seconds")
     at = datetime.now(UTC)
     diff: list[str] = []
-    try:
-        for row in found:
-            new = seconds[row.id]
-            if row.prep_seconds == new and (
-                new is None or row.prep_seconds_is_estimate == is_estimate
-            ):
-                continue
-            size = row.size_code.value if row.size_code else "One"
-            before = f"{row.prep_seconds}s" if row.prep_seconds is not None else "recipe time"
-            after = f"{new}s" if new is not None else "recipe time"
-            diff.append(f"{size}: {before} -> {after}")
-            row.prep_seconds = new
-            row.prep_seconds_is_estimate = is_estimate if new is not None else None
-            session.add(
-                RecipeChange(
-                    menu_item_id=row.id,
-                    change_kind="prep_seconds",
-                    effective_from=at,
-                    actor=actor,
-                    summary=f"time to make {size}: {before} -> {after}",
-                    lines=[f"{size}: {before} -> {after}"],
-                )
+    for row in found:
+        new = seconds[row.id]
+        if row.prep_seconds == new and (new is None or row.prep_seconds_is_estimate == is_estimate):
+            continue
+        size = row.size_code.value if row.size_code else "One"
+        before = f"{row.prep_seconds}s" if row.prep_seconds is not None else "recipe time"
+        after = f"{new}s" if new is not None else "recipe time"
+        diff.append(f"{size}: {before} -> {after}")
+        row.prep_seconds = new
+        row.prep_seconds_is_estimate = is_estimate if new is not None else None
+        session.add(
+            RecipeChange(
+                menu_item_id=row.id,
+                change_kind="prep_seconds",
+                effective_from=at,
+                actor=actor,
+                summary=f"time to make {size}: {before} -> {after}",
+                lines=[f"{size}: {before} -> {after}"],
             )
-        if not diff:
-            raise ValueError("there is nothing to apply: the times are already exactly this")
-        session.flush()
-        ids = [r.id for r in found]
-        rollup = rollup_menu_items(session, ids, at=at, trigger=f"prep time edit by {actor}")
-        session.commit()
-    except Exception:
-        session.rollback()
-        raise
+        )
+    if not diff:
+        raise ValueError("there is nothing to apply: the times are already exactly this")
+    session.flush()
+    ids = [r.id for r in found]
+    rollup = rollup_menu_items(session, ids, at=at, trigger=f"prep time edit by {actor}")
+    session.flush()
     return PrepApplied(
         menu_item_ids=ids,
         summary=f"{found[0].name}: " + "; ".join(diff),

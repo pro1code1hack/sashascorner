@@ -6,20 +6,19 @@ which is why this router is listed in `handlers.ALL_ROUTERS` rather than attache
 
 from __future__ import annotations
 
-from typing import Any
-
 from aiogram import Router
 from aiogram.filters import Command, CommandObject
 from aiogram.types import Message
 
 from cafeops.bot import formatters as f
+from cafeops.bot.deps import RunSync
 from cafeops.services.loyalty.admin import member_brief
 
 router = Router(name="member")
 
 
 @router.message(Command("member"))
-async def member(message: Message, command: CommandObject, run_sync: Any) -> None:
+async def member(message: Message, command: CommandObject, run_sync: RunSync) -> None:
     contact = (command.args or "").strip()
     if not contact:
         await message.answer(f.member_usage())

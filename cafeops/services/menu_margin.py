@@ -36,6 +36,7 @@ from cafeops.db.repositories.menu_cost import CachedCost, SqlMenuCostRepository
 from cafeops.domain.composition import ItemAvailability, availability_at
 from cafeops.domain.labour import ItemLabour, LabourRollup, MarginRanking, rank_menu, rollup_labour
 from cafeops.domain.types import LabourCost
+from cafeops.domain.units import gbp_code
 from cafeops.jobs.cost_rollup import configured_rate_pence
 
 __all__ = ["MarginView", "menu_availability", "menu_margin"]
@@ -116,7 +117,7 @@ def menu_margin(
         )
     elif rate != configured_rate_pence():
         warnings.append(
-            f"ranked at an OVERRIDE rate of GBP {rate / 100:.2f}/hr, not the configured "
+            f"ranked at an OVERRIDE rate of {gbp_code(rate)}/hr, not the configured "
             "rate. The cached labour cost on each row still carries the rate it was "
             "computed at."
         )

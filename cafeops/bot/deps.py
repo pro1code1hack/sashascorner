@@ -18,15 +18,16 @@ import asyncio
 from collections.abc import Callable
 from datetime import UTC, date, datetime, time
 from decimal import Decimal, InvalidOperation
-from typing import Any
+from typing import Any, Protocol
 
 from sqlalchemy.orm import Session, sessionmaker
 
 from cafeops.config import settings
-from cafeops.db.base import SessionFactory, session_scope
+from cafeops.db.base import session_scope
 
 __all__ = [
     "OWNER_FALLBACK_NAME",
+    "RunSync",
     "is_owner",
     "owner_name",
     "parse_expiry",
@@ -45,10 +46,18 @@ __all__ = [
 OWNER_FALLBACK_NAME = "telegram"
 
 
-def run_sync_factory(
-    factory: sessionmaker[Session] | None,
-) -> Callable[..., Any]:
-    """Build a `run_sync` bound to a specific session factory. For the local preview."""
+class RunSync(Protocol):
+    """What a handler (or a scheduled job) is given to reach the sync services layer:
+    `await run_sync(fn, *args, **kwargs)` runs `fn(session, *args, **kwargs)` on a worker
+    thread inside one `session_scope` and returns its result. Handlers take it by this
+    type; aiogram injects it as `run_sync`."""
+
+    async def __call__[T](self, fn: Callable[..., T], /, *args: Any, **kwargs: Any) -> T: ...
+
+
+def run_sync_factory(factory: sessionmaker[Session] | None) -> RunSync:
+    """A `run_sync` bound to a specific session factory (the preview, the scheduler's
+    test factory). `None` is the process-wide factory."""
 
     async def _run[T](fn: Callable[..., T], /, *args: Any, **kwargs: Any) -> T:
         def work() -> T:
@@ -60,18 +69,10 @@ def run_sync_factory(
     return _run
 
 
-async def run_sync[T](fn: Callable[..., T], /, *args: Any, **kwargs: Any) -> T:
-    """Run one sync unit of work on a thread, inside one transaction.
-
-    `fn` takes a `Session` as its first argument. Nothing async is allowed inside it --
-    that is the point: everything below this line is the ordinary sync services layer.
-    """
-
-    def work() -> T:
-        with session_scope(SessionFactory) as session:
-            return fn(session, *args, **kwargs)
-
-    return await asyncio.to_thread(work)
+#: Run one sync unit of work on a thread, inside one transaction. `fn` takes a `Session`
+#: as its first argument. Nothing async is allowed inside it -- that is the point:
+#: everything below this line is the ordinary sync services layer.
+run_sync: RunSync = run_sync_factory(None)
 
 
 def is_owner(user_id: int | None) -> bool:

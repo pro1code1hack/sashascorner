@@ -5,7 +5,8 @@ import { useEffect, useRef } from 'preact/hooks';
 import { lazy, Suspense } from 'preact/compat';
 import { interceptLinks, restoreScroll, route } from './router';
 import { loadCatalogue, online } from './store';
-import { toast } from './toast';
+import { loadMember } from './member';
+import { showStashedToast, toast } from './toast';
 import { Overview } from './views/Overview';
 import { Category } from './views/Category';
 import { Product } from './views/Product';
@@ -15,7 +16,6 @@ import { isMock } from './api';
 import { Loading } from './ui';
 
 const Checkout = lazy(() => import('./checkout/Checkout'));
-const Account = lazy(() => import('./account/Account'));
 const Status = lazy(() => import('./status/Status'));
 
 function Fallback() {
@@ -38,6 +38,8 @@ export default function App() {
 
   useEffect(() => {
     void loadCatalogue();
+    void loadMember();
+    showStashedToast();
     if (root.current) interceptLinks(root.current);
     if (isMock()) console.info('[shop] mock mode');
   }, []);
@@ -84,11 +86,9 @@ export default function App() {
       );
       break;
     case 'account':
-      view = (
-        <Suspense fallback={<Fallback />}>
-          <Account />
-        </Suspense>
-      );
+      // The account moved site-wide (owner, 2026-09-29): /account keeps `?next=checkout`.
+      location.replace(`/account${location.search}${location.hash}`);
+      view = <Fallback />;
       break;
     case 'status':
       view = (

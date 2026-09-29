@@ -61,7 +61,6 @@ from cafeops.agent.policies import (
     spec_for,
 )
 from cafeops.config import settings
-from cafeops.db.models import AgentActionLog
 from cafeops.db.repositories.agent_log import SqlAgentLogRepository
 from cafeops.domain.types import AgentProposal, AgentToolOutcome
 from cafeops.services.agent_proposals import agent_for, insert_proposal
@@ -343,8 +342,8 @@ class AgentRun:
             refusal_reason=refusal_reason,
             proposal_ref=proposal_ref,
             model=self.model,
+            agent=self.agent,
         )
-        self._stamp_agent(log_id)
         if proposal is not None:
             # The agent's only write besides its log: a WAITING proposal, INSERT only
             # (the audit engine refuses anything else on that table). Same commit as
@@ -371,11 +370,6 @@ class AgentRun:
         )
         self.calls.append(record)
         return record
-
-    def _stamp_agent(self, log_id: int) -> None:
-        row = self._audit_session.get(AgentActionLog, log_id)
-        if row is not None:
-            row.agent = self.agent
 
     # -- the facts pack ----------------------------------------------------
 
@@ -439,7 +433,11 @@ class AgentRun:
         import anthropic
         from anthropic.types import MessageParam, TextBlock, ToolParam, ToolUseBlock
 
-        client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+        client = anthropic.Anthropic(
+            api_key=settings.anthropic_api_key,
+            timeout=NARRATION_CALL_TIMEOUT_SECONDS,
+            max_retries=NARRATION_MAX_RETRIES,
+        )
         # Read tools only. A narration has no business staging a basket or emitting a
         # proposal, so the surface offered is narrowed to the READ kind -- the
         # allowlist filtered down, not widened.
@@ -520,7 +518,7 @@ class AgentRun:
         kept -- a reader needs to see what was said -- but the row says not to trust it.
         """
         outcome = AgentToolOutcome.OK if result.trustworthy else AgentToolOutcome.FAILED
-        log_id = self.log.log(
+        self.log.log(
             run_id=self.run_id,
             tool_name="narrate",
             inputs={
@@ -541,14 +539,22 @@ class AgentRun:
                 )
             ),
             model=result.model,
+            agent=self.agent,
         )
-        self._stamp_agent(log_id)
         self._audit_session.commit()
 
 
 # ==========================================================================
 # The no-API-key path
 # ==========================================================================
+
+
+#: One narration call's ceiling. `settings.agent_max_tokens` (1200 by default) is a
+#: short answer; at any sane output rate it is well inside a minute, so a call past
+#: 60 s is a hung connection. `narrate()` makes up to `settings.agent_max_tool_calls`
+#: calls, so the worst case is bounded at timeout x turns x (1 + retries).
+NARRATION_CALL_TIMEOUT_SECONDS = 60.0
+NARRATION_MAX_RETRIES = 2
 
 
 def deterministic_narration(*, question: str, facts: str) -> str:

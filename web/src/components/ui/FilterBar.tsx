@@ -130,7 +130,9 @@ export function FilterToggle({
       )}
     >
       {children}
-      {count !== undefined && <span className="fig text-xs opacity-60">{count}</span>}
+      {count !== undefined && (
+        <span className={cx('fig text-xs font-semibold', active ? 'text-brand-ink' : 'text-ink-2')}>{count}</span>
+      )}
     </button>
   )
 }

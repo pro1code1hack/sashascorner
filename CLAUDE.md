@@ -337,13 +337,18 @@ Known dirt is surfaced, not fixed: `'card' (£3.00)`, `Syrup Gift Set`, VERIFY r
 cafeops/
   config.py
   db/{base,types}.py  models/  repositories/protocols.py
-  domain/                  PURE: no SQLAlchemy, no I/O, no config import
-    types.py               shared dataclasses + enums   [INTEGRATOR-OWNED]
-    units.py composition.py stock.py forecast.py ordering.py drift.py tiers.py
-    sourcing.py labour.py   (v2, not yet written)
-  integrations/lightspeed/  channels/ (v2)  suppliers/
-  agent/                    (v2, not yet written) runner.py tools.py policies.py
-  services/  bot/  jobs/  api/  seed/  cli.py
+  clock.py                 utcnow / local_today / local_day_bounds -- the only clock
+  logging_setup.py         configure_logging() for every entry point
+  domain/                  PURE: no SQLAlchemy, no I/O, no config import (checked)
+    types.py               shared dataclasses                [INTEGRATOR-OWNED]
+    enums.py               every enum; db/models imports these, never the reverse
+    composition/           package: resolve availability impact display changes changeset
+    units.py stock.py forecast.py ordering.py drift.py tiers.py sourcing.py labour.py
+  integrations/lightspeed/  channels/  payments/  pos/  suppliers/  wallet/
+  agent/                    runner.py tools.py policies.py browser/
+  services/                 flush only; the entry point owns the transaction (ARCH 8Y)
+  bot/  jobs/  api/  seed/
+  cli/                      EVERY Typer command, incl. agent/portal/pos/wallet/loyalty/shop
 migrations/  docs/phase1/  docs/phase4/  web/
 ```
 
@@ -380,6 +385,10 @@ The agent gets three jobs, each behind a whitelisted tool interface:
 browser-worker` process drives Anthropic's browser toolset against per-supplier
 Playwright profiles, stops at the basket and emits a `SUPPLIER_BASKET` proposal.
 Design: `docs/agents/BROWSER-ORDERING.md`; decision record: `ARCHITECTURE.md` §8W.
+Confirming an order for a website supplier in the bot now stages its basket
+(`services/order_dispatch`), the owner is messaged when a basket job finishes, and the
+weekly drift job puts waste-factor suggestions in the Agents queue deterministically
+(`services/waste_proposals`) -- `ARCHITECTURE.md` §8Z.
 
 Hard rules: never writes to `stock_movement`, `purchase_order` or composition directly.
 Every action logged to `agent_action_log` with inputs, output and tool. Anything that
@@ -599,12 +608,15 @@ uv run mypy cafeops/domain/ cafeops/services/   # strict, zero type: ignore
     or emits a proposal, and every action is logged.
 11. All money in integer pence. A float touching money is a bug — `Qty` raises.
 12. The stock ledger is append-only. Corrections are `ADJUSTMENT` movements.
-    **One documented exception:** `services/rebuild_batches.py` with `purge=True`
-    (its default) deletes `EXPIRED` movements and all batches before replaying the
-    ledger. Those rows are *derived* — the expiry sweep computes them from batch
-    state — so recomputing them loses nothing recorded. It must never delete a
-    `SALE`, `RECEIPT`, `COUNT` or `ADJUSTMENT`, and today only `cafeops seed --demo`
-    calls it. A new caller of `rebuild_batches` is a decision, not a refactor.
+    **Documented exceptions (audited 2026-09-29, ARCHITECTURE.md §8Y):**
+    - `services/rebuild_batches.py` with `purge=True` (its default) deletes `EXPIRED`
+      movements and all batches, and clears `batch_id` on every movement, before
+      replaying the ledger. Those values are *derived* from batch state, so
+      recomputing them loses nothing recorded. Today only `cafeops seed --demo` calls
+      it. A new caller of `rebuild_batches` is a decision, not a refactor.
+    - `services/purge_demo.py` deletes the demo seed's `SALE` and `DELIVERY`
+      movements (demo rows only, behind `cafeops purge-demo --commit`).
+    Nothing else may delete or update a ledger row.
 
 ---
 

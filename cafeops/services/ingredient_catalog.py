@@ -51,7 +51,6 @@ from cafeops.db.models import (
     VariantAxis,
     VariantOption,
 )
-from cafeops.db.models.enums import Storage
 from cafeops.db.repositories.composition import SqlCompositionRepository
 from cafeops.db.repositories.menu_cost import SqlMenuCostRepository
 from cafeops.domain.composition import (
@@ -64,6 +63,7 @@ from cafeops.domain.composition import (
     unit_gbp,
     unit_label,
 )
+from cafeops.domain.enums import Storage
 from cafeops.domain.labour import UNTIMED
 from cafeops.domain.types import PriceSource, Tier, Unit
 from cafeops.domain.units import IncompatibleUnitsError, convert
@@ -72,6 +72,7 @@ from cafeops.jobs.cost_rollup import (
     rollup_for_ingredient,
     snapshots_at,
 )
+from cafeops.services.actor import require_actor
 from cafeops.services.edit_composition import require_not_retroactive
 from cafeops.services.reference_seed import UK14
 
@@ -108,13 +109,6 @@ class PriceIn:
     source: PriceSource
     supplier_id: int | None = None
     note: str | None = None
-
-
-def _signed(actor: str) -> str:
-    name = actor.strip()
-    if not name:
-        raise ValueError("say who is making this change (the operator name)")
-    return name[:120]
 
 
 def cost_per_unit(ingredient: Ingredient, price: PriceIn) -> Decimal:
@@ -453,23 +447,19 @@ def apply_ingredient_price(
     actor: str,
     effective_from: datetime | None = None,
 ) -> PriceApplied:
-    """Record the price from now and recost every item using it. Commits itself."""
+    """Record the price from now and recost every item using it. Flushes; the caller commits."""
     at = require_not_retroactive(effective_from or datetime.now(UTC))
-    actor = _signed(actor)
+    actor = require_actor(actor)
     ingredient = session.get(Ingredient, ingredient_id)
     if ingredient is None:
         raise LookupError(f"ingredient {ingredient_id} not found")
     if ingredient.retired_at is not None:
         raise IngredientInUseError(f"{ingredient.name} is retired; nothing was recorded")
-    try:
-        row = _record_price(session, ingredient, price, at=at, actor=actor)
-        rollup = rollup_for_ingredient(
-            session, ingredient_id, at=at, trigger=f"price recorded by {actor}"
-        )
-        session.commit()
-    except Exception:
-        session.rollback()
-        raise
+    row = _record_price(session, ingredient, price, at=at, actor=actor)
+    rollup = rollup_for_ingredient(
+        session, ingredient_id, at=at, trigger=f"price recorded by {actor}"
+    )
+    session.flush()
     return PriceApplied(
         price_id=row.id,
         effective_from=at,
@@ -510,7 +500,7 @@ def create_ingredient(
     (routing it through `suppliers.link_product` would re-record it as SUPPLIER_FEED,
     clearing an estimate flag nobody cleared -- invariant 8).
     """
-    actor = _signed(actor)
+    actor = require_actor(actor)
     clean = name.strip()
     if not clean:
         raise ValueError("an ingredient needs a name")
@@ -563,30 +553,26 @@ def create_ingredient(
         ),
         source_note=(note or "").strip()[:400] or None,
     )
-    try:
-        session.add(row)
-        session.flush()
-        if price is not None:
-            _record_price(session, row, price, at=at, actor=actor)
-            if supplier is not None:
-                session.add(
-                    SupplierProduct(
-                        supplier_id=supplier.id,
-                        ingredient_id=row.id,
-                        sku=(sku or "").strip()[:80],
-                        pack_size=price.pack_size,
-                        pack_unit=price.pack_unit,
-                        price_pence=price.pack_cost_pence,
-                        is_preferred=True,
-                        moq_packs=1,
-                        last_seen_price_at=at,
-                    )
+    session.add(row)
+    session.flush()
+    if price is not None:
+        _record_price(session, row, price, at=at, actor=actor)
+        if supplier is not None:
+            session.add(
+                SupplierProduct(
+                    supplier_id=supplier.id,
+                    ingredient_id=row.id,
+                    sku=(sku or "").strip()[:80],
+                    pack_size=price.pack_size,
+                    pack_unit=price.pack_unit,
+                    price_pence=price.pack_cost_pence,
+                    is_preferred=True,
+                    moq_packs=1,
+                    last_seen_price_at=at,
                 )
-                session.flush()
-        session.commit()
-    except Exception:
-        session.rollback()
-        raise
+            )
+            session.flush()
+    session.flush()
     return row.id
 
 
@@ -603,46 +589,42 @@ def update_ingredient(
     unit: Unit | None = None,
 ) -> None:
     """Name, category, notes; the unit only while nothing records a quantity in it."""
-    _signed(actor)
+    require_actor(actor)
     row = session.get(Ingredient, ingredient_id)
     if row is None:
         raise LookupError(f"ingredient {ingredient_id} not found")
-    try:
-        if unit is not None and unit is not row.unit:
-            refs = {k: v for k, v in ingredient_references(session, ingredient_id).items() if v}
-            if refs:
-                raise IngredientInUseError(
-                    f"{row.name}'s unit cannot change: "
-                    + ", ".join(f"{v} {k}" for k, v in refs.items())
-                    + f" record quantities in {unit_label(row.unit)}, and changing the unit "
-                    "would silently change what every one of them means."
-                )
-            row.unit = unit
-        if name is not None:
-            clean = name.strip()
-            if not clean:
-                raise ValueError("an ingredient needs a name")
-            clash = session.scalar(
-                select(Ingredient.id).where(
-                    func.lower(Ingredient.name) == clean.lower(), Ingredient.id != ingredient_id
-                )
+    if unit is not None and unit is not row.unit:
+        refs = {k: v for k, v in ingredient_references(session, ingredient_id).items() if v}
+        if refs:
+            raise IngredientInUseError(
+                f"{row.name}'s unit cannot change: "
+                + ", ".join(f"{v} {k}" for k, v in refs.items())
+                + f" record quantities in {unit_label(row.unit)}, and changing the unit "
+                "would silently change what every one of them means."
             )
-            if clash:
-                raise ValueError(f"there is already an ingredient called {clean!r}")
-            row.name = clean
-        if set_category:
-            row.category = (category or "").strip() or None
-        if set_note:
-            row.source_note = (note or "").strip()[:400] or None
-        session.commit()
-    except Exception:
-        session.rollback()
-        raise
+        row.unit = unit
+    if name is not None:
+        clean = name.strip()
+        if not clean:
+            raise ValueError("an ingredient needs a name")
+        clash = session.scalar(
+            select(Ingredient.id).where(
+                func.lower(Ingredient.name) == clean.lower(), Ingredient.id != ingredient_id
+            )
+        )
+        if clash:
+            raise ValueError(f"there is already an ingredient called {clean!r}")
+        row.name = clean
+    if set_category:
+        row.category = (category or "").strip() or None
+    if set_note:
+        row.source_note = (note or "").strip()[:400] or None
+    session.flush()
 
 
 def retire_ingredient(session: Session, ingredient_id: int, *, actor: str) -> datetime:
     """ "Delete" = retire. Refused while a live recipe still uses it; history stays."""
-    actor = _signed(actor)
+    actor = require_actor(actor)
     row = session.get(Ingredient, ingredient_id)
     if row is None:
         raise LookupError(f"ingredient {ingredient_id} not found")
@@ -658,7 +640,7 @@ def retire_ingredient(session: Session, ingredient_id: int, *, actor: str) -> da
     at = datetime.now(UTC)
     row.retired_at = at
     row.retired_by = actor
-    session.commit()
+    session.flush()
     return at
 
 
@@ -680,7 +662,7 @@ def attach_ingredient_photo(session: Session, ingredient_id: int, asset_id: int 
     if asset_id is not None and session.get(MediaAsset, asset_id) is None:
         raise LookupError(f"media asset {asset_id} not found")
     row.photo_asset_id = asset_id
-    session.commit()
+    session.flush()
 
 
 def set_allergens(
@@ -692,7 +674,7 @@ def set_allergens(
     source becomes "checked by <actor> on <date>", which is what marks the list as
     confirmed rather than researched.
     """
-    name = _signed(actor)
+    name = require_actor(actor)
     row = session.get(Ingredient, ingredient_id)
     if row is None:
         raise LookupError(f"ingredient {ingredient_id} not found")
@@ -710,5 +692,5 @@ def set_allergens(
         row.allergens_source = (
             f"{ALLERGENS_CHECKED_PREFIX}{name} on {datetime.now(UTC).date().isoformat()}"
         )
-    session.commit()
+    session.flush()
     return row.allergens

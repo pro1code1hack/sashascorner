@@ -82,6 +82,11 @@
   --color-seq-4: #4a6fd1;
   --color-seq-5: #2f4fa8;
 
+  /* The loyalty pass (docs/loyalty/CONTRACT.md 353): the printed card's own palette,
+   * used ONLY by the card preview and the physical card. Not back-office colours. */
+  --color-pass-blush: #e9dcd6;
+  --color-pass-ink: #474531;
+
   /* (proposed) the scrim behind the off-canvas sidebar */
   --color-scrim: rgb(31 38 51 / 0.24);
 

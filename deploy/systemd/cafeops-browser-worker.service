@@ -15,6 +15,14 @@ EnvironmentFile=/etc/cafeops/cafeops.env
 # shared install. Exits immediately unless CAFEOPS_BROWSER_WORKER_ENABLED=true.
 Environment=CAFEOPS_BROWSER_DATA_DIR=/opt/cafeops/data/browser
 ExecStart=/opt/cafeops/.venv/bin/cafeops browser-worker
+# Tier 2 (docs/agents/BROWSER-ORDERING.md 10): a portal that refuses headless
+# browsers (Tesco) needs a visible window, and a server has no screen. Install xvfb
+# (`apt-get install xvfb xauth`), set CAFEOPS_BROWSER_HEADLESS=false in the env file,
+# and use this ExecStart instead of the one above -- it is what the Docker image's
+# entrypoint (deploy/browser-worker-entrypoint.sh) does for the same setting:
+#   ExecStart=/usr/bin/xvfb-run -a --server-args="-screen 0 1280x900x24" /opt/cafeops/.venv/bin/cafeops browser-worker
+# Without a display, such a job ends NEEDS_HUMAN with that reason instead of a
+# browser that is served "Access Denied".
 Restart=on-failure
 RestartSec=10
 # A job in flight gets time to record its last step before the unit is killed.

@@ -10,6 +10,8 @@ export function Toggle({
   onChange,
   label,
   disabled,
+  tone = 'ok',
+  describedBy,
   className,
 }: {
   checked: boolean
@@ -17,6 +19,10 @@ export function Toggle({
   /** Visible label to the right. If omitted, pass `aria-label` via `label` anyway. */
   label: ReactNode
   disabled?: boolean
+  /** Track colour when on: `ok` (default, the one green fill) or `brand` (loyalty programme). */
+  tone?: 'ok' | 'brand'
+  /** id of a hint element. */
+  describedBy?: string
   className?: string
 }) {
   return (
@@ -25,13 +31,14 @@ export function Toggle({
       role="switch"
       aria-checked={checked}
       disabled={disabled}
+      aria-describedby={describedBy}
       onClick={() => onChange(!checked)}
       className={cx('inline-flex items-center gap-2.5 rounded-full disabled:opacity-50', className)}
     >
       <span
         className={cx(
           'relative h-6 w-10 flex-none rounded-full transition-colors',
-          checked ? 'bg-ok' : 'bg-line-strong',
+          checked ? (tone === 'brand' ? 'bg-brand' : 'bg-ok') : 'bg-line-strong',
         )}
         aria-hidden="true"
       >
@@ -115,7 +122,7 @@ export function Stepper({
 }) {
   const btn = cx(
     'grid flex-none place-items-center rounded-full border bg-surface leading-none hover:bg-canvas disabled:opacity-50',
-    size === 'sm' ? 'size-[22px] border-line-strong text-sm' : 'size-[50px] border-line text-2xl',
+    size === 'sm' ? 'size-7 border-line-strong text-sm' : 'size-[50px] border-line text-2xl',
   )
   return (
     <span className="inline-flex items-center gap-1.5">

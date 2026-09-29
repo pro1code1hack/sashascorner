@@ -8,7 +8,9 @@
  */
 import { useEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Button, ErrorBox, FilterChip, FilterChipRow, Loading, PageBody, PageHeader, Pill, cx } from '../../components/ui'
+import { Button, Empty, ErrorBox, FilterChip, FilterChipRow, LinkButton, Loading, PageBody, PageHeader, Pill, StatusLine } from '../../components/ui'
+import type { Outcome } from '../../components/ui'
+import { ago, stamp } from '../../lib/format'
 import { navigate, useLocation } from '../../lib/router'
 import type { Message, MessageStatus } from '../../lib/types/website'
 import { WEBSITE_KEY, siteGet, siteWrite, useInvalidateWebsite } from '../../lib/website-api'
@@ -45,27 +47,6 @@ function phoneIn(text: string): string | null {
 }
 const telHref = (p: string) => `tel:${p.replace(/[^\d+]/g, '')}`
 
-/** "Monday 28 September 2026 at 14:05", in Dundee. */
-function stamp(ts: string): string {
-  const d = new Date(ts)
-  if (!Number.isFinite(d.getTime())) return ''
-  return new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', dateStyle: 'full', timeStyle: 'short' }).format(d)
-}
-
-/** "just now" / "12 min ago" / "3 hours ago", then "12 Sep, 14:05". */
-function ago(ts: string): string {
-  const t = new Date(ts).getTime()
-  if (!Number.isFinite(t)) return ''
-  const s = Math.max(0, (Date.now() - t) / 1000)
-  if (s < 60) return 'just now'
-  if (s < 3600) return `${Math.floor(s / 60)} min ago`
-  if (s < 86400) {
-    const h = Math.floor(s / 3600)
-    return `${h} hour${h === 1 ? '' : 's'} ago`
-  }
-  return new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(t))
-}
-
 /** The moves each pile offers: [to, button, in progress, done]. */
 const MOVES: Record<MessageStatus, [MessageStatus, string, string, string][]> = {
   new: [
@@ -78,9 +59,6 @@ const MOVES: Record<MessageStatus, [MessageStatus, string, string, string][]> = 
   ],
   archived: [['new', 'Move back to New', 'Saving…', 'Back in New.']],
 }
-
-const LINK_BUTTON =
-  'inline-flex h-10 items-center justify-center whitespace-nowrap rounded-control border border-line-control bg-surface px-3.5 text-base font-semibold text-ink no-underline hover:bg-canvas'
 
 /* ------------------------------------------------------------ screen --- */
 
@@ -97,8 +75,6 @@ export function MessagesScreen() {
   )
 }
 
-type Notice = { tone: 'ok' | 'bad'; text: string; undo?: () => void } | null
-
 function Inbox() {
   const loc = useLocation()
   const q = loc.query.get('tab')
@@ -112,7 +88,7 @@ function Inbox() {
   const invalidate = useInvalidateWebsite()
   const [open, setOpen] = useState<Set<number>>(() => new Set())
   const [pending, setPending] = useState<{ id: number; to: MessageStatus } | null>(null)
-  const [notice, setNotice] = useState<Notice>(null)
+  const [outcome, setOutcome] = useState<Outcome | null>(null)
   const [rowError, setRowError] = useState<{ id: number; text: string } | null>(null)
   const listRef = useRef<HTMLUListElement>(null)
   const chipsRef = useRef<HTMLDivElement>(null)
@@ -131,7 +107,7 @@ function Inbox() {
   if (messages.error) {
     return (
       <div className="flex flex-col items-start gap-3">
-        <ErrorBox error={messages.error} what="Messages didn’t load" />
+        <ErrorBox error={messages.error} what="messages" />
         <Button pending={messages.isFetching} pendingLabel="Loading…" onClick={() => void messages.refetch()}>
           Try again
         </Button>
@@ -158,7 +134,7 @@ function Inbox() {
     const from = m.status
     setPending({ id: m.id, to })
     setRowError(null)
-    setNotice(null)
+    setOutcome(null)
     const r = await siteWrite<Message>(`/messages/${m.id}`, { status: to }, 'PATCH')
     setPending(null)
     if (r.kind !== 'ok') {
@@ -172,55 +148,42 @@ function Inbox() {
     })
     refocus.current = true
     await invalidate()
-    setNotice({
-      tone: 'ok',
+    setOutcome({
+      kind: 'ok',
       text: `${m.name}: ${done}`,
-      undo: () => {
-        setNotice(null)
-        void siteWrite<Message>(`/messages/${m.id}`, { status: from }, 'PATCH').then(async (u) => {
-          if (u.kind === 'ok') {
-            await invalidate()
-            setNotice({ tone: 'ok', text: `${m.name}: undone.` })
-          } else setNotice({ tone: 'bad', text: u.message })
-        })
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          setOutcome(null)
+          void siteWrite<Message>(`/messages/${m.id}`, { status: from }, 'PATCH').then(async (u) => {
+            if (u.kind === 'ok') {
+              await invalidate()
+              setOutcome({ kind: 'ok', text: `${m.name}: undone.` })
+            } else setOutcome({ kind: 'error', text: u.message })
+          })
+        },
       },
     })
   }
 
   return (
-    <div className="flex min-w-0 flex-col gap-3.5">
+    <div className="mx-auto flex w-full min-w-0 max-w-[1100px] flex-col gap-3.5">
       <div ref={chipsRef}>
         <FilterChipRow label="Messages">
           {TABS.map((t) => (
-            <FilterChip key={t.id} active={tab === t.id} onClick={() => setTab(t.id)}>
+            <FilterChip key={t.id} active={tab === t.id} onClick={() => setTab(t.id)} count={counts[t.id] > 0 ? counts[t.id] : undefined}>
               {t.label}
-              {counts[t.id] > 0 && <span className="fig text-xs text-ink-2">{counts[t.id]}</span>}
             </FilterChip>
           ))}
         </FilterChipRow>
       </div>
 
-      <div aria-live="polite">
-        {notice && (
-          <p
-            role={notice.tone === 'bad' ? 'alert' : 'status'}
-            className={cx(
-              'flex flex-wrap items-center gap-x-3 gap-y-1 rounded-control px-3 py-2 text-base',
-              notice.tone === 'bad' ? 'bg-bad-wash text-bad-ink' : 'bg-canvas text-ink',
-            )}
-          >
-            <span>{notice.text}</span>
-            {notice.undo && (
-              <Button variant="link" onClick={notice.undo} className="min-h-6">
-                Undo
-              </Button>
-            )}
-          </p>
-        )}
-      </div>
+      <StatusLine outcome={outcome} />
 
       {list.length === 0 ? (
-        <p className="border-t border-line py-10 text-center text-md text-ink-2">{EMPTY[tab]}</p>
+        <div className="border-t border-line">
+          <Empty>{EMPTY[tab]}</Empty>
+        </div>
       ) : (
         <ul ref={listRef} aria-label={`${TABS.find((t) => t.id === tab)?.label ?? ''} messages`} className="border-t border-line">
           {list.map((m) => (
@@ -284,20 +247,17 @@ function MessageItem({
         <p className="text-sm text-ink-2 [overflow-wrap:anywhere]">{from}</p>
         <div className="flex flex-wrap gap-2 max-sm:[&>*]:flex-[1_1_calc(50%-4px)]">
           {m.email && (
-            <a className={LINK_BUTTON} href={`mailto:${m.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(quoted)}`}>
+            <LinkButton className="max-sm:min-h-11" href={`mailto:${m.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(quoted)}`}>
               Reply by email
-            </a>
+            </LinkButton>
           )}
-          {phone && (
-            <a className={LINK_BUTTON} href={telHref(phone)}>
-              Call {phone}
-            </a>
-          )}
+          {phone && <LinkButton className="max-sm:min-h-11" href={telHref(phone)}>Call {phone}</LinkButton>}
           {MOVES[m.status].map(([to, label, doing, done]) => (
             <Button
               key={to}
               variant="outline"
               size="md"
+              className="max-sm:min-h-11"
               pending={pendingTo === to}
               pendingLabel={doing}
               disabled={pendingTo !== null && pendingTo !== to}
@@ -307,11 +267,7 @@ function MessageItem({
             </Button>
           ))}
         </div>
-        {error && (
-          <p role="alert" className="text-base text-bad-ink">
-            {error}
-          </p>
-        )}
+        <StatusLine outcome={error ? { kind: 'error', text: error } : null} />
       </div>
     </li>
   )

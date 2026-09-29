@@ -172,7 +172,8 @@ def apply_component_qty_change(
     effective_from: datetime | None = None,
     window_days: int = COGS_WINDOW_DAYS,
 ) -> EditResult:
-    """Apply the edit from today, then recost everything it touched. One transaction.
+    """Apply the edit from today, then recost everything it touched. Flushes; the
+    caller commits, so all of it is one transaction.
 
     The sequence matters:
 
@@ -193,29 +194,25 @@ def apply_component_qty_change(
     before_map = dict(component.qty_by_size)
     after_map = _validated(qty_by_size)
 
-    try:
-        labour = preview_component_qty_change_with_labour(
-            session,
-            component_id,
-            qty_by_size=after_map,
-            at=effective_from,
-            window_days=window_days,
-        )
-        preview = labour.preview
-        new_id = composition.close_and_open_component(
-            component_id, qty_by_size=after_map, effective_from=effective_from
-        )
-        session.flush()
-        rollup = rollup_for_template(
-            session,
-            component.template_id,
-            at=effective_from,
-            trigger=f"composition edit by {actor}",
-        )
-        session.commit()
-    except Exception:
-        session.rollback()
-        raise
+    labour = preview_component_qty_change_with_labour(
+        session,
+        component_id,
+        qty_by_size=after_map,
+        at=effective_from,
+        window_days=window_days,
+    )
+    preview = labour.preview
+    new_id = composition.close_and_open_component(
+        component_id, qty_by_size=after_map, effective_from=effective_from
+    )
+    session.flush()
+    rollup = rollup_for_template(
+        session,
+        component.template_id,
+        at=effective_from,
+        trigger=f"composition edit by {actor}",
+    )
+    session.flush()
 
     return EditResult(
         component_id=component_id,

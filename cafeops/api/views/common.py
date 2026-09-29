@@ -4,27 +4,52 @@
 construction in one place rather than by each of six views remembering to. A view that
 built a `Cost` by hand could set `pence=0` for an unknown cost; none of them can,
 because none of them builds one.
+
+The drift block, the supplier row and the cutoff parser live here for the same reason:
+the original views and the `api/areas/` views both render them, and an area view that
+imported another module's private helper was a copy waiting to happen.
 """
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date, datetime, time
 from decimal import Decimal
 from zoneinfo import ZoneInfo
 
-from cafeops.api.encoding import as_pence, as_qty
-from cafeops.api.schemas import Cost, Forecast
+from fastapi import HTTPException
+from sqlalchemy.orm import Session
+
+from cafeops.api.encoding import as_pence, as_qty, pct
+from cafeops.api.params import HTTP_422
+from cafeops.api.schemas import Cost, DriftAttributionOut, DriftOut, Forecast, SupplierOut
+from cafeops.db.models import Supplier
+from cafeops.db.repositories.drift import SqlDriftRepository
 from cafeops.db.repositories.menu_cost import CachedCost
-from cafeops.domain.types import ForecastResult, IngredientSnapshot, PriceSource, Unit
+from cafeops.db.repositories.par import SqlParLevelRepository
+from cafeops.domain.drift import DriftExplanation, mean_abs_drift_pct
+from cafeops.domain.types import (
+    DriftVerdict,
+    ForecastResult,
+    IngredientSnapshot,
+    PriceSource,
+    SupplierTerms,
+    Unit,
+)
+from cafeops.services.record_count import explain_drift_history, gate_status
+from cafeops.services.suppliers import contact_details
 
 __all__ = [
     "MISSING_COST_NOTE",
     "cost_from_cached",
     "cost_from_ingredient",
     "cost_unknown",
+    "drift_attribution_out",
+    "drift_out",
     "forecast_out",
     "local_date",
+    "parse_cutoff",
     "qty_or_zero",
+    "supplier_out",
 ]
 
 MISSING_COST_NOTE = (
@@ -120,3 +145,121 @@ def local_date(at: datetime, tz: ZoneInfo) -> date:
 
 def qty_or_zero(value: Decimal | None) -> str:
     return as_qty(value if value is not None else Decimal("0")) or "0"
+
+
+def _trust_status(verdict: DriftVerdict | None, has_observation: bool) -> str | None:
+    """Map the gate verdict onto the spec's three presentation words.
+
+    `ELIGIBLE -> trusted`, `TUNE_WASTE_FACTOR -> drifting`, `FORCE_MANUAL -> excluded`.
+    Trivial, which is exactly why it belongs in one place: the same badge appears on the
+    stock list, the ingredient detail and the digest, and three independent mappings
+    will not stay in step.
+
+    None when there is no drift observation -- a genuine fourth state, and calling it
+    "trusted" would assert confidence nothing has earned.
+
+    Do NOT label that state "never counted". An ingredient can have a physical count and
+    still have no observation: drift needs an ANCHOR plus a later count, so the first
+    count of anything produces a basis and no reading. Chocolate powder on the seeded data
+    has exactly one count and zero observations. Calling it "never counted" would
+    contradict the basis column two cells to its left, which is the specific confusion the
+    stock screen exists to prevent (invariant 6). The frontend renders it as
+    "not yet judged" / "no evidence either way", which is what it actually is.
+    """
+    if verdict is None or not has_observation:
+        return None
+    return {
+        DriftVerdict.ELIGIBLE: "trusted",
+        DriftVerdict.TUNE_WASTE_FACTOR: "drifting",
+        DriftVerdict.FORCE_MANUAL: "excluded",
+    }.get(verdict)
+
+
+def drift_out(session: Session, ingredient: IngredientSnapshot, *, history: int = 6) -> DriftOut:
+    """The drift block of a stock row: latest observation, gate, attribution (spec 5.2)."""
+    drift_repo = SqlDriftRepository(session)
+    par_repo = SqlParLevelRepository(session)
+
+    rows = drift_repo.history(ingredient.id, limit=max(history, 2))
+    decision = gate_status(session, ingredient=ingredient)
+    audit = par_repo.audit(ingredient.id)
+    latest = rows[0] if rows else None
+
+    attribution: DriftAttributionOut | None = None
+    if latest is not None:
+        explained = explain_drift_history(session, ingredient_id=ingredient.id, limit=1)
+        if explained:
+            attribution = drift_attribution_out(explained[0].explanation)
+
+    return DriftOut(
+        has_observation=latest is not None,
+        observed_at=latest.observed_at if latest else None,
+        theoretical_qty=as_qty(latest.theoretical_qty) if latest else None,
+        counted_qty=as_qty(latest.counted_qty) if latest else None,
+        drift_pct=pct(latest.drift_pct) if latest else None,
+        verdict=decision.verdict.value if decision.verdict is not None else None,
+        mean_abs_drift_pct=pct(mean_abs_drift_pct([row.drift_pct for row in rows])),
+        observation_count=len(rows),
+        auto_order_enabled=bool(audit and audit.auto_order_enabled),
+        auto_order_reason=audit.reason if audit else None,
+        clean_streak=decision.clean_streak,
+        required_streak=decision.required_streak,
+        gate_action=decision.action.value,
+        trust_status=_trust_status(decision.verdict, latest is not None),
+        attribution=attribution,
+    )
+
+
+def drift_attribution_out(explanation: DriftExplanation) -> DriftAttributionOut:
+    return DriftAttributionOut(
+        cause=explanation.cause.value,
+        headline=explanation.headline,
+        action=explanation.action,
+        gap_qty=as_qty(explanation.gap_qty) or "0",
+        expired_qty=as_qty(explanation.expired_qty) or "0",
+        measurement_qty=as_qty(explanation.measurement_qty) or "0",
+        expiry_qty=as_qty(explanation.expiry_qty) or "0",
+        expiry_share=pct(explanation.expiry_share),
+        unexplained_loss_qty=as_qty(explanation.unexplained_loss_qty) or "0",
+        surplus_qty=as_qty(explanation.surplus_qty) or "0",
+        surplus_note=explanation.surplus_note,
+        loss_pct_of_consumption=pct(explanation.loss_pct_of_consumption),
+    )
+
+
+def supplier_out(
+    terms: SupplierTerms, row: Supplier | None = None, product_count: int | None = None
+) -> SupplierOut:
+    return SupplierOut(
+        kind=row.kind if row is not None else None,
+        contact=row.contact if row is not None else None,
+        order_url=row.order_url if row is not None else None,
+        notes=row.notes if row is not None else None,
+        email=contact_details(row)["email"] if row is not None else None,
+        phone=contact_details(row)["phone"] if row is not None else None,
+        archived=row is not None and row.archived_at is not None,
+        product_count=product_count,
+        supplier_id=terms.supplier_id,
+        name=terms.name,
+        lead_time_days=terms.lead_time_days,
+        delivery_weekdays=tuple(terms.delivery_weekdays),
+        min_order_pence=terms.min_order_pence,
+        order_channel=terms.order_channel.value,
+        cutoff_time=terms.cutoff_time.isoformat() if terms.cutoff_time is not None else None,
+        delivery_fee_pence=terms.delivery_fee_pence,
+        free_delivery_threshold_pence=terms.free_delivery_threshold_pence,
+        terms_are_placeholders=terms.terms_are_placeholders,
+    )
+
+
+def parse_cutoff(raw: str | None) -> time | None:
+    if raw is None or raw == "":
+        return None
+    try:
+        hh, mm = raw.split(":")
+        return time(int(hh), int(mm))
+    except ValueError:
+        raise HTTPException(
+            status_code=HTTP_422,
+            detail={"message": f"cutoff_time must be HH:MM. Got {raw!r}."},
+        ) from None

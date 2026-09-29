@@ -14,6 +14,7 @@ and the CLI import this module without a browser installed.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 from pathlib import Path
@@ -23,10 +24,14 @@ from sqlalchemy.engine import make_url
 
 from cafeops.agent.browser.types import BrowserAction, BrowserExecutor
 from cafeops.config import REPO_ROOT, settings
+from cafeops.integrations.suppliers.portals.base import PortalNeedsHuman
 
 if TYPE_CHECKING:
     from cafeops.db.models import SupplierSession
     from cafeops.integrations.suppliers.portals.base import SupplierPortal
+
+
+log = logging.getLogger("cafeops.browser.session")
 
 
 class SessionKeyMissing(RuntimeError):
@@ -123,6 +128,12 @@ def decrypt_state(blob: bytes) -> dict[str, Any]:
 # ==========================================================================
 
 
+def has_display() -> bool:
+    """Is there a screen to put a headed window on? `DISPLAY` is what X11 and
+    `xvfb-run` set; `WAYLAND_DISPLAY` is the Wayland equivalent on a desktop box."""
+    return bool(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"))
+
+
 def open_supplier_browser(
     session_row: SupplierSession,
     portal: SupplierPortal,
@@ -137,6 +148,23 @@ def open_supplier_browser(
     state is stored, it is decrypted and handed to Playwright so the first launch is
     already signed in. After that the profile's own cookies are the truth.
     """
+    if headless is None:
+        headless = settings.browser_headless
+    if headless and getattr(portal, "prefers_headed", False):
+        # Tier 2 (docs/agents/BROWSER-ORDERING.md §10): the site refuses headless
+        # browsers (Tesco/Akamai). A visible window needs a display -- Xvfb in the
+        # worker container, the real screen on a laptop. Without one, say so before
+        # opening anything rather than launching a browser that will be served
+        # "Access Denied".
+        if has_display():
+            headless = False
+        else:
+            raise PortalNeedsHuman(
+                f"{portal.label} refuses headless browsers; run the worker with a display "
+                "(xvfb: CAFEOPS_BROWSER_HEADLESS=false with deploy/browser-worker-entrypoint.sh) "
+                "or stage this order by hand"
+            )
+
     from cafeops.agent.browser.executor import PlaywrightExecutor
 
     profile = profile_dir_for(session_row.supplier_id, portal.slug)
@@ -147,7 +175,7 @@ def open_supplier_browser(
     executor: BrowserExecutor = PlaywrightExecutor.launch(
         profile_dir=profile,
         policy=portal.policy,
-        headless=settings.browser_headless if headless is None else headless,
+        headless=headless,
         screenshot_max_px=settings.browser_screenshot_max_px,
         downloads_dir=downloads_dir,
         storage_state=storage_state,
@@ -155,32 +183,74 @@ def open_supplier_browser(
     return executor
 
 
+class SignInCheckFailed(RuntimeError):
+    """The sign-in could not be LOOKED AT: the start page did not load (DNS, network,
+    a refused navigation), the executor has no page, or the adapter itself failed
+    (`PortalStepFailed("generic portal not configured")`, a Playwright error). Not
+    "signed out" -- a session must not be marked EXPIRED, and a person sent to sign in
+    again, because the network was down or the adapter is misconfigured."""
+
+
 def check_signed_in(executor: BrowserExecutor, portal: SupplierPortal) -> tuple[bool, str | None]:
-    """Navigate to the portal's start page and ask the adapter. Never raises."""
+    """Navigate to the portal's start page and ask the adapter.
+
+    Three outcomes, kept apart on purpose:
+
+    * `(True, label)` / `(False, None)` -- the adapter looked and answered. `False` is
+      the only thing that means "sign in again".
+    * `PortalNeedsHuman` re-raised -- a CAPTCHA, a code, a bot wall: the job stops
+      NEEDS_HUMAN with the portal's own reason.
+    * `SignInCheckFailed` -- nothing was looked at (see the class). The caller records
+      a failed check, not an expired session.
+
+    The account label is cosmetic; failing to read it is logged and gives `None`.
+    """
     try:
         result = executor.execute(BrowserAction("navigate", {"url": portal.policy.start_url}))
-        if result.is_error:
-            return False, None
-        page = getattr(executor, "page", None)
-        if page is None:
-            return False, None
-        if not portal.is_signed_in(page):
-            return False, None
-        try:
-            label = portal.account_label(page)
-        except Exception:
-            label = None
-        return True, label
-    except Exception:
+    except Exception as exc:
+        log.warning("%s: start page navigation raised", portal.slug, exc_info=True)
+        raise SignInCheckFailed(
+            f"could not open {portal.policy.start_url}: {type(exc).__name__}: {str(exc)[:300]}"
+        ) from exc
+    if result.is_error:
+        detail = str(result.content)[:300]
+        log.warning("%s: start page did not load: %s", portal.slug, detail)
+        raise SignInCheckFailed(f"could not open {portal.policy.start_url}: {detail}")
+    page = getattr(executor, "page", None)
+    if page is None:
+        raise SignInCheckFailed(
+            f"{type(executor).__name__} exposes no Playwright page to check the sign-in on"
+        )
+    try:
+        signed_in = portal.is_signed_in(page)
+    except PortalNeedsHuman:
+        raise
+    except Exception as exc:
+        log.warning("%s: is_signed_in raised", portal.slug, exc_info=True)
+        raise SignInCheckFailed(
+            f"{portal.label}: the sign-in check failed: {type(exc).__name__}: {str(exc)[:300]}"
+        ) from exc
+    if not signed_in:
+        log.info("%s: the portal reports signed out", portal.slug)
         return False, None
+    try:
+        label = portal.account_label(page)
+    except PortalNeedsHuman:
+        raise
+    except Exception:
+        log.warning("%s: account label unreadable", portal.slug, exc_info=True)
+        label = None
+    return True, label
 
 
 __all__ = [
     "SessionKeyMissing",
+    "SignInCheckFailed",
     "browser_data_dir",
     "check_signed_in",
     "decrypt_state",
     "encrypt_state",
+    "has_display",
     "open_supplier_browser",
     "profile_dir_for",
     "profile_dir_name",

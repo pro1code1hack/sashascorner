@@ -30,7 +30,7 @@ from sqlalchemy.orm import Session
 
 from cafeops.config import REPO_ROOT, settings
 from cafeops.db.models import Ingredient, MenuCategory, MenuItem, Supplier
-from cafeops.db.models.enums import Storage, Unit
+from cafeops.domain.enums import Storage, Unit
 from cafeops.domain.units import IncompatibleUnitsError, convert
 from cafeops.seed.menu_board import _norm
 from cafeops.services.media_store import MAX_BYTES, MediaRefusedError, sniff_image

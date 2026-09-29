@@ -40,9 +40,11 @@ class SqlStockRepository:
     ) -> tuple[Decimal, int]:
         """Signed sum over (after, until]. Summed in Python, deliberately.
 
-        The qty column is TEXT on SQLite (see db/types.Qty), so a SQL SUM() would
-        coerce through float and lose exactness. At one cafe's volume, summing
-        exact Decimals in Python is correct and fast enough. On Postgres the
+        The qty column is a scaled INTEGER (db/types.Qty, ARCHITECTURE 8E), so a SQL
+        SUM() would now be exact -- but it would also be the one place the scale
+        factor leaks into a query. At one cafe's volume, summing exact Decimals in
+        Python is correct and fast enough, and keeps every quantity read through
+        the one type that knows the scale. On Postgres the
         column is a real NUMERIC and this can become a SQL SUM if it needs to.
         """
         stmt = select(StockMovement.qty).where(

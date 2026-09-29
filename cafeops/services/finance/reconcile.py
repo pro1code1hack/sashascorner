@@ -21,8 +21,10 @@ from datetime import date
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from cafeops.db.models.enums import FinanceSource, PaymentBasis, PaymentMethod, SalesChannelName
+from cafeops.clock import local_today, utcnow
+from cafeops.config import settings
 from cafeops.db.models.finance import CardPayout, CashCount
+from cafeops.domain.enums import FinanceSource, PaymentBasis, PaymentMethod, SalesChannelName
 from cafeops.services.finance.channels_month import (
     CHANNELS,
     MonthChannel,
@@ -36,10 +38,8 @@ from cafeops.services.finance.common import (
     add_working_days,
     clean_text,
     finance_settings,
-    local_today,
     month_key,
     month_range,
-    now_utc,
     require_pence,
 )
 from cafeops.services.finance.periods import data_months
@@ -209,7 +209,7 @@ def _card_section(
     if since is not None and until is not None:
         stmt = stmt.where(CardPayout.sold_on >= since, CardPayout.sold_on <= until)
     payouts = {p.sold_on: p for p in session.scalars(stmt)}
-    today = local_today()
+    today = local_today(settings.tz)
     rows: list[CardRow] = []
     for day in sorted(resolved):
         fig = resolved[day].by_method.get(PaymentMethod.CARD)
@@ -280,7 +280,7 @@ def record_payout(
         row.arrived_pence = arrived_pence
         row.arrived_on = arrived_on
         row.updated_by = operator
-        row.updated_at = now_utc()
+        row.updated_at = utcnow()
     session.flush()
     return card_row(session, sold_on)
 
@@ -365,9 +365,9 @@ def record_cash_count(
     who = clean_text(counted_by)
     if who is None:
         raise FinanceRefused("counted_by: a cash count needs the name of whoever counted it")
-    if day > local_today():
+    if day > local_today(settings.tz):
         raise FinanceRefused("a cash count cannot be for a day that has not happened yet")
-    now = now_utc()
+    now = utcnow()
     if row is None:
         row = CashCount(
             business_date=day,
@@ -404,7 +404,7 @@ def explain_cash(
         raise FinanceRefused("explained_by: an explanation needs a name")
     row.explanation = text
     row.explained_by = who
-    row.explained_at = now_utc()
+    row.explained_at = utcnow()
     session.flush()
     return cash_row(session, day)
 

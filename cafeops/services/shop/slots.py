@@ -18,6 +18,7 @@ from datetime import UTC, date, datetime, timedelta
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from cafeops.clock import local_day_bounds
 from cafeops.config import settings
 from cafeops.db.models import OrderStatus, ShopOrder, ShopSettings
 from cafeops.domain.shop import (
@@ -116,13 +117,15 @@ def next_open_local(shop: ShopSettings, now: datetime) -> str | None:
     )
     if opens is None:
         return None
-    return next_open_label(opens, local_now)
+    # "Next open" is when the first order can be ready, not when the door opens.
+    return next_open_label(opens + timedelta(minutes=shop.lead_minutes), local_now)
 
 
 def _taken(session: Session, shop: ShopSettings, day: date) -> dict[datetime, int]:
     """Live orders per slot start (UTC) on `day`."""
-    start = to_utc(datetime.combine(day, datetime.min.time()))
-    end = start + timedelta(days=1)
+    # Not `start + timedelta(days=1)`: a clock-change day is 23 or 25 hours long, and
+    # the last hour of a late-October Saturday's slots would count against Sunday.
+    start, end = local_day_bounds(day, tz=settings.tz)
     step = max(1, shop.slot_minutes)
     counts: dict[datetime, int] = {}
     rows = session.execute(
@@ -180,7 +183,13 @@ def slots_for(
             if not window.is_open
             else "Too late today."
             if day == now_local.date()
-            else f"Orders can be placed up to {shop.days_ahead} day(s) ahead."
+            else (
+                "Orders can only be placed for today."
+                if shop.days_ahead == 0
+                else f"Orders can be placed up to {shop.days_ahead} "
+                + ("day" if shop.days_ahead == 1 else "days")
+                + " ahead."
+            )
         )
     starts = (
         slot_starts(

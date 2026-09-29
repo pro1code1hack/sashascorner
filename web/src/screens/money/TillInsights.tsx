@@ -20,8 +20,8 @@
  * --color-chart-{instore,deliveroo,justeat,other} order; heatmap and sizes ->
  * the one-hue --color-seq-* ramp. Text never wears a series colour.
  */
-import { useMemo, useState } from 'react'
-import type { ReactNode } from 'react'
+import { useMemo, useRef, useState } from 'react'
+import type { KeyboardEvent, ReactNode } from 'react'
 import { Pill, Segmented, cx } from '../../components/ui'
 import type { SalesInsights } from '../../lib/types/finance'
 import { count } from './filters'
@@ -114,13 +114,14 @@ export function SectionTitle({
   )
 }
 
-/** "▲ 12% vs Mon 1 Sep – …": direction by glyph and word, never colour alone. */
+/** "▲ 12% vs Mon 1 Sep – …": direction by glyph and word. A fall is not a crossed
+ *  threshold, so it is ink-2 like a rise (design law: red only for a threshold). */
 export function Delta({ now, prev, vs }: { now: number | null; prev: number | null | undefined; vs?: string }) {
   if (now === null || prev === null || prev === undefined || prev === 0) return vs ? <span className="text-ink-3">no earlier period to compare</span> : null
   const p = Math.round(((now - prev) / Math.abs(prev)) * 100)
   const glyph = p > 0 ? '▲' : p < 0 ? '▼' : '='
   return (
-    <span className={p < 0 ? 'text-bad-ink' : 'text-ink-2'} title={vs ? `Compared with ${vs}` : 'Compared with the period before'}>
+    <span className="text-ink-2" title={vs ? `Compared with ${vs}` : 'Compared with the period before'}>
       <span aria-hidden="true">{glyph}</span> {p === 0 ? 'level' : `${Math.abs(p)}% ${p > 0 ? 'up' : 'down'}`}
       {vs && <span className="text-ink-3"> vs {vs}</span>}
     </span>
@@ -187,51 +188,105 @@ export function WhenHeatmap({ data, onDrill }: { data: SalesInsights; onDrill: (
   const rows = WD_SHORT.map((_, w) => w).filter((w) => (openDays[w] ?? 0) > 0)
   const hv = hover ? { avg: avgOf(hover.w, hover.h), c: cell.get(`${hover.w}-${hover.h}`) } : null
 
+  // One tab stop for the whole grid (WCAG 2.4.3): the arrow keys move between
+  // cells, Home/End run along a row, and the weekday header is column 0 so
+  // Enter on it drills. Every other cell is tabIndex -1. The grid is itself the
+  // accessible table (row and column headers, a labelled gridcell per hour), so
+  // it needs no sr-only twin.
+  const [pos, setPos] = useState({ r: 0, c: 1 })
+  const cells = useRef(new Map<string, HTMLElement>())
+  const keyOf = (r: number, c: number) => `${r}-${c}`
+  const focusR = Math.min(pos.r, Math.max(0, rows.length - 1))
+  const focusC = Math.min(pos.c, hours.length)
+  const tab = (r: number, c: number) => (focusR === r && focusC === c ? 0 : -1)
+  const setRef = (r: number, c: number) => (el: HTMLElement | null) => {
+    if (el) cells.current.set(keyOf(r, c), el)
+    else cells.current.delete(keyOf(r, c))
+  }
+  const move = (r: number, c: number) => {
+    setPos({ r, c })
+    cells.current.get(keyOf(r, c))?.focus()
+  }
+  const onKey = (e: KeyboardEvent, r: number, c: number) => {
+    const lastR = rows.length - 1
+    const lastC = hours.length
+    let nr = r
+    let nc = c
+    if (e.key === 'ArrowRight') nc = Math.min(lastC, c + 1)
+    else if (e.key === 'ArrowLeft') nc = Math.max(0, c - 1)
+    else if (e.key === 'ArrowDown') nr = Math.min(lastR, r + 1)
+    else if (e.key === 'ArrowUp') nr = Math.max(0, r - 1)
+    else if (e.key === 'Home') nc = 0
+    else if (e.key === 'End') nc = lastC
+    else return
+    e.preventDefault()
+    move(nr, nc)
+  }
+
   return (
     <section aria-labelledby="heat-h" className="min-w-0">
       <ChartHead id="heat-h" title="When people buy" sub="Average receipts in each hour, per day open. Click a day to see only that weekday." />
+      <p id="heat-keys" className="sr-only">
+        Use the arrow keys to move between hours and days; Home and End run along a row.
+      </p>
       <div className="scroll-x">
         <div
-          role="table"
+          role="grid"
           aria-label="Average receipts per hour, by weekday"
+          aria-describedby="heat-keys"
           className="grid min-w-[420px] gap-[2px]"
           style={{ gridTemplateColumns: `44px repeat(${hours.length}, minmax(0, 1fr))` }}
           onMouseLeave={() => setHover(null)}
         >
           <div role="row" className="contents">
-            <span role="columnheader" />
+            <span role="columnheader">
+              <span className="sr-only">Weekday</span>
+            </span>
             {hours.map((h) => (
               <span key={h} role="columnheader" className="fig pb-1 text-center text-label text-ink-3">
                 {hourLabel(h)}
               </span>
             ))}
           </div>
-          {rows.map((w) => (
+          {rows.map((w, r) => (
             <div key={w} role="row" className="contents">
-              <button
-                type="button"
-                role="rowheader"
-                onClick={() => onDrill('weekday', String(w))}
-                title={`Only ${WD_LONG[w]}`}
-                className="h-8 rounded-control pr-2 text-left text-sm font-semibold text-ink-2 hover:bg-canvas-2 hover:text-ink"
-              >
-                {WD_SHORT[w]}
-              </button>
-              {hours.map((h) => {
+              {/* A rowheader wrapping a real button: the drill is a visible link, not a bare label. */}
+              <span role="rowheader" className="flex items-center">
+                <button
+                  type="button"
+                  ref={setRef(r, 0)}
+                  tabIndex={tab(r, 0)}
+                  onKeyDown={(e) => onKey(e, r, 0)}
+                  onClick={() => onDrill('weekday', String(w))}
+                  className="h-8 w-full rounded-control pr-2 text-left text-sm font-semibold text-brand-ink underline decoration-brand-line underline-offset-2 hover:bg-canvas-2 hover:decoration-brand"
+                >
+                  {WD_SHORT[w]}
+                  <span className="sr-only">: show only {WD_LONG[w]}</span>
+                </button>
+              </span>
+              {hours.map((h, i) => {
+                const c = i + 1
                 const v = avgOf(w, h)
                 const b = bin(v)
                 const on = hover?.w === w && hover.h === h
                 return (
                   <span
                     key={h}
-                    role="cell"
-                    tabIndex={0}
+                    role="gridcell"
+                    ref={setRef(r, c)}
+                    tabIndex={tab(r, c)}
+                    onKeyDown={(e) => onKey(e, r, c)}
                     aria-label={`${WD_LONG[w]} ${hourLabel(h)}: ${v.toFixed(1)} receipts on average`}
                     onMouseEnter={() => setHover({ w, h })}
-                    onFocus={() => setHover({ w, h })}
+                    onFocus={() => {
+                      setPos({ r, c })
+                      setHover({ w, h })
+                    }}
                     onBlur={() => setHover(null)}
-                    className={cx('h-8 rounded-[4px] outline-offset-1', on && 'ring-2 ring-ink')}
-                    style={{ background: b < 0 ? 'var(--color-canvas)' : HEAT[b] }}
+                    // An empty hour is a hairline outline, not a paler fill: the
+                    // lightest bin and "nothing" must not read as the same thing.
+                    className={cx('h-8 rounded-[4px] outline-offset-1', b < 0 && 'border border-line bg-surface', on && 'ring-2 ring-ink')}
+                    style={b < 0 ? undefined : { background: HEAT[b] }}
                   />
                 )
               })}
@@ -246,6 +301,7 @@ export function WhenHeatmap({ data, onDrill }: { data: SalesInsights; onDrill: (
             <span key={c} className="h-3 w-5 rounded-[3px]" style={{ background: c }} />
           ))}
           More
+          <span className="ml-1 h-3 w-5 rounded-[3px] border border-line bg-surface" /> none
         </span>
         <span className="fig min-h-5">
           {hover && hv ? (
@@ -346,7 +402,7 @@ export function Categories({ data, onDrill, active }: { data: SalesInsights; onD
           <li key={c.key}>
             <DrillRow active={active === c.key} onClick={() => onDrill('category', c.key)} label={`Only ${categoryLabel(c.key)}`}>
               <span className="min-w-0 flex-1 py-1.5">
-                <span className={cx('block truncate', c.key === NO_CATEGORY ? 'italic text-ink-2' : 'text-ink')}>{categoryLabel(c.key)}</span>
+                <span className={cx('block truncate', c.key === NO_CATEGORY ? 'text-ink-2' : 'text-ink')}>{categoryLabel(c.key)}</span>
                 <span className="mt-1 block h-2 rounded-full bg-canvas">
                   <span className="block h-2 rounded-full bg-brand" style={{ width: `${(c.gross_pence / max) * 100}%` }} />
                 </span>

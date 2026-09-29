@@ -80,6 +80,7 @@ from cafeops.domain.units import convert
 
 __all__ = [
     "ASSUMED_EXPIRY_NOTE",
+    "RECEIVABLE",
     "DeliveryReceipt",
     "ReceiveRefused",
     "open_batch",
@@ -101,7 +102,7 @@ ASSUMED_EXPIRY_NOTE = "EXPIRY ASSUMED"
 #: Statuses a line may be received against. Invariant 1: a human confirmed all three.
 #: `RECEIVED` is included so a second, partial delivery against a closed order still
 #: lands in the ledger instead of being lost.
-_RECEIVABLE: tuple[POStatus, ...] = (POStatus.CONFIRMED, POStatus.SENT, POStatus.RECEIVED)
+RECEIVABLE: tuple[POStatus, ...] = (POStatus.CONFIRMED, POStatus.SENT, POStatus.RECEIVED)
 
 
 class ReceiveRefused(ValueError):
@@ -205,7 +206,7 @@ def receive_po_line(
     if order is None:  # pragma: no cover - FK guarantees it
         raise LookupError(f"purchase_order {line.po_id} not found")
 
-    if order.status not in _RECEIVABLE:
+    if order.status not in RECEIVABLE:
         raise ReceiveRefused(
             f"purchase order {order.id} is {order.status.value}; stock can only be received "
             "against an order a human confirmed (invariant 1). If this arrived without an "

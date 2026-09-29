@@ -5,6 +5,7 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useInvalidateWebsite } from '../../../lib/website-api'
+import { clock, nowHHMM } from '../dates'
 import { dropDraft, setDraft, setStatus, useDraftState, type SlotStatus } from './drafts'
 import { draftOf, putSlot, snap, usePutSlot, type DraftItem, type Media, type Slot } from './model'
 
@@ -94,8 +95,7 @@ export function PhotosProvider({
       if (r.kind === 'ok') {
         putSlotCache({ ...r.data, key, label: s.label, page: s.page })
         dropDraft(key)
-        const t = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit' }).format(new Date())
-        setStatus(key, { text: `Saved at ${t}. The site shows it within a minute.`, tone: 'ok' })
+        setStatus(key, { text: `Saved at ${clock(nowHHMM())}. The site shows it within a minute.`, tone: 'ok' })
         announce(`${s.label}: saved.`)
         void invalidate()
         return true

@@ -8,7 +8,8 @@
  * cost). Estimates are italic; an unknown cost is left out and said so.
  */
 import type { ReactNode } from 'react'
-import { Button, cx } from '../../../components/ui'
+import { Button, StatusLine, cx } from '../../../components/ui'
+import type { Outcome } from '../../../components/ui'
 import { useOperator } from '../../../lib/operator'
 import type { ChangeImpact } from '../../../lib/types/menu'
 import { gbpDelta3, gbpSigned, pctText, sizeLabel } from './figures'
@@ -99,10 +100,20 @@ export function ImpactPanel({
 }) {
   const [operator] = useOperator()
   const shown = diff.slice(0, 8)
+  // One always-mounted status line carries the preview's state. The panel is
+  // not a live region: that re-announced its buttons on every keystroke.
+  const outcome: Outcome | null =
+    status.kind === 'loading'
+      ? { kind: 'info', text: 'Working it out…' }
+      : status.kind === 'ready'
+        ? { kind: 'ok', text: 'Preview ready.' }
+        : 'message' in status
+          ? { kind: 'error', text: status.message }
+          : null
   return (
-    <section className="rounded-card border border-line bg-surface p-3.5" aria-live="polite">
+    <section className="rounded-card border border-line bg-surface p-3.5" aria-busy={status.kind === 'loading' || undefined}>
       <h3 className="text-lg font-extrabold tracking-[-.01em]">{title}</h3>
-      {status.kind === 'loading' && diff.length === 0 && <p className="mt-1 text-base text-ink-2">Working it out…</p>}
+      <StatusLine outcome={outcome} className="mt-1" />
       {shown.length > 0 && (
         <ul className="mt-1">
           {shown.map((line, i) => (
@@ -153,11 +164,6 @@ export function ImpactPanel({
           {p}
         </p>
       ))}
-      {(status.kind === 'refused' || status.kind === 'failed' || status.kind === 'offline' || status.kind === 'conflict') && (
-        <p role="alert" className="mt-1 text-sm text-bad-ink">
-          {status.message}
-        </p>
-      )}
       <p className="mb-3 mt-2 text-sm text-ink-2">{note}</p>
       <div className="flex gap-2">
         <Button variant="outline" className="flex-1 rounded-card-lg" onClick={onDiscard} disabled={applying}>

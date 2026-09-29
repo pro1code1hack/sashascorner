@@ -31,6 +31,7 @@ import httpx
 from fastapi import APIRouter, HTTPException, Request, status
 from fastapi.responses import Response
 
+from cafeops.api.schemas import Out
 from cafeops.api.security import ApiAuth, client_ip
 from cafeops.config import settings
 
@@ -62,10 +63,12 @@ def _not_configured() -> HTTPException:
 
 
 def _unreachable(exc: Exception) -> HTTPException:
+    """502. The site API's internal address goes to the log, not the body: the media
+    route is unauthenticated, and a stranger has no use for the box's topology."""
     log.warning("site API unreachable at %s: %s", _base(), exc)
     return HTTPException(
         status_code=status.HTTP_502_BAD_GATEWAY,
-        detail=f"The website's server isn't answering ({_base()}). Is it running?",
+        detail="The website's server isn't answering. Is it running?",
     )
 
 
@@ -126,8 +129,14 @@ async def _forward(request: Request, upstream_path: str) -> Response:
     return _passed_back(upstream)
 
 
-@router.get("/connection")
-async def connection() -> dict[str, object]:
+class WebsiteConnectionOut(Out):
+    configured: bool
+    reachable: bool
+    public_url: str
+
+
+@router.get("/connection", response_model=WebsiteConnectionOut)
+async def connection() -> WebsiteConnectionOut:
     """Is the website wired up? Answers without failing, for a banner."""
     configured = bool(settings.site_service_key)
     reachable = False
@@ -137,11 +146,11 @@ async def connection() -> dict[str, object]:
                 reachable = (await client.get(f"{_base()}/api/health")).is_success
         except httpx.HTTPError:
             reachable = False
-    return {
-        "configured": configured,
-        "reachable": reachable,
-        "public_url": settings.site_public_url.rstrip("/"),
-    }
+    return WebsiteConnectionOut(
+        configured=configured,
+        reachable=reachable,
+        public_url=settings.site_public_url.rstrip("/"),
+    )
 
 
 @router.get("/slots")

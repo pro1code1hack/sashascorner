@@ -32,6 +32,10 @@ BrowserJobStatusName = Literal[
 ]
 BrowserStepSourceName = Literal["SCRIPT", "MODEL", "POLICY"]
 BrowserStepOutcomeName = Literal["OK", "ERROR", "REFUSED"]
+#: The tier ladder (docs/agents/BROWSER-ORDERING.md §10), best first: a cart link
+#: opened in the owner's own browser, the portal's quick-order pad, the per-line
+#: browser path (scripted, then the model for what breaks).
+TierName = Literal["cart_link", "quick_order", "browser"]
 
 
 # --------------------------------------------------------------------------
@@ -61,9 +65,13 @@ class BrowserJobOut(Out):
     output_tokens: int
     proposal_id: int | None
     run_id: str | None
-    #: One sentence derived from `result`: "6 of 6 lines in basket, £48.20 seen
-    #: (expected £47.90)" or "signed in as s***@x.com". None until the job has a result.
+    #: One sentence derived from `result`: "browser: 6 of 6 lines in basket, £48.20 seen
+    #: (expected £47.90)", "cart link ready: 3 items" or "signed in as s***@x.com". None
+    #: until the job has a result.
     result_summary: str | None
+    #: The best tier that put a line in the basket (`result["tier"]`); None for a
+    #: CHECK_SESSION job, a job still running, or one that staged nothing.
+    tier: TierName | None = None
 
 
 class BrowserStepOut(Out):
@@ -102,6 +110,10 @@ class PortalOut(Out):
     slug: str
     label: str
     start_url: str
+    #: What this adapter can do, best first; "browser" is always last.
+    tiers: tuple[TierName, ...] = ("browser",)
+    #: The site refuses headless browsers, so the worker needs a display (Xvfb) for it.
+    prefers_headed: bool = False
 
 
 class SessionOut(Out):
@@ -120,9 +132,14 @@ class IntegrationOut(Out):
     portal: PortalOut | None
     session: SessionOut
     auto_stage: bool
+    #: True when a basket can be staged now. With a "cart_link" tier this is True
+    #: even with the worker off and no stored sign-in: the link opens in the owner's
+    #: own browser. Otherwise the worker must be on and the sign-in CONNECTED.
     can_stage: bool
     cannot_stage_reason: str | None
     last_job: BrowserJobOut | None
+    #: Same as `portal.tiers`; empty when the supplier has no adapter.
+    tiers: tuple[TierName, ...] = ()
 
 
 class IntegrationsOut(Out):

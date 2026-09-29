@@ -19,7 +19,7 @@ import type { RecipesRail } from '../../lib/types/menu'
 import { RailChips, RailColumn } from '../menu/common/Rail'
 import type { RailItem } from '../menu/common/Rail'
 import { RecipeEditorView } from './Editor'
-import { MenuTabs } from '../menu/MenuTabs'
+import { MENU_TAB_HINT, MenuTabs } from '../menu/MenuTabs'
 import { ProposalView } from './ProposalView'
 
 type Sel = { kind: 'template'; id: number } | { kind: 'proposal'; id: string } | { kind: 'one' } | { kind: 'none' }
@@ -102,18 +102,30 @@ export function RecipesScreen() {
     <>
       <PageHeader
         title="Menu"
-        subtitle={<MenuTabs current="recipes" />}
+        subtitle={MENU_TAB_HINT.recipes}
         saved={dirty ? 'Unsaved changes' : rail.data ? 'Saved' : 'Loading…'}
         actions={
-          <Button
-            variant="primary"
-            className="rounded-[18px] px-[18px] text-lg"
-            disabled={!firstProposal}
-            title="New recipes start from a pattern detected in the workbook"
-            onClick={() => firstProposal && go({ p: firstProposal.proposal_id })}
-          >
-            + New recipe
-          </Button>
+          <>
+            <MenuTabs current="recipes" />
+            {rail.data && (
+              <span className="flex flex-wrap items-center gap-2">
+                <Button
+                  variant="primary"
+                  size="lg"
+                  disabled={!firstProposal}
+                  aria-describedby="rec-new-why"
+                  onClick={() => firstProposal && go({ p: firstProposal.proposal_id })}
+                >
+                  Confirm a detected recipe
+                </Button>
+                <span id="rec-new-why" className="max-w-[26ch] text-xs text-ink-2">
+                  {firstProposal
+                    ? 'New recipes start from a pattern detected in the workbook.'
+                    : 'Nothing to confirm: every recipe detected in the workbook is confirmed.'}
+                </span>
+              </span>
+            )}
+          </>
         }
       />
       {from !== null && (
@@ -171,7 +183,7 @@ export function RecipesScreen() {
             onConfirmed={(id) => navigate('/menu/recipes', { query: id ? { t: String(id) } : {} })}
           />
         ) : sel.kind === 'one' && rail.data ? (
-          <div className="min-h-0 flex-1 overflow-y-auto bg-surface px-4 pb-8 pt-5 sm:px-[22px]">
+          <div className="min-h-0 flex-1 overflow-y-auto bg-surface px-4 pb-8 pt-5 sm:px-5.5">
             <h2 className="text-2xl font-extrabold tracking-[-.01em]">One-off recipes</h2>
             <p className="mb-3.5 mt-1 text-base text-ink-2">
               {rail.data.one_offs.length} items have their own hand-written recipe (cakes, bottled drinks, toasties, meal

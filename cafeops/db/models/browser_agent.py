@@ -38,7 +38,7 @@ from sqlalchemy.types import JSON
 
 from cafeops.db.base import Base
 from cafeops.db.models._common import UTCDateTime, enum_col, utcnow
-from cafeops.db.models.enums import (
+from cafeops.domain.enums import (
     BrowserJobKind,
     BrowserJobStatus,
     BrowserStepOutcome,

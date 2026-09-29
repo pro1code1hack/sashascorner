@@ -12,9 +12,9 @@
  * reorder level. Every refusal is shown verbatim.
  */
 import { useEffect, useState } from 'react'
-import type { ReactNode } from 'react'
+import type { ReactNode, RefObject } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Button, Input, Meter, Select, cx } from '../../components/ui'
+import { Button, Field, Input, Meter, Select, TBody, THead, Table, Td, Th, Tr, cx } from '../../components/ui'
 import { confirmShelfLife } from '../../lib/api'
 import { parseDec } from '../../lib/dec'
 import { gbp } from '../../lib/format'
@@ -46,8 +46,7 @@ function SectionTitle({ id, title, note, action }: { id: string; title: string; 
   )
 }
 
-const TABLE_HEAD = 'border-b border-line pb-1.5 text-label font-bold uppercase tracking-[.06em] text-ink-3'
-const FIELD_LABEL = 'flex min-w-0 flex-col gap-1 text-xs font-bold text-ink-2'
+/** Side-column section heads: small uppercase, but still `h2` (the page outline is h1 → h2s). */
 const SIDE_HEAD = 'text-label font-bold uppercase tracking-[.06em] text-ink-3'
 
 function neg(q: string): string {
@@ -104,13 +103,13 @@ export function Overview({ row }: { row: StockRow }) {
         <div className="flex min-w-0 flex-col gap-0.5">
           <span className={SIDE_HEAD}>Runs out</span>
           {ro.reason || !ro.text ? (
-            <span className="pt-2 text-base text-ink-2" title={ro.title}>
+            // Invariant 9: the reason where the date would be, in full, no hover needed.
+            <span className="pt-2 text-base text-ink-2">
               {ro.text || 'no forecast yet'}
+              {ro.title && ro.title !== ro.text && <span className="block text-sm">{ro.title}</span>}
             </span>
           ) : (
-            <span className={cx('fig text-4xl leading-tight', ro.alert && 'text-bad-ink')} title={ro.title}>
-              {ro.text}
-            </span>
+            <span className={cx('fig text-4xl leading-tight', ro.alert && 'text-bad-ink')}>{ro.text}</span>
           )}
           <a href={href('/stock', { tab: 'buy' })} className="text-sm font-bold text-brand-ink">
             What to buy ›
@@ -175,7 +174,16 @@ export function ChecklistSection({ row }: { row: StockRow }) {
 
 /* ------------------------------------------------ counts and drift (5.2) -- */
 
-export function Counts({ row, onCountNow }: { row: StockRow; onCountNow: () => void }) {
+export function Counts({
+  row,
+  onCountNow,
+  countRef,
+}: {
+  row: StockRow
+  onCountNow: () => void
+  /** The page focuses this button again when the count flow closes. */
+  countRef?: RefObject<HTMLButtonElement>
+}) {
   const q = useQuery({
     queryKey: KEYS.stockDetail(row.ingredient_id),
     queryFn: () => stockApi.stockDetail(row.ingredient_id),
@@ -207,13 +215,13 @@ export function Counts({ row, onCountNow }: { row: StockRow; onCountNow: () => v
         <h2 id="st-counts" className="text-xl font-extrabold tracking-[-.01em]">
           Counts
         </h2>
-        <Button variant="primary" size="sm" onClick={onCountNow}>
+        <Button ref={countRef} variant="primary" onClick={onCountNow}>
           Count it now
         </Button>
       </div>
       {driftLine && <p className="text-base">{driftLine}</p>}
       {attribution && pctAbs !== null && pctAbs >= 5 && share !== null && (
-        <div className="flex flex-col gap-2 rounded-card border border-line bg-canvas-2 px-3.5 py-3">
+        <div className="flex flex-col gap-2 rounded-control bg-canvas px-3.5 py-3">
           <div className="grid grid-cols-[140px_minmax(0,1fr)_44px] items-center gap-x-3 gap-y-1.5 text-sm">
             <span>Went out of date</span>
             <Meter
@@ -253,44 +261,44 @@ export function Counts({ row, onCountNow }: { row: StockRow; onCountNow: () => v
           </p>
         </div>
       )}
-      <div className="flex flex-col">
-        <div className={cx('grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] gap-3', TABLE_HEAD)}>
-          <span>Date</span>
-          <span className="text-right">Counted</span>
-          <span className="text-right">Out by</span>
-        </div>
-        {q.isPending ? (
-          <p className="py-2 text-sm text-ink-2">Loading…</p>
-        ) : q.isError ? (
-          <p className="py-2 text-sm text-ink-2">{q.error instanceof Error ? q.error.message : 'Could not load.'}</p>
-        ) : counts.length === 0 ? (
-          <p className="py-2 text-sm text-ink-2">Never counted.</p>
-        ) : (
-          counts.map((c) => {
-            const pd = c.drift_pct === null ? null : Math.abs(c.drift_pct)
-            return (
-              <div
-                key={c.stock_count_id}
-                className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] gap-3 border-b border-line-row py-1.5 text-base"
-              >
-                <span>{fmtD(c.counted_at)}</span>
-                <span className="fig text-right">{fmtQ(c.counted_qty, row.unit)}</span>
-                <span className={cx('fig text-right', pd !== null && pd > 15 ? 'font-bold text-bad-ink' : 'text-ink-2')}>
-                  {pd === null ? 'first count' : `${(Math.round(pd * 10) / 10).toFixed(1)}%`}
-                </span>
-              </div>
-            )
-          })
-        )}
-      </div>
+      {q.isPending ? (
+        <p className="py-2 text-sm text-ink-2">Loading…</p>
+      ) : q.isError ? (
+        <p className="py-2 text-sm text-ink-2">{q.error instanceof Error ? q.error.message : 'Could not load.'}</p>
+      ) : counts.length === 0 ? (
+        <p className="py-2 text-sm text-ink-2">Never counted.</p>
+      ) : (
+        <Table label="Counts, newest first">
+          <THead>
+            <tr>
+              <Th>Date</Th>
+              <Th numeric>Counted</Th>
+              <Th numeric>Out by</Th>
+            </tr>
+          </THead>
+          <TBody>
+            {counts.map((c) => {
+              const pd = c.drift_pct === null ? null : Math.abs(c.drift_pct)
+              const over = pd !== null && pd > 15
+              return (
+                <Tr key={c.stock_count_id}>
+                  <Td>{fmtD(c.counted_at)}</Td>
+                  <Td numeric>{fmtQ(c.counted_qty, row.unit)}</Td>
+                  <Td numeric alert={over} strong={over} className={over ? undefined : 'text-ink-2'}>
+                    {pd === null ? 'first count' : `${(Math.round(pd * 10) / 10).toFixed(1)}%`}
+                  </Td>
+                </Tr>
+              )
+            })}
+          </TBody>
+        </Table>
+      )}
       <p className="text-xs text-ink-2">{autoLine} Over 15% out is marked.</p>
     </section>
   )
 }
 
 /* ---------------------------------------------------------------- batches -- */
-
-const BATCH_GRID = 'grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.4fr)_minmax(0,1fr)]'
 
 export function Batches({ row }: { row: StockRow }) {
   const gap = parseDec(row.batch_coverage_gap)
@@ -301,33 +309,39 @@ export function Batches({ row }: { row: StockRow }) {
   return (
     <section aria-labelledby="st-batches" className="flex flex-col gap-3">
       <SectionTitle id="st-batches" title="Batches" note="Used oldest-first by use-by date." />
-      <div className="flex flex-col">
-        <div className={cx('grid gap-3', BATCH_GRID, TABLE_HEAD)}>
-          <span>Came in</span>
-          <span className="text-right">Qty</span>
-          <span>Use by</span>
-          <span className="text-right">Left</span>
-        </div>
-        {open.length === 0 ? (
-          <p className="py-2 text-sm text-ink-2">No batches with stock left.</p>
-        ) : (
-          open.map((b) => {
-            const soon = b.days_left !== null && b.days_left <= 3
-            return (
-              <div key={b.batch_id} className={cx('grid gap-3 border-b border-line-row py-1.5 text-base', BATCH_GRID)}>
-                <span>{dayMonth(b.received_at)}</span>
-                <span className="fig text-right">{b.qty_received ? fmtQ(b.qty_received, row.unit) : '—'}</span>
-                <span className={cx(soon && 'font-bold text-bad-ink')}>
-                  {b.effective_expiry
-                    ? `${fmtD(b.effective_expiry)} · ${b.days_left}d${b.expiry_assumed ? ' (assumed)' : ''}`
-                    : 'keeps'}
-                </span>
-                <span className="fig text-right italic">{fmtQ(b.qty_remaining, row.unit)}</span>
-              </div>
-            )
-          })
-        )}
-      </div>
+      {open.length === 0 ? (
+        <p className="py-2 text-sm text-ink-2">No batches with stock left.</p>
+      ) : (
+        <Table label="Open batches">
+          <THead>
+            <tr>
+              <Th>Came in</Th>
+              <Th numeric>Qty</Th>
+              <Th>Use by</Th>
+              <Th numeric>Left (est.)</Th>
+            </tr>
+          </THead>
+          <TBody>
+            {open.map((b) => {
+              const soon = b.days_left !== null && b.days_left <= 3
+              return (
+                <Tr key={b.batch_id}>
+                  <Td>{dayMonth(b.received_at)}</Td>
+                  <Td numeric>{b.qty_received ? fmtQ(b.qty_received, row.unit) : '—'}</Td>
+                  <Td alert={soon} strong={soon}>
+                    {b.effective_expiry
+                      ? `${fmtD(b.effective_expiry)} · ${b.days_left}d${b.expiry_assumed ? ' (assumed)' : ''}`
+                      : 'keeps'}
+                  </Td>
+                  <Td numeric est>
+                    {fmtQ(b.qty_remaining, row.unit)}
+                  </Td>
+                </Tr>
+              )
+            })}
+          </TBody>
+        </Table>
+      )}
       {gap !== null && gap.u !== 0n && (
         <p className="text-sm text-ink-2">
           {fmtQ(row.batch_coverage_gap, row.unit)} on hand that no delivery accounts for; it can’t expire or be written off
@@ -383,22 +397,20 @@ export function DeliveryForm({ row }: { row: StockRow }) {
   }
   return (
     <section aria-labelledby="st-delivery" className="flex flex-col gap-2">
-      <h3 id="st-delivery" className={SIDE_HEAD}>
+      <h2 id="st-delivery" className={SIDE_HEAD}>
         Delivery came in
-      </h3>
+      </h2>
       <div className="grid grid-cols-2 gap-2">
-        <label className={FIELD_LABEL}>
-          Quantity ({unitWord(row.unit)})
-          <Input size="sm" numeric placeholder="0" value={qty} onChange={(e) => setQty(e.target.value)} className="font-normal" />
-        </label>
+        <Field label={`Quantity (${unitWord(row.unit)})`}>
+          <Input size="sm" numeric placeholder="0" value={qty} onChange={(e) => setQty(e.target.value)} />
+        </Field>
         {shelf === null ? (
-          <div className={FIELD_LABEL}>
+          <div className="flex min-w-0 flex-col gap-1 text-xs font-bold text-ink-2">
             Use by
             <span className="flex h-9 items-center text-base font-normal text-ink-2">keeps, no date</span>
           </div>
         ) : (
-          <label className={FIELD_LABEL}>
-            Use by
+          <Field label="Use by" hint={!edited && date !== '' ? 'Assumed from shelf life until you change it.' : undefined}>
             <Input
               size="sm"
               type="date"
@@ -407,13 +419,12 @@ export function DeliveryForm({ row }: { row: StockRow }) {
                 setDate(e.target.value)
                 setEdited(true)
               }}
-              className={cx('font-normal', !edited && date !== '' && 'italic')}
+              est={!edited && date !== ''}
             />
-          </label>
+          </Field>
         )}
       </div>
-      {!edited && date !== '' && <p className="text-xs text-ink-2">Use-by assumed from shelf life until you change it.</p>}
-      <Button variant="primary" size="sm" block disabled={!ok} pending={w.pending} pendingLabel="Saving…" onClick={record}>
+      <Button variant="primary" block disabled={!ok} pending={w.pending} pendingLabel="Saving…" onClick={record}>
         Record delivery
       </Button>
       <OutcomeLine outcome={w.outcome} />
@@ -471,29 +482,29 @@ export function WriteOffForm({ row }: { row: StockRow }) {
   }
   return (
     <section aria-labelledby="st-writeoff" className="flex flex-col gap-2">
-      <h3 id="st-writeoff" className={SIDE_HEAD}>
+      <h2 id="st-writeoff" className={SIDE_HEAD}>
         Write off
-      </h3>
+      </h2>
       <div className="grid grid-cols-2 gap-2">
-        <label className={FIELD_LABEL}>
-          Quantity ({unitWord(row.unit)})
-          <Input size="sm" numeric placeholder="0" value={qty} onChange={(e) => setQty(e.target.value)} className="font-normal" />
-        </label>
-        <label className={FIELD_LABEL}>
-          Why
-          <Select size="sm" value={reason} onChange={(e) => setReason(e.target.value as WriteOffReason)} className="font-normal text-ink">
+        <Field label={`Quantity (${unitWord(row.unit)})`}>
+          <Input size="sm" numeric placeholder="0" value={qty} onChange={(e) => setQty(e.target.value)} />
+        </Field>
+        <Field label="Why">
+          <Select size="sm" value={reason} onChange={(e) => setReason(e.target.value as WriteOffReason)}>
             {REASONS.map((r) => (
               <option key={r.value} value={r.value}>
                 {r.label}
               </option>
             ))}
           </Select>
-        </label>
+        </Field>
       </div>
       {reason === 'OTHER' && (
-        <Input size="sm" aria-label="What happened" placeholder="What happened" value={note} onChange={(e) => setNote(e.target.value)} />
+        <Field label="What happened">
+          <Input size="sm" placeholder="A few words" value={note} onChange={(e) => setNote(e.target.value)} />
+        </Field>
       )}
-      <Button variant="danger-soft" size="sm" block disabled={!ok} pending={w.pending} pendingLabel="Saving…" onClick={submit}>
+      <Button variant="danger-soft" block disabled={!ok} pending={w.pending} pendingLabel="Saving…" onClick={submit}>
         Write off
       </Button>
       <OutcomeLine outcome={w.outcome} />
@@ -519,28 +530,33 @@ export function TierPicker({ row }: { row: StockRow }) {
     })
   }
   const earned = row.drift.clean_streak >= row.drift.required_streak && row.drift.has_observation
+  const aLocked = row.tier !== 'A' && (row.tier === 'C' || !earned)
+  // Why A is disabled, printed under the control (never only in a tooltip).
+  const lockReason = !aLocked
+    ? null
+    : row.tier === 'C'
+      ? 'A is locked: a checklist item has no counts. Move it to B and count it first.'
+      : `A is earned: ${row.drift.clean_streak} of ${row.drift.required_streak} counts in a row under 10% so far.`
   return (
     <section aria-labelledby="st-tier" className="flex flex-col gap-2">
-      <h3 id="st-tier" className={SIDE_HEAD}>
+      <h2 id="st-tier" className={SIDE_HEAD}>
         Tier
-      </h3>
-      <div role="group" aria-labelledby="st-tier" className="inline-flex h-10 w-full items-center gap-0.5 rounded-button bg-wash p-[3px]">
+      </h2>
+      <div
+        role="group"
+        aria-labelledby="st-tier"
+        aria-describedby="st-tier-note"
+        className="inline-flex h-10 w-full items-center gap-0.5 rounded-button bg-wash p-[3px]"
+      >
         {(['A', 'B', 'C'] as const).map((t) => {
           const on = row.tier === t
-          const locked = t === 'A' && !on && (row.tier === 'C' || !earned)
+          const locked = t === 'A' && aLocked
           return (
             <button
               key={t}
               type="button"
               aria-pressed={on}
               disabled={w.pending || locked}
-              title={
-                locked
-                  ? row.tier === 'C'
-                    ? 'A checklist item has no counts: move it to B and count it first.'
-                    : `Not earned yet: ${row.drift.clean_streak} of ${row.drift.required_streak} counts in a row under 10%.`
-                  : undefined
-              }
               onClick={() => move(t)}
               className={cx(
                 'h-[34px] flex-1 rounded-[calc(var(--radius-button)-3px)] text-base transition-[background-color] disabled:cursor-not-allowed',
@@ -552,11 +568,8 @@ export function TierPicker({ row }: { row: StockRow }) {
           )
         })}
       </div>
-      <p className="text-sm text-ink-2">
-        {row.tier}: {TIER_NOTE[row.tier]}.
-        {row.tier === 'B' &&
-          !earned &&
-          ` A is earned: ${row.drift.clean_streak} of ${row.drift.required_streak} counts in a row under 10%.`}
+      <p id="st-tier-note" className="text-sm text-ink-2">
+        {row.tier}: {TIER_NOTE[row.tier]}.{lockReason && ` ${lockReason}`}
       </p>
       <OutcomeLine outcome={w.outcome} />
     </section>
@@ -635,12 +648,11 @@ export function KeepsForm({ row }: { row: StockRow }) {
 
   return (
     <section aria-labelledby="st-keeps" className="flex flex-col gap-2">
-      <h3 id="st-keeps" className={SIDE_HEAD}>
+      <h2 id="st-keeps" className={SIDE_HEAD}>
         How long it keeps
-      </h3>
+      </h2>
       <div className="grid grid-cols-2 gap-2">
-        <label className={FIELD_LABEL}>
-          Unopened (days)
+        <Field label="Unopened (days)" error={shelfEdited && !daysOk ? 'Whole days, 1 or more.' : undefined}>
           <Input
             size="sm"
             numeric
@@ -650,11 +662,9 @@ export function KeepsForm({ row }: { row: StockRow }) {
             onChange={(e) => setDays(e.target.value)}
             est={est && days === (sl.shelf_life_days?.toString() ?? '')}
             missing={est && sl.is_perishable}
-            className="font-normal"
           />
-        </label>
-        <label className={FIELD_LABEL}>
-          Opened (days)
+        </Field>
+        <Field label="Opened (days)" error={shelfEdited && !openOk ? 'Whole days, 1 or more, or blank.' : undefined}>
           <Input
             size="sm"
             numeric
@@ -663,13 +673,12 @@ export function KeepsForm({ row }: { row: StockRow }) {
             disabled={doesNotExpire}
             onChange={(e) => setOpen(e.target.value)}
             est={est && open !== '' && open === (sl.open_life_days?.toString() ?? '')}
-            className="font-normal"
           />
-        </label>
+        </Field>
       </div>
       <p className="text-sm text-ink-2">{note}</p>
       {shelfEdited && (
-        <div className="flex flex-col gap-2 rounded-card border border-line bg-canvas-2 px-3 py-2.5">
+        <div className="flex flex-col gap-2 border-t border-line pt-3">
           <span className="text-sm text-ink-2">Where does this come from?</span>
           <div className="grid grid-cols-2 gap-2">
             {(
@@ -684,7 +693,7 @@ export function KeepsForm({ row }: { row: StockRow }) {
                 aria-pressed={source === v}
                 onClick={() => setSource(v)}
                 className={cx(
-                  'rounded-button border px-3 py-1.5 text-sm',
+                  'h-10 rounded-button border px-3 text-sm',
                   source === v ? 'border-brand-line bg-brand-wash font-bold text-brand-ink' : 'border-line-strong bg-surface',
                 )}
               >
@@ -694,7 +703,6 @@ export function KeepsForm({ row }: { row: StockRow }) {
           </div>
           <Button
             variant="primary"
-            size="sm"
             block
             disabled={!daysOk || !openOk || source === null}
             pending={shelfW.pending}
@@ -703,14 +711,12 @@ export function KeepsForm({ row }: { row: StockRow }) {
           >
             Save shelf life
           </Button>
-          {(!daysOk || !openOk) && <p className="text-sm text-bad-ink">Whole days, 1 or more.</p>}
         </div>
       )}
       <OutcomeLine outcome={shelfW.outcome} />
 
       {row.tier !== 'C' && row.par && (
-        <label className={cx(FIELD_LABEL, 'mt-2')}>
-          Reorder when down to ({unitWord(row.unit)})
+        <Field label={`Reorder when down to (${unitWord(row.unit)})`} className="mt-2" hint="Saves when you leave the box.">
           <Input
             size="sm"
             numeric
@@ -722,9 +728,8 @@ export function KeepsForm({ row }: { row: StockRow }) {
             onKeyDown={(e) => {
               if (e.key === 'Enter') void saveReorder()
             }}
-            className="font-normal"
           />
-        </label>
+        </Field>
       )}
       <OutcomeLine outcome={parW.outcome} />
     </section>

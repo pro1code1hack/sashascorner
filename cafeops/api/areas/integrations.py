@@ -29,7 +29,7 @@ from cafeops.api.areas.integrations_schemas import (
     RequestedByIn,
     SessionImportIn,
 )
-from cafeops.api.areas.shell_views import parse_before
+from cafeops.api.params import parse_before
 from cafeops.api.runtime import in_session
 from cafeops.api.security import ApiAuth
 

@@ -33,7 +33,9 @@ import ipaddress
 from typing import Annotated
 
 from fastapi import Depends, Header, HTTPException, Request, status
+from sqlalchemy.orm import Session
 
+from cafeops.api.runtime import run_committing
 from cafeops.db.base import session_scope
 from cafeops.db.models import AuthEvent
 from cafeops.services import auth as auth_service
@@ -101,6 +103,10 @@ def _bearer(authorization: str | None) -> str | None:
     return None
 
 
+class _WrongPassword(HTTPException):
+    """The one auth refusal that records something (a LOGIN_FAILED audit row)."""
+
+
 def require_password(
     request: Request,
     x_api_key: Annotated[str | None, Header(alias="X-API-Key")] = None,
@@ -114,7 +120,8 @@ def require_password(
     """
     token = _bearer(authorization)
     ip = client_ip(request)
-    with session_scope() as session:
+
+    def check(session: Session) -> int | None:
         if not auth_service.auth_is_configured(session):
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=_UNSET_MESSAGE
@@ -123,8 +130,7 @@ def require_password(
         if token is not None:
             row = auth_service.resolve_session(session, token)
             if row is not None:
-                request.state.auth_session_id = row.id
-                return
+                return row.id
             if x_api_key is None:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -156,13 +162,15 @@ def require_password(
             auth_service.record_audit(
                 session, AuthEvent.LOGIN_FAILED, via="api_key", client_ip=ip, detail="X-API-Key"
             )
-            session.commit()
-            raise HTTPException(
+            raise _WrongPassword(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="wrong password.",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-        request.state.auth_session_id = None
+        return None
+
+    # A wrong password is committed before it propagates, so its audit row stands.
+    request.state.auth_session_id = run_committing(check, refusals=(_WrongPassword,))
 
 
 #: Attach to a router to protect every route on it.

@@ -301,45 +301,8 @@ export interface ChannelUploadOut {
   notes: string[]
 }
 
-export interface DirectorEntry {
-  id: number
-  date: ISODate
-  type: DirectorType
-  description: string
-  in_pence: Pence
-  out_pence: Pence
-  /** Running "company owes you" after this row; capital injections do not move it. */
-  balance_pence: Pence
-  counts_toward_owed: boolean
-  notes: string | null
-  /** Set: mirrored from an expense, read-only here apart from the note. */
-  expense_id: number | null
-  source: string
-  source_ref: string | null
-}
-
-export interface DirectorResponse {
-  entries: DirectorEntry[]
-  put_in_pence: Pence
-  taken_out_pence: Pence
-  capital_in_pence: Pence
-  loans_in_pence: Pence
-  /** + the company owes you, − you owe the company. Capital excluded. */
-  loan_balance_pence: Pence
-  workbook_balance_pence: Pence
-  mirrored_count: number
-  caveats: string[]
-}
-
-export interface DirectorEntryIn {
-  date?: ISODate
-  type?: DirectorType
-  description?: string
-  in_pence?: Pence
-  out_pence?: Pence
-  notes?: string | null
-  operator?: string | null
-}
+/* The director's-account screen was removed (DECISIONS 9-19); the backend
+   endpoints stay, the client types went with the screen. */
 
 export interface FinanceAlerts {
   cash: null | {

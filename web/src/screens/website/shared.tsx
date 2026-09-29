@@ -15,8 +15,8 @@ export function WebsiteGate({ children }: { children: ReactNode }) {
   if (!LIVE) {
     return (
       <Empty roomy>
-        The website screens read the live site, and this back office is showing recorded fixtures. Run it with
-        VITE_LIVE=1 to manage bookings, messages and photos.
+        <p>This back office is showing recorded data, so the website&rsquo;s bookings, messages and photos are not here.</p>
+        <p className="mt-2 text-sm text-ink-2">Ask whoever set this up to run it against the live site (VITE_LIVE=1).</p>
       </Empty>
     )
   }
@@ -34,9 +34,10 @@ export function WebsiteGate({ children }: { children: ReactNode }) {
       <div className="p-5">
         <WarnBox>
           <div className="font-bold">The website isn&rsquo;t connected to the back office yet.</div>
-          <div className="text-ink-2">
-            Set <code>SITE_SERVICE_KEY</code> in <code>.env</code> to one long random value (both apps read it), then
-            restart the back office and the website.
+          <div>Ask whoever set this up to connect the website. Bookings, messages and photos appear here once it is.</div>
+          <div className="mt-1 text-sm text-ink-2">
+            For them: set <code>SITE_SERVICE_KEY</code> in <code>.env</code> to one long random value (both apps read it),
+            then restart the back office and the website.
           </div>
         </WarnBox>
       </div>

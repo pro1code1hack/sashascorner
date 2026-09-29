@@ -48,7 +48,8 @@ export const route: Signal<Route> = signal<Route>(resolve(location.pathname, loc
 
 // Dev-only: keep `?mock=` alive across in-app navigation so a reload stays in mock mode.
 const KEEP = import.meta.env.DEV ? ['mock'] : [];
-function withKept(path: string): string {
+/** Dev only: carries `?mock=` onto a path so a full page load stays in mock mode. */
+export function withKept(path: string): string {
   if (!KEEP.length) return path;
   const url = new URL(path, location.origin);
   const cur = new URLSearchParams(location.search);
@@ -73,6 +74,12 @@ export function go(path: string, opts: { replace?: boolean } = {}): void {
     return;
   }
   const full = withKept(path);
+  // Outside the shop (the /account island) there is no App to render a route: load it.
+  const here = normalise(location.pathname);
+  if (here !== BASE && !here.startsWith(BASE + '/')) {
+    location.assign(full);
+    return;
+  }
   if (opts.replace) history.replaceState(history.state, '', full);
   else {
     remember();
@@ -112,6 +119,7 @@ export const paths = {
     `${BASE}/p/${encodeURIComponent(slug)}${line === undefined ? '' : `?line=${line}`}`,
   basket: () => `${BASE}/basket`,
   checkout: () => `${BASE}/checkout`,
-  account: () => `${BASE}/account`,
+  // Site-wide since 2026-09-29 (pages/account.astro); /order/account redirects there.
+  account: () => withKept('/account'),
   status: (code: string) => `${BASE}/status/${encodeURIComponent(code)}`,
 };

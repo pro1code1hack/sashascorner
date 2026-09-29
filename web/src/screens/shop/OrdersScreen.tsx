@@ -18,10 +18,11 @@ import {
   PageHeader,
   Pagination,
   SearchInput,
+  StatusLine,
   StatusTag,
   cx,
 } from '../../components/ui'
-import type { ActiveFilterChip, FilterOption } from '../../components/ui'
+import type { ActiveFilterChip, FilterOption, Outcome } from '../../components/ui'
 import { gbp } from '../../lib/format'
 import { href, useLocation } from '../../lib/router'
 import { fetchAllOrders, useShopOrders } from '../../lib/shop-api'
@@ -89,7 +90,7 @@ function OrdersListScreen() {
   const needle = useDebounced(q.trim(), 300)
   const orders = useShopOrders({ status: scope, q: needle || undefined, from: from || undefined, to: to || undefined, page, page_size: pageSize })
   const [exporting, setExporting] = useState(false)
-  const [exportNote, setExportNote] = useState<string | null>(null)
+  const [exportNote, setExportNote] = useState<Outcome | null>(null)
   const exportCsv = async () => {
     setExporting(true)
     setExportNote(null)
@@ -97,9 +98,9 @@ function OrdersListScreen() {
       const all = await fetchAllOrders({ status: scope, q: needle || undefined, from: from || undefined, to: to || undefined })
       const name = `online-orders_${scope}${from ? `_from-${from}` : ''}${to ? `_to-${to}` : ''}_${todayIso()}.csv`
       downloadCsv(name, buildCsv(CSV_HEADER, all.map(csvRow)))
-      setExportNote(`${plural(all.length, 'order')} in the file.`)
+      setExportNote({ kind: 'ok', text: `${plural(all.length, 'order')} in the file.` })
     } catch (e) {
-      setExportNote(e instanceof Error ? `Could not build the file: ${e.message}` : 'Could not build the file.')
+      setExportNote({ kind: 'error', text: e instanceof Error ? `Could not build the file: ${e.message}` : 'Could not build the file.' })
     } finally {
       setExporting(false)
     }
@@ -193,11 +194,7 @@ function OrdersListScreen() {
                 />
               </label>
               <span className="ml-auto flex flex-wrap items-center gap-2">
-                {exportNote && (
-                  <span role="status" className="text-sm text-ink-2">
-                    {exportNote}
-                  </span>
-                )}
+                <StatusLine outcome={exportNote} className="min-h-0" />
                 <Button variant="outline" size="sm" pending={exporting} pendingLabel="Building…" disabled={!data || data.total === 0} onClick={() => void exportCsv()}>
                   Download CSV
                 </Button>
@@ -221,8 +218,9 @@ function OrdersListScreen() {
               <Empty>{chips.length || needle ? 'No orders match these filters.' : 'No online orders yet. They appear here as customers place them.'}</Empty>
             )}
             {data && data.items.length > 0 && (
-              <div className={cx('overflow-hidden rounded-card-lg bg-surface shadow-raised', orders.isFetching && 'opacity-80')}>
-                <div className={cx(LIST_HEAD, COLS)}>
+              <div className="overflow-hidden rounded-card-lg bg-surface shadow-raised" aria-busy={orders.isFetching || undefined}>
+                {/* Visual column heads only; each row's cells carry their own hidden labels. */}
+                <div className={cx(LIST_HEAD, COLS)} aria-hidden="true">
                   <span>Code</span>
                   <span>Order</span>
                   <span>Placed</span>
@@ -260,16 +258,12 @@ function OrdersListScreen() {
 
 function OrderRow({ o }: { o: OrderAdmin }) {
   const st = statusWord(o.status)
-  const done = o.status === 'CANCELLED' || o.status === 'REJECTED'
+  // A cancelled or rejected row keeps full contrast: the status tag says what happened.
   return (
     <li className="border-b border-line-row last:border-b-0">
       <a
         href={href(orderPath(o.id))}
-        className={cx(
-          'grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 px-3.5 py-2.5 text-ink no-underline hover:bg-canvas-2',
-          COLS,
-          done && 'opacity-60',
-        )}
+        className={cx('grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 px-3.5 py-2.5 text-ink no-underline hover:bg-canvas-2', COLS)}
       >
         <span className="fig hidden font-bold compact:block">{o.code_display}</span>
         <span className="min-w-0">
@@ -288,14 +282,28 @@ function OrderRow({ o }: { o: OrderAdmin }) {
             {o.placed_local} · due {o.requested_local} · {st.label} · {paymentWord(o.payment_method, o.payment_status)}
           </span>
         </span>
-        <span className="fig hidden text-base compact:block">{o.placed_local}</span>
-        <span className="fig hidden text-base compact:block">{o.asap ? `ASAP · ${o.requested_local}` : o.requested_local}{o.table ? <span className="block text-sm text-ink-2">Table {o.table}</span> : null}</span>
-        <span className="hidden text-sm text-ink-2 wide:block">{paymentWord(o.payment_method, o.payment_status)}</span>
+        <span className="fig hidden text-base compact:block">
+          <span className="sr-only">Placed </span>
+          {o.placed_local}
+        </span>
+        <span className="fig hidden text-base compact:block">
+          <span className="sr-only">Due </span>
+          {o.asap ? `ASAP · ${o.requested_local}` : o.requested_local}
+          {o.table ? <span className="block text-sm text-ink-2">Table {o.table}</span> : null}
+        </span>
+        <span className="hidden text-sm text-ink-2 wide:block">
+          <span className="sr-only">Payment </span>
+          {paymentWord(o.payment_method, o.payment_status)}
+        </span>
         <span className="hidden compact:block">
+          <span className="sr-only">Status </span>
           <StatusTag tone={st.tone}>{st.label}</StatusTag>
           <span className="mt-0.5 block truncate text-sm text-ink-2 wide:hidden">{paymentWord(o.payment_method, o.payment_status)}</span>
         </span>
-        <span className="fig text-right text-base font-bold">{gbp(o.total_pence)}</span>
+        <span className="fig text-right text-base font-bold">
+          <span className="sr-only">Total </span>
+          {gbp(o.total_pence)}
+        </span>
       </a>
     </li>
   )

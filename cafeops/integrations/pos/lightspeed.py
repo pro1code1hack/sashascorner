@@ -46,6 +46,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from datetime import UTC
+from decimal import Decimal
 from typing import Any
 
 from sqlalchemy import select
@@ -66,7 +67,11 @@ log = logging.getLogger("cafeops.pos.lightspeed")
 
 TOGO_PATH = "/o/op/1/order/toGo"
 PAY_PATH = "/o/op/1/pay"
-READINESS_PATH = "/o/op/1/onlineOrderReadiness"
+
+
+def _pounds(pence: int) -> str:
+    """Money leaves as a decimal string, never a float (CLAUDE.md invariant 11)."""
+    return str(Decimal(pence) / 100)
 
 
 def build_togo_payload(session: Session, order: ShopOrder) -> dict[str, Any]:
@@ -100,7 +105,7 @@ def build_togo_payload(session: Session, order: ShopOrder) -> dict[str, Any]:
             # No K-Series id: send it as a custom line so the docket is still complete.
             entry["sku"] = "ONLINE"
             entry["customItemName"] = (f"{ln.name} {ln.size_label}".strip())[:60]
-            entry["customItemPrice"] = ln.unit_price_pence / 100
+            entry["customItemPrice"] = _pounds(ln.unit_price_pence)
         mods: list[dict[str, str]] = []
         for opt in ln.options:
             if not isinstance(opt, dict):
@@ -145,7 +150,7 @@ def build_togo_payload(session: Session, order: ShopOrder) -> dict[str, Any]:
     if order.payment_status is PaymentStatus.PAID:
         payload["payment"] = {
             "paymentMethod": settings.lightspeed_payment_method_code or "ONLINE",
-            "paymentAmount": order.total_pence / 100,
+            "paymentAmount": _pounds(order.total_pence),
         }
     return payload
 
@@ -177,7 +182,7 @@ class LightspeedSink:
             )
         payload = build_togo_payload(self._session(order), order)
         try:
-            body = asyncio.run(_post(TOGO_PATH, payload))
+            body = _post(TOGO_PATH, payload)
         except LightspeedNotConfiguredError as exc:
             return PosPushResult(False, None, str(exc))
         except LightspeedAPIError as exc:
@@ -206,10 +211,10 @@ class LightspeedSink:
             "endpointId": settings.lightspeed_online_order_endpoint_id,
             "businessLocationId": settings.lightspeed_business_location_id,
             "paymentMethod": settings.lightspeed_payment_method_code or "ONLINE",
-            "paymentAmount": order.total_pence / 100,
+            "paymentAmount": _pounds(order.total_pence),
         }
         try:
-            body = asyncio.run(_post(PAY_PATH, payload))
+            body = _post(PAY_PATH, payload)
         except (LightspeedNotConfiguredError, LightspeedAPIError) as exc:
             return PosPushResult(False, None, str(exc)[:300])
         ok = str(body.get("status", "")).lower() == "ok"
@@ -221,32 +226,20 @@ class LightspeedSink:
         )
 
 
-async def _post(path: str, payload: dict[str, Any]) -> dict[str, Any]:
-    """One authenticated POST through the existing client (rate limit, retries, refresh).
+def _post(path: str, payload: dict[str, Any]) -> dict[str, Any]:
+    """One authenticated POST through `LightspeedClient.post_json`: the client's token
+    refresh, rate limit and write-safe retries, and only its two exceptions
+    (`LightspeedNotConfiguredError`, `LightspeedAPIError` -- transport failures
+    included) ever leave it.
 
-    The client's `_request` takes query params only, so the JSON body goes through its
-    underlying `httpx` client with the token it minted. Same auth, same limiter.
+    `asyncio.run` because the POS adapter is called from sync service code on a worker
+    thread with no event loop (CLAUDE.md 3: async only at the I/O edge). A fresh client
+    per push is deliberate: pushes are a handful a day, and a long-lived `httpx`
+    client bound to a loop that `asyncio.run` then closes would be the bug.
     """
-    async with LightspeedClient() as client:
-        client._require_configured()
-        token = await client._ensure_access_token()
-        await client._rate_limiter.wait()
-        response = await client._http.post(
-            path,
-            json=payload,
-            headers={"Authorization": f"Bearer {token}", "Accept": "application/json"},
-        )
-        if response.status_code == 401:
-            token = await client._ensure_access_token(force=True)
-            response = await client._http.post(
-                path,
-                json=payload,
-                headers={"Authorization": f"Bearer {token}", "Accept": "application/json"},
-            )
-        if response.status_code >= 400:
-            raise LightspeedAPIError(
-                f"POST {path} failed: HTTP {response.status_code} {response.text[:200]}",
-                status_code=response.status_code,
-            )
-        data = response.json()
-        return dict(data) if isinstance(data, dict) else {"status": str(data)}
+
+    async def _go() -> dict[str, Any]:
+        async with LightspeedClient() as client:
+            return await client.post_json(path, payload)
+
+    return asyncio.run(_go())

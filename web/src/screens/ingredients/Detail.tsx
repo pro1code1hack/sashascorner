@@ -11,23 +11,31 @@
  * - "Delete" is Retire, refused with the reason while a live recipe uses it.
  * - Supplier links are shown, not edited here (the Suppliers screen owns them).
  */
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import type { ReactNode } from 'react'
 import {
   Button,
-  Checkbox,
   ConfirmTwiceButton,
   ErrorBox,
   Field,
   Input,
   Loading,
+  Pill,
   Segmented,
   Select,
+  StatusLine,
+  THead,
+  TBody,
+  Table,
+  Td,
   Textarea,
+  Th,
   TierBadge,
   TitleInput,
+  Tr,
   cx,
 } from '../../components/ui'
+import type { Outcome } from '../../components/ui'
 import { parseDec, toFixed, trimQty } from '../../lib/dec'
 import { ingredientApi, useIngredient, useInvalidateMenu } from '../../lib/menu-api'
 import { useOperator } from '../../lib/operator'
@@ -77,7 +85,7 @@ function DetailBody({ d, categories, onRetired }: { d: IngredientDetail; categor
   const [cat, setCat] = useState(row.category ?? '')
   const [note, setNote] = useState(row.note ?? '')
   const [unit, setUnit] = useState<Unit>(row.unit)
-  const [metaMsg, setMetaMsg] = useState<string | null>(null)
+  const [metaMsg, setMetaMsg] = useState<Outcome | null>(null)
   const [saving, setSaving] = useState(false)
   useEffect(() => {
     setName(row.name)
@@ -99,9 +107,9 @@ function DetailBody({ d, categories, onRetired }: { d: IngredientDetail; categor
     const r = await ingredientApi.meta(row.ingredient_id, body)
     setSaving(false)
     if (r.kind === 'ok') {
-      setMetaMsg(null)
+      setMetaMsg({ kind: 'ok', text: 'Saved.' })
       await invalidate()
-    } else setMetaMsg(r.message)
+    } else setMetaMsg({ kind: 'error', text: r.message })
   }
 
   const cats = [...new Set([...categories, row.category ?? ''].filter(Boolean))].sort((a, b) => a.localeCompare(b))
@@ -110,7 +118,9 @@ function DetailBody({ d, categories, onRetired }: { d: IngredientDetail; categor
     .join(', ')
 
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto px-4 py-[18px] sm:px-[22px]">
+    <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
+      {/* The name is an input; the heading outline still needs the entity's name. */}
+      <h2 className="sr-only">{row.name}</h2>
       <div className="flex items-center gap-3">
         <TitleInput aria-label="Ingredient name" value={name} onChange={(e) => setName(e.target.value)} className="flex-1" />
         <ConfirmTwiceButton
@@ -121,7 +131,7 @@ function DetailBody({ d, categories, onRetired }: { d: IngredientDetail; categor
             if (r.kind === 'ok') {
               await invalidate()
               onRetired()
-            } else setMetaMsg(r.message)
+            } else setMetaMsg({ kind: 'error', text: r.message })
           }}
         >
           Retire
@@ -144,9 +154,8 @@ function DetailBody({ d, categories, onRetired }: { d: IngredientDetail; categor
       </div>
 
       <div className="my-4 grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3.5">
-        <label className="flex min-w-0 flex-col gap-1 text-base text-ink-2">
-          Category
-          <Select value={cat} onChange={(e) => setCat(e.target.value)} className="text-md text-ink">
+        <Field label="Category">
+          <Select value={cat} onChange={(e) => setCat(e.target.value)}>
             <option value="">No category</option>
             {cats.map((c) => (
               <option key={c} value={c}>
@@ -154,23 +163,19 @@ function DetailBody({ d, categories, onRetired }: { d: IngredientDetail; categor
               </option>
             ))}
           </Select>
-        </label>
-        <label className="flex min-w-0 flex-col gap-1 text-base text-ink-2">
-          Costed per
-          <Select
-            value={unit}
-            disabled={unitLocked}
-            onChange={(e) => setUnit(e.target.value as Unit)}
-            className="text-md text-ink"
-            title={unitLocked ? `Fixed: ${lockedText} record quantities in ${unitWord(row.unit)}` : undefined}
-          >
+        </Field>
+        <Field
+          label="Costed per"
+          hint={unitLocked ? `Fixed: ${lockedText} record quantities in ${unitWord(row.unit)}.` : undefined}
+        >
+          <Select value={unit} disabled={unitLocked} onChange={(e) => setUnit(e.target.value as Unit)}>
             {UNITS.map((u) => (
               <option key={u} value={u}>
                 {unitWord(u)}
               </option>
             ))}
           </Select>
-        </label>
+        </Field>
       </div>
 
       {metaDirty && (
@@ -192,11 +197,7 @@ function DetailBody({ d, categories, onRetired }: { d: IngredientDetail; categor
           </Button>
         </div>
       )}
-      {metaMsg && (
-        <p role="alert" className="mb-3 text-sm text-bad-ink">
-          {metaMsg}
-        </p>
-      )}
+      <StatusLine outcome={metaMsg} className="mb-3" />
 
       <PriceEditor d={d} />
       <ShelfLife row={row} />
@@ -216,33 +217,42 @@ function DetailBody({ d, categories, onRetired }: { d: IngredientDetail; categor
           {d.offers.length === 0 ? (
             <p className="py-2 text-base text-ink-2">No supplier linked yet. The price above is used as-is.</p>
           ) : (
-            d.offers.map((o) => (
-              <div
-                key={o.supplier_product_id}
-                className="grid grid-cols-[28px_minmax(0,1.4fr)_minmax(0,1.4fr)_minmax(0,110px)_minmax(0,1fr)] items-center gap-2.5 border-b border-line py-2 text-base last:border-b-0"
-              >
-                <span
-                  className={cx('text-lg', o.is_preferred ? 'text-alert' : 'text-ink-3')}
-                  title={o.is_preferred ? 'Preferred supplier' : 'Not preferred'}
-                  aria-label={o.is_preferred ? 'Preferred' : 'Not preferred'}
-                >
-                  {o.is_preferred ? '★' : '☆'}
-                </span>
-                <a href={href('/suppliers', { id: o.supplier_id })} className="truncate underline">
-                  {o.supplier_name}
-                </a>
-                <span className="truncate text-ink-2">
-                  {qtyText(o.pack_size)} {unitWord(o.pack_unit)} for {gbp(o.price_pence)}
-                  {o.sku ? ` · ${o.sku}` : ''}
-                </span>
-                <span className="fig text-right">
-                  {o.unit_cost_pence === null ? '—' : `${unitPrice(o.unit_cost_pence)}/${unitWord(row.unit)}`}
-                </span>
-                <span className={cx('text-sm', o.is_cheapest ? 'text-ink' : 'text-ink-2')}>
-                  {o.vs_cheapest_pct === null ? '' : o.is_cheapest ? 'cheapest' : `+${Math.round(o.vs_cheapest_pct)}% vs cheapest`}
-                </span>
-              </div>
-            ))
+            <Table label="Where to buy" minWidth={520}>
+              <THead>
+                <tr>
+                  <Th width={28}>
+                    <span className="sr-only">Preferred</span>
+                  </Th>
+                  <Th>Supplier</Th>
+                  <Th>Pack</Th>
+                  <Th numeric>Per unit</Th>
+                  <Th>vs cheapest</Th>
+                </tr>
+              </THead>
+              <TBody>
+                {d.offers.map((o) => (
+                  <Tr key={o.supplier_product_id}>
+                    <Td className={cx('text-lg', o.is_preferred ? 'text-brand-ink' : 'text-ink-3')}>
+                      <span aria-hidden="true">{o.is_preferred ? '★' : '☆'}</span>
+                      <span className="sr-only">{o.is_preferred ? 'Preferred' : 'Not preferred'}</span>
+                    </Td>
+                    <Td>
+                      <a href={href(`/suppliers/${o.supplier_id}`)} className="underline">
+                        {o.supplier_name}
+                      </a>
+                    </Td>
+                    <Td className="text-ink-2">
+                      {qtyText(o.pack_size)} {unitWord(o.pack_unit)} for {gbp(o.price_pence)}
+                      {o.sku ? ` · ${o.sku}` : ''}
+                    </Td>
+                    <Td numeric>{o.unit_cost_pence === null ? '—' : `${unitPrice(o.unit_cost_pence)}/${unitWord(row.unit)}`}</Td>
+                    <Td className={cx('text-sm', o.is_cheapest ? 'text-ink' : 'text-ink-2')}>
+                      {o.vs_cheapest_pct === null ? '' : o.is_cheapest ? 'cheapest' : `+${Math.round(o.vs_cheapest_pct)}% vs cheapest`}
+                    </Td>
+                  </Tr>
+                ))}
+              </TBody>
+            </Table>
           )}
           {d.offers.some((o) => o.terms_are_placeholders) && (
             <p className="pt-1.5 text-xs text-ink-2">Some suppliers’ terms are still guesses (see Suppliers).</p>
@@ -265,10 +275,10 @@ function DetailBody({ d, categories, onRetired }: { d: IngredientDetail; categor
             <a
               key={u.menu_item_id}
               href={href('/menu', { item: u.menu_item_id })}
-              title={u.template_name ? `through the ${u.template_name} recipe` : 'one-off recipe'}
               className="rounded-button border border-line-strong px-3.5 py-1.5 text-base no-underline hover:bg-canvas"
             >
               {u.name}
+              <span className="sr-only">{u.template_name ? ` (through the ${u.template_name} recipe)` : ' (one-off recipe)'}</span>
             </a>
           ))}
           {d.used_in.length > 40 && <span className="px-2 py-1.5 text-base text-ink-2">and {d.used_in.length - 40} more</span>}
@@ -309,7 +319,8 @@ function PriceEditor({ d }: { d: IngredientDetail }) {
   const [supplier, setSupplier] = useState<number | null>(pack?.supplier_id ?? preferred?.supplier_id ?? null)
   const [operator] = useOperator()
   const [applying, setApplying] = useState(false)
-  const [done, setDone] = useState<string | null>(null)
+  const [done, setDone] = useState<Outcome | null>(null)
+  const packUnitId = useId()
   const invalidate = useInvalidateMenu()
 
   const sizeOut = qtyOut(size)
@@ -334,12 +345,12 @@ function PriceEditor({ d }: { d: IngredientDetail }) {
   return (
     <>
       <div className="mb-4 grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3.5">
-        <label className="flex min-w-0 flex-col gap-1 text-base text-ink-2">
-          Pack size
+        <Field label="Pack size">
           <span className="flex gap-1.5">
-            <Input numeric value={size} onChange={(e) => QTY_INPUT.test(e.target.value) && setSize(e.target.value)} className="text-ink" />
+            <Input numeric value={size} onChange={(e) => QTY_INPUT.test(e.target.value) && setSize(e.target.value)} />
             <span className="w-[76px] flex-none">
-              <Select aria-label="Pack unit" value={packUnit} onChange={(e) => setPackUnit(e.target.value as Unit)} className="text-ink">
+              {/* Its own id: two controls in one Field would otherwise share the label's id. */}
+              <Select id={packUnitId} aria-label="Pack unit" value={packUnit} onChange={(e) => setPackUnit(e.target.value as Unit)}>
                 {compatibleUnits(row.unit).map((u) => (
                   <option key={u} value={u}>
                     {unitWord(u)}
@@ -348,33 +359,25 @@ function PriceEditor({ d }: { d: IngredientDetail }) {
               </Select>
             </span>
           </span>
-        </label>
-        <label className="flex min-w-0 flex-col gap-1 text-base text-ink-2">
-          Pack cost £
+        </Field>
+        <Field label="Pack cost £">
           <Input
             numeric
-            aria-label="Pack cost in pounds"
             value={cost}
             placeholder="0.00"
             onChange={(e) => MONEY_INPUT.test(e.target.value) && setCost(e.target.value)}
-            className="text-ink"
           />
-        </label>
+        </Field>
       </div>
 
-      <div className="mb-4 flex flex-wrap items-center gap-[18px] rounded-card border border-line px-4 py-3">
+      <div className="mb-4 flex flex-wrap items-center gap-4 rounded-card border border-line px-4 py-3">
         <div>
           <div className="text-base text-ink-2">Cost per unit</div>
           <div className={cx('fig text-2xl', est && 'italic')}>
             {row.unit_cost.pence === null ? 'no price' : `${unitPrice(row.unit_cost.pence)} / ${unitWord(row.unit)}`}
           </div>
         </div>
-        <Checkbox
-          checked={est}
-          disabled
-          onChange={() => undefined}
-          label={<span className="text-md">Price is an estimate</span>}
-        />
+        {row.unit_cost.pence !== null && (est ? <Pill tone="warn">Estimate</Pill> : <Pill tone="neutral">Recorded price</Pill>)}
         <div className="flex-1" />
         <p className="max-w-[320px] text-base text-ink-2">
           {row.used_in_count === 0
@@ -400,12 +403,10 @@ function PriceEditor({ d }: { d: IngredientDetail }) {
             />
           </div>
           {suppliers.length > 0 && (
-            <label className="flex max-w-[320px] flex-col gap-1 text-xs font-bold text-ink-2">
-              Supplier
+            <Field label="Supplier" className="max-w-[320px]">
               <Select
                 value={supplier === null ? '' : String(supplier)}
                 onChange={(e) => setSupplier(e.target.value === '' ? null : Number(e.target.value))}
-                className="font-normal text-ink"
               >
                 <option value="">Not from a linked supplier</option>
                 {suppliers.map(([id, n]) => (
@@ -414,11 +415,11 @@ function PriceEditor({ d }: { d: IngredientDetail }) {
                   </option>
                 ))}
               </Select>
-            </label>
+            </Field>
           )}
           {!valid && <p className="text-sm text-bad-ink">Enter a pack size above 0 and a pack cost in pounds.</p>}
           {valid && source === '' && <p className="text-sm text-ink-2">Say where the price is from to see what it changes.</p>}
-          {done && <p role="status" className="text-sm">{done}</p>}
+          <StatusLine outcome={done} />
           {body && (
             <ImpactPanel
               title="What this price does"
@@ -443,10 +444,10 @@ function PriceEditor({ d }: { d: IngredientDetail }) {
                 const r = await ingredientApi.priceApply(row.ingredient_id, { ...body, actor: operator })
                 setApplying(false)
                 if (r.kind === 'ok') {
-                  setDone(`Recorded. ${r.data.rollup_items_recosted} menu item cost(s) recalculated.`)
+                  setDone({ kind: 'ok', text: `Recorded. ${r.data.rollup_items_recosted} menu item cost(s) recalculated.` })
                   setSource('')
                   await invalidate()
-                } else setDone(r.message)
+                } else setDone({ kind: 'error', text: r.message })
               }}
             />
           )}
@@ -627,6 +628,7 @@ export function CreateIngredient({
   const [operator] = useOperator()
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
+  const packUnitId = useId()
   const invalidate = useInvalidateMenu()
 
   const setUnit = (u: Unit) => {
@@ -688,7 +690,7 @@ export function CreateIngredient({
 
   return (
     <form
-      className="min-h-0 flex-1 overflow-y-auto px-4 py-[18px] sm:px-[22px]"
+      className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5"
       onSubmit={(e) => {
         e.preventDefault()
         void submit()
@@ -745,7 +747,7 @@ export function CreateIngredient({
               <span className="flex gap-1.5">
                 <Input numeric value={size} onChange={(e) => QTY_INPUT.test(e.target.value) && setSize(e.target.value)} />
                 <span className="w-[84px] flex-none">
-                  <Select aria-label="Pack unit" value={packUnit} onChange={(e) => setPackUnit(e.target.value as Unit)}>
+                  <Select id={packUnitId} aria-label="Pack unit" value={packUnit} onChange={(e) => setPackUnit(e.target.value as Unit)}>
                     {compatibleUnits(unit).map((u) => (
                       <option key={u} value={u}>
                         {unitWord(u)}
@@ -834,16 +836,16 @@ export function CreateIngredient({
           </section>
         </div>
 
-        {msg && (
-          <p role="alert" className="mt-4 text-sm text-bad-ink">
-            {msg}
-          </p>
-        )}
-        {tried && blocking && (
-          <p role="alert" className="mt-4 text-sm text-bad-ink">
-            Fix the highlighted fields to add it.
-          </p>
-        )}
+        <StatusLine
+          className="mt-4"
+          outcome={
+            msg !== null
+              ? { kind: 'error', text: msg }
+              : tried && blocking
+                ? { kind: 'error', text: 'Fix the highlighted fields to add it.' }
+                : null
+          }
+        />
         <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-line pt-4">
           <Button type="submit" variant="primary" pending={busy} pendingLabel="Adding…">
             Add ingredient

@@ -20,15 +20,15 @@ from datetime import date
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from cafeops.db.models.enums import DirectorEntryType, FinanceSource
+from cafeops.clock import utcnow
 from cafeops.db.models.finance import DirectorEntry
+from cafeops.domain.enums import DirectorEntryType, FinanceSource
 from cafeops.services.finance.common import (
     UNSET,
     FinanceConflict,
     FinanceRefused,
     clean_text,
     editor,
-    now_utc,
     require_pence,
 )
 from cafeops.services.finance.common import Unset as _Unset
@@ -237,7 +237,7 @@ def update_entry(
     if not isinstance(notes, _Unset):
         e.notes = clean_text(notes)
     e.updated_by = editor(operator)
-    e.updated_at = now_utc()
+    e.updated_at = utcnow()
     session.flush()
     return e
 
@@ -248,7 +248,7 @@ def delete_entry(session: Session, entry_id: int, *, operator: str | None = None
         raise FinanceConflict(
             f"This drawing {_MIRRORED.replace('change it', 'delete it or change its type')}."
         )
-    e.deleted_at = now_utc()
+    e.deleted_at = utcnow()
     e.updated_by = editor(operator)
     session.flush()
     return e.id

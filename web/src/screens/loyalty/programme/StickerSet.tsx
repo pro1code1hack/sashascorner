@@ -7,7 +7,7 @@
  */
 import { useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent, PointerEvent } from 'react'
-import { cx } from '../../../components/ui'
+import { StatusLine, cx } from '../../../components/ui'
 import type { Sticker, StickerKey } from '../../../lib/types/loyalty'
 import { StickerImg } from '../stickers'
 
@@ -147,9 +147,11 @@ export function StickerSet({
                 className={cx(
                   'flex w-full flex-col items-center gap-1 rounded-card border-[1.5px] px-1.5 pb-2 pt-2.5 transition-colors motion-reduce:transition-none',
                   isOn
-                    ? 'border-brand bg-brand-wash hover:bg-[#e3e9fb]'
+                    ? 'border-brand bg-brand-wash hover:bg-seq-1'
                     : 'border-dashed border-line-strong bg-surface hover:bg-canvas',
-                  isOn && 'cursor-grab touch-none active:cursor-grabbing',
+                  // pan-y, not none: a finger can still scroll the page over the tiles; a
+                  // sideways drag reorders, and ← → does it from the keyboard.
+                  isOn && 'cursor-grab touch-pan-y active:cursor-grabbing',
                   dragging === k && 'opacity-50',
                   over === k && dragging !== k && 'shadow-selected',
                 )}
@@ -158,20 +160,16 @@ export function StickerSet({
                   <StickerImg sticker={k} size={32} />
                 </span>
                 <span className={cx('text-base font-bold', !isOn && 'text-ink-2')}>{s.name}</span>
-                <span className="fig text-xs text-ink-3">{isOn ? `in the set · ${idx + 1}` : 'off'}</span>
+                <span className="fig text-xs text-ink-2">{isOn ? `in the set · ${idx + 1}` : 'off'}</span>
               </button>
             </li>
           )
         })}
       </ul>
-      <p className="mt-2.5 text-xs text-ink-3">
+      <p className="mt-2.5 text-xs text-ink-2">
         Keyboard: focus a sticker in the set and press ← or → to move it; Enter switches it on or off.
       </p>
-      {note && (
-        <p role="status" className="mt-1.5 text-sm text-bad-ink">
-          {note}
-        </p>
-      )}
+      <StatusLine className="mt-1.5" outcome={note ? { kind: 'error', text: note } : null} />
     </div>
   )
 }

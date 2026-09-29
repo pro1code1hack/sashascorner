@@ -61,9 +61,7 @@ __all__ = [
     "groups_for_product",
     "load_settings",
     "option_groups_by_id",
-    "photo_url_for",
     "product_slug",
-    "sync_all",
     "sync_categories",
     "sync_products",
 ]
@@ -172,13 +170,15 @@ def sync_products(session: Session) -> int:
     return made
 
 
-def sync_all(session: Session) -> tuple[int, int]:
-    return sync_categories(session), sync_products(session)
-
-
 # --------------------------------------------------------------------------
 # the customer's catalogue
 # --------------------------------------------------------------------------
+
+
+#: Products whose ops menu item has no category are served under this catch-all
+#: category (it sorts last; the admin's Menu items list shows "no category").
+MORE_SLUG = "more"
+MORE_NAME = "More from the menu"
 
 
 @dataclass(frozen=True, slots=True)
@@ -280,13 +280,6 @@ class Catalogue:
     basket_upsells: tuple[UpsellView, ...]
     #: Every other product's id by slug, for the client's routing.
     slugs: dict[str, int] = field(default_factory=dict)
-
-
-def photo_url_for(session: Session, asset_id: int | None) -> str | None:
-    if asset_id is None:
-        return None
-    asset = session.get(MediaAsset, asset_id)
-    return media_url(asset.filename) if asset is not None else None
 
 
 def product_slug(product: ShopProduct) -> str:
@@ -444,6 +437,11 @@ def catalogue(session: Session, *, now: datetime | None = None) -> Catalogue:
             continue
         if category_slug is not None and category_slug not in visible_slugs:
             continue
+        if category_slug is None:
+            # An ops menu item with no category (58 of them at the time of writing,
+            # Pumpkin Spice Latte included). Hiding them would be a silent loss; they
+            # go in one catch-all tile until somebody assigns a category in Menu items.
+            category_slug = MORE_SLUG
         sizes = sorted(
             (
                 SizeView(
@@ -513,6 +511,18 @@ def catalogue(session: Session, *, now: datetime | None = None) -> Catalogue:
         )
 
     category_views: list[CategoryView] = []
+    if count_by_slug.get(MORE_SLUG):
+        category_views.append(
+            CategoryView(
+                id=0,
+                slug=MORE_SLUG,
+                name=MORE_NAME,
+                blurb=None,
+                photo_url=first_photo_by_slug.get(MORE_SLUG),
+                photo_is_fallback=MORE_SLUG in first_photo_by_slug,
+                product_count=count_by_slug[MORE_SLUG],
+            )
+        )
     for c in categories:
         if not c.visible:
             continue

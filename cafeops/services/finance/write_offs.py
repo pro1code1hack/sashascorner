@@ -9,17 +9,18 @@ cost, which is an estimate. A movement with no cost at all makes the total unkno
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, datetime, time, timedelta
+from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from cafeops.clock import local_day_bounds
 from cafeops.config import settings
 from cafeops.db.models.batch import StockBatch
-from cafeops.db.models.enums import MovementType, PriceSource
 from cafeops.db.models.ingredient import Ingredient
 from cafeops.db.models.stock import StockMovement
+from cafeops.domain.enums import MovementType, PriceSource
 
 __all__ = ["WriteOffs", "valued_write_offs"]
 
@@ -34,8 +35,7 @@ class WriteOffs:
 
 def valued_write_offs(session: Session, since: date, until: date) -> WriteOffs:
     tz = settings.tz
-    start = datetime.combine(since, time.min, tzinfo=tz)
-    end = datetime.combine(until + timedelta(days=1), time.min, tzinfo=tz)
+    start, end = local_day_bounds(since, until, tz=tz)
     rows = session.execute(
         select(StockMovement, StockBatch, Ingredient)
         .join(Ingredient, Ingredient.id == StockMovement.ingredient_id)

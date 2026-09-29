@@ -10,7 +10,7 @@ from sqlalchemy.types import JSON
 
 from cafeops.db.base import Base
 from cafeops.db.models._common import Qty, UTCDateTime, enum_col
-from cafeops.db.models.enums import SaleChannel, SaleSource
+from cafeops.domain.enums import SaleChannel, SaleSource
 
 if TYPE_CHECKING:
     from cafeops.db.models.menu import MenuItem

@@ -1,8 +1,8 @@
 /**
  * Agents (shell-agents.md §6, DECISIONS §1 and §7, CLAUDE.md §9 / invariant 10).
  *
- * Left: what is waiting for a person (agent proposals, plus orders waiting in
- * Telegram, read-only), what was decided recently, and what agents may do.
+ * Left: what is waiting for a person (agent proposals, plus draft orders waiting
+ * to be confirmed on their order page, read-only), what was decided recently, and what agents may do.
  * Right: the run log, from `agent_action_log`, with human decisions interleaved.
  *
  * Accept is a real write through the kind's own service, so nothing here is
@@ -13,7 +13,6 @@
 import { useEffect, useState } from 'react'
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 import { Button, Card, ErrorBox, FilterChip, FilterChipRow, Loading, PageHeader, cx } from '../../components/ui'
-import { OperatorNeeded } from '../../components/shell/Operator'
 import { ago, gbp } from '../../lib/format'
 import { useOperator } from '../../lib/operator'
 import { href } from '../../lib/router'
@@ -45,13 +44,11 @@ function useInvalidateAfterDecision() {
 
 function ProposalCard({
   p,
-  operator,
   pending,
   error,
   onDecide,
 }: {
   p: AgentProposal
-  operator: string | null
   pending: Pending
   error: string | null
   onDecide: (p: AgentProposal, which: 'accept' | 'decline') => void
@@ -60,7 +57,6 @@ function ProposalCard({
   const mine = pending?.id === p.id
   const failed = p.status === 'APPLY_FAILED'
   const lastError = failed && p.applied_result ? String(p.applied_result.error ?? '') : ''
-  const noName = operator === null
 
   return (
     <Card className="mb-2.5">
@@ -88,7 +84,7 @@ function ProposalCard({
           <Button
             variant="primary"
             size="sm"
-            disabled={busy || noName}
+            disabled={busy}
             pending={mine && pending?.which === 'accept'}
             pendingLabel="Applying…"
             onClick={() => onDecide(p, 'accept')}
@@ -109,7 +105,7 @@ function ProposalCard({
         <Button
           variant="outline"
           size="sm"
-          disabled={busy || noName}
+          disabled={busy}
           pending={mine && pending?.which === 'decline'}
           pendingLabel="Declining…"
           onClick={() => onDecide(p, 'decline')}
@@ -120,7 +116,7 @@ function ProposalCard({
           <Button
             variant="ghost"
             size="sm"
-            disabled={busy || noName}
+            disabled={busy}
             pending={mine && pending?.which === 'accept'}
             pendingLabel="Saving…"
             onClick={() => onDecide(p, 'accept')}
@@ -129,11 +125,10 @@ function ProposalCard({
           </Button>
         )}
       </div>
-      {mine || error === null ? null : (
-        <p className="mt-2 text-sm text-bad-ink" role="alert">
-          {error}
-        </p>
-      )}
+      {/* Always mounted, so a refusal is announced when it arrives. */}
+      <p className={cx('text-sm text-bad-ink', !mine && error !== null && 'mt-2')} role="alert">
+        {mine || error === null ? '' : error}
+      </p>
     </Card>
   )
 }
@@ -164,7 +159,7 @@ function OrderCard({ o }: { o: WaitingOrder }) {
         <span>{ago(o.created_at)}</span>
       </div>
       <h3 className="mb-1 mt-0.5 text-lg font-normal">
-        {o.supplier} order, <span className="fig">{gbp(o.total_pence)}</span>: waiting in Telegram
+        {o.supplier} order, <span className="fig">{gbp(o.total_pence)}</span>: waiting to be confirmed
       </h3>
       <p className="text-base text-ink-2">{o.note}</p>
       <a href={href(`/orders/${o.po_id}`)} className="mt-1 inline-block text-base font-bold text-brand-ink">
@@ -184,6 +179,7 @@ const STATUS_WORD: Record<AgentProposal['status'], { word: string; cls: string }
 
 function LeftColumn() {
   const q = useProposals()
+  // Never null (owner, 2026-09-26: never ask "who are you"; the default is "Back office").
   const [operator] = useOperator()
   const invalidate = useInvalidateAfterDecision()
   const [pending, setPending] = useState<Pending>(null)
@@ -198,7 +194,6 @@ function LeftColumn() {
   }, [flash])
 
   const decide = async (p: AgentProposal, which: 'accept' | 'decline') => {
-    if (operator === null) return
     setPending({ id: p.id, which })
     setErrors((e) => {
       const n = { ...e }
@@ -235,11 +230,6 @@ function LeftColumn() {
       <h2 className="mb-2 text-xl font-extrabold tracking-[-.01em]">
         Waiting for you · <span className="fig">{count}</span>
       </h2>
-      {operator === null && (waiting.length > 0 || stale.length > 0) && (
-        <div className="mb-2.5">
-          <OperatorNeeded what="accept or decline a proposal" />
-        </div>
-      )}
       <div aria-live="polite">
         {flash.map((f) => (
           <p key={`${f.id}-${f.text}`} className="mb-2.5 rounded-button bg-canvas px-3 py-2 text-sm text-ink-2">
@@ -258,7 +248,6 @@ function LeftColumn() {
         <ProposalCard
           key={p.id}
           p={p}
-          operator={operator}
           pending={pending}
           error={errors[p.id] ?? null}
           onDecide={(pp, which) => void decide(pp, which)}
@@ -268,7 +257,7 @@ function LeftColumn() {
         <OrderCard key={`po-${o.po_id}`} o={o} />
       ))}
       {waiting.length === 0 && data.orders_waiting.length === 0 && stale.length === 0 && (
-        <Card className="text-base text-ink-2">Nothing waiting. Order confirmations happen in Telegram.</Card>
+        <Card className="text-base text-ink-2">Nothing waiting. Draft orders are confirmed on their own page in Orders.</Card>
       )}
 
       <h2 className="mb-1.5 mt-4.5 text-lg font-extrabold tracking-[-.01em]">Decided recently</h2>
@@ -317,17 +306,34 @@ function RunRowView({ r, open, onToggle }: { r: AgentRunRow; open: boolean; onTo
   const body = (
     <>
       {/* Phone: When · Result on line 1, Agent · tool, then Produced. */}
-      <div className="flex justify-between gap-2 compact:contents">
-        <span className="text-ink-2">{ago(r.finished_at)}</span>
-        <span className={cx('text-right compact:hidden', resultCls)}>{r.result}</span>
-      </div>
-      <span className="block min-w-0">
-        {r.agent_label}
-        <br />
-        <span className="text-xs text-ink-3">{r.tool_label}</span>
+      {/* Spans only (this sits inside a button). The column heads are visual, so each
+          cell carries its own hidden label. */}
+      <span className="flex justify-between gap-2 compact:contents">
+        <span className="text-ink-2">
+          <span className="sr-only">When: </span>
+          {ago(r.finished_at)}
+        </span>
+        <span className={cx('text-right compact:hidden', resultCls)}>
+          <span className="sr-only">Result: </span>
+          {r.result}
+        </span>
       </span>
-      <span className="block min-w-0 break-words">{r.produced}</span>
-      <span className={cx('hidden compact:block', resultCls)}>{r.result}</span>
+      <span className="block min-w-0">
+        <span className="sr-only">Agent: </span>
+        {r.agent_label}
+        <span className="block text-xs text-ink-3">
+          <span className="sr-only">Tool: </span>
+          {r.tool_label}
+        </span>
+      </span>
+      <span className="block min-w-0 break-words">
+        <span className="sr-only">Produced: </span>
+        {r.produced}
+      </span>
+      <span className={cx('hidden compact:block', resultCls)}>
+        <span className="sr-only">Result: </span>
+        {r.result}
+      </span>
     </>
   )
   if (r.is_decision) {

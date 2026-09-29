@@ -102,17 +102,28 @@ CMD ["cafeops", "serve", "--host", "0.0.0.0", "--port", "8000"]
 # install runs as root (`--with-deps` needs apt) but the worker runs as `cafeops`,
 # and Playwright's default location is per-user, so without this ENV the non-root
 # worker would report "Executable doesn't exist" for a browser that IS installed.
+#
+# `xvfb` (and `xauth`, which xvfb-run needs) go in the same apt layer: sites that
+# refuse headless browsers (Tesco/Akamai; the adapter sets `prefers_headed`) get a
+# visible window on a virtual display when the entrypoint sees
+# CAFEOPS_BROWSER_HEADLESS=false (docs/agents/BROWSER-ORDERING.md 10, tier 2).
 FROM runtime AS browser
 USER root
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 RUN playwright install --with-deps chromium \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends xvfb xauth \
     && rm -rf /var/lib/apt/lists/* \
     && chown -R cafeops:cafeops /ms-playwright
 # Where the persistent per-supplier Chromium profiles live (CAFEOPS_BROWSER_DATA_DIR,
 # on the data volume). Seeded with the right ownership like /data above.
 RUN mkdir -p /data/browser && chown -R cafeops:cafeops /data/browser
+COPY --chmod=0755 deploy/browser-worker-entrypoint.sh /usr/local/bin/browser-worker-entrypoint
 USER cafeops
-CMD ["cafeops", "browser-worker"]
+# The entrypoint decides headless vs. xvfb-run from CAFEOPS_BROWSER_HEADLESS and
+# execs `cafeops browser-worker` with any CMD arguments appended (e.g. --once).
+ENTRYPOINT ["browser-worker-entrypoint"]
+CMD []
 
 
 # --------------------------------------------------------------------------

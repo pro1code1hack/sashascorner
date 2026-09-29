@@ -13,6 +13,10 @@
 //   signedin   X-Card-Token is treated as a valid member (Sasha, 5/8 stamps, a reward)
 //   reorder    (with signedin) a past order whose lines include one gone and one sold out
 //   empty      no banners, no upsells
+//   cfg422     GET /config answers 422 (seen mid-deploy): the shop must read as unreachable
+//   wall       config.require_account: a card is needed to place an order (Agent K/J).
+//              Without `signedin`, a stored token is still refused (401), so the wall
+//              shows; sign in with code 123456 (the rewards mock) and add `signedin`.
 //
 // The catalogue is built from the site's real menu (src/data/menu.json), so category
 // names, items and prices are the café's own. Photos, kcal, descriptions and option
@@ -21,7 +25,11 @@ import menu from '../../data/menu.json';
 import type {
   Catalogue,
   Category,
-  Me,
+  MeK,
+  MeMember,
+  MePatch,
+  MyOrder,
+  MyOrdersPage,
   OptionGroup,
   OrderView,
   PlacedOrder,
@@ -245,8 +253,20 @@ function configFor(flags: Set<string>): ShopConfig {
     next_open_local: flags.has('shut') ? 'Tomorrow 09:00' : null,
     cafe: { name: "Sasha's Corner", address_line: '23 Commercial Street', postcode: 'DD1 3DD', phone: '07398 433317' },
     loyalty: { program_name: "Sasha's Corner Rewards", stamps_required: 8, reward_text: 'Any drink, on us' },
+    require_account: flags.has('wall'),
   };
 }
+
+// The member's own details (PATCH /api/shop/me edits them for the rest of the visit).
+const memberDetails: MeMember = {
+  first_name: 'Sasha',
+  email: 'sasha@example.com',
+  phone: '+447700900123',
+  birthday_day: 14,
+  birthday_month: 3,
+  marketing_opt_in: true,
+  member_since: '2026-09-01',
+};
 
 let cat: Catalogue | null = null;
 const orders = new Map<string, { view: OrderView; token: string; placedAt: number; lines: QuoteBody['lines'] }>();
@@ -299,6 +319,75 @@ const STATUS_LABEL: Record<string, string> = {
 };
 const STEP: Record<string, number> = { PENDING_PAYMENT: 0, NEW: 0, ACCEPTED: 1, PREPARING: 2, READY: 3, COLLECTED: 4, CANCELLED: 0, REJECTED: 0 };
 
+/** The member's orders, newest first: those placed this visit plus a few from before. */
+function myOrders(f: Set<string>): MyOrder[] {
+  const c = cat!;
+  const fromLive: MyOrder[] = [...orders.values()]
+    .sort((a, b) => b.placedAt - a.placedAt)
+    .map((o) => ({
+      code: o.view.code,
+      status: o.view.status,
+      status_label: o.view.status_label,
+      placed_local: new Date(o.placedAt).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }),
+      requested_local: o.view.requested_local,
+      dining: o.view.dining,
+      table: o.view.table ?? null,
+      total_pence: o.view.total_pence,
+      lines: o.view.lines.map((l) => ({ name: l.name, size_label: l.size_label, qty: l.qty, options: l.options.map((x) => ({ group: x.group, name: x.name })) })),
+      reorder: { lines: o.lines, complete: true },
+    }));
+  const first = c.products[0];
+  const soldOut = c.products.find((x) => !x.available);
+  const past = (i: number, lines: MyOrder['lines'], reorder: MyOrder['reorder'], total: number, status: MyOrder['status'] = 'COLLECTED', code = `PAST${String(i + 1).padStart(2, '0')}`): MyOrder => {
+    const at = new Date(Date.now() - (i + 1) * 3 * 86_400_000);
+    return {
+      code,
+      status,
+      status_label: STATUS_LABEL[status],
+      placed_local: at.toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }),
+      requested_local: at.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+      dining: i % 2 ? 'eat_in' : 'takeaway',
+      table: i % 2 ? '4' : null,
+      total_pence: total,
+      lines,
+      reorder,
+    };
+  };
+  const ok: MyOrder[] = Array.from({ length: 12 }, (_, i) =>
+    past(
+      i,
+      [{ name: first.name, size_label: first.sizes[0].label, qty: 1 + (i % 2), options: [{ group: 'Milk', name: 'Oat milk' }] }],
+      { lines: [{ product_id: first.id, menu_item_id: first.sizes[0].menu_item_id, qty: 1 + (i % 2), option_ids: [13] }], complete: true },
+      first.sizes[0].price_pence * (1 + (i % 2)) + 50,
+      i === 5 ? 'CANCELLED' : 'COLLECTED',
+    ),
+  );
+  const gone: MyOrder[] = f.has('reorder')
+    ? [
+        past(
+          0,
+          [
+            { name: first.name, size_label: first.sizes[0].label, qty: 2, options: [{ group: 'Milk', name: 'Oat milk' }] },
+            { name: 'Pistachio croissant', size_label: '', qty: 1, options: [] },
+            ...(soldOut ? [{ name: soldOut.name, size_label: '', qty: 1, options: [] }] : []),
+          ],
+          {
+            lines: [
+              { product_id: first.id, menu_item_id: first.sizes[0].menu_item_id, qty: 2, option_ids: [13] },
+              { product_id: 999_999, menu_item_id: 999_999, qty: 1, option_ids: [] },
+              ...(soldOut ? [{ product_id: soldOut.id, menu_item_id: soldOut.sizes[0].menu_item_id, qty: 1, option_ids: [] }] : []),
+            ],
+            complete: false,
+          },
+          1210,
+          'COLLECTED',
+          'GONE01',
+        ),
+      ]
+    : [];
+  return [...fromLive, ...gone, ...ok];
+}
+
 export async function mockApi(
   method: string,
   path: string,
@@ -315,7 +404,7 @@ export async function mockApi(
   const url = new URL(path, location.origin);
   const p = url.pathname;
 
-  if (p === '/api/shop/config') return { status: 200, body: cfg };
+  if (p === '/api/shop/config') return f.has('cfg422') ? { status: 422, body: { detail: [{ msg: 'Field required', loc: ['query', 'x'] }] } } : { status: 200, body: cfg };
   if (p === '/api/shop/catalogue') return { status: 200, body: cat };
   if (p === '/api/shop/slots') {
     const now = new Date();
@@ -336,6 +425,7 @@ export async function mockApi(
   }
   if (p === '/api/shop/orders' && method === 'POST') {
     if (!cfg.enabled) return { status: 403, body: { error: 'shop_closed', detail: cfg.closed_message } };
+    if (cfg.require_account && !member) return { status: 401, body: { error: 'sign_in_required', detail: 'Sign in to your Rewards card to place an order.' } };
     const b = body as PlaceOrderBody;
     const q = price(cat, b, member && b.reward);
     if (q.problems.length) return { status: 422, body: { error: 'invalid_request', detail: q.problems[0] } };
@@ -402,12 +492,38 @@ export async function mockApi(
     }
     return { status: 200, body: o.view };
   }
+  if (p === '/api/shop/me/orders') {
+    if (!member) return { status: 401, body: { error: 'bad_token', detail: 'Sign in again.' } };
+    const page = Math.max(1, Number(url.searchParams.get('page') ?? 1));
+    const size = Math.min(50, Math.max(1, Number(url.searchParams.get('page_size') ?? 10)));
+    const all = myOrders(f);
+    const items = all.slice((page - 1) * size, page * size);
+    return { status: 200, body: { items, total: all.length, page, page_size: size } satisfies MyOrdersPage };
+  }
+  if (p === '/api/shop/me' && method === 'PATCH') {
+    if (!member) return { status: 401, body: { error: 'bad_token', detail: 'Sign in again.' } };
+    const b = (body ?? {}) as MePatch;
+    if (b.first_name !== undefined && !b.first_name.trim()) return { status: 422, body: { error: 'first_name_required', detail: 'Please add your first name.' } };
+    if (b.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(b.email)) return { status: 422, body: { error: 'bad_email', detail: "That email address doesn't look right." } };
+    if (b.phone && b.phone.replace(/\D/g, '').length < 10) return { status: 422, body: { error: 'bad_phone', detail: "That number doesn't look right. A UK mobile starts 07." } };
+    if (b.email === 'taken@example.com') return { status: 422, body: { error: 'email_taken', detail: 'That email address is already on another account. Sign in with it instead, or use a different one.' } };
+    if (b.email === null && b.phone === null) return { status: 422, body: { error: 'contact_required', detail: 'Keep an email address or a mobile number: it is how we send you a code to sign in.' } };
+    if ((b.birthday_day ?? null) !== null && (b.birthday_month ?? null) !== null && b.birthday_day! > new Date(Date.UTC(2024, b.birthday_month!, 0)).getUTCDate())
+      return { status: 422, body: { error: 'bad_birthday', detail: "That month doesn't have that many days." } };
+    if (b.first_name !== undefined) memberDetails.first_name = b.first_name.trim();
+    if (b.email !== undefined) memberDetails.email = b.email;
+    if (b.phone !== undefined) memberDetails.phone = b.phone;
+    if (b.birthday_day !== undefined) memberDetails.birthday_day = b.birthday_day;
+    if (b.birthday_month !== undefined) memberDetails.birthday_month = b.birthday_month;
+    if (b.marketing_opt_in !== undefined) memberDetails.marketing_opt_in = b.marketing_opt_in;
+  }
   if (p === '/api/shop/me') {
     if (!member) return { status: 401, body: { error: 'bad_token', detail: 'Sign in again.' } };
-    const me: Me = {
-      first_name: 'Sasha',
-      email: 'sasha@example.com',
-      phone: '+447700900123',
+    const me: MeK = {
+      first_name: memberDetails.first_name,
+      email: memberDetails.email,
+      phone: memberDetails.phone,
+      member: { ...memberDetails },
       card_id: '3f2b8c1e-9a4d-4e7b-8c21-5d6f7a8b9c0d',
       stamps_current: 5,
       stamps_required: 8,

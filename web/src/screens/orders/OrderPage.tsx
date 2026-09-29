@@ -15,7 +15,7 @@
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Button, ErrorBox, Loading, StatusTag, Stepper, cx } from '../../components/ui'
+import { Button, ConfirmTwiceButton, ErrorBox, Loading, StatusTag, Stepper, cx } from '../../components/ui'
 import { gbp, stamp } from '../../lib/format'
 import { useOperator } from '../../lib/operator'
 import { href } from '../../lib/router'
@@ -23,7 +23,7 @@ import { KEYS, orderWrites, stockApi } from '../../lib/stock-api'
 import type { PurchaseOrder } from '../../lib/types/stock'
 import { dayMonth, fmtD, fmtQ } from '../stock/fmt'
 import { OutcomeLine, useWrite } from '../stock/writes'
-import { AFTER_ORDER_WRITE, ArmChip, ReceiptSlot, ReceiveSheet } from './OrderBits'
+import { AFTER_ORDER_WRITE, ReceiptSlot, ReceiveSheet } from './OrderBits'
 import { statusWord } from './status'
 
 const ROW = 'grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 compact:grid-cols-[minmax(0,1fr)_130px_90px_100px_150px]'
@@ -55,7 +55,7 @@ export function OrderPage({ poId }: { poId: number }) {
               <Statement key={`${o.po_id}-${o.status}`} o={o} />
               <aside className="flex min-w-0 flex-col gap-6">
                 <section>
-                  <h3 className="mb-2 text-lg font-bold">Receipt</h3>
+                  <h2 className="mb-2 text-lg font-bold">Receipt</h2>
                   <ReceiptSlot o={o} />
                 </section>
                 <Timeline o={o} />
@@ -95,7 +95,7 @@ function Statement({ o }: { o: PurchaseOrder }) {
         {o.terms_are_placeholders && (
           <>
             {' · '}
-            <a href={href('/suppliers')}>{o.supplier_name}’s terms are still a guess</a>
+            <a href={href(`/suppliers/${o.supplier_id}`)}>{o.supplier_name}’s terms are still a guess</a>
           </>
         )}
       </p>
@@ -140,13 +140,30 @@ function Statement({ o }: { o: PurchaseOrder }) {
               </span>
               <span role="cell" className="flex justify-end">
                 {draft ? (
-                  <Stepper
-                    label={`packs of ${l.ingredient_name}`}
-                    value={<span className="fig inline-block min-w-6 text-center text-lg">{n}</span>}
-                    canDecrement={n > 0}
-                    onDecrement={() => setPacks((p) => ({ ...p, [l.po_line_id]: Math.max(0, n - 1) }))}
-                    onIncrement={() => setPacks((p) => ({ ...p, [l.po_line_id]: n + 1 }))}
-                  />
+                  <>
+                    {/* The primary phone action: 50px buttons on a phone, the
+                        compact stepper in the desktop column. Only one is ever
+                        displayed, so only one is in the accessibility tree. */}
+                    <span className="compact:hidden">
+                      <Stepper
+                        size="lg"
+                        label={`packs of ${l.ingredient_name}`}
+                        value={n}
+                        canDecrement={n > 0}
+                        onDecrement={() => setPacks((p) => ({ ...p, [l.po_line_id]: Math.max(0, n - 1) }))}
+                        onIncrement={() => setPacks((p) => ({ ...p, [l.po_line_id]: n + 1 }))}
+                      />
+                    </span>
+                    <span className="hidden compact:inline-flex">
+                      <Stepper
+                        label={`packs of ${l.ingredient_name}`}
+                        value={<span className="fig inline-block min-w-6 text-center text-lg">{n}</span>}
+                        canDecrement={n > 0}
+                        onDecrement={() => setPacks((p) => ({ ...p, [l.po_line_id]: Math.max(0, n - 1) }))}
+                        onIncrement={() => setPacks((p) => ({ ...p, [l.po_line_id]: n + 1 }))}
+                      />
+                    </span>
+                  </>
                 ) : (
                   <span className="fig">{n}</span>
                 )}
@@ -185,7 +202,9 @@ function Statement({ o }: { o: PurchaseOrder }) {
             onClick={() =>
               void w.run(() => orderWrites.confirm(o.po_id, operator, packs), {
                 invalidate: AFTER_ORDER_WRITE,
-                ok: () => `Confirmed by ${operator}. Mark it sent once it has gone to ${o.supplier_name}.`,
+                // The operator is a constant for now (OperatorControl is a stub by owner
+                // instruction), so "by Back office" would say nothing. The timeline keeps it.
+                ok: () => `Confirmed. Mark it sent once it has gone to ${o.supplier_name}.`,
               })
             }
           >
@@ -211,12 +230,14 @@ function Statement({ o }: { o: PurchaseOrder }) {
           </Button>
         )}
         {o.actions.includes('cancel') && (
-          <ArmChip
+          <ConfirmTwiceButton
+            size="md"
             disabled={w.pending}
+            armedLabel="Tap again to cancel the order"
             onConfirm={() => void w.run(() => orderWrites.cancel(o.po_id, operator), { invalidate: AFTER_ORDER_WRITE, ok: () => 'Cancelled.' })}
           >
             Cancel order
-          </ArmChip>
+          </ConfirmTwiceButton>
         )}
       </div>
       <OutcomeLine outcome={w.outcome} className="mt-2" />
@@ -266,7 +287,7 @@ function Timeline({ o }: { o: PurchaseOrder }) {
   if (o.cancelled_at) steps.push(['Cancelled', `${stamp(o.cancelled_at)}${o.cancelled_by ? ` · ${o.cancelled_by}` : ''}${o.cancel_reason ? ` · ${o.cancel_reason}` : ''}`])
   return (
     <section>
-      <h3 className="mb-2 text-lg font-bold">What happened</h3>
+      <h2 className="mb-2 text-lg font-bold">What happened</h2>
       <ol>
         {steps.map(([k, v]) => (
           <li key={k} className="grid grid-cols-[90px_minmax(0,1fr)] gap-2 border-b-[1.5px] border-dashed border-line py-1.5 text-base">

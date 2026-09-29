@@ -17,12 +17,11 @@ message they belong to, so the sent card and the edited card cannot drift apart.
 
 from __future__ import annotations
 
-from typing import Any
-
 from aiogram import Router
 from aiogram.filters.callback_data import CallbackData
 from aiogram.types import CallbackQuery, InlineKeyboardMarkup, Message
 
+from cafeops.bot.deps import RunSync
 from cafeops.services.shop.errors import ShopError
 from cafeops.services.shop.notify import TelegramReply, telegram_action
 
@@ -46,7 +45,7 @@ def _actor(query: CallbackQuery) -> str:
 
 
 @router.callback_query(ShopOrderCB.filter())
-async def act(query: CallbackQuery, callback_data: ShopOrderCB, run_sync: Any) -> None:
+async def act(query: CallbackQuery, callback_data: ShopOrderCB, run_sync: RunSync) -> None:
     try:
         reply: TelegramReply = await run_sync(
             telegram_action, callback_data.order_id, callback_data.action, actor=_actor(query)

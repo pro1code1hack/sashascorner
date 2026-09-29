@@ -106,10 +106,6 @@ class SqlDriftRepository:
             for row in self.session.scalars(stmt)
         ]
 
-    def observed_stock_count_ids(self) -> set[int]:
-        """Counts that already carry an observation. Backfill is idempotent on this."""
-        return set(self.session.scalars(select(DriftObservation.stock_count_id)))
-
     def counts_missing_observations(
         self, *, ingredient_id: int | None = None, limit: int | None = None
     ) -> list[tuple[int, int, Decimal, datetime]]:

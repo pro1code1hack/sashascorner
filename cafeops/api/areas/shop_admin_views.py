@@ -9,7 +9,7 @@ screen shows it verbatim (FRONTEND-KIT §1 rule 10).
 from __future__ import annotations
 
 from collections import defaultdict
-from collections.abc import Callable, Iterable
+from collections.abc import Iterable
 from datetime import UTC, datetime, timedelta
 from typing import Any, cast
 
@@ -66,6 +66,7 @@ from cafeops.api.areas.shop_admin_schemas import (
     SummaryOut,
     UpsellAdminOut,
     UpsellIn,
+    UpsellPatchIn,
 )
 from cafeops.config import settings
 from cafeops.db.models import (
@@ -86,9 +87,8 @@ from cafeops.db.models import (
     SizeCode,
 )
 from cafeops.domain.shop import ALLERGENS, DIETARY, allergens_state
-from cafeops.services.media_store import MediaRefusedError, media_url, store_image
+from cafeops.services.media_store import media_url, store_image
 from cafeops.services.shop import admin, insights, payments
-from cafeops.services.shop.admin import ShopAdminRefused
 from cafeops.services.shop.catalog import product_slug
 
 _SIZE_LABELS: dict[SizeCode, str] = {
@@ -98,20 +98,6 @@ _SIZE_LABELS: dict[SizeCode, str] = {
     SizeCode.ONE: "",
 }
 _SIZE_SORT: dict[SizeCode, int] = {SizeCode.S: 0, SizeCode.M: 1, SizeCode.XL: 2, SizeCode.ONE: 3}
-
-
-def _refused(exc: ShopAdminRefused) -> HTTPException:
-    return HTTPException(status_code=exc.status, detail=exc.detail)
-
-
-def guarded[T](work: Callable[[], T]) -> T:
-    """Run a service call, translating its refusals into HTTP answers."""
-    try:
-        return work()
-    except ShopAdminRefused as exc:
-        raise _refused(exc) from exc
-    except MediaRefusedError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 # ==========================================================================
@@ -300,10 +286,8 @@ def orders_view(
     page: int,
     page_size: int,
 ) -> OrdersPageOut:
-    result = guarded(
-        lambda: admin.orders_page(
-            session, status=status, since=since, until=until, q=q, page=page, page_size=page_size
-        )
+    result = admin.orders_page(
+        session, status=status, since=since, until=until, q=q, page=page, page_size=page_size
     )
     ids = [o.id for o in result.items]
     if ids:
@@ -324,29 +308,36 @@ def orders_view(
 
 
 def order_view(session: Session, order_id: int) -> OrderAdminOut:
-    order = guarded(lambda: admin.order_or_404(session, order_id))
+    order = admin.order_or_404(session, order_id)
     return _order_out(order, _members(session, [order]), datetime.now(UTC))
 
 
 def status_view(
     session: Session, order_id: int, *, status: str, reason: str | None, by: str
 ) -> OrderAdminOut:
-    order = guarded(lambda: admin.set_status(session, order_id, status, reason=reason, by=by))
+    order = admin.set_status(session, order_id, status, reason=reason, by=by)
     return _one_order(session, order)
 
 
 def note_view(session: Session, order_id: int, *, staff_note: str | None, by: str) -> OrderAdminOut:
-    order = guarded(lambda: admin.set_staff_note(session, order_id, staff_note, by=by))
+    order = admin.set_staff_note(session, order_id, staff_note, by=by)
     return _one_order(session, order)
 
 
 def paid_view(session: Session, order_id: int, *, by: str) -> OrderAdminOut:
-    order = guarded(lambda: admin.mark_paid(session, order_id, by=by))
+    order = admin.mark_paid(session, order_id, by=by)
     return _one_order(session, order)
 
 
 def refund_view(session: Session, order_id: int, *, by: str, reason: str | None) -> OrderAdminOut:
-    order = guarded(lambda: admin.refund(session, order_id, by=by, reason=reason))
+    try:
+        order = admin.refund(session, order_id, by=by, reason=reason)
+    except admin.RefundDeclined:
+        # The one refusal that is also a record: the `refund_failed` event must survive
+        # the 409, and raising rolls the request's transaction back. So it is committed
+        # here, deliberately, before answering (services flush; the caller commits).
+        session.commit()
+        raise
     return _one_order(session, order)
 
 
@@ -382,6 +373,7 @@ def _settings_out(row: ShopSettings) -> ShopSettingsOut:
         terms_url=row.terms_url,
         loyalty_stamps_online=row.loyalty_stamps_online,
         notify_telegram=row.notify_telegram,
+        guest_orders=row.guest_orders,
         payment_provider=row.payment_provider,
         pos_sink=row.pos_sink,
         email_notify=row.email_notify,
@@ -401,8 +393,8 @@ def settings_view(session: Session) -> ShopSettingsOut:
 
 
 def settings_update_view(session: Session, body: ShopSettingsIn) -> ShopSettingsOut:
-    changes = body.model_dump(exclude_unset=True)
-    row = guarded(lambda: admin.update_settings(session, changes))
+    change = admin.SettingsChange(**body.model_dump(exclude_unset=True))
+    row = admin.update_settings(session, change)
     return _settings_out(row)
 
 
@@ -471,7 +463,7 @@ def _product_out(
                 effective.append(gid)
     kcal_by_size = row.kcal_by_size or {}
     return ProductAdminOut(
-        id=row.id,
+        id=row.id if row.id is not None else 0,  # 0: not listed yet (an unsaved default)
         item_name=row.item_name,
         display_name=row.display_name,
         name=row.display_name or row.item_name,
@@ -626,7 +618,7 @@ def _groups_by_category(session: Session) -> dict[str, list[int]]:
 
 
 def catalogue_view(session: Session) -> CatalogueAdminOut:
-    guarded(lambda: admin.sync_catalogue(session))
+    admin.sync_catalogue(session)
     categories = list(
         session.scalars(select(ShopCategory).order_by(ShopCategory.sort_order, ShopCategory.id))
     )
@@ -716,24 +708,24 @@ def _category_view(session: Session, row: ShopCategory) -> CategoryAdminOut:
 
 def category_update_view(session: Session, category_id: int, body: CategoryIn) -> CategoryAdminOut:
     changes = body.model_dump(exclude_unset=True)
-    row = guarded(lambda: admin.category_update(session, category_id, changes))
+    row = admin.category_update(session, category_id, changes)
     return _category_view(session, row)
 
 
 def categories_order_view(session: Session, ids: list[int]) -> CatalogueAdminOut:
-    guarded(lambda: admin.categories_order(session, ids))
+    admin.categories_order(session, ids)
     return catalogue_view(session)
 
 
 def category_photo_view(
     session: Session, category_id: int, data: bytes | None, actor: str | None
 ) -> PhotoOut:
-    guarded(lambda: admin.category_or_404(session, category_id))  # 404 before any file is written
+    admin.category_or_404(session, category_id)  # 404 before any file is written
     if data is None:
-        guarded(lambda: admin.set_category_photo(session, category_id, None))
+        admin.set_category_photo(session, category_id, None)
         return _no_photo()
-    stored = guarded(lambda: store_image(session, data, uploaded_by=actor))
-    guarded(lambda: admin.set_category_photo(session, category_id, stored.asset_id))
+    stored = store_image(session, data, uploaded_by=actor)
+    admin.set_category_photo(session, category_id, stored.asset_id)
     return _photo(stored)
 
 
@@ -767,9 +759,13 @@ def _product_view(session: Session, row: ShopProduct) -> ProductAdminOut:
     )
 
 
+def _product_change(body: ProductIn) -> admin.ProductChange:
+    return admin.ProductChange(**body.model_dump(exclude_unset=True))
+
+
 def product_update_view(session: Session, product_id: int, body: ProductIn) -> ProductAdminOut:
-    changes = body.model_dump(exclude_unset=True)
-    row = guarded(lambda: admin.product_update(session, product_id, changes))
+    change = _product_change(body)
+    row = admin.product_update(session, product_id, change)
     return _product_view(session, row)
 
 
@@ -791,42 +787,42 @@ def _by_menu_item(session: Session, menu_item_id: int, row: ShopProduct) -> Prod
 
 
 def product_by_menu_item_view(session: Session, menu_item_id: int) -> ProductByMenuItemOut:
-    row = guarded(lambda: admin.product_for_menu_item(session, menu_item_id))
+    """Read-only. A product not listed yet is answered as the default the first edit
+    would create, with `id` 0 and `updated_at` null; nothing is written by a GET."""
+    row = admin.product_for_menu_item(session, menu_item_id)
     return _by_menu_item(session, menu_item_id, row)
 
 
 def product_update_by_menu_item_view(
     session: Session, menu_item_id: int, body: ProductIn
 ) -> ProductByMenuItemOut:
-    row = guarded(lambda: admin.product_for_menu_item(session, menu_item_id))
-    changes = body.model_dump(exclude_unset=True)
-    row = guarded(lambda: admin.product_update(session, row.id, changes))
+    """Create-if-missing and the edit are one transaction: a refused edit (raised)
+    rolls the new row back with it."""
+    change = _product_change(body)
+    created = admin.ensure_product_for_menu_item(session, menu_item_id)
+    row = admin.product_update(session, created.id, change)
     return _by_menu_item(session, menu_item_id, row)
 
 
 def products_order_view(session: Session, category_slug: str, ids: list[int]) -> CatalogueAdminOut:
-    guarded(lambda: admin.products_order(session, category_slug, ids))
+    admin.products_order(session, category_slug, ids)
     return catalogue_view(session)
 
 
 def products_bulk_view(session: Session, body: ProductsBulkIn) -> BulkOut:
-    rows = guarded(
-        lambda: admin.products_bulk(
-            session, body.ids, available=body.available, visible=body.visible
-        )
-    )
+    rows = admin.products_bulk(session, body.ids, available=body.available, visible=body.visible)
     return BulkOut(changed=len(rows), products=tuple(_product_view(session, r) for r in rows))
 
 
 def product_photo_view(
     session: Session, product_id: int, data: bytes | None, actor: str | None
 ) -> PhotoOut:
-    guarded(lambda: admin.product_or_404(session, product_id))
+    admin.product_or_404(session, product_id)
     if data is None:
-        guarded(lambda: admin.set_product_photo(session, product_id, None))
+        admin.set_product_photo(session, product_id, None)
         return _no_photo()
-    stored = guarded(lambda: store_image(session, data, uploaded_by=actor))
-    guarded(lambda: admin.set_product_photo(session, product_id, stored.asset_id))
+    stored = store_image(session, data, uploaded_by=actor)
+    admin.set_product_photo(session, product_id, stored.asset_id)
     return _photo(stored)
 
 
@@ -850,24 +846,24 @@ def _group_view(session: Session, row: ShopOptionGroup) -> OptionGroupAdminOut:
 
 
 def option_group_create_view(session: Session, body: OptionGroupIn) -> OptionGroupAdminOut:
-    row = guarded(lambda: admin.option_group_create(session, body.model_dump()))
+    row = admin.option_group_create(session, body.model_dump())
     return _group_view(session, row)
 
 
 def option_group_update_view(
     session: Session, group_id: int, body: OptionGroupIn
 ) -> OptionGroupAdminOut:
-    row = guarded(lambda: admin.option_group_update(session, group_id, body.model_dump()))
+    row = admin.option_group_update(session, group_id, body.model_dump())
     return _group_view(session, row)
 
 
 def option_group_delete_view(session: Session, group_id: int) -> DeletedOut:
-    guarded(lambda: admin.delete_option_group(session, group_id))
+    admin.delete_option_group(session, group_id)
     return DeletedOut(id=group_id, deleted=True)
 
 
 def option_groups_order_view(session: Session, ids: list[int]) -> CatalogueAdminOut:
-    guarded(lambda: admin.option_groups_order(session, ids))
+    admin.option_groups_order(session, ids)
     return catalogue_view(session)
 
 
@@ -877,10 +873,10 @@ def option_photo_view(
     if session.get(ShopOption, option_id) is None:
         raise HTTPException(status_code=404, detail=f"option {option_id} does not exist")
     if data is None:
-        guarded(lambda: admin.set_option_photo(session, option_id, None))
+        admin.set_option_photo(session, option_id, None)
         return _no_photo()
-    stored = guarded(lambda: store_image(session, data, uploaded_by=actor))
-    guarded(lambda: admin.set_option_photo(session, option_id, stored.asset_id))
+    stored = store_image(session, data, uploaded_by=actor)
+    admin.set_option_photo(session, option_id, stored.asset_id)
     return _photo(stored)
 
 
@@ -888,15 +884,15 @@ def option_photo_view(
 
 
 def upsell_create_view(session: Session, body: UpsellIn) -> UpsellAdminOut:
-    return _upsell_out(guarded(lambda: admin.upsell_create(session, body.model_dump())))
+    return _upsell_out(admin.upsell_create(session, body.model_dump()))
 
 
-def upsell_update_view(session: Session, upsell_id: int, body: UpsellIn) -> UpsellAdminOut:
-    return _upsell_out(guarded(lambda: admin.upsell_update(session, upsell_id, body.model_dump())))
+def upsell_update_view(session: Session, upsell_id: int, body: UpsellPatchIn) -> UpsellAdminOut:
+    return _upsell_out(admin.upsell_update(session, upsell_id, body.model_dump()))
 
 
 def upsell_delete_view(session: Session, upsell_id: int) -> DeletedOut:
-    guarded(lambda: admin.upsell_delete(session, upsell_id))
+    admin.upsell_delete(session, upsell_id)
     return DeletedOut(id=upsell_id, deleted=True)
 
 
@@ -908,34 +904,32 @@ def _banner_view(session: Session, row: ShopBanner) -> BannerAdminOut:
 
 
 def banner_create_view(session: Session, body: BannerIn) -> BannerAdminOut:
-    return _banner_view(session, guarded(lambda: admin.banner_create(session, body.model_dump())))
+    return _banner_view(session, admin.banner_create(session, body.model_dump()))
 
 
 def banner_update_view(session: Session, banner_id: int, body: BannerIn) -> BannerAdminOut:
-    return _banner_view(
-        session, guarded(lambda: admin.banner_update(session, banner_id, body.model_dump()))
-    )
+    return _banner_view(session, admin.banner_update(session, banner_id, body.model_dump()))
 
 
 def banner_delete_view(session: Session, banner_id: int) -> DeletedOut:
-    guarded(lambda: admin.banner_delete(session, banner_id))
+    admin.banner_delete(session, banner_id)
     return DeletedOut(id=banner_id, deleted=True)
 
 
 def banners_order_view(session: Session, ids: list[int]) -> CatalogueAdminOut:
-    guarded(lambda: admin.banners_order(session, ids))
+    admin.banners_order(session, ids)
     return catalogue_view(session)
 
 
 def banner_photo_view(
     session: Session, banner_id: int, data: bytes | None, actor: str | None
 ) -> PhotoOut:
-    guarded(lambda: admin.banner_or_404(session, banner_id))
+    admin.banner_or_404(session, banner_id)
     if data is None:
-        guarded(lambda: admin.set_banner_photo(session, banner_id, None))
+        admin.set_banner_photo(session, banner_id, None)
         return _no_photo()
-    stored = guarded(lambda: store_image(session, data, uploaded_by=actor))
-    guarded(lambda: admin.set_banner_photo(session, banner_id, stored.asset_id))
+    stored = store_image(session, data, uploaded_by=actor)
+    admin.set_banner_photo(session, banner_id, stored.asset_id)
     return _photo(stored)
 
 

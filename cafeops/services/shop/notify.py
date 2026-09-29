@@ -45,6 +45,7 @@ from cafeops.db.models import (
     ShopSettings,
 )
 from cafeops.domain.shop import TRANSITIONS, can_transition, display_code
+from cafeops.domain.units import pounds
 from cafeops.services.loyalty.messaging import send_email, send_sms
 from cafeops.services.shop.errors import ShopError
 from cafeops.services.shop.orders import load_order, record_event, transition
@@ -212,7 +213,7 @@ def new_order_text(order: ShopOrder) -> str:
     )
     head = (
         f"🛍 Новый онлайн-заказ {display_code(order.code)} · {order.customer_name} · к {when} · "
-        f"{dining} · {_positions(len(order.lines))} · £{order.total_pence / 100:.2f} · {pay}"
+        f"{dining} · {_positions(len(order.lines))} · {pounds(order.total_pence)} · {pay}"
     )
     lines = []
     for ln in order.lines:
@@ -223,7 +224,7 @@ def new_order_text(order: ShopOrder) -> str:
     if order.note:
         text += f"\nЗаметка: {order.note}"
     if order.discount_pence:
-        text += f"\nБесплатный напиток по карте: −£{order.discount_pence / 100:.2f}"
+        text += f"\nБесплатный напиток по карте: −{pounds(order.discount_pence)}"
     return text
 
 

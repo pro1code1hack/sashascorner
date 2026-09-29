@@ -4,7 +4,7 @@
  * The table only reads. A row opens a drawer to edit it; "+ Add expense" opens
  * the same drawer empty. "Personal" (drawings) rows are mirrored once into the
  * director's account by the server and never enter the P&L. A delete can be
- * undone for five seconds.
+ * undone for ten seconds.
  *
  * Server filters: period, search, category, type, needs-a-look, no receipt.
  * On top of those, in the browser: a custom date range, payee, paid-by and a
@@ -29,6 +29,7 @@ import {
   PageHeader,
   SearchInput,
   Select,
+  StatusLine,
   TBody,
   THead,
   Table,
@@ -38,7 +39,7 @@ import {
   Tr,
   cx,
 } from '../../components/ui'
-import type { ActiveFilterChip } from '../../components/ui'
+import type { ActiveFilterChip, Outcome } from '../../components/ui'
 import { poundsToPence, penceToPounds } from '../../components/confirm/numbers'
 import { useLocation } from '../../lib/router'
 import { useOperator } from '../../lib/operator'
@@ -101,7 +102,7 @@ export function ExpensesScreen() {
   const [method, setMethod] = useState('all')
   const [amount, setAmount] = useState<PenceRange>({ min: null, max: null })
   const [drawer, setDrawer] = useState<DrawerState>(null)
-  const [undo, setUndo] = useState<{ text: string; restore: () => void } | null>(null)
+  const [undo, setUndo] = useState<{ text: string; restore: (() => void) | null } | null>(null)
   const clearUndo = useCallback(() => setUndo(null), [])
 
   const q = useExpenses(range ? 'all' : period, filters)
@@ -260,11 +261,7 @@ export function ExpensesScreen() {
             <Loading what="Loading expenses" />
           ) : (
             <div className="px-4 pb-8 sm:px-5 compact:px-6">
-              {undo && (
-                <div className="flex pt-3">
-                  <UndoBar text={undo.text} onUndo={undo.restore} onDone={clearUndo} />
-                </div>
-              )}
+              <UndoBar undo={undo} onDone={clearUndo} className="pt-3" />
               <Figures
                 items={[
                   {
@@ -387,7 +384,7 @@ function ExpensesTable({
         </Td>
         <Td className="text-center text-sm">
           {e.has_receipt ? (
-            <span aria-label="Receipt kept" className="text-ok-ink">
+            <span aria-label="Receipt kept" className="text-ink">
               ✓
             </span>
           ) : (
@@ -498,23 +495,28 @@ function ExpenseDrawer({
   categories: ExpenseCategory[]
   period: string | null
   onClose: () => void
-  onUndo: (u: { text: string; restore: () => void } | null) => void
+  onUndo: (u: { text: string; restore: (() => void) | null } | null) => void
 }) {
   const [operator] = useOperator()
   const refresh = useInvalidateFinance()
   const [d, setD] = useState<Draft>(() => draftOf(expense, categories, period))
-  const [error, setError] = useState<string | null>(null)
+  // What the server said about the last write; validation lives on the fields.
+  const [outcome, setOutcome] = useState<Outcome | null>(null)
+  const [missing, setMissing] = useState<{ description?: string; amount?: string; date?: string }>({})
   const [busy, setBusy] = useState(false)
   const set = (p: Partial<Draft>) => setD((x) => ({ ...x, ...p }))
   const amountParsed = poundsToPence(d.amount)
   const amountBad = amountParsed.kind === 'bad' ? amountParsed.message : null
 
   async function save() {
-    if (!d.description.trim()) return setError('Enter who was paid or what for.')
+    const problems: typeof missing = {}
+    if (!d.description.trim()) problems.description = 'Enter who was paid or what for.'
     if (amountParsed.kind !== 'value' || amountParsed.value <= 0)
-      return setError(amountParsed.kind === 'bad' ? amountParsed.message : 'Enter an amount over £0.')
-    if (!d.date) return setError('Pick a date.')
-    setError(null)
+      problems.amount = amountParsed.kind === 'bad' ? amountParsed.message : 'Enter an amount over £0.'
+    if (!d.date) problems.date = 'Pick a date.'
+    setMissing(problems)
+    if (Object.keys(problems).length > 0 || amountParsed.kind !== 'value') return
+    setOutcome(null)
     const full: ExpenseIn = {
       date: d.date,
       category_id: d.category_id,
@@ -550,7 +552,7 @@ function ExpenseDrawer({
       r = await financeWrite.patchExpense(expense.id, { ...body, operator })
     }
     setBusy(false)
-    if (r.kind !== 'ok') return setError(r.message)
+    if (r.kind !== 'ok') return setOutcome({ kind: 'error', text: r.message })
     await refresh()
     onClose()
   }
@@ -560,14 +562,18 @@ function ExpenseDrawer({
     setBusy(true)
     const r = await financeWrite.deleteExpense(expense.id, operator)
     setBusy(false)
-    if (r.kind !== 'ok') return setError(r.message)
+    if (r.kind !== 'ok') return setOutcome({ kind: 'error', text: r.message })
     await refresh()
     onClose()
     const token = r.data.undo_token
     onUndo({
       text: `Deleted ${expense.description} · ${gbp(expense.amount_pence)}`,
       restore: () =>
-        void financeWrite.restoreExpense(expense.id, token, operator).then(async () => {
+        void financeWrite.restoreExpense(expense.id, token, operator).then(async (res) => {
+          if (res.kind !== 'ok') {
+            onUndo({ text: `Couldn't restore ${expense.description}: ${res.message}`, restore: null })
+            return
+          }
           onUndo(null)
           await refresh()
         }),
@@ -605,15 +611,15 @@ function ExpenseDrawer({
         </div>
       )}
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Date">
-          <Input type="date" value={d.date} onChange={(e) => set({ date: e.target.value })} />
+        <Field label={<Required>Date</Required>} error={missing.date}>
+          <Input type="date" required value={d.date} onChange={(e) => set({ date: e.target.value })} />
         </Field>
-        <Field label="Amount" error={amountBad}>
-          <MoneyInput value={d.amount} placeholder="0.00" onChange={(e) => set({ amount: e.target.value })} />
+        <Field label={<Required>Amount</Required>} error={missing.amount ?? amountBad}>
+          <MoneyInput required value={d.amount} placeholder="0.00" onChange={(e) => set({ amount: e.target.value })} />
         </Field>
       </div>
-      <Field label="Payee or description">
-        <Input value={d.description} placeholder="Who was paid" onChange={(e) => set({ description: e.target.value })} />
+      <Field label={<Required>Payee or description</Required>} error={missing.description}>
+        <Input required value={d.description} placeholder="Who was paid" onChange={(e) => set({ description: e.target.value })} />
       </Field>
       <Field label="Category">
         <Select value={String(d.category_id)} onChange={(e) => set({ category_id: Number(e.target.value) })}>
@@ -656,11 +662,16 @@ function ExpenseDrawer({
           {expense.updated_by ? ` · last edited by ${expense.updated_by}` : ''}
         </p>
       )}
-      {error && (
-        <p role="alert" className="text-sm text-bad-ink">
-          {error}
-        </p>
-      )}
+      <StatusLine outcome={outcome} />
     </Drawer>
+  )
+}
+
+/** A field label with the "required" cue said in words, not only by an asterisk. */
+function Required({ children }: { children: ReactNode }) {
+  return (
+    <>
+      {children} <span className="font-normal text-ink-2">(required)</span>
+    </>
   )
 }

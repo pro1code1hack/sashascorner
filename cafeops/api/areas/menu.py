@@ -79,7 +79,8 @@ from cafeops.api.areas.menu_schemas import (
 from cafeops.api.runtime import in_session
 from cafeops.api.schemas import MaterialiseResponse
 from cafeops.api.security import ApiAuth
-from cafeops.services.media_store import MAX_BYTES, media_path
+from cafeops.api.uploads import read_bounded_body
+from cafeops.services.media_store import media_path
 
 router = APIRouter(dependencies=[ApiAuth], tags=["menu"])
 
@@ -319,14 +320,8 @@ async def photo_upload(
     menu_item_id: int,
     request: Request,
     x_operator: Annotated[str | None, Header()] = None,
-    content_length: Annotated[int | None, Header()] = None,
 ) -> PhotoOut:
-    if content_length is not None and content_length > MAX_BYTES:
-        raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail="that photo is over 2 MB; resize it (1200px wide is plenty) and try again",
-        )
-    data = await request.body()
+    data = await read_bounded_body(request)
     return await in_session(lambda s: views.photo_upload_view(s, menu_item_id, data, x_operator))
 
 
@@ -399,14 +394,8 @@ async def ingredient_photo_upload(
     ingredient_id: int,
     request: Request,
     x_operator: Annotated[str | None, Header()] = None,
-    content_length: Annotated[int | None, Header()] = None,
 ) -> IngredientPhotoOut:
-    if content_length is not None and content_length > MAX_BYTES:
-        raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail="that photo is over 2 MB; resize it (1200px wide is plenty) and try again",
-        )
-    data = await request.body()
+    data = await read_bounded_body(request)
     return await in_session(
         lambda s: views.ingredient_photo_upload_view(s, ingredient_id, data, x_operator)
     )

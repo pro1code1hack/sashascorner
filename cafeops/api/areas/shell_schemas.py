@@ -268,7 +268,7 @@ class AgentProposalsOut(Out):
     waiting: tuple[AgentProposalOut, ...]
     decided: tuple[AgentProposalOut, ...]
     waiting_count: int
-    #: Orders sent to Telegram and not confirmed. Read-only (DECISIONS 1).
+    #: Orders waiting for a named person to confirm (DECISIONS 28). Read-only here.
     orders_waiting: tuple[WaitingOrderOut, ...]
 
 

@@ -48,7 +48,7 @@ from cafeops.services.loyalty.join import (
 )
 from cafeops.services.loyalty.messaging import Outgoing
 from cafeops.services.loyalty.programs import programs, reward_options
-from cafeops.services.loyalty.recovery import request_recovery, verify_recovery
+from cafeops.services.loyalty.recovery import BAD_CODE, request_recovery, verify_recovery
 from cafeops.services.loyalty.retention import erase_member
 from cafeops.services.loyalty.wallets import apple_configured, google_configured
 
@@ -292,8 +292,17 @@ def recover_view(session: Session, contact: str) -> tuple[RecoverOut, Outgoing |
     return RecoverOut(delivery=result.delivery), result.outgoing
 
 
-def verify_view(session: Session, body: VerifyIn) -> JoinResult | None:
+class WrongRecoveryCode(LoyaltyError):
+    """`BAD_CODE`, raised as a type the router can commit before propagating: the
+    attempt counter `verify_recovery` bumped must stick, or a wrong code costs nothing
+    and the guess budget is unlimited (services/loyalty/recovery)."""
+
+    def __init__(self) -> None:
+        super().__init__(BAD_CODE.status, BAD_CODE.code, BAD_CODE.detail)
+
+
+def verify_view(session: Session, body: VerifyIn) -> JoinResult:
     joined = verify_recovery(session, body.contact, body.code)
     if joined is None:
-        return None
+        raise WrongRecoveryCode()
     return join_result(joined.card_id, joined.token)

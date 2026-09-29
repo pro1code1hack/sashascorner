@@ -266,24 +266,8 @@ function shownPounds(p: number): string {
  * The period's figures in one quiet line: label over figure, hairline
  * dividers. Not a card grid.
  */
-export function Figures({ items, className }: { items: ReadonlyArray<{ label: string; value: ReactNode; sub?: ReactNode; strong?: boolean }>; className?: string }) {
-  return (
-    <dl className={cx('flex flex-wrap gap-y-3 border-b border-line py-3', className)}>
-      {items.map((it, i) => (
-        <div
-          key={it.label}
-          className={cx('min-w-[96px] pr-5', i > 0 && 'border-l border-line pl-5', 'max-sm:border-0! max-sm:pl-0! max-sm:w-1/2')}
-        >
-          <dt className="text-xs font-bold uppercase tracking-[.06em] text-ink-3">{it.label}</dt>
-          <dd className={cx('fig whitespace-nowrap tracking-[-.01em]', it.strong ? 'text-2xl font-extrabold' : 'text-xl font-bold')}>
-            {it.value}
-          </dd>
-          {it.sub && <dd className="text-sm text-ink-2">{it.sub}</dd>}
-        </div>
-      ))}
-    </dl>
-  )
-}
+/** Moved to the kit (components/ui/page.tsx); re-exported so existing imports keep working. */
+export { Figures } from '../../components/ui'
 
 /** Integer count with thousands separators. */
 export function count(n: number): string {

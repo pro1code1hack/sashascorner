@@ -39,6 +39,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from cafeops.clock import local_day_bounds, local_today
 from cafeops.config import settings
 from cafeops.db.models import (
     LoyaltyCard,
@@ -63,6 +64,7 @@ from cafeops.domain.loyalty import (
     points_for_spend,
     sticker_set,
 )
+from cafeops.domain.units import pounds
 from cafeops.services.loyalty.alerts import check_stamp_rate
 from cafeops.services.loyalty.common import (
     audit,
@@ -346,7 +348,7 @@ def add_spend(
         raise LoyaltyError(
             422,
             "bad_spend",
-            f"£{spend_pence / 100:.2f} earns no points at {program.points_per_pound} a pound.",
+            f"{pounds(spend_pence)} earns no points at {program.points_per_pound} a pound.",
         )
     approver: StaffUser | None = None
     if spend_pence > MAX_POINTS_SPEND_PENCE:
@@ -354,11 +356,11 @@ def add_spend(
             raise LoyaltyError(
                 409,
                 "manager_pin_required",
-                f"£{spend_pence / 100:.2f} is more than £{MAX_POINTS_SPEND_PENCE / 100:.2f}; "
+                f"{pounds(spend_pence)} is more than {pounds(MAX_POINTS_SPEND_PENCE)}; "
                 "a manager's PIN confirms it is not a typo.",
             )
         approver = verify_manager_pin(session, manager_pin, limiter_key=actor.limiter_key)
-    note = f"spend £{spend_pence / 100:.2f}"
+    note = f"spend {pounds(spend_pence)}"
     if approver is not None:
         note += f", approved by {approver.name}"
     event, rewards = _apply(
@@ -648,8 +650,8 @@ def expire_stamps(session: Session, *, now: datetime | None = None) -> int:
         months = int(program.stamps_expire_months or 0)
         if months < 1:
             continue
-        cutoff_day = months_before(now.astimezone(settings.tz).date(), months)
-        cutoff = datetime.combine(cutoff_day, datetime.min.time(), tzinfo=settings.tz)
+        cutoff_day = months_before(local_today(settings.tz, now=now), months)
+        cutoff = local_day_bounds(cutoff_day, tz=settings.tz)[0]
         stale = session.scalars(
             select(LoyaltyCard)
             .join(LoyaltyMember, LoyaltyMember.id == LoyaltyCard.member_id)

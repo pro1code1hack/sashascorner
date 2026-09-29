@@ -36,7 +36,6 @@ __all__ = [
     "is_wallet_not_configured",
     "kick_wallets",
     "limit",
-    "loyalty_error_handler",
     "send_pending_alerts",
     "validation_error_handler",
     "wallet_not_configured_response",
@@ -49,20 +48,6 @@ LOYALTY_PREFIXES = ("/api/loyalty", "/api/staff", "/api/members", "/api/shop")
 
 def err(status: int, code: str, detail: str) -> LoyaltyError:
     return LoyaltyError(status, code, detail)
-
-
-async def loyalty_error_handler(_request: Request, exc: Exception) -> JSONResponse:
-    assert isinstance(exc, LoyaltyError)
-    headers = None
-    if exc.status == 429:
-        # The detail says how long; the header is for clients that read it.
-        digits = "".join(ch for ch in exc.detail if ch.isdigit())
-        headers = {"Retry-After": digits or "60"}
-    return JSONResponse(
-        status_code=exc.status,
-        content={"error": exc.code, "detail": exc.detail},
-        headers=headers,
-    )
 
 
 async def validation_error_handler(request: Request, exc: Exception) -> Response:

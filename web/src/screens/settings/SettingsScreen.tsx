@@ -10,10 +10,10 @@
  * English) and "Reset demo data" (it would erase the stock ledger from a web
  * button). Read-only lines for the Telegram bot, narration and staff rate.
  */
-import { useId, useState } from 'react'
+import { useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { Button, ErrorBox, Loading, PageBody, PageHeader, cx } from '../../components/ui'
+import { Button, ErrorBox, Field, Input, LinkButton, Loading, PageBody, PageHeader, StatusLine, cx } from '../../components/ui'
 import { ago, gbp, stamp } from '../../lib/format'
 import { useOperator } from '../../lib/operator'
 import { href } from '../../lib/router'
@@ -36,9 +36,6 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
   )
 }
 
-const BOX =
-  'h-10 w-full min-w-0 rounded-control border border-line-control bg-surface px-2.5 text-md placeholder:text-ink-3 outline-none focus-visible:edge-brand sm:w-52'
-
 function PasswordRow({ data }: { data: SettingsResponse }) {
   const qc = useQueryClient()
   const [operator] = useOperator()
@@ -47,7 +44,6 @@ function PasswordRow({ data }: { data: SettingsResponse }) {
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState<PasswordChangeResponse | null>(null)
-  const id = useId()
   const min = data.auth.min_length
   const tooShort = next !== '' && next.length < min
 
@@ -78,43 +74,44 @@ function PasswordRow({ data }: { data: SettingsResponse }) {
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-1.5">
-      <div className="flex flex-wrap items-center gap-2">
-        <label htmlFor={`${id}-cur`} className="sr-only">
-          Current password
-        </label>
-        <input
-          id={`${id}-cur`}
-          type="password"
-          autoComplete="current-password"
-          placeholder="current password"
-          value={current}
-          onChange={(e) => {
-            setCurrent(e.target.value)
-            setError(null)
-          }}
-          className={BOX}
-        />
-        <label htmlFor={`${id}-new`} className="sr-only">
-          New password
-        </label>
-        <input
-          id={`${id}-new`}
-          type="password"
-          autoComplete="new-password"
-          placeholder="new password"
-          value={next}
-          aria-invalid={tooShort || undefined}
-          aria-describedby={`${id}-msg`}
-          onChange={(e) => {
-            setNext(e.target.value)
-            setError(null)
-            setDone(null)
-          }}
-          className={BOX}
-        />
+      <p className="text-sm text-ink-2">
+        The one password for the back office and the website admin. {source} Changing it signs every other device
+        out.
+      </p>
+      {/* Visible labels: a placeholder disappears as soon as someone types. */}
+      <div className="flex flex-wrap items-start gap-x-2 gap-y-2">
+        <Field label="Current password" className="w-full sm:w-52">
+          <Input
+            type="password"
+            autoComplete="current-password"
+            value={current}
+            onChange={(e) => {
+              setCurrent(e.target.value)
+              setError(null)
+            }}
+          />
+        </Field>
+        <Field
+          label="New password"
+          className="w-full sm:w-52"
+          hint={tooShort ? undefined : `At least ${min} characters.`}
+          error={tooShort ? `At least ${min} characters: ${next.length} so far.` : undefined}
+        >
+          <Input
+            type="password"
+            autoComplete="new-password"
+            value={next}
+            onChange={(e) => {
+              setNext(e.target.value)
+              setError(null)
+              setDone(null)
+            }}
+          />
+        </Field>
         <Button
           type="submit"
           variant="outline"
+          className="sm:mt-[22px]"
           pending={pending}
           pendingLabel="Changing…"
           disabled={current === '' || next.length < min}
@@ -122,22 +119,15 @@ function PasswordRow({ data }: { data: SettingsResponse }) {
           Change
         </Button>
       </div>
-      <div id={`${id}-msg`} className="text-sm" aria-live="polite">
-        {error !== null ? (
-          <span className="text-bad-ink">{error}</span>
-        ) : done !== null ? (
-          <span>
-            {done.message} <span className="text-ink-2">Every other device is signed out. {done.telegram.detail}</span>
-          </span>
-        ) : tooShort ? (
-          <span className="text-ink-2">At least {min} characters.</span>
-        ) : (
-          <span className="text-ink-2">
-            The one password for the back office and the website admin. {source} Changing it signs every other
-            device out.
-          </span>
-        )}
-      </div>
+      <StatusLine
+        outcome={
+          error !== null
+            ? { kind: 'error', text: error }
+            : done !== null
+              ? { kind: 'ok', text: `${done.message} Every other device is signed out. ${done.telegram.detail}` }
+              : null
+        }
+      />
     </form>
   )
 }
@@ -154,9 +144,15 @@ function LightspeedRow({ data }: { data: SettingsResponse }) {
       <div className="flex flex-col gap-1">
         <div>Not connected.</div>
         <div className="text-sm text-ink-2">
-          Set <span className="break-words font-mono text-sm">{ls.env_vars.join(', ')}</span> on the server.
-          Connecting is an ops task, not a web form: the refresh token is a long-lived credential.
+          Whoever runs the server connects the till there, not in a web form: the till's key is a long-lived
+          credential.
         </div>
+        {ls.env_vars.length > 0 && (
+          <details className="text-sm text-ink-2">
+            <summary className="cursor-pointer">What they need to set</summary>
+            <span className="break-words">{ls.env_vars.join(', ')}</span>
+          </details>
+        )}
       </div>
     )
   }
@@ -177,11 +173,11 @@ function LightspeedRow({ data }: { data: SettingsResponse }) {
           Sync now
         </Button>
       </div>
-      {outcome !== null ? (
-        <div className={cx('text-sm', failed ? 'text-bad-ink' : 'text-ink-2')} aria-live="polite">
-          {outcome}
-        </div>
-      ) : (
+      {/* Always mounted, so the sync outcome is announced when it arrives. */}
+      <div className={cx('text-sm', failed ? 'text-bad-ink' : 'text-ink-2')} role="status" aria-live="polite">
+        {outcome}
+      </div>
+      {outcome === null && (
         attempt !== null &&
         (attempt.status === 'FAILED' || attempt.status === 'PARTIAL') && (
           <div className={cx('text-sm', attempt.status === 'FAILED' ? 'text-bad-ink' : 'text-ink-2')}>
@@ -207,12 +203,9 @@ function SettingsBody({ data }: { data: SettingsResponse }) {
       </Row>
       <Row label="Setup checklist">
         <div className="flex flex-wrap items-center gap-2">
-          <a
-            href={href('/setup')}
-            className="inline-flex h-8 items-center rounded-button border border-line-strong px-3.5 text-base text-ink no-underline hover:bg-canvas hover:text-ink"
-          >
+          <LinkButton variant="outline" size="sm" href={href('/setup')}>
             Open the checklist
-          </a>
+          </LinkButton>
           {open !== undefined && (
             <span className="text-sm text-ink-2">
               {open === 0 ? 'All five steps done.' : `${open} of 5 steps still open.`}

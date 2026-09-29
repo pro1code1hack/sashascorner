@@ -41,6 +41,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Mapping
+from decimal import Decimal, InvalidOperation
 
 from cafeops.db.models import LoyaltyMember, ShopOrder
 from cafeops.integrations.payments.providers.base import (
@@ -90,7 +91,12 @@ class LightspeedPaymentProvider:
         status = str(payload.get("status", "")).upper()
         errors = payload.get("errors") or []
         amount = payload.get("paymentAmount")
-        pence = round(float(amount) * 100) if isinstance(amount, int | float) else None
+        pence: int | None = None
+        if isinstance(amount, int | float | str) and not isinstance(amount, bool):
+            try:
+                pence = int((Decimal(str(amount)) * 100).to_integral_value())
+            except InvalidOperation:
+                pence = None
         if status in ("OK", "SUCCESS", "PAID", "COMPLETED") and not errors:
             return PaymentEvent("paid", str(ref) if ref else None, pence, None, "lightspeed")
         if status in ("FAIL", "FAILED", "ERROR") or errors:

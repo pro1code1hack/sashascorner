@@ -16,7 +16,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Annotated, Literal
 
-from pydantic import Field
+from pydantic import BeforeValidator, Field
 
 from cafeops.api.schemas import In, Out
 
@@ -34,12 +34,18 @@ DiningStr = Literal["TAKEAWAY", "EAT_IN"]
 SmsNotifyStr = Literal["off", "ready", "all"]
 PaymentMethodStr = Literal["COUNTER", "ONLINE"]
 PaymentStatusStr = Literal["UNPAID", "PAID", "REFUNDED", "FAILED"]
-OptionKindStr = Literal["SINGLE", "MULTI"]
-OptionLayoutStr = Literal["TILES", "PHOTO_TILES", "CHECKLIST"]
-UpsellPlacementStr = Literal["ITEM_PAGE", "BASKET"]
-SizeCodeStr = Literal["S", "M", "XL", "ONE"]
-OrdersFilter = Literal["live", "today", "all"]
 
+
+def _upper(value: object) -> object:
+    return value.upper() if isinstance(value, str) else value
+
+
+# The DB member names. The public catalogue spells them lowercase, so a curl written
+# from the contract sends "single" / "tiles": `_upper` accepts either before validation.
+OptionKindStr = Annotated[Literal["SINGLE", "MULTI"], BeforeValidator(_upper)]
+OptionLayoutStr = Annotated[Literal["TILES", "PHOTO_TILES", "CHECKLIST"], BeforeValidator(_upper)]
+UpsellPlacementStr = Annotated[Literal["ITEM_PAGE", "BASKET"], BeforeValidator(_upper)]
+SizeCodeStr = Literal["S", "M", "XL", "ONE"]
 HHMM = Annotated[str, Field(pattern=r"^([01]\d|2[0-3]):[0-5]\d$", description="HH:MM, 24h")]
 BY = Field(min_length=1, max_length=80, description="Operator name. Required on every write.")
 
@@ -269,6 +275,9 @@ class ShopSettingsOut(Out):
     terms_url: str
     loyalty_stamps_online: bool
     notify_telegram: bool
+    #: CONTRACT §10.J: off (default) = customers sign in with their Rewards card to place
+    #: an order; the public API then answers 401 `sign_in_required` without a card token.
+    guest_orders: bool = False
     payment_provider: str = Field(default="stripe", description="A key from `payment_providers`.")
     pos_sink: str = Field(default="none", description="none | lightspeed")
     #: CONTRACT §3c customer updates. Email and push are free; SMS costs a few pence a
@@ -311,6 +320,7 @@ class ShopSettingsIn(In):
     terms_url: str | None = Field(default=None, max_length=300)
     loyalty_stamps_online: bool | None = None
     notify_telegram: bool | None = None
+    guest_orders: bool | None = None
     payment_provider: str | None = Field(default=None, max_length=20)
     pos_sink: str | None = Field(default=None, max_length=20)
     email_notify: bool | None = None
@@ -516,6 +526,14 @@ class UpsellIn(In):
     placement: UpsellPlacementStr
     heading: str = Field(min_length=1, max_length=80)
     product_ids: list[int] = Field(default_factory=list)
+
+
+class UpsellPatchIn(In):
+    """Any subset, for PUT on an existing upsell."""
+
+    placement: UpsellPlacementStr | None = None
+    heading: str | None = Field(default=None, min_length=1, max_length=80)
+    product_ids: list[int] | None = None
     sort_order: int = Field(default=0, ge=0)
     active: bool = True
 

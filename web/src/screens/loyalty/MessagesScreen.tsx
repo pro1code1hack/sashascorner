@@ -28,11 +28,11 @@ export function MessagesScreen() {
         </PageBody>
       ) : (
         <PageBody flush>
-          <div className="grid min-h-full grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)]">
-            <div className="order-2 min-w-0 bg-canvas px-4 py-5 sm:px-5 md:order-1">
+          <div className="grid min-h-full grid-cols-1 compact:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)]">
+            <div className="order-2 min-w-0 bg-canvas px-4 py-5 sm:px-5 compact:order-1">
               <List data={q.data} />
             </div>
-            <aside className="order-1 min-w-0 border-b border-line bg-surface px-4 py-5 sm:px-5 md:order-2 md:border-b-0 md:border-l">
+            <aside className="order-1 min-w-0 border-b border-line bg-surface px-4 py-5 sm:px-5 compact:order-2 compact:border-b-0 compact:border-l">
               <Composer data={q.data} />
             </aside>
           </div>

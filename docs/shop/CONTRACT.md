@@ -242,6 +242,15 @@ display (minimal edits, only label maps/lists — leave logic alone).
    `reward_max_price_pence`); the reward is marked redeemed **at COLLECTED** (via the
    existing redeem service pattern: `redeemed_at`, `redeemed_menu_item_id`, `sale_id`),
    and released if the order is cancelled.
+   **§3.5 addendum (owner decision, 2026-09-29; Agent J):** placing an order needs a
+   signed-in Rewards card. `shop_settings.guest_orders` (bool, default `False`) relaxes it.
+   While it is off, `POST /api/shop/orders` without a valid `X-Card-Token` answers
+   `401 {"error":"sign_in_required","detail":"Sign in with your Rewards card to place an
+   order — it takes a moment and every order earns stamps."}` before any other check; a
+   voided card counts as no card. Browsing, `GET /catalogue`, `GET /slots` and
+   `POST /quote` stay open to guests, so prices are never hidden. `GET /config` carries
+   `require_account: boolean` (= `not guest_orders`) for the checkout to branch on. With
+   a valid token the order is linked to the member exactly as before (this rule).
 6. **Payment**: `COUNTER` orders are `NEW` immediately with `payment_status=UNPAID`; staff
    mark paid at collection (`COLLECTED` implies paid: set `PAID`, `paid_at`). `ONLINE`
    orders start `PENDING_PAYMENT`; the Stripe Checkout Session's success webhook
@@ -1113,3 +1122,172 @@ Files: `web/src/screens/shop/{OrderPage,LiveOrdersScreen,OrdersScreen,InsightsSc
 - **Not verified**: a real print (only simulated by swapping `@media print` for `screen`); clipboard contents (the
   button state was checked, the clipboard read blocks on a permission prompt in this Chrome); a successful refund
   (no provider configured); `photo_is_fallback` is typed but not rendered (the preview already says "No photo yet").
+
+### J — sign-in required to order (2026-09-29)
+
+Files: migration `h6e7f8a9b0c1_shop_guest_orders.py` (on `g5d6e7f8a9b0`, applied to the live DB
+after an upgrade/downgrade/upgrade on a `.backup` copy), `cafeops/db/models/shop.py`
+(`ShopSettings.guest_orders`), `cafeops/services/shop/{orders,admin}.py`,
+`cafeops/services/loyalty/join.py` (+ a two-line delegation in `backoffice.py`),
+`cafeops/api/areas/{shop,shop_views,shop_schemas,shop_admin_schemas,shop_admin_views}.py`,
+`web/src/lib/types/shop.ts`, `web/src/screens/shop/{SettingsScreen,OrderPage}.tsx`.
+
+- **The rule** is §3.5's addendum above, enforced in `services/shop/orders.place_order`
+  (`SIGN_IN_REQUIRED_DETAIL`), so the bot, the API and anything else placing an order
+  share it. Verified: `POST /orders` without a token and with a bad token both answer
+  the 401; with a valid token 201; `POST /quote` as a guest 200.
+- **Admin**: `GET`/`PUT /api/shop-admin/settings` carry `guest_orders`. `#/shop/settings`
+  › Ordering has the Toggle "Guests may order without signing in" with the note
+  "Off: customers sign in with their Rewards card at checkout, so every order has a
+  verified contact and earns stamps." Verified: `PUT {guest_orders: true}` → `GET /config`
+  `require_account: false` → a guest order 201 (`SC-4DUZWK`, deleted since) → restored to
+  `false`. The existing guest contact rule (`contact_required`: a phone or an email) still
+  applies to guest orders.
+- **Order page / ticket**: the Customer panel's Rewards row says "Guest" (was "not a
+  member") and the print ticket's name line adds " · Guest", both only when `member` is
+  null; a member's ticket is unchanged.
+- **Profile** (`GET /api/shop/me`): gains `member: {first_name, email, phone, birthday_day,
+  birthday_month, marketing_opt_in, member_since}`; `recent_orders` is unchanged (it was
+  already limited to 10, not the 5 §4 sketches — left as F shipped it).
+- **`GET /api/shop/me/orders?page=&page_size=`** (`page ≥ 1`, `page_size` 1–50, default 10;
+  99 → 422): `{items: [{code, status, status_label, placed_at, placed_local ("29 Sep 2026
+  09:58"), requested_local ("10:10", or day-qualified when the collection day differs from
+  the day placed), dining, table, total_pence, lines: [{name, size_label, qty,
+  options: [{group, name}]}], reorder: {lines: [{product_id, menu_item_id, qty, option_ids}],
+  complete}}], total, page, page_size}`, newest first, the token's member only; no token
+  → 401 `bad_token`. `reorder` uses F's `_reorder_lines` (a line whose product, size or
+  an option has vanished is dropped and `complete` is false). Rate-limited like `/me`.
+- **`PATCH /api/shop/me`** `{first_name?, email?, phone?, birthday_day?, birthday_month?,
+  marketing_opt_in?}` → the `member` block. Any subset; a field left out is left alone;
+  `email`/`phone` sent as `null` clear that contact; `birthday_day`+`birthday_month` both
+  `null` remove the birthday. Consent goes through loyalty's `set_marketing_opt_in`
+  (source "online shop"); everything else through loyalty's `update_details`, which now
+  takes `set_email/email`, `set_phone/phone` and `source` on `DetailsChange`. The contact
+  rules moved into `join.py` beside it (`contact_taken`, `_member_contact`) and the back
+  office's `patch_member` delegates its `_taken` there, so there is one uniqueness rule:
+  normalised (`+447700900123`), 422 `bad_email` / `bad_phone`, 409 `contact_taken`,
+  422 `contact_required` when both would be empty, 422 `nothing_to_change` on `{}`,
+  422 `first_name_required` on `first_name: null`, 422 `invalid_request` on an unknown
+  field. Verified all of those by curl; the audit row reads "member changed first name,
+  birthday, phone from the online shop". **Deviation from `PreferencesIn`'s stance**
+  (loyalty §: "email and phone are not editable here … a typo would lock the member
+  out"): the owner's decision lists them, so the shop lets a member change them; the
+  one-contact-kept rule is the safety net.
+- **Review fixes** (coordinator, 2026-09-29), all in J's files:
+  1. `GET /orders/{code}` (customer) events are an allowlist — `placed, paid, accepted,
+     preparing, ready, collected, cancelled, rejected, refund_needed, refunded,
+     reward_unavailable, reward_released, expired`; `refund_needed` reads only "A refund
+     is due.", `refunded` "Refunded." (no provider ids); `note`, `notified`, `notify_failed`,
+     `pos_*`, `refund_failed`, `payment_error`, `sale_recorded` never leave. Verified: after
+     a staff note and an accept, the DB holds `placed, note, accepted, notify_failed` and
+     the customer sees `[('placed', …), ('accepted', None)]`.
+  2. Order rate limit is 20/min and 60/hour per IP, counted on 201 and honeypot hits only
+     (`_check` before, `_count` after); 409/422 refusals do not count. Verified: 25
+     consecutive 422s then a 201. 429 wording unchanged.
+  3. `GET /config` carries `sms_notify: 'off'|'ready'|'all'` (the setting, "off" when
+     Twilio is not configured) and `updates: {email, push, sms}` (setting on AND channel
+     configured). Verified on this box: `sms_notify: "off"`, all three false.
+  4. `orders._collect`: a held reward that is gone at COLLECTED no longer raises the
+     total on a PAID order. PAID online → `discount_pence`/`total_pence` stay as paid,
+     the discount still lands on the sale line it was for (gross 0 here), nothing is
+     redeemed, event `reward_unavailable` "The free drink had already been used; the
+     online price stands."; UNPAID counter → discount withdrawn and the new total, as
+     before. Verified with `_collect` on a `.backup` copy (both branches).
+- **Cleanup**: test orders `SC-9B65KV`, `SC-UW4UCG`, `SC-4DUZWK` (and their lines/events)
+  deleted; no `web:` sale was written on the live DB (collect ran on the copy);
+  `guest_orders` restored to `false`; the test member's name, phone, birthday and consent
+  restored (its `birthday_set_at` is now today, and four loyalty audit rows from the
+  PATCH tests remain).
+- **Not verified**: the public app (`site/web`) does not yet read `require_account` or
+  handle `sign_in_required` — that is the checkout's job, outside J; the toggle was checked
+  through the API and `tsc`/`vite build`, not clicked in a browser.
+
+### K — sign-in wall, account and profile (2026-09-29)
+
+Files: `site/web/src/pages/account.astro` (new), `site/web/src/scripts/shop/{AccountApp.tsx,member.ts}` (new),
+`account/{Account,SignInWall}.tsx`, `{api,types,store,router,toast,mock,App}.ts(x)`, `components/TopBar.tsx`,
+`views/{Basket,Overview}.tsx`, `checkout/{Checkout,common}.tsx`, `status/Status.tsx`, `site/web/src/styles/shop.css`;
+one-liners: `astro.config.mjs` (`/account` out of the sitemap), `pages/rewards.astro` (copy only),
+`components/Header.astro` ("My account" link + an inline script that swaps in the first name).
+
+- **The account is the thing; the Rewards card lives inside it** (owner, 2026-09-29). `/account` is a
+  site-wide static page mounting `AccountApp` (the same `Account` screen the shop had); `/order/account`
+  does `location.replace('/account' + search)`, so `?next=checkout` survives and the checkout wall still
+  returns to `/order/checkout`. `paths.account()` is `/account`; `router.go()` does a full load when the
+  app is not mounted under `/order` (the island's "Back to checkout" / "Order again"). Nav copy: "Sign in"
+  / "Create account" (was "Join Rewards") everywhere in the shop; the join tab's lead line is
+  `ACCOUNT_LEAD` in `Account.tsx`.
+- **Sign-in wall** (`SignInWall.tsx`, `member.needsSignIn()` = `config.require_account && !signedIn`):
+  the basket shows the panel under the total and its bar CTA becomes "Sign in to order"; the checkout shows
+  the panel in place of the form; `POST /orders` → 401 `sign_in_required` (or `bad_token`) shows the same
+  panel inline with a one-line reason and forgets a dead token. Guest flow unchanged when `require_account`
+  is false. Both buttons go to `/account?next=checkout&tab=signin|join`.
+- **`member.ts`**: `signedIn` (signal: a token is on this device), `member` ({card_id, first_name}, cached
+  under `localStorage['sc.shop.member.v1']` so the top bar and the site header say the name on first paint),
+  `me` (the last `/me`), `loadMember()` (401 → `signOut()`), `signIn()`, `signOut()`. The Header's inline
+  script reads the rewards token slot and this cache; nothing is fetched there.
+- **Profile** (signed in), in order: *Your Rewards card* — `cardHtml()` from `GET /api/loyalty/card/{id}`
+  with the token (`card.css` imported by `Account.tsx`), `walletHtml()` under it, "Open the full card" →
+  `/c/<id>`; a 404/410 on the card, or a club card whose siblings hold no `stamp` card, shows "Add your
+  Rewards card" (`POST /api/loyalty/card/{id}/programs {program: <is_default slug>}`), and `card.joinable`
+  lists as "Add to your account" (new card's token saved, the account stays on the card it signed in with).
+  *Free drink* when `/me.reward` or a `STAMP_CARD` reward. *Your orders* — `GET /api/shop/me/orders`
+  paged 10 with "Show more" (a 404/405 falls back to `/me.recent_orders`); "Order again" reuses
+  `store.reorder` and, because the basket is a page load away, stashes the notice / toast in sessionStorage
+  (`store.stashNotice`, `toast.stashToast`, read by `basket.notice` / `App` on mount); "View" only when this
+  device holds the order token. *Your details* — `PATCH /api/shop/me` with the changed fields only; J's
+  answer is the `member` block (the mock answers the whole `/me`; both handled); 422 field codes and 409
+  `contact_taken` land on the field with the server's `detail` verbatim, others under the form. *Sign out on
+  this device.*
+- **Status page**: "Signed in as <name> · stamps added when you collect", or, signed out with guests
+  allowed, "Create an account to earn stamps on your next order."
+- **Mock** (`?mock=`): `wall` (require_account), `/me.member`, `/me/orders` (13 rows, `reorder` adds
+  `SC-GONE01` with a gone and a sold-out line), `PATCH /me` (`taken@example.com` → 422 `email_taken`).
+  The rewards mock's card is "Olena" while the shop mock's member is "Sasha": two mocks, one visit.
+- **Verified**: `npx tsc --noEmit` and `npm run build` clean; in Chrome, mock: wall on basket and checkout,
+  sign-in (code 123456) returning to checkout with the basket intact, an order placed and the status line,
+  `/order/account` → `/account` redirect, profile at 1443 and at a real 375-wide same-origin iframe
+  (no horizontal overflow), Save (`Saved.`), Order again with the left-out sentence on the basket, header
+  and mobile menu showing the name. Live: `/me`, `/me/orders` and `PATCH /me` answered for the `Test Join
+  Agent` card (its email was PATCHed to a test value and restored to `test-join-agent@example.com`).
+- **QA sweep, folded in**: `document.title` on checkout ("Checkout · Order ahead · Sasha's Corner"), account
+  ("My account · Sasha's Corner") and status ("Order SC-XXXXXX · Sasha's Corner") through `views/useTitle`
+  (new second argument `site` drops the "Order ahead" middle). A non-2xx `GET /config` (a 422 was seen
+  mid-deploy) now reads as unreachable: `store.configError` keeps network/timeout/5xx/429 wording and turns
+  any other status into "The ordering system answered with an error…" under the overview's "We can't reach
+  the shop right now." block (mock flag `cfg422` reproduces it). The site header's account link follows
+  sign-in / sign-out without a reload (`member.syncHeader`).
+- **Not verified**: a real one-time code (no SMTP/SMS here); Apple/Google Wallet links (not configured);
+  the "Add your Rewards card" / joinable flows against the live API (the test member has the default card
+  only); a real 401 mid-checkout (mock cannot expire a token after `/me` passed).
+
+
+### Integrator — readiness audit fixes (2026-09-29)
+
+From the whole-diff code review and the QA sweep (both agents' reports are in the
+session, not in the repo). Fixed by the integrator:
+
+- **Site Docker image did not build**: `npm ci` refused TypeScript 7 against
+  `@astrojs/check` (only the dev install with `--legacy-peer-deps` worked). The site is
+  on TypeScript ^6 now; `sashasite info-export` no longer needs the `site_setting`
+  table (falls back to `config/cafe.toml`), which the image's data stage never has.
+  `docker compose build api caddy site-api site-static` succeeds.
+- **Lightspeed payment webhook** was unauthenticated: it now requires
+  `CAFEOPS_LIGHTSPEED_WEBHOOK_SECRET` presented as `X-Lightspeed-Secret` (403 otherwise).
+- **Stripe** Checkout Sessions expire after 30 minutes (matching `expire_pending_payments`);
+  a payment that still lands on a cancelled/rejected order is recorded as PAID with a
+  `refund_needed` event instead of a 409; the redelivery stamp is written through a
+  query, so duplicate webhooks are duplicates.
+- **Money never floats** in the Lightspeed adapters (`Decimal`).
+- **Customer status page** shows only an allowlist of events (no staff notes, no
+  provider ids); orders rate limit is 20/min, 60/hour per IP counting placements only;
+  `/api/shop/config` carries `sms_notify` and `updates`; a PAID online order keeps its
+  paid total when the held reward is gone at COLLECTED. (Agent J applied these.)
+- Push unsubscribe sends the endpoint as `?endpoint=`, so only that device is dropped.
+- **Catalogue**: products whose ops item has no category are served under a catch-all
+  category `more` ("More from the menu", id 0) instead of being unreachable.
+- Admin: option-group `kind`/`layout` and upsell `placement` accept lowercase;
+  `PUT /upsells/{id}` takes any subset (`UpsellPatchIn`).
+- `next_open_local` includes the lead time; "Orders can only be placed for today."
+- `cafeops doctor` has an "online ordering" line; `docs/shop/GO-LIVE.md` written.
+- `site/web/node_modules` and `site/web/.astro` untracked and ignored.

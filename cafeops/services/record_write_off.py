@@ -130,9 +130,7 @@ def record_write_off(
     batches = repo.open_batches(ingredient_id, at=at)
     by_id = {b.batch_id: b for b in batches}
 
-    allocations, shortfall = allocate_fifo(
-        qty=qty, batches=batches, open_life_days=open_life, at=at
-    )
+    allocations, shortfall = allocate_fifo(qty=qty, batches=batches, open_life_days=open_life)
 
     signed_by = recorded_by.strip()[:120]
     stock_repo = SqlStockRepository(session)

@@ -15,19 +15,19 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from datetime import UTC, date, datetime, time, timedelta
-from typing import Any
+from typing import Any, cast
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from cafeops.clock import local_day_bounds, local_today, utcnow
 from cafeops.config import settings
 from cafeops.db.models import (
     MediaAsset,
     MenuItem,
     Modifier,
-    Sale,
 )
 from cafeops.db.models.shop import (
     DiningOption,
@@ -49,6 +49,8 @@ from cafeops.db.models.shop import (
 from cafeops.domain.shop import ALLERGENS, DIETARY, TRANSITIONS, allergens_problem
 from cafeops.integrations.payments import registry
 from cafeops.integrations.pos.lightspeed import LightspeedSink
+from cafeops.services.actor import require_actor
+from cafeops.services.finance.common import UNSET, Unset
 from cafeops.services.shop import catalog, orders, payments, slots
 from cafeops.services.shop.errors import ShopError
 
@@ -56,7 +58,10 @@ __all__ = [
     "LIVE_STATUSES",
     "POS_SINK_KEYS",
     "OrdersPage",
+    "ProductChange",
     "ProviderInfo",
+    "RefundDeclined",
+    "SettingsChange",
     "ShopAdminRefused",
     "Summary",
     "banner_create",
@@ -66,6 +71,7 @@ __all__ = [
     "categories_order",
     "category_update",
     "delete_option_group",
+    "ensure_product_for_menu_item",
     "get_settings",
     "mark_paid",
     "option_group_create",
@@ -104,6 +110,15 @@ class ShopAdminRefused(Exception):
         self.detail = detail
 
 
+class RefundDeclined(ShopAdminRefused):
+    """The payment provider refused a refund. Unlike every other refusal this one is
+    also a record: the `refund_failed` event is flushed and the caller must COMMIT it
+    before answering 409, or the attempt vanishes from the order's timeline."""
+
+    def __init__(self, detail: str) -> None:
+        super().__init__(409, detail)
+
+
 #: "Live" on the board: placed and not yet collected, cancelled or rejected.
 LIVE_STATUSES: tuple[OrderStatus, ...] = (
     OrderStatus.PENDING_PAYMENT,
@@ -116,15 +131,20 @@ LIVE_STATUSES: tuple[OrderStatus, ...] = (
 _HHMM = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 
 
-def _now() -> datetime:
-    return datetime.now(UTC)
+class _ActorRefused(ShopAdminRefused):
+    """`require_actor`'s refusal, as the 422 the admin API has always answered."""
+
+    def __init__(self, detail: str) -> None:
+        super().__init__(422, detail)
+
+
+_STAFF = "staff:"
+#: `shop_order_event.actor` is String(80); the prefix eats into it.
+_STAFF_NAME_MAX = 80 - len(_STAFF)
 
 
 def _staff(by: str) -> str:
-    name = " ".join(by.split())[:60]
-    if not name:
-        raise ShopAdminRefused(422, "say who is doing this: the operator name is required")
-    return f"staff:{name}"
+    return _STAFF + require_actor(by, error=_ActorRefused)[:_STAFF_NAME_MAX]
 
 
 # ==========================================================================
@@ -187,17 +207,74 @@ def _validate_closures(raw: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]
     return out
 
 
-def update_settings(session: Session, changes: Mapping[str, Any]) -> ShopSettings:
-    """Apply a subset of §2.1's columns. Hours and closures are validated and replaced
-    wholesale; every other key is set as given. Unknown keys are refused."""
+@dataclass(frozen=True, slots=True)
+class SettingsChange:
+    """A PATCH of §2.1's columns: a field left `UNSET` was not sent and is kept.
+
+    Every field that was sent is validated -- and the "someone must still be able to
+    order and pay" rules checked against the result -- BEFORE the row is touched, so a
+    refused change leaves the settings exactly as they were. Hours and closures are
+    replaced wholesale."""
+
+    enabled: bool | Unset | None = UNSET
+    closed_message: str | Unset | None = UNSET
+    hero_title: str | Unset | None = UNSET
+    hero_subtitle: str | Unset | None = UNSET
+    takeaway_enabled: bool | Unset | None = UNSET
+    eat_in_enabled: bool | Unset | None = UNSET
+    default_dining: str | Unset | None = UNSET
+    lead_minutes: int | Unset | None = UNSET
+    slot_minutes: int | Unset | None = UNSET
+    max_orders_per_slot: int | Unset | None = UNSET
+    days_ahead: int | Unset | None = UNSET
+    hours: Sequence[Mapping[str, Any]] | Unset | None = UNSET
+    last_order_minutes_before_close: int | Unset | None = UNSET
+    closures: Sequence[Mapping[str, Any]] | Unset | None = UNSET
+    pay_at_counter: bool | Unset | None = UNSET
+    pay_online: bool | Unset | None = UNSET
+    kcal_notice: str | Unset | None = UNSET
+    allergen_notice: str | Unset | None = UNSET
+    collection_note: str | Unset | None = UNSET
+    terms_url: str | Unset | None = UNSET
+    loyalty_stamps_online: bool | Unset | None = UNSET
+    notify_telegram: bool | Unset | None = UNSET
+    guest_orders: bool | Unset | None = UNSET
+    payment_provider: str | Unset | None = UNSET
+    pos_sink: str | Unset | None = UNSET
+    email_notify: bool | Unset | None = UNSET
+    push_notify: bool | Unset | None = UNSET
+    sms_notify: str | Unset | None = UNSET
+
+
+def _sent(change: SettingsChange | ProductChange) -> dict[str, object]:
+    """The fields of a change dataclass that were sent, by name."""
+    return {
+        f.name: getattr(change, f.name)
+        for f in fields(change)
+        if not isinstance(getattr(change, f.name), Unset)
+    }
+
+
+def update_settings(session: Session, change: SettingsChange) -> ShopSettings:
+    """Apply a `SettingsChange`. Validates everything first; mutates only when all of
+    it is acceptable."""
     row = get_settings(session)
-    for key, value in changes.items():
+    planned: dict[str, object] = {}
+    for key, value in _sent(change).items():
+        if value is None:
+            # Every settings column is NOT NULL: an explicit null is a mistake, not "clear".
+            raise ShopAdminRefused(422, f"'{key}' cannot be empty; send a value or leave it out")
         if key == "hours":
-            row.hours = _validate_hours(value)
+            planned[key] = _validate_hours(cast(Sequence[Mapping[str, Any]], value))
         elif key == "closures":
-            row.closures = _validate_closures(value)
+            planned[key] = _validate_closures(cast(Sequence[Mapping[str, Any]], value))
         elif key == "default_dining":
-            row.default_dining = DiningOption[str(value)]
+            try:
+                planned[key] = DiningOption[str(value)]
+            except KeyError:
+                raise ShopAdminRefused(
+                    422, f"'{value}' is not a dining option; choose TAKEAWAY or EAT_IN"
+                ) from None
         elif key == "payment_provider":
             chosen = str(value).strip().lower()
             if chosen not in registry.keys():
@@ -206,57 +283,33 @@ def update_settings(session: Session, changes: Mapping[str, Any]) -> ShopSetting
                     f"'{value}' is not a payment provider; choose from "
                     + ", ".join(registry.keys()),
                 )
-            row.payment_provider = chosen
+            planned[key] = chosen
         elif key == "pos_sink":
             chosen = str(value).strip().lower()
             if chosen not in POS_SINK_KEYS:
                 raise ShopAdminRefused(
                     422, f"'{value}' is not a POS sink; choose from " + ", ".join(POS_SINK_KEYS)
                 )
-            row.pos_sink = chosen
-        elif key in _SETTINGS_FIELDS:
-            setattr(row, key, value)
+            planned[key] = chosen
         else:
-            raise ShopAdminRefused(422, f"'{key}' is not a shop setting")
-    if not row.takeaway_enabled and not row.eat_in_enabled:
+            planned[key] = value
+
+    def after(key: str) -> object:
+        return planned[key] if key in planned else getattr(row, key)
+
+    if not after("takeaway_enabled") and not after("eat_in_enabled"):
         raise ShopAdminRefused(
             422, "at least one of takeaway and eat in must stay on, or nobody can order"
         )
-    if not row.pay_at_counter and not row.pay_online:
+    if not after("pay_at_counter") and not after("pay_online"):
         raise ShopAdminRefused(
             422, "at least one way to pay must stay on: at the counter or online"
         )
-    row.updated_at = _now()
-    session.commit()
+    for key, value in planned.items():
+        setattr(row, key, value)
+    row.updated_at = utcnow()
+    session.flush()
     return row
-
-
-_SETTINGS_FIELDS = frozenset(
-    {
-        "email_notify",
-        "push_notify",
-        "sms_notify",
-        "enabled",
-        "closed_message",
-        "hero_title",
-        "hero_subtitle",
-        "takeaway_enabled",
-        "eat_in_enabled",
-        "lead_minutes",
-        "slot_minutes",
-        "max_orders_per_slot",
-        "days_ahead",
-        "last_order_minutes_before_close",
-        "pay_at_counter",
-        "pay_online",
-        "kcal_notice",
-        "allergen_notice",
-        "collection_note",
-        "terms_url",
-        "loyalty_stamps_online",
-        "notify_telegram",
-    }
-)
 
 
 def stripe_configured() -> bool:
@@ -332,10 +385,8 @@ class Summary:
 
 
 def _today_window() -> tuple[datetime, datetime]:
-    tz = settings.tz
-    today = datetime.now(tz).date()
-    start = datetime.combine(today, time.min, tzinfo=tz).astimezone(UTC)
-    return start, start + timedelta(days=1)
+    """Today's local day as a UTC window -- via the one helper that gets DST days right."""
+    return local_day_bounds(local_today(settings.tz), tz=settings.tz)
 
 
 def summary(session: Session) -> Summary:
@@ -382,7 +433,7 @@ def summary(session: Session) -> Summary:
     )
     return Summary(
         enabled=row.enabled,
-        open_now=slots.open_now(row, _now()),
+        open_now=slots.open_now(row, utcnow()),
         new=counts.get(OrderStatus.NEW, 0),
         accepted=counts.get(OrderStatus.ACCEPTED, 0),
         preparing=counts.get(OrderStatus.PREPARING, 0),
@@ -474,9 +525,8 @@ def set_status(
     try:
         orders.transition(session, order, target, actor=actor, reason=reason)
     except ShopError as exc:
-        session.rollback()
         raise ShopAdminRefused(exc.status, exc.detail) from exc
-    session.commit()
+    session.flush()
     session.refresh(order)
     return order
 
@@ -490,7 +540,7 @@ def allowed_transitions(order: ShopOrder) -> list[OrderStatus]:
 def set_staff_note(session: Session, order_id: int, note: str | None, *, by: str) -> ShopOrder:
     order = order_or_404(session, order_id)
     orders.add_staff_note(session, order, note or "", actor=_staff(by))
-    session.commit()
+    session.flush()
     return order
 
 
@@ -513,9 +563,8 @@ def mark_paid(session: Session, order_id: int, *, by: str) -> ShopOrder:
     try:
         orders.mark_paid(session, order, actor=actor)
     except ShopError as exc:
-        session.rollback()
         raise ShopAdminRefused(exc.status, exc.detail) from exc
-    session.commit()
+    session.flush()
     return order
 
 
@@ -523,33 +572,21 @@ def refund(session: Session, order_id: int, *, by: str, reason: str | None) -> S
     """Refund a PAID ONLINE order through the payment provider (CONTRACT §10.F).
 
     A COUNTER payment is refused with "refund it from the till" (409); so is an order
-    that is not PAID. When the provider says no, its sentence comes back as the 409
-    AFTER the `refund_failed` event is committed, so the timeline shows the attempt.
+    that is not PAID. When the provider says no, its sentence comes back as
+    `RefundDeclined` (409) with the `refund_failed` event already flushed: the caller
+    commits before answering, so the timeline shows the attempt.
     """
     order = order_or_404(session, order_id)
     actor = _staff(by)
     try:
         result = payments.refund_order(session, order, actor=actor, reason=reason)
     except ShopError as exc:
-        session.rollback()
         raise ShopAdminRefused(exc.status, exc.detail) from exc
-    session.commit()
+    session.flush()
     if not result.ok:
-        raise ShopAdminRefused(409, result.detail)
+        raise RefundDeclined(result.detail)
     session.refresh(order)
     return order
-
-
-def sales_for(session: Session, order: ShopOrder) -> list[Sale]:
-    if order.sale_receipt_id is None:
-        return []
-    return list(
-        session.scalars(
-            select(Sale)
-            .where(Sale.lightspeed_receipt_id == order.sale_receipt_id)
-            .order_by(Sale.id)
-        )
-    )
 
 
 # ==========================================================================
@@ -560,7 +597,7 @@ def sales_for(session: Session, order: ShopOrder) -> list[Sale]:
 def sync_catalogue(session: Session) -> None:
     catalog.sync_categories(session)
     catalog.sync_products(session)
-    session.commit()
+    session.flush()
 
 
 def _asset_or_404(session: Session, asset_id: int | None) -> None:
@@ -606,22 +643,22 @@ def category_update(session: Session, category_id: int, changes: Mapping[str, An
             setattr(row, key, value)
         else:
             raise ShopAdminRefused(422, f"'{key}' is not an editable category field")
-    row.updated_at = _now()
-    session.commit()
+    row.updated_at = utcnow()
+    session.flush()
     return row
 
 
 def categories_order(session: Session, ids: Sequence[int]) -> None:
     _reorder(session.scalars(select(ShopCategory)), ids, "shop category")
-    session.commit()
+    session.flush()
 
 
 def set_category_photo(session: Session, category_id: int, asset_id: int | None) -> ShopCategory:
     row = category_or_404(session, category_id)
     _asset_or_404(session, asset_id)
     row.photo_asset_id = asset_id
-    row.updated_at = _now()
-    session.commit()
+    row.updated_at = utcnow()
+    session.flush()
     return row
 
 
@@ -636,22 +673,46 @@ def product_or_404(session: Session, product_id: int) -> ShopProduct:
 
 
 def product_for_menu_item(session: Session, menu_item_id: int) -> ShopProduct:
-    """The shop product behind an ops menu item (by name). Syncs first when missing; a
-    name the sync skips (no active size) gets a row here so the editor still works.
-    404 only when the menu item itself does not exist."""
+    """The shop product behind an ops menu item (by name). READ-ONLY: a GET answers
+    with this, so a product not listed yet comes back as an unsaved default -- the row
+    `catalog.sync_products` would create -- never added to the session (its `id` is
+    None). `ensure_product_for_menu_item` is the writing twin. 404 only when the menu
+    item itself does not exist."""
     item = session.get(MenuItem, menu_item_id)
     if item is None:
         raise ShopAdminRefused(404, f"menu item {menu_item_id} does not exist")
     row = session.scalar(select(ShopProduct).where(ShopProduct.item_name == item.name))
+    if row is not None:
+        return row
+    last = session.scalar(select(func.max(ShopProduct.sort_order)))
+    return ShopProduct(
+        item_name=item.name,
+        category_ops_name=(item.category or "").strip() or None,
+        allergens=[],
+        dietary=[],
+        sort_order=(last or 0) + 10,
+        visible=True,
+        available=True,
+        featured=False,
+    )
+
+
+def ensure_product_for_menu_item(session: Session, menu_item_id: int) -> ShopProduct:
+    """`product_for_menu_item`, persisted: syncs the catalogue when the product is
+    missing, and a name the sync skips (no active size) gets a row here so the editor
+    still works. Only an edit (PUT) calls this."""
+    found = product_for_menu_item(session, menu_item_id)
+    if found.id is not None:
+        return found
+    catalog.sync_products(session)
+    session.flush()
+    row = session.scalar(select(ShopProduct).where(ShopProduct.item_name == found.item_name))
     if row is None:
-        catalog.sync_products(session)
-        session.flush()
-        row = session.scalar(select(ShopProduct).where(ShopProduct.item_name == item.name))
-    if row is None:
-        row = ShopProduct(item_name=item.name, category_ops_name=item.category, updated_at=_now())
+        item = session.get(MenuItem, menu_item_id)
+        assert item is not None  # product_for_menu_item 404s first
+        row = ShopProduct(item_name=item.name, category_ops_name=item.category, updated_at=utcnow())
         session.add(row)
         session.flush()
-    session.commit()
     return row
 
 
@@ -677,32 +738,72 @@ _PRODUCT_TEXT: dict[str, int] = {
 }
 
 
-def product_update(session: Session, product_id: int, changes: Mapping[str, Any]) -> ShopProduct:
+@dataclass(frozen=True, slots=True)
+class ProductChange:
+    """A PATCH of one shop product: a field left `UNSET` was not sent and is kept;
+    `None` clears a nullable field. Validated in full before the row is touched."""
+
+    display_name: str | Unset | None = UNSET
+    description: str | Unset | None = UNSET
+    note: str | Unset | None = UNSET
+    ingredients_text: str | Unset | None = UNSET
+    badge: str | Unset | None = UNSET
+    kcal: int | Unset | None = UNSET
+    kcal_by_size: Mapping[str, int] | Unset | None = UNSET
+    nutrition: Mapping[str, str] | Unset | None = UNSET
+    allergens: Sequence[str] | Unset | None = UNSET
+    dietary: Sequence[str] | Unset | None = UNSET
+    visible: bool | Unset | None = UNSET
+    available: bool | Unset | None = UNSET
+    featured: bool | Unset | None = UNSET
+    category_ops_name: str | Unset | None = UNSET
+    sort_order: int | Unset | None = UNSET
+    default_size: str | Unset | None = UNSET
+    option_group_ids: Sequence[int] | Unset | None = UNSET
+
+
+#: NOT NULL product columns: an explicit null is refused rather than left to the database.
+_PRODUCT_REQUIRED = frozenset(
+    {"allergens", "dietary", "visible", "available", "featured", "sort_order", "option_group_ids"}
+)
+
+
+def product_update(session: Session, product_id: int, change: ProductChange) -> ShopProduct:
+    """Apply a `ProductChange`. Every sent field is validated first; nothing is written
+    unless all of it is acceptable."""
     row = product_or_404(session, product_id)
-    for key, value in changes.items():
+    planned: dict[str, object] = {}
+    groups: list[int] | None = None
+    for key, value in _sent(change).items():
+        if value is None and key in _PRODUCT_REQUIRED:
+            raise ShopAdminRefused(422, f"'{key}' cannot be empty; send a value or leave it out")
         if key in _PRODUCT_TEXT:
-            setattr(
-                row,
-                key,
+            planned[key] = (
                 (" ".join(str(value).split())[: _PRODUCT_TEXT[key]] or None)
                 if value is not None
-                else None,
+                else None
             )
         elif key == "allergens":
-            cleaned = _clean_list(value, ALLERGENS, "allergen")
+            cleaned = _clean_list(cast(Sequence[str], value), ALLERGENS, "allergen")
             problem = allergens_problem(cleaned)
             if problem is not None:
                 raise ShopAdminRefused(422, problem)
-            row.allergens = cleaned
+            planned[key] = cleaned
         elif key == "dietary":
-            row.dietary = _clean_list(value, DIETARY, "dietary tag")
+            planned[key] = _clean_list(cast(Sequence[str], value), DIETARY, "dietary tag")
         elif key == "kcal_by_size":
-            row.kcal_by_size = (
-                {str(k): int(v) for k, v in dict(value).items()} if value is not None else None
+            planned[key] = (
+                {str(k): int(v) for k, v in cast(Mapping[str, int], value).items()}
+                if value is not None
+                else None
             )
         elif key == "nutrition":
-            row.nutrition = (
-                {str(k): str(v) for k, v in dict(value).items() if str(v).strip()}
+            planned[key] = (
+                {
+                    str(k): str(v)
+                    for k, v in cast(Mapping[str, str], value).items()
+                    if str(v).strip()
+                }
                 if value is not None
                 else None
             )
@@ -715,17 +816,21 @@ def product_update(session: Session, product_id: int, changes: Mapping[str, Any]
                 )
                 if not exists:
                     raise ShopAdminRefused(404, f"there is no category called '{value}'")
-            row.category_ops_name = value
-        elif key == "default_size":
-            row.default_size = value
+            planned[key] = value
         elif key == "option_group_ids":
-            _set_product_groups(session, row, [int(i) for i in value])
-        elif key in ("kcal", "visible", "available", "featured", "sort_order"):
-            setattr(row, key, value)
-        else:
-            raise ShopAdminRefused(422, f"'{key}' is not an editable product field")
-    row.updated_at = _now()
-    session.commit()
+            groups = [int(i) for i in cast(Sequence[int], value)]
+            known = set(session.scalars(select(ShopOptionGroup.id)))
+            for gid in groups:
+                if gid not in known:
+                    raise ShopAdminRefused(404, f"option group {gid} does not exist")
+        else:  # kcal, visible, available, featured, sort_order, default_size
+            planned[key] = value
+    for key, value in planned.items():
+        setattr(row, key, value)
+    if groups is not None:
+        _set_product_groups(session, row, groups)
+    row.updated_at = utcnow()
+    session.flush()
     return row
 
 
@@ -762,7 +867,7 @@ def products_order(session: Session, category_slug: str, ids: Sequence[int]) -> 
         )
     )
     _reorder(rows, ids, "shop product")
-    session.commit()
+    session.flush()
 
 
 def products_bulk(
@@ -775,14 +880,14 @@ def products_bulk(
     missing = [i for i in ids if i not in found]
     if missing:
         raise ShopAdminRefused(404, f"shop product {missing[0]} does not exist")
-    now = _now()
+    now = utcnow()
     for row in rows:
         if available is not None:
             row.available = available
         if visible is not None:
             row.visible = visible
         row.updated_at = now
-    session.commit()
+    session.flush()
     return rows
 
 
@@ -790,8 +895,8 @@ def set_product_photo(session: Session, product_id: int, asset_id: int | None) -
     row = product_or_404(session, product_id)
     _asset_or_404(session, asset_id)
     row.photo_asset_id = asset_id
-    row.updated_at = _now()
-    session.commit()
+    row.updated_at = utcnow()
+    session.flush()
     return row
 
 
@@ -894,11 +999,11 @@ def option_group_create(session: Session, body: Mapping[str, Any]) -> ShopOption
     if body.get("sort_order") is None:
         last = session.scalar(select(func.max(ShopOptionGroup.sort_order)))
         row.sort_order = (last if last is not None else -1) + 1
-    row.updated_at = _now()
+    row.updated_at = utcnow()
     session.add(row)
     session.flush()
     _apply_options(session, row, body.get("options", ()))
-    session.commit()
+    session.flush()
     return row
 
 
@@ -908,20 +1013,20 @@ def option_group_update(
     row = group_or_404(session, group_id)
     _apply_group_fields(session, row, body)
     _apply_options(session, row, body.get("options", ()))
-    row.updated_at = _now()
-    session.commit()
+    row.updated_at = utcnow()
+    session.flush()
     return row
 
 
 def delete_option_group(session: Session, group_id: int) -> None:
     row = group_or_404(session, group_id)
     session.delete(row)  # options and attachments cascade (§2.5)
-    session.commit()
+    session.flush()
 
 
 def option_groups_order(session: Session, ids: Sequence[int]) -> None:
     _reorder(session.scalars(select(ShopOptionGroup)), ids, "option group")
-    session.commit()
+    session.flush()
 
 
 def set_option_photo(session: Session, option_id: int, asset_id: int | None) -> ShopOption:
@@ -930,7 +1035,7 @@ def set_option_photo(session: Session, option_id: int, asset_id: int | None) -> 
         raise ShopAdminRefused(404, f"option {option_id} does not exist")
     _asset_or_404(session, asset_id)
     row.photo_asset_id = asset_id
-    session.commit()
+    session.flush()
     return row
 
 
@@ -949,18 +1054,30 @@ def _check_products(session: Session, ids: Sequence[int]) -> list[int]:
 
 
 def _apply_upsell(session: Session, row: ShopUpsell, body: Mapping[str, Any]) -> None:
-    row.placement = UpsellPlacement[str(body["placement"])]
-    row.heading = " ".join(str(body["heading"]).split())[:80]
-    row.product_ids = _check_products(session, body.get("product_ids", ()))
-    row.sort_order = int(body.get("sort_order", 0))
-    row.active = bool(body.get("active", True))
+    """Create takes the whole shape; an update may send any subset (`None` = keep)."""
+    if body.get("placement") is not None:
+        row.placement = UpsellPlacement[str(body["placement"])]
+    if body.get("heading") is not None:
+        row.heading = " ".join(str(body["heading"]).split())[:80]
+    if body.get("product_ids") is not None:
+        row.product_ids = _check_products(session, body["product_ids"])
+    elif row.product_ids is None:
+        row.product_ids = []
+    if body.get("sort_order") is not None:
+        row.sort_order = int(body["sort_order"])
+    elif row.sort_order is None:
+        row.sort_order = 0
+    if body.get("active") is not None:
+        row.active = bool(body["active"])
+    elif row.active is None:
+        row.active = True
 
 
 def upsell_create(session: Session, body: Mapping[str, Any]) -> ShopUpsell:
     row = ShopUpsell()
     _apply_upsell(session, row, body)
     session.add(row)
-    session.commit()
+    session.flush()
     return row
 
 
@@ -969,7 +1086,7 @@ def upsell_update(session: Session, upsell_id: int, body: Mapping[str, Any]) -> 
     if row is None:
         raise ShopAdminRefused(404, f"upsell {upsell_id} does not exist")
     _apply_upsell(session, row, body)
-    session.commit()
+    session.flush()
     return row
 
 
@@ -978,7 +1095,7 @@ def upsell_delete(session: Session, upsell_id: int) -> None:
     if row is None:
         raise ShopAdminRefused(404, f"upsell {upsell_id} does not exist")
     session.delete(row)
-    session.commit()
+    session.flush()
 
 
 # --- banners ------------------------------------------------------------------
@@ -1019,32 +1136,32 @@ def banner_create(session: Session, body: Mapping[str, Any]) -> ShopBanner:
     row = ShopBanner()
     _apply_banner(row, body)
     session.add(row)
-    session.commit()
+    session.flush()
     return row
 
 
 def banner_update(session: Session, banner_id: int, body: Mapping[str, Any]) -> ShopBanner:
     row = banner_or_404(session, banner_id)
     _apply_banner(row, body)
-    session.commit()
+    session.flush()
     return row
 
 
 def banner_delete(session: Session, banner_id: int) -> None:
     session.delete(banner_or_404(session, banner_id))
-    session.commit()
+    session.flush()
 
 
 def banners_order(session: Session, ids: Sequence[int]) -> None:
     _reorder(session.scalars(select(ShopBanner)), ids, "banner")
-    session.commit()
+    session.flush()
 
 
 def set_banner_photo(session: Session, banner_id: int, asset_id: int | None) -> ShopBanner:
     row = banner_or_404(session, banner_id)
     _asset_or_404(session, asset_id)
     row.photo_asset_id = asset_id
-    session.commit()
+    session.flush()
     return row
 
 

@@ -16,18 +16,20 @@ Nothing here writes. Money is integer pence; a missing deduction is `None`.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, datetime, time, timedelta
+from datetime import date
 from decimal import Decimal
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from cafeops.clock import local_day_bounds
 from cafeops.config import settings
-from cafeops.db.models.enums import PaymentMethod, PaymentSourceKind, SaleChannel, SaleSource
 from cafeops.db.models.menu import MenuItem
 from cafeops.db.models.payment import PaymentDay
 from cafeops.db.models.sale import Sale
-from cafeops.services.finance.common import FinanceRefused
+from cafeops.domain.composition import qty_text
+from cafeops.domain.enums import PaymentMethod, PaymentSourceKind, SaleChannel, SaleSource
+from cafeops.services.finance.common import WEEKDAY_ABBR, FinanceRefused
 from cafeops.services.finance.takings import rank
 
 __all__ = [
@@ -40,7 +42,6 @@ __all__ = [
 ]
 
 MAX_PAGE_SIZE = 200
-_WEEKDAYS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 
 
 @dataclass(frozen=True, slots=True)
@@ -116,11 +117,6 @@ def _check_range(since: date | None, until: date | None) -> None:
         raise FinanceRefused("from: must not be after to")
 
 
-def _qty_text(q: Decimal) -> str:
-    n = q.normalize()
-    return format(n, "f") if n != n.to_integral_value() else str(int(n))
-
-
 def list_receipts(
     session: Session,
     *,
@@ -145,11 +141,9 @@ def list_receipts(
         except KeyError as exc:
             raise FinanceRefused("source: POS_API, MANUAL, CSV_UPLOAD or LOYALTY") from exc
     if since is not None:
-        stmt = stmt.where(Sale.sold_at >= datetime.combine(since, time.min, tzinfo=tz))
+        stmt = stmt.where(Sale.sold_at >= local_day_bounds(since, tz=tz)[0])
     if until is not None:
-        stmt = stmt.where(
-            Sale.sold_at < datetime.combine(until + timedelta(days=1), time.min, tzinfo=tz)
-        )
+        stmt = stmt.where(Sale.sold_at < local_day_bounds(until, tz=tz)[1])
     if channel:
         try:
             stmt = stmt.where(Sale.channel == SaleChannel[channel.upper()])
@@ -178,19 +172,19 @@ def list_receipts(
                 qty[name] = qty.get(name, Decimal(0)) + s.qty
         if needle and needle not in rid.lower() and not any(needle in n.lower() for n in qty):
             continue
-        parts = [n if v == 1 else f"{_qty_text(v)} x {n}" for n, v in qty.items()]
+        parts = [n if v == 1 else f"{qty_text(v)} x {n}" for n, v in qty.items()]
         total_items = sum(qty.values(), Decimal(0))
         rows.append(
             ReceiptRow(
                 receipt_id=rid,
                 date=first.date(),
-                weekday=_WEEKDAYS[first.weekday()],
+                weekday=WEEKDAY_ABBR[first.weekday()],
                 time=first.strftime("%H:%M"),
                 channel=lines[0][0].channel.value,
                 source=lines[0][0].source.value,
                 recorded_by=lines[0][0].recorded_by,
                 lines=len(lines),
-                items=_qty_text(total_items),
+                items=qty_text(total_items),
                 summary=", ".join(parts) if parts else "(voided)",
                 gross_pence=gross,
                 voided=voided,
@@ -276,7 +270,7 @@ def list_takings(
             TakingsRow(
                 id=r.id,
                 date=r.business_date,
-                weekday=_WEEKDAYS[r.business_date.weekday()],
+                weekday=WEEKDAY_ABBR[r.business_date.weekday()],
                 method=r.method.value,
                 source=r.source.value,
                 basis=r.basis.value,

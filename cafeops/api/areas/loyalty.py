@@ -17,6 +17,7 @@ from __future__ import annotations
 import asyncio
 import html
 from typing import Annotated
+from urllib.parse import urlencode
 
 from fastapi import APIRouter, BackgroundTasks, Header, Query, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
@@ -41,11 +42,12 @@ from cafeops.api.areas.loyalty_schemas import (
     RecoverOut,
     VerifyIn,
 )
-from cafeops.api.runtime import in_session
+from cafeops.api.runtime import in_session, in_session_committing
 from cafeops.api.security import client_ip
+from cafeops.config import settings
+from cafeops.domain.loyalty import verify_unsubscribe
 from cafeops.services.loyalty.consent import unsubscribe
 from cafeops.services.loyalty.errors import LoyaltyError
-from cafeops.services.loyalty.recovery import BAD_CODE
 from cafeops.services.loyalty.wallets import wallet_module
 
 open_router = APIRouter(prefix="/api/loyalty", tags=["loyalty"])
@@ -229,11 +231,11 @@ async def recover(body: RecoverIn, request: Request, background: BackgroundTasks
 )
 async def recover_verify(body: VerifyIn, request: Request) -> JoinResult:
     limit("verify", client_ip(request))
-    result = await in_session(lambda s: views.verify_view(s, body))
-    if result is None:
-        # Raised after the commit so the attempt counter sticks (services/loyalty/recovery).
-        raise BAD_CODE
-    return result
+    # A wrong code is committed before it propagates, so the attempt counter sticks
+    # (services/loyalty/recovery).
+    return await in_session_committing(
+        lambda s: views.verify_view(s, body), refusals=(views.WrongRecoveryCode,)
+    )
 
 
 _PAGE = """<!doctype html><html lang="en"><head><meta charset="utf-8">
@@ -245,24 +247,58 @@ a{{color:#9b6038}}</style></head><body><main><h1>{title}</h1><p>{body}</p>
 <p><a href="/">Sasha's Corner</a></p></main></body></html>"""
 
 
+_BAD_LINK = _PAGE.format(
+    title="That link did not work",
+    body=html.escape(
+        "The unsubscribe link is incomplete. Open the web card and switch news off "
+        "there, or ask us at the till."
+    ),
+)
+
+
 @open_router.get(
     "/unsubscribe",
     response_class=HTMLResponse,
-    summary="One-click marketing opt-out from an emailed link.",
+    summary="The emailed opt-out link: a page with one button. Writes nothing.",
 )
 async def unsubscribe_page(
     m: Annotated[int, Query()], s: Annotated[str, Query(max_length=64)]
 ) -> HTMLResponse:
-    ok = await in_session(lambda session: unsubscribe(session, m, s))
-    if not ok:
-        page = _PAGE.format(
-            title="That link did not work",
-            body=html.escape(
-                "The unsubscribe link is incomplete. Open the web card and switch news off "
-                "there, or ask us at the till."
-            ),
+    """A GET must not unsubscribe: mail scanners and link previews fetch every URL in a
+    message, and would opt the member out before they read it. The page checks the
+    signature (without writing) and asks; the button POSTs back here."""
+    if not verify_unsubscribe(m, s, settings.loyalty_key):
+        return HTMLResponse(_BAD_LINK, status_code=400)
+    action = html.escape(f"/api/loyalty/unsubscribe?{urlencode({'m': m, 's': s, 'via': 'page'})}")
+    page = _PAGE.format(
+        title="Stop news and offers?",
+        body=html.escape(
+            "We will stop sending you news and offers. Your stamp card keeps working as before."
         )
-        return HTMLResponse(page, status_code=400)
+        + f'</p><form method="post" action="{action}"><button type="submit" '
+        'style="font:inherit;padding:10px 18px;border-radius:8px;border:1px solid #9b6038;'
+        'background:#9b6038;color:#fff;cursor:pointer">Unsubscribe</button></form><p>',
+    )
+    return HTMLResponse(page)
+
+
+@open_router.post(
+    "/unsubscribe",
+    response_class=Response,
+    include_in_schema=False,
+)
+async def unsubscribe_one_click(
+    m: Annotated[int, Query()],
+    s: Annotated[str, Query(max_length=64)],
+    via: Annotated[str | None, Query(max_length=10)] = None,
+) -> Response:
+    """RFC 8058: mail clients POST to the List-Unsubscribe URL with no page shown, and get
+    a bare 200. The page's button adds `via=page` and gets a page back."""
+    ok = await in_session(lambda session: unsubscribe(session, m, s))
+    if via != "page":
+        return Response(status_code=200)
+    if not ok:
+        return HTMLResponse(_BAD_LINK, status_code=400)
     page = _PAGE.format(
         title="You are unsubscribed",
         body=html.escape(
@@ -270,12 +306,3 @@ async def unsubscribe_page(
         ),
     )
     return HTMLResponse(page)
-
-
-@open_router.post("/unsubscribe", include_in_schema=False)
-async def unsubscribe_one_click(
-    m: Annotated[int, Query()], s: Annotated[str, Query(max_length=64)]
-) -> Response:
-    """RFC 8058: mail clients POST to the List-Unsubscribe URL with no page shown."""
-    await in_session(lambda session: unsubscribe(session, m, s))
-    return Response(status_code=200)

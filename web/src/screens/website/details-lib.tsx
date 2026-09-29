@@ -1,22 +1,12 @@
 /**
- * Helpers for Website › Café details: the settings query, the PUT with per-field
- * 422 errors, and a per-section draft that a background refetch cannot wipe.
+ * Helpers for Website › Café details: the PUT with per-field 422 errors, and a
+ * per-section draft that a background refetch cannot wipe. The settings query
+ * itself is `useSiteSettings` in lib/website-api.ts, shared with Bookings and Today.
  */
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { ApiError, LIVE, request } from '../../lib/api'
-import { WEBSITE_KEY, siteGet, sitePath } from '../../lib/website-api'
+import { sitePath } from '../../lib/website-api'
 import type { BookingRules, CafeSettings, Closure, SiteSettings } from '../../lib/types/website'
-
-export const SETTINGS_KEY = [...WEBSITE_KEY, 'settings'] as const
-
-export function useSiteSettings() {
-  return useQuery({
-    queryKey: SETTINGS_KEY,
-    queryFn: () => siteGet<SiteSettings>('/settings'),
-    enabled: LIVE,
-  })
-}
 
 /** `PUT /api/admin/settings` takes any subset; `cafe` and `booking` merge field by field. */
 export interface SettingsPut {
@@ -32,17 +22,82 @@ export type PutResult =
   | { kind: 'failed'; message: string }
 
 /**
- * FastAPI 422 detail -> { "cafe.name": "String should have at least 1 character" }.
- * Same rules as the old site admin (site/web/src/scripts/admin-core/api.ts `fieldErrors`).
+ * What a Pydantic validation `type` means, in the owner's words. `ctx` carries the
+ * bound for the limit types. A `value_error` is a sentence the site wrote itself
+ * (its hours and rules checks), so that one is shown as written; anything not
+ * listed falls back to "This isn't valid."
+ */
+function plainError(type: string, msg: string, ctx: Record<string, unknown>): string {
+  const n = (k: string) => (typeof ctx[k] === 'number' ? String(ctx[k]) : null)
+  switch (type) {
+    case 'missing':
+      return 'This is needed.'
+    case 'string_too_short':
+    case 'too_short': {
+      const min = n('min_length')
+      return min === '1' ? 'Can’t be empty.' : min ? `At least ${min} characters.` : 'Too short.'
+    }
+    case 'string_too_long':
+    case 'too_long': {
+      const max = n('max_length')
+      return max ? `At most ${max} characters.` : 'Too long.'
+    }
+    case 'string_type':
+      return 'Must be text.'
+    case 'int_parsing':
+    case 'int_type':
+    case 'int_from_float':
+      return 'Must be a whole number.'
+    case 'float_parsing':
+    case 'float_type':
+    case 'decimal_parsing':
+      return 'Must be a number.'
+    case 'greater_than_equal':
+      return n('ge') ? `Must be ${n('ge')} or more.` : 'Too small.'
+    case 'greater_than':
+      return n('gt') ? `Must be more than ${n('gt')}.` : 'Too small.'
+    case 'less_than_equal':
+      return n('le') ? `Must be ${n('le')} or less.` : 'Too big.'
+    case 'less_than':
+      return n('lt') ? `Must be less than ${n('lt')}.` : 'Too big.'
+    case 'string_pattern_mismatch':
+      return 'Not in the right form.'
+    case 'time_parsing':
+    case 'time_type':
+      return 'Not a time. Use HH:MM.'
+    case 'date_parsing':
+    case 'date_type':
+    case 'date_from_datetime_parsing':
+      return 'Not a date.'
+    case 'url_parsing':
+    case 'url_type':
+    case 'url_scheme':
+      return 'Not a web address.'
+    case 'bool_parsing':
+    case 'bool_type':
+      return 'Must be yes or no.'
+    case 'value_error': {
+      const m = msg.replace(/^Value error, /, '')
+      if (/valid email address/i.test(m)) return 'Not an email address.'
+      return m ? m.charAt(0).toUpperCase() + m.slice(1) : 'This isn’t valid.'
+    }
+    default:
+      return 'This isn’t valid.'
+  }
+}
+
+/**
+ * FastAPI 422 detail -> { "cafe.name": "Can’t be empty." }. Keys are the dotted
+ * path without `body`; the first error per field wins.
  */
 export function fieldErrors(detail: unknown): Record<string, string> {
   const out: Record<string, string> = {}
   if (!Array.isArray(detail)) return out
-  for (const d of detail as { loc?: unknown[]; msg?: unknown }[]) {
+  for (const d of detail as { loc?: unknown[]; msg?: unknown; type?: unknown; ctx?: unknown }[]) {
     const loc = (d.loc ?? []).filter((p) => p !== 'body' && p !== 'query').map(String)
     const key = loc.join('.') || '_'
-    const msg = String(d.msg ?? 'Not valid').replace(/^Value error, /, '')
-    if (!out[key]) out[key] = msg.charAt(0).toUpperCase() + msg.slice(1)
+    const ctx = d.ctx && typeof d.ctx === 'object' ? (d.ctx as Record<string, unknown>) : {}
+    if (!out[key]) out[key] = plainError(String(d.type ?? ''), String(d.msg ?? ''), ctx)
   }
   return out
 }
@@ -83,23 +138,4 @@ export function useDraft<T>(source: T) {
     setDraft(next)
   }
   return { draft, setDraft, dirty, accept }
-}
-
-/** Today in the café's time zone, YYYY-MM-DD. */
-export function todayISO(): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date())
-}
-
-/** "Friday 25 December", with the year when it isn't this year. */
-export function longDate(iso: string): string {
-  const d = new Date(`${iso}T12:00:00Z`)
-  if (Number.isNaN(d.getTime())) return iso
-  const sameYear = iso.slice(0, 4) === todayISO().slice(0, 4)
-  return new Intl.DateTimeFormat('en-GB', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    ...(sameYear ? {} : { year: 'numeric' }),
-    timeZone: 'UTC',
-  }).format(d)
 }

@@ -26,7 +26,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 
-from sqlalchemy import or_, select
+from sqlalchemy import ColumnElement, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -58,6 +58,7 @@ __all__ = [
     "birthday_counts_from",
     "check_birthday",
     "clean_first_name",
+    "contact_taken",
     "find_member_by_contact",
     "join",
     "new_card",
@@ -283,15 +284,64 @@ def join(session: Session, req: JoinRequest) -> Joined:
 @dataclass(frozen=True, slots=True)
 class DetailsChange:
     """What the member changed. `None` leaves a field alone; `birthday` is only applied
-    when `set_birthday` is true, and `(None, None)` then removes it."""
+    when `set_birthday` is true, and `(None, None)` then removes it. Likewise `email`
+    and `phone` are applied only under `set_email` / `set_phone`, and `None` then clears
+    that contact; one of the two must remain, it is how a lost card is recovered."""
 
     first_name: str | None = None
     set_birthday: bool = False
     birthday: tuple[int | None, int | None] = (None, None)
+    set_email: bool = False
+    email: str | None = None
+    set_phone: bool = False
+    phone: str | None = None
+    #: Where the member made the change, for the audit row.
+    source: str = "the web card"
+
+
+def contact_taken(session: Session, member_id: int, cond: ColumnElement[bool]) -> bool:
+    """Another member holds this contact. Erased members hold none, so they never count.
+    The one uniqueness rule for email and phone; the back office delegates here too."""
+    return (
+        session.scalar(select(LoyaltyMember.id).where(cond, LoyaltyMember.id != member_id))
+        is not None
+    )
+
+
+def _member_contact(
+    session: Session, member: LoyaltyMember, change: DetailsChange
+) -> tuple[str | None, str | None]:
+    """The email and phone the member will have after `change`, checked: well-formed,
+    not another member's, and not both empty."""
+    email, phone = member.email, member.phone
+    if change.set_email:
+        raw = (change.email or "").strip()
+        email = normalise_email(raw) if raw else None
+        if raw and email is None:
+            raise LoyaltyError(422, "bad_email", "That email address does not look right.")
+        if email and contact_taken(session, member.id, LoyaltyMember.email == email):
+            raise LoyaltyError(409, "contact_taken", "Another member already has that email.")
+    if change.set_phone:
+        raw = (change.phone or "").strip()
+        phone = normalise_phone(raw) if raw else None
+        if raw and phone is None:
+            raise LoyaltyError(422, "bad_phone", "That phone number does not look right.")
+        if phone and contact_taken(session, member.id, LoyaltyMember.phone == phone):
+            raise LoyaltyError(
+                409, "contact_taken", "Another member already has that phone number."
+            )
+    if (change.set_email or change.set_phone) and email is None and phone is None:
+        raise LoyaltyError(
+            422,
+            "contact_required",
+            "Keep an email or a phone number: it is how you get your card back.",
+        )
+    return email, phone
 
 
 def update_details(session: Session, card: LoyaltyCard, change: DetailsChange) -> list[str]:
-    """Name and birthday, edited by the member. Returns what changed (for the audit).
+    """Name, birthday and contact, edited by the member. Returns what changed (for the
+    audit).
 
     The 30-day rule needs no check here: a new or changed birthday restarts
     `birthday_set_at`, and the birthday job refuses any occurrence fewer than 30 days
@@ -315,11 +365,18 @@ def update_details(session: Session, card: LoyaltyCard, change: DetailsChange) -
             member.birthday_day, member.birthday_month = day, month
             member.birthday_set_at = now if day is not None else None
             changed.append("birthday removed" if day is None else "birthday")
+    email, phone = _member_contact(session, member, change)
+    if email != member.email:
+        member.email = email
+        changed.append("email")
+    if phone != member.phone:
+        member.phone = phone
+        changed.append("phone")
     if changed:
         audit(
             session,
             "profile",
-            f"member changed {', '.join(changed)} from the web card",
+            f"member changed {', '.join(changed)} from {change.source}",
             card_id=card.id,
             member_id=member.id,
             at=now,

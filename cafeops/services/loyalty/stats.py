@@ -40,12 +40,13 @@ from __future__ import annotations
 
 from collections import Counter, defaultdict
 from dataclasses import dataclass
-from datetime import UTC, date, datetime, time, timedelta
+from datetime import date, datetime, timedelta
 
 from sqlalchemy import Select, and_, func, select
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.elements import ColumnElement
 
+from cafeops.clock import local_day_bounds
 from cafeops.config import settings
 from cafeops.db.models import (
     LoyaltyAudit,
@@ -112,10 +113,6 @@ class LoyaltyStats:
     repeat_rate_members_by_scans: float | None = None
     receipts_with_customer_share: float | None = None
     repeat_rate_reason: str | None = None
-
-
-def _local_midnight(day: date) -> datetime:
-    return datetime.combine(day, time.min, tzinfo=settings.tz).astimezone(UTC)
 
 
 def _local_day(at: datetime) -> date:
@@ -257,8 +254,7 @@ def stats(
     on_program = select(LoyaltyCard.id).where(LoyaltyCard.program_id == program.id)
     today = _local_day(now)
     first = today - timedelta(days=days - 1)
-    since = _local_midnight(first)
-    until = _local_midnight(today + timedelta(days=1))
+    since, until = local_day_bounds(first, today, tz=settings.tz)
     live: ColumnElement[bool] = LoyaltyMember.deleted_at.is_(None)
     if not is_default:
         live = and_(live, LoyaltyMember.id.in_(held))
@@ -403,8 +399,7 @@ class DailySummary:
 def daily_summary(session: Session, *, day: date | None = None) -> DailySummary:
     """One local day, for the 19:30 Telegram message and `cafeops loyalty summary`."""
     day = day or _local_day(now_utc())
-    since = _local_midnight(day)
-    until = _local_midnight(day + timedelta(days=1))
+    since, until = local_day_bounds(day, tz=settings.tz)
     visits = _visits(session, since, until, default_program(session).id)
 
     def count(stmt: Select[tuple[int]]) -> int:

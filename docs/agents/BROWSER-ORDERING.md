@@ -233,3 +233,95 @@ Consequences and open items:
   auto-stage), the order page (Stage basket, job progress, basket snapshot with the
   screenshot) and Agents (the proposal card exists already); fixtures are in
   `web/fixtures/integrations.json` and `web/fixtures/browser-jobs.json`.
+
+---
+
+## 10. Tiers: build the cart, don't navigate to it
+
+**Added 2026-09-29.** The first build drove every basket through a browser: open the
+profile, sign-in check, one product page per line, read the basket. That is the right
+shape for a portal that offers nothing else, and the wrong one for a portal that will
+hand you the basket as a URL. A STAGE_BASKET job now climbs a ladder and stops at the
+first rung that puts the lines in; only what is left goes to the next. Every rung ends
+at the same place: a `BasketSnapshot`, a SUPPLIER_BASKET proposal, a person who pays.
+
+| Tier | Where | What it needs | Adapter capability |
+|---|---|---|---|
+| 0 `cart_link` | `services/browser_jobs.enqueue_stage_basket`, inline | nothing: no worker, no stored sign-in | `cart_link(lines) -> CartLinkPlan \| None` |
+| 1 `quick_order` | `agent/browser/job.run_stage_basket` | worker + CONNECTED session | `quick_order_url`, `quick_order(page, lines) -> QuickOrderResult`, `quick_order_hints()` |
+| — `browser` | `run_stage_basket`, per line | worker + CONNECTED session (+ a model for what breaks) | `add_line_scripted`, `read_basket`, `agent_hints` (every adapter) |
+| 2 headed | `agent/browser/session.open_supplier_browser` | a display (Xvfb in the container, a screen on a laptop) | `prefers_headed = True` |
+
+**Tier 0, the cart link.** Amazon's add-to-cart form and Shopify's cart permalink
+(Cups Direct) build a pre-filled basket from product ids and quantities. Opening that
+URL in the owner's own, already-signed-in browser *is* the staged basket: no
+automation, no cookies on the server, no bot detection to lose to. So when the adapter
+returns a plan that covers every line, `enqueue_stage_basket` does the whole job right
+there: the `browser_job` row is inserted already SUCCEEDED (`worker_id="inline"`,
+`model=None`), with one `browser_job_step` (`script:cart_link`, the plan's label, the
+URL), a snapshot whose lines are `added` by `cart_link` at the wanted packs with **no
+prices** (`unit_price_seen_pence` and `subtotal_seen_pence` are None, never zero --
+the link does not see prices, and the one warning says so), and the proposal whose
+"Open basket" is the link. The proposal body says it is a link that fills the basket in
+the owner's own browser and that the person checks prices there. `IntegrationStatus.
+can_stage` is therefore True for a `cart_link` portal even with the worker off and no
+session; `cannot_stage_reason` talks about the worker and the sign-in only for portals
+without one. A plan that covers only some lines (an item with no ASIN in its URL, a
+variant lookup that failed) is stored in `params["cart_link"]` and the job is queued
+as before: the worker opens the link first (`script:cart_link_open`), which pre-fills
+those lines in its own browser, and carries on with the rest.
+
+**Tier 1, the quick-order pad.** Booker and Brakes have a product-code form: paste
+codes and quantities, submit once, the basket fills. One scripted step
+(`script:quick_order`) does every remaining line that has a SKU in one form and reads
+back which codes the pad accepted; a rejected code (`QuickOrderResult.rejected`) keeps
+its line pending, with the pad's own words as the note, and falls through to the
+per-line path. When the pad itself is not where or what the adapter expects
+(`PortalStepFailed`), ONE model task (`loop.quick_order_task`) drives the pad for all
+of those lines with `quick_order_hints()` and answers per line (`added` /
+`not_found` / `gave_up`); `gave_up` lines fall through as well. A pad is not checkout:
+the system prompt says so, and the policy refuses the controls regardless.
+
+**The browser tier** is §4 unchanged: `add_line_scripted` per line, the model for the
+step that broke, then `read_basket`, screenshot, snapshot.
+
+**Tier 2, headed for hostile sites.** Tesco (Akamai) serves "Access Denied" to a
+headless Chromium however well the profile is signed in. Its adapter sets
+`prefers_headed`; `open_supplier_browser` then launches a visible window when there is
+a display (`DISPLAY` or `WAYLAND_DISPLAY`) and otherwise raises `PortalNeedsHuman`
+*before opening anything*, so the job ends NEEDS_HUMAN with "refuses headless
+browsers; run the worker with a display (xvfb ...) or stage this order by hand" and
+zero browser launches. On the server the display is Xvfb: the `browser` image stage
+installs `xvfb` and `xauth`, and its entrypoint, `deploy/browser-worker-entrypoint.sh`,
+execs `xvfb-run -a --server-args="-screen 0 1280x900x24" cafeops browser-worker`
+when `CAFEOPS_BROWSER_HEADLESS` is false and no `DISPLAY` is set (the compose
+`browser-worker` service passes the variable through from `.env`, default true; the
+systemd unit carries the equivalent `ExecStart` in a comment).
+
+**What the result records.** `result["tier"]` is the best tier that put at least one
+line in (`cart_link` > `quick_order` > `browser`), `result["tiers_used"]` the tiers
+that ran, and each line's `added_by` is one of `cart_link` | `quick_order` | `script`
+| `model`. The API carries `tiers` on `IntegrationOut` and `PortalOut` (best first;
+`browser` is always last), `prefers_headed` on `PortalOut`, and `tier` on
+`BrowserJobOut`, whose `result_summary` now reads "cart link ready: 3 items" /
+"quick order pad: 5 of 6 codes accepted" / "browser: 6 of 6 lines in basket, £48.20
+seen". `cafeops portal list` shows the tiers column; `cafeops portal stage` prints the
+tier used and the basket (or cart-link) URL.
+
+**Why not always the browser?** Because every tier above it removes a way to fail. A
+cart link cannot be blocked by bot detection, cannot expire, and costs nothing; a
+quick-order pad is one form instead of six product pages; a headed window is what the
+site will actually serve. The browser stays the floor, not the plan.
+
+**Verified by running (2026-09-29).** Fake adapters against the real database
+(restored to the same row counts afterwards): a complete cart link staged inline with
+the worker off and no session (SUCCEEDED, `tier="cart_link"`, one step, a WAITING
+proposal whose `basket_url` is the link, one audit row); a partial link queued with
+`params["cart_link"]`, then run through cart-link open, a pad that accepted two codes
+and rejected one, and the per-line path for the rejected line (`tiers_used` all three,
+`added_by` = cart_link, cart_link, quick_order, quick_order, script); a `prefers_headed`
+portal with no `DISPLAY` ending NEEDS_HUMAN with the xvfb reason and zero launches (a
+CHECK_SESSION on it likewise, session row untouched). The real-Chromium e2e on the
+local fake shop still passes on the browser tier (`tier="browser"`). The browser
+image built with `xvfb-run` and the entrypoint present; `CAFEOPS_BROWSER_HEADLESS=false`
+starts the worker under Xvfb.

@@ -12,6 +12,7 @@ takes seconds is a checklist nobody opens.
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
@@ -29,6 +30,8 @@ from cafeops.db.models import (
 from cafeops.services import doctor
 from cafeops.services.auth import credential_source
 from cafeops.services.sync_runs import LIGHTSPEED_ENV_VARS, latest_ok, lightspeed_ready
+
+log = logging.getLogger(__name__)
 
 __all__ = ["SetupStatus", "SetupStep", "SetupWarning", "setup_status"]
 
@@ -93,6 +96,7 @@ def _import_step(session: Session, *, with_counts: bool) -> SetupStep:
             remaining = len(waiting)
             body += f" {remaining} recipe proposal{'s' if remaining != 1 else ''} waiting."
         except Exception:  # the count is a nicety; the step's state does not depend on it
+            log.debug("setup step 1: could not count recipe proposals", exc_info=True)
             remaining = None
     return SetupStep(
         n=1,

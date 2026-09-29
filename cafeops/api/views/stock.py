@@ -35,7 +35,6 @@ from cafeops.api.schemas import (
     ChecklistStateOut,
     Cost,
     CountHistoryRowOut,
-    DriftAttributionOut,
     DriftHistoryRowOut,
     DriftOut,
     OnHand,
@@ -50,7 +49,7 @@ from cafeops.api.schemas import (
     StockSummary,
     WrittenOffOut,
 )
-from cafeops.api.views.common import cost_from_ingredient, forecast_out
+from cafeops.api.views.common import cost_from_ingredient, drift_out, forecast_out
 from cafeops.config import settings
 from cafeops.db.models import (
     ChecklistResponse,
@@ -70,19 +69,15 @@ from cafeops.db.models import (
 from cafeops.db.repositories.composition import SqlCompositionRepository
 from cafeops.db.repositories.drift import SqlDriftRepository
 from cafeops.db.repositories.ingredient import SqlIngredientRepository
-from cafeops.db.repositories.par import SqlParLevelRepository
 from cafeops.db.repositories.season import SqlSeasonRepository
 from cafeops.db.repositories.stock import SqlStockRepository
 from cafeops.domain.drift import (
     DEFAULT_WASTE_DAMPING,
-    DriftExplanation,
     evaluate_drift,
-    mean_abs_drift_pct,
 )
 from cafeops.domain.types import (
     DriftVerdict,
     ForecastResult,
-    IngredientSnapshot,
     SeasonSpec,
     ShelfLifeSpec,
     Tier,
@@ -104,7 +99,6 @@ from cafeops.services.build_order import (
 )
 from cafeops.services.media_store import media_url
 from cafeops.services.read_stock import StockReading, read_on_hand
-from cafeops.services.record_count import explain_drift_history, gate_status
 
 __all__ = ["stock_detail_view", "stock_view"]
 
@@ -188,88 +182,8 @@ def _shelf_life(reading: StockReading, spec: ShelfLifeSpec | None) -> ShelfLifeO
     )
 
 
-# --------------------------------------------------------------------------
-# drift, attribution and the gate (spec 5.2)
-# --------------------------------------------------------------------------
-
-
-def _trust_status(verdict: DriftVerdict | None, has_observation: bool) -> str | None:
-    """Map the gate verdict onto the spec's three presentation words.
-
-    `ELIGIBLE -> trusted`, `TUNE_WASTE_FACTOR -> drifting`, `FORCE_MANUAL -> excluded`.
-    Trivial, which is exactly why it belongs in one place: the same badge appears on the
-    stock list, the ingredient detail and the digest, and three independent mappings
-    will not stay in step.
-
-    None when there is no drift observation -- a genuine fourth state, and calling it
-    "trusted" would assert confidence nothing has earned.
-
-    Do NOT label that state "never counted". An ingredient can have a physical count and
-    still have no observation: drift needs an ANCHOR plus a later count, so the first
-    count of anything produces a basis and no reading. Chocolate powder on the seeded data
-    has exactly one count and zero observations. Calling it "never counted" would
-    contradict the basis column two cells to its left, which is the specific confusion the
-    stock screen exists to prevent (invariant 6). The frontend renders it as
-    "not yet judged" / "no evidence either way", which is what it actually is.
-    """
-    if verdict is None or not has_observation:
-        return None
-    return {
-        DriftVerdict.ELIGIBLE: "trusted",
-        DriftVerdict.TUNE_WASTE_FACTOR: "drifting",
-        DriftVerdict.FORCE_MANUAL: "excluded",
-    }.get(verdict)
-
-
-def _drift(session: Session, ingredient: IngredientSnapshot, *, history: int = 6) -> DriftOut:
-    drift_repo = SqlDriftRepository(session)
-    par_repo = SqlParLevelRepository(session)
-
-    rows = drift_repo.history(ingredient.id, limit=max(history, 2))
-    decision = gate_status(session, ingredient=ingredient)
-    audit = par_repo.audit(ingredient.id)
-    latest = rows[0] if rows else None
-
-    attribution: DriftAttributionOut | None = None
-    if latest is not None:
-        explained = explain_drift_history(session, ingredient_id=ingredient.id, limit=1)
-        if explained:
-            attribution = _attribution(explained[0].explanation)
-
-    return DriftOut(
-        has_observation=latest is not None,
-        observed_at=latest.observed_at if latest else None,
-        theoretical_qty=as_qty(latest.theoretical_qty) if latest else None,
-        counted_qty=as_qty(latest.counted_qty) if latest else None,
-        drift_pct=pct(latest.drift_pct) if latest else None,
-        verdict=decision.verdict.value if decision.verdict is not None else None,
-        mean_abs_drift_pct=pct(mean_abs_drift_pct([row.drift_pct for row in rows])),
-        observation_count=len(rows),
-        auto_order_enabled=bool(audit and audit.auto_order_enabled),
-        auto_order_reason=audit.reason if audit else None,
-        clean_streak=decision.clean_streak,
-        required_streak=decision.required_streak,
-        gate_action=decision.action.value,
-        trust_status=_trust_status(decision.verdict, latest is not None),
-        attribution=attribution,
-    )
-
-
-def _attribution(explanation: DriftExplanation) -> DriftAttributionOut:
-    return DriftAttributionOut(
-        cause=explanation.cause.value,
-        headline=explanation.headline,
-        action=explanation.action,
-        gap_qty=as_qty(explanation.gap_qty) or "0",
-        expired_qty=as_qty(explanation.expired_qty) or "0",
-        measurement_qty=as_qty(explanation.measurement_qty) or "0",
-        expiry_qty=as_qty(explanation.expiry_qty) or "0",
-        expiry_share=pct(explanation.expiry_share),
-        unexplained_loss_qty=as_qty(explanation.unexplained_loss_qty) or "0",
-        surplus_qty=as_qty(explanation.surplus_qty) or "0",
-        surplus_note=explanation.surplus_note,
-        loss_pct_of_consumption=pct(explanation.loss_pct_of_consumption),
-    )
+# Drift, attribution and the gate (spec 5.2) are `common.drift_out`: the Stock area's
+# count write reports the same block.
 
 
 # --------------------------------------------------------------------------
@@ -381,7 +295,7 @@ def _row(
         )
 
     days_left = reading.soonest_expiry_days
-    drift = _drift(session, ingredient)
+    drift = drift_out(session, ingredient)
     extras = extras or _Extras.load(session)
     return StockRow(
         ingredient_id=ingredient.id,
@@ -585,7 +499,9 @@ def stock_detail_view(
             select(DriftObservation.stock_count_id, DriftObservation.drift_pct).where(
                 DriftObservation.ingredient_id == ingredient_id
             )
-        ).all()
+        )
+        .tuples()
+        .all()
     )
     counts = tuple(
         CountHistoryRowOut(

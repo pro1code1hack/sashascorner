@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from cafeops.api.schemas import Health, Meta
 from cafeops.config import settings
-from cafeops.db.base import engine
+from cafeops.db.base import get_engine
 from cafeops.db.models import DrinkTemplate, Ingredient, MenuItem, StockMovement
 from cafeops.domain.drift import DriftCause
 from cafeops.domain.types import (
@@ -44,7 +44,7 @@ def health_view(session: Session, *, authenticated: bool = False) -> Health:
     """
     base = Health(
         status="ok",
-        database_dialect=engine.dialect.name,
+        database_dialect=get_engine().dialect.name,
         # True for either source: a stored credential (set from Settings) or the env
         # bootstrap. services/auth.py owns the precedence.
         auth_configured=auth_is_configured(session),
@@ -61,7 +61,10 @@ def health_view(session: Session, *, authenticated: bool = False) -> Health:
     )
 
 
-def meta_view(_session: Session) -> Meta:
+def meta_view(_session: Session, *, authenticated: bool = False) -> Meta:
+    """Enums and conventions. `/api/meta` is open (the frontend reads it before sign-in),
+    so the one business figure in it -- the loaded labour rate -- is null for a caller
+    who has not proved they belong here, like `health_view`'s row counts."""
     return Meta(
         money_encoding=(
             "Integer pence where the database stores an integer (price_pence, "
@@ -88,7 +91,7 @@ def meta_view(_session: Session) -> Meta:
         drift_causes=tuple(c.value for c in DriftCause),
         order_channels=tuple(c.value for c in OrderChannel),
         sales_channels=tuple(c.value for c in SalesChannelName),
-        loaded_hourly_rate_pence=settings.loaded_hourly_rate_pence,
+        loaded_hourly_rate_pence=settings.loaded_hourly_rate_pence if authenticated else None,
         local_timezone=settings.local_timezone,
         invariant_notes=(
             "6: every stock figure carries is_theoretical and has_count_basis. A figure "
@@ -100,7 +103,9 @@ def meta_view(_session: Session) -> Meta:
             "reasons IN PLACE OF the number -- the number is not in the payload.",
             "4: a shelf-life or season cap travels on the order line as cap_reason, with "
             "the arithmetic in cap_detail.",
-            "1: no endpoint in this API creates, confirms or sends a purchase order. Draft "
-            "orders are computed and returned; confirmation is a human in Telegram.",
+            "1: nothing is ordered without a named person. GET /api/orders/draft computes "
+            "and persists nothing; POST /api/orders/from-draft writes a DRAFT, and only "
+            "POST /api/orders/{id}/confirm with the confirming person's name moves it on. "
+            "No endpoint sends an order to a supplier.",
         ),
     )

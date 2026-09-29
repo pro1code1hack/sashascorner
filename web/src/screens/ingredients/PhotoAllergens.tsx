@@ -12,7 +12,8 @@
  */
 import { useRef, useState } from 'react'
 import type { DragEvent } from 'react'
-import { Button, FilterChip, Pill, cx } from '../../components/ui'
+import { Button, FilterChip, Pill, StatusLine, cx } from '../../components/ui'
+import type { Outcome } from '../../components/ui'
 import { ingredientApi, useInvalidateMenu } from '../../lib/menu-api'
 import { useOperator } from '../../lib/operator'
 import type { IngredientRow } from '../../lib/types/menu'
@@ -78,20 +79,22 @@ export function IngredientPhoto({ row }: { row: IngredientRow }) {
   const input = useRef<HTMLInputElement>(null)
   const [operator] = useOperator()
   const [busy, setBusy] = useState(false)
-  const [message, setMessage] = useState<string | null>(null)
+  const [outcome, setOutcome] = useState<Outcome | null>(null)
   const [over, setOver] = useState(false)
   const invalidate = useInvalidateBoth()
   const url = row.photo_url ?? null
 
   const upload = async (file: File | undefined) => {
     if (!file) return
-    setMessage(null)
+    setOutcome({ kind: 'info', text: 'Uploading…' })
     setBusy(true)
     try {
       const blob = await shrink(file).catch(() => file)
       const r = await ingredientApi.uploadPhoto(row.ingredient_id, blob, operator)
-      if (r.kind === 'ok') await invalidate()
-      else setMessage(r.message)
+      if (r.kind === 'ok') {
+        await invalidate()
+        setOutcome({ kind: 'ok', text: url ? 'Photo replaced.' : 'Photo added.' })
+      } else setOutcome({ kind: 'error', text: r.message })
     } finally {
       setBusy(false)
     }
@@ -136,28 +139,24 @@ export function IngredientPhoto({ row }: { row: IngredientRow }) {
         }}
       />
       <PhotoCredit row={row} />
-      {(url || message) && (
-        <div className="flex items-center gap-2">
-          {message && (
-            <span role="alert" className="flex-1 text-sm text-bad-ink">
-              {message}
-            </span>
-          )}
-          {url && (
-            <Button
-              variant="link"
-              className="ml-auto"
-              onClick={async () => {
-                const r = await ingredientApi.clearPhoto(row.ingredient_id)
-                if (r.kind === 'ok') await invalidate()
-                else setMessage(r.message)
-              }}
-            >
-              Remove photo
-            </Button>
-          )}
-        </div>
-      )}
+      <div className="flex items-start gap-2">
+        <StatusLine outcome={outcome} className="min-w-0 flex-1" />
+        {url && (
+          <Button
+            variant="link"
+            className="ml-auto flex-none"
+            onClick={async () => {
+              const r = await ingredientApi.clearPhoto(row.ingredient_id)
+              if (r.kind === 'ok') {
+                await invalidate()
+                setOutcome({ kind: 'ok', text: 'Photo removed.' })
+              } else setOutcome({ kind: 'error', text: r.message })
+            }}
+          >
+            Remove photo
+          </Button>
+        )}
+      </div>
     </div>
   )
 }
@@ -168,20 +167,21 @@ export function Allergens({ row }: { row: IngredientRow }) {
   const [editing, setEditing] = useState(false)
   const [picked, setPicked] = useState<Set<string>>(new Set(row.allergens ?? []))
   const [pending, setPending] = useState(false)
-  const [message, setMessage] = useState<string | null>(null)
+  const [outcome, setOutcome] = useState<Outcome | null>(null)
   const list = row.allergens ?? null
   const estimate = list !== null && !row.allergens_confirmed
   const researched = row.allergens_source?.startsWith('http') ? row.allergens_source : null
 
   const save = async (value: string[] | null) => {
     setPending(true)
-    setMessage(null)
+    setOutcome(null)
     const r = await ingredientApi.allergens(row.ingredient_id, value, operator)
     setPending(false)
     if (r.kind === 'ok') {
       setEditing(false)
       await invalidate()
-    } else setMessage(r.message)
+      setOutcome({ kind: 'ok', text: value === null ? 'Marked not recorded.' : `Saved, checked by ${operator}.` })
+    } else setOutcome({ kind: 'error', text: r.message })
   }
 
   return (
@@ -273,11 +273,7 @@ export function Allergens({ row }: { row: IngredientRow }) {
           </div>
         </div>
       )}
-      {message && (
-        <p role="alert" className="text-sm text-bad-ink">
-          {message}
-        </p>
-      )}
+      <StatusLine outcome={outcome} />
     </section>
   )
 }

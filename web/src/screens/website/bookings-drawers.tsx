@@ -8,37 +8,36 @@
  */
 import { useRef, useState } from 'react'
 import type { FormEvent } from 'react'
-import { Button, Checkbox, ConfirmTwiceButton, Drawer, Field, FilterChip, FilterChipRow, Input, Segmented, Textarea } from '../../components/ui'
+import {
+  Button,
+  Checkbox,
+  ConfirmTwiceButton,
+  Drawer,
+  Field,
+  FilterChip,
+  FilterChipRow,
+  Input,
+  LinkButton,
+  SectionHead,
+  StatusLine,
+  Textarea,
+  cx,
+} from '../../components/ui'
 import { siteWrite, useInvalidateWebsite } from '../../lib/website-api'
 import type { Booking, BookingPatch, BookingStatus, NewBooking } from '../../lib/types/website'
-import {
-  ISO_DATE,
-  STATUS_LABEL,
-  StatusWord,
-  TimePicker,
-  addDays,
-  isCapacityRefusal,
-  longDate,
-  partyOf,
-  patchBooking,
-  people,
-  relDay,
-  todayISO,
-  useRoom,
-} from './bookings-parts'
+import { STATUS_LABEL, StatusWord, TimePicker, isCapacityRefusal, partyOf, patchBooking, people, useRoom } from './bookings-parts'
 import type { Notice } from './bookings-parts'
+import { ISO_DATE, addDays, longDate, relDay, todayISO } from './dates'
 
 const EDIT_FORM = 'bk-edit-form'
 const ADD_FORM = 'bk-add-form'
 
+/** The form's own refusal line: always mounted, so it is announced when it fills. */
 function FormError({ text }: { text: string | null }) {
-  if (!text) return null
-  return (
-    <p role="alert" className="text-sm text-bad-ink">
-      {text}
-    </p>
-  )
+  return <StatusLine outcome={text ? { kind: 'error', text } : null} />
 }
+
+const MARKS = ['confirmed', 'arrived', 'no_show'] as const
 
 function Fact({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -86,7 +85,7 @@ export function BookingDrawer({
   const { room } = useRoom(date, time, p, b)
   const showOverride = refusedFull || (room !== null && !room.fits)
 
-  const setStatus = async (status: BookingStatus, how: 'seg' | 'cancel' | 'reinstate') => {
+  const setStatus = async (status: BookingStatus, how: 'mark' | 'cancel' | 'reinstate') => {
     if (inFlight.current || status === b.status) return
     inFlight.current = true
     setStatusPending(status)
@@ -113,7 +112,16 @@ export function BookingDrawer({
       return
     }
     setCurrent(r.data)
-    notify({ tone: 'stale', text: how === 'reinstate' ? `${b.name}’s booking is reinstated.` : `${b.name}: ${STATUS_LABEL[status].toLowerCase()}.` })
+    if (how === 'reinstate') {
+      notify({ tone: 'stale', text: `${b.name}’s booking is reinstated.` })
+      return
+    }
+    // The same Undo the row buttons offer: one press puts the old status back.
+    notify({
+      tone: 'stale',
+      text: `${b.name}: ${STATUS_LABEL[status].toLowerCase()}.`,
+      undo: { id: b.id, body: { status: b.status }, label: `${b.name}: back to ${STATUS_LABEL[b.status].toLowerCase()}` },
+    })
   }
 
   const save = async (e: FormEvent) => {
@@ -174,20 +182,14 @@ export function BookingDrawer({
       {(b.phone || b.email) && (
         <div className="flex flex-wrap gap-2">
           {b.phone && (
-            <a
-              href={`tel:${b.phone.replace(/[^\d+]/g, '')}`}
-              className="inline-flex min-h-11 items-center rounded-control border border-line-control bg-surface px-3.5 text-base font-semibold text-ink no-underline hover:bg-canvas"
-            >
+            <LinkButton href={`tel:${b.phone.replace(/[^\d+]/g, '')}`} className="min-h-11">
               Call {b.phone}
-            </a>
+            </LinkButton>
           )}
           {b.email && (
-            <a
-              href={`mailto:${b.email}?subject=${mailSubject}`}
-              className="inline-flex min-h-11 items-center rounded-control border border-line-control bg-surface px-3.5 text-base font-semibold text-ink no-underline hover:bg-canvas"
-            >
+            <LinkButton href={`mailto:${b.email}?subject=${mailSubject}`} className="min-h-11">
               Email
-            </a>
+            </LinkButton>
           )}
         </div>
       )}
@@ -230,21 +232,33 @@ export function BookingDrawer({
         </section>
       ) : (
         <>
+          {/* Three explicit presses, not a radio group: arrow keys must never write (H7). */}
           <div className="flex flex-col gap-1">
-            <span className="text-xs font-bold text-ink-2" aria-hidden="true">
+            <span id={`${EDIT_FORM}-mark`} className="text-xs font-bold text-ink-2">
               Mark as
             </span>
-            <Segmented<BookingStatus>
-              label="Mark as"
-              value={statusPending ?? b.status}
-              onChange={(s) => void setStatus(s, 'seg')}
-              options={(['confirmed', 'arrived', 'no_show'] as const).map((s) => ({ value: s, label: STATUS_LABEL[s] }))}
-              className="self-start"
-            />
+            <div role="group" aria-labelledby={`${EDIT_FORM}-mark`} className="flex flex-wrap gap-2">
+              {MARKS.map((st) => {
+                const on = st === b.status
+                return (
+                  <Button
+                    key={st}
+                    aria-pressed={on}
+                    pending={statusPending === st}
+                    pendingLabel="Saving…"
+                    disabled={busy && statusPending !== st}
+                    onClick={() => void setStatus(st, 'mark')}
+                    className={cx('min-h-11', on && 'border-brand-line bg-brand-wash font-bold text-brand-ink hover:bg-brand-wash')}
+                  >
+                    {STATUS_LABEL[st]}
+                  </Button>
+                )
+              })}
+            </div>
           </div>
 
           <form id={EDIT_FORM} noValidate onSubmit={(e) => void save(e)} className="flex flex-col gap-3.5">
-            <h3 className="text-lg font-extrabold tracking-[-.01em]">Change the booking</h3>
+            <SectionHead as="h3">Change the booking</SectionHead>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Party" error={fieldErr.party}>
                 <Input inputMode="numeric" value={party} onChange={(e) => setParty(e.target.value)} className="fig" />

@@ -38,6 +38,7 @@ from cafeops.db.models import (
 )
 from cafeops.domain.composition import gbp, qty_text
 from cafeops.domain.types import ComponentRole, ModifierAction
+from cafeops.services.actor import require_actor
 from cafeops.services.edit_composition import require_not_retroactive
 
 __all__ = [
@@ -284,14 +285,12 @@ def apply_modifier_change(
     actor: str,
     effective_from: datetime | None = None,
 ) -> tuple[int, datetime, tuple[str, ...]]:
-    """Close the open version, open the new one, refresh the cache. Commits itself.
+    """Close the open version, open the new one, refresh the cache. Flushes; the caller commits.
 
     Returns (new version id, effective_from, diff lines).
     """
     at = require_not_retroactive(effective_from or datetime.now(UTC))
-    actor = actor.strip()[:120]
-    if not actor:
-        raise ValueError("say who is making this change (the operator name)")
+    actor = require_actor(actor, error=ValueError)
     modifier = session.get(Modifier, modifier_id)
     if modifier is None:
         raise LookupError(f"swap {modifier_id} not found")
@@ -300,58 +299,54 @@ def apply_modifier_change(
         raise ValueError("Nothing was applied: " + "; ".join(refusals) + ".")
     if not diff:
         raise ValueError("there is nothing to apply: the swap already behaves like this")
-    try:
-        open_version = session.scalar(
-            select(ModifierVersion).where(
-                ModifierVersion.modifier_id == modifier_id, ModifierVersion.effective_to.is_(None)
-            )
+    open_version = session.scalar(
+        select(ModifierVersion).where(
+            ModifierVersion.modifier_id == modifier_id, ModifierVersion.effective_to.is_(None)
         )
-        if open_version is not None:
-            if open_version.effective_from >= at:
-                raise ValueError("this swap was already changed at this instant; try again")
-            open_version.effective_to = at
-            session.flush()
-        version = ModifierVersion(
-            modifier_id=modifier_id,
-            action=after.action,
-            target_role=after.target_role,
-            ingredient_id=after.ingredient_id,
-            qty_delta=after.qty_delta,
-            qty_multiplier=after.qty_multiplier,
-            price_pence=after.price_pence,
-            price_is_estimate=after.price_is_estimate,
-            is_active=after.is_active,
-            effective_from=at,
-            changed_by=actor,
-        )
-        session.add(version)
-        modifier.action = after.action
-        modifier.target_role = after.target_role
-        modifier.ingredient_id = after.ingredient_id
-        modifier.qty_delta = after.qty_delta
-        modifier.qty_multiplier = after.qty_multiplier
-        modifier.price_pence = after.price_pence
-        modifier.price_is_estimate = after.price_is_estimate
-        modifier.is_active = after.is_active
+    )
+    if open_version is not None:
+        if open_version.effective_from >= at:
+            raise ValueError("this swap was already changed at this instant; try again")
+        open_version.effective_to = at
         session.flush()
-        # One history line on every recipe the swap applies to, so each recipe's
-        # history says what changed for it and who changed it.
-        template_ids = session.scalars(
-            select(DrinkTemplate.id).where(DrinkTemplate.name.in_(templates))
-        ).all()
-        for template_id in template_ids:
-            session.add(
-                RecipeChange(
-                    template_id=template_id,
-                    change_kind="modifier",
-                    effective_from=at,
-                    actor=actor,
-                    summary=" · ".join(diff[:3]),
-                    lines=list(diff),
-                )
+    version = ModifierVersion(
+        modifier_id=modifier_id,
+        action=after.action,
+        target_role=after.target_role,
+        ingredient_id=after.ingredient_id,
+        qty_delta=after.qty_delta,
+        qty_multiplier=after.qty_multiplier,
+        price_pence=after.price_pence,
+        price_is_estimate=after.price_is_estimate,
+        is_active=after.is_active,
+        effective_from=at,
+        changed_by=actor,
+    )
+    session.add(version)
+    modifier.action = after.action
+    modifier.target_role = after.target_role
+    modifier.ingredient_id = after.ingredient_id
+    modifier.qty_delta = after.qty_delta
+    modifier.qty_multiplier = after.qty_multiplier
+    modifier.price_pence = after.price_pence
+    modifier.price_is_estimate = after.price_is_estimate
+    modifier.is_active = after.is_active
+    session.flush()
+    # One history line on every recipe the swap applies to, so each recipe's
+    # history says what changed for it and who changed it.
+    template_ids = session.scalars(
+        select(DrinkTemplate.id).where(DrinkTemplate.name.in_(templates))
+    ).all()
+    for template_id in template_ids:
+        session.add(
+            RecipeChange(
+                template_id=template_id,
+                change_kind="modifier",
+                effective_from=at,
+                actor=actor,
+                summary=" · ".join(diff[:3]),
+                lines=list(diff),
             )
-        session.commit()
-    except Exception:
-        session.rollback()
-        raise
+        )
+    session.flush()
     return version.id, at, tuple(diff)

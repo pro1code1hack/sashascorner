@@ -29,13 +29,19 @@ export function PhysicalCard({
   busySlot?: number | null
 }) {
   const [openSlot, setOpenSlot] = useState<number | null>(null)
+  const slotRefs = useRef<Array<HTMLButtonElement | null>>([])
+  /** Close the picker; `refocus` puts focus back on the slot that opened it (not on an outside click). */
+  const close = (slot: number, refocus: boolean) => {
+    setOpenSlot(null)
+    if (refocus) slotRefs.current[slot]?.focus()
+  }
   const slots = Math.min(Math.max(card.stamps_required, 1), 12)
   return (
-    <div className="relative w-full max-w-[21rem] flex-none rounded-[18px] bg-[#e9dcd6] px-4 pb-4 pt-4 text-[#474531] shadow-[0_6px_18px_rgb(71_69_49/0.16)] sm:px-5">
+    <div className="relative w-full max-w-[21rem] flex-none rounded-card-lg bg-pass-blush px-4 pb-4 pt-4 text-pass-ink shadow-login sm:px-5">
       <div className="flex items-start justify-between gap-3">
         <span className="pt-0.5 text-label font-extrabold uppercase tracking-[.16em]">Sasha’s Corner</span>
         <span className="text-right leading-none">
-          <span className="block text-[10px] font-extrabold uppercase tracking-[.14em]">Stamps</span>
+          <span className="block text-label font-extrabold uppercase tracking-[.14em]">Stamps</span>
           <span className="fig text-xl font-extrabold">
             {card.stamps_current}/{card.stamps_required}
           </span>
@@ -55,13 +61,16 @@ export function PhysicalCard({
             <li key={i} className="relative aspect-square">
               {filled ? (
                 <button
+                  ref={(el) => {
+                    slotRefs.current[i] = el
+                  }}
                   type="button"
                   disabled={!onPick || card.voided}
                   onClick={() => setOpenSlot(openSlot === i ? null : i)}
                   aria-label={`Stamp ${i + 1}: ${stickerName(key) || 'sticker'}. Change sticker`}
                   aria-expanded={openSlot === i}
                   className={cx(
-                    'grid size-full place-items-center rounded-full bg-surface shadow-[0_2px_6px_rgb(71_69_49/0.14)] transition-transform',
+                    'grid size-full place-items-center rounded-full bg-surface shadow-raised transition-transform',
                     onPick && 'hover:scale-[1.04] focus-visible:outline-2 focus-visible:outline-brand',
                     busySlot === i && 'opacity-50',
                   )}
@@ -69,7 +78,7 @@ export function PhysicalCard({
                   <StickerImg sticker={key} size={40} className="size-[62%]" />
                 </button>
               ) : (
-                <span className="fig grid size-full place-items-center rounded-full border-[1.5px] border-dashed border-[#474531]/35 text-2xl font-semibold text-[#474531]/60">
+                <span className="fig grid size-full place-items-center rounded-full border-[1.5px] border-dashed border-pass-ink/50 text-2xl font-semibold text-pass-ink/80">
                   {i + 1}
                 </span>
               )}
@@ -77,9 +86,9 @@ export function PhysicalCard({
                 <StickerPicker
                   current={key}
                   alignRight={i % 4 >= 2}
-                  onClose={() => setOpenSlot(null)}
+                  onClose={(refocus) => close(i, refocus)}
                   onPick={(s) => {
-                    setOpenSlot(null)
+                    close(i, true)
                     if (s !== key) onPick(i, s)
                   }}
                 />
@@ -88,9 +97,9 @@ export function PhysicalCard({
           )
         })}
       </ol>
-      <div className="mt-4 flex items-end justify-between gap-3 border-t border-[#474531]/20 pt-2.5">
+      <div className="mt-4 flex items-end justify-between gap-3 border-t border-pass-ink/20 pt-2.5">
         <span className="min-w-0">
-          <span className="block text-[10px] font-extrabold uppercase tracking-[.14em]">Member</span>
+          <span className="block text-label font-extrabold uppercase tracking-[.14em]">Member</span>
           <span className="block truncate text-md font-bold">{memberName}</span>
         </span>
         <span className="flex-none text-sm">{card.voided ? 'Deleted' : 'Active'}</span>
@@ -108,15 +117,20 @@ function StickerPicker({
   current: StickerKey | undefined
   alignRight: boolean
   onPick: (s: StickerKey) => void
-  onClose: () => void
+  /** `true` when focus should go back to the slot (Escape), `false` for a click or tab away. */
+  onClose: (refocus: boolean) => void
 }) {
   const ref = useRef<HTMLDivElement>(null)
+  // The latest onClose, so the effect runs once per opening (it also moves focus in).
+  const closeRef = useRef(onClose)
+  closeRef.current = onClose
   useEffect(() => {
+    const onClose = (refocus: boolean) => closeRef.current(refocus)
     const down = (e: MouseEvent) => {
-      if (ref.current && !ref.current.parentElement?.contains(e.target as Node)) onClose()
+      if (ref.current && !ref.current.parentElement?.contains(e.target as Node)) onClose(false)
     }
     const key = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') onClose(true)
     }
     document.addEventListener('mousedown', down)
     document.addEventListener('keydown', key)
@@ -125,14 +139,19 @@ function StickerPicker({
       document.removeEventListener('mousedown', down)
       document.removeEventListener('keydown', key)
     }
-  }, [onClose])
+  }, [])
   return (
     <div
       ref={ref}
       role="dialog"
       aria-label="Choose a sticker"
+      onBlur={(e) => {
+        // Tabbing out of the picker closes it, so no open popover is left behind.
+        const to = e.relatedTarget as Node | null
+        if (to && !ref.current?.parentElement?.contains(to)) onClose(false)
+      }}
       className={cx(
-        'absolute top-[calc(100%+6px)] z-20 w-[13.5rem] rounded-card border border-line bg-surface p-2 text-ink shadow-[0_8px_24px_rgb(31_38_51/0.18)]',
+        'absolute top-[calc(100%+6px)] z-20 w-[13.5rem] rounded-card border border-line bg-surface p-2 text-ink shadow-login',
         alignRight ? 'right-0' : 'left-0',
       )}
     >

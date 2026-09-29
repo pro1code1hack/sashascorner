@@ -49,10 +49,12 @@ from cafeops.db.models import (
     PurchaseOrder,
 )
 from cafeops.domain.types import AgentProposal as DomainProposal
+from cafeops.services.actor import require_actor
 
 __all__ = [
     "AGENT_LABELS",
     "DecisionOutcome",
+    "ProposalApplyFailed",
     "ProposalConflict",
     "ProposalView",
     "RunRow",
@@ -64,6 +66,7 @@ __all__ = [
     "insert_proposal",
     "list_proposals",
     "proposal_view",
+    "record_apply_failure",
     "run_log",
     "waiting_count",
     "waiting_orders",
@@ -446,6 +449,41 @@ class _Superseded(Exception):
     """The world moved since the agent proposed this. Nothing was applied."""
 
 
+class ProposalApplyFailed(Exception):
+    """The kind's service failed part-way. Its transaction must be rolled back before
+    the failure is recorded: catch this, roll back, then call `record_apply_failure`
+    in a fresh transaction."""
+
+    def __init__(
+        self, proposal_id: int, *, decided_by: str, note: str | None, cause: Exception
+    ) -> None:
+        super().__init__(str(cause))
+        self.proposal_id = proposal_id
+        self.decided_by = decided_by
+        self.note = note
+        self.reason = str(cause)
+        self.error = f"{type(cause).__name__}: {cause}"[:1000]
+
+
+def record_apply_failure(session: Session, failure: ProposalApplyFailed) -> DecisionOutcome:
+    """Record APPLY_FAILED, with the person's name, after the failed attempt was rolled
+    back. Nothing of the change survives, so the message can say so truthfully."""
+    row = _load_for_decision(session, failure.proposal_id)
+    _decide(
+        row,
+        ProposalStatus.APPLY_FAILED,
+        decided_by=failure.decided_by,
+        note=failure.note,
+        applied_result={"error": failure.error},
+    )
+    return DecisionOutcome(
+        proposal=proposal_view(row),
+        outcome="failed",
+        applied=None,
+        message=f"It didn't apply, and nothing was changed: {failure.reason}",
+    )
+
+
 def _load_for_decision(session: Session, proposal_id: int) -> AgentProposal:
     row = session.get(AgentProposal, proposal_id)
     if row is None:
@@ -460,10 +498,7 @@ def _load_for_decision(session: Session, proposal_id: int) -> AgentProposal:
 
 
 def _operator(decided_by: str) -> str:
-    name = " ".join(decided_by.split())
-    if not name:
-        raise ValueError("a decision needs the name of the person making it (decided_by)")
-    return name[:120]
+    return require_actor(decided_by, error=ValueError)
 
 
 def _decimal(raw: object) -> Decimal:
@@ -474,7 +509,7 @@ def _decimal(raw: object) -> Decimal:
 
 
 def _apply_waste_factor(session: Session, row: AgentProposal) -> tuple[dict[str, str], str]:
-    from cafeops.services.record_count import apply_waste_suggestion
+    from cafeops.services.record_count import apply_waste_suggestion, waste_suggestion
 
     p = row.payload or {}
     ingredient = session.get(Ingredient, int(str(p["ingredient_id"])))
@@ -487,19 +522,24 @@ def _apply_waste_factor(session: Session, row: AgentProposal) -> tuple[dict[str,
             f"{ingredient.name}'s waste allowance is now {ingredient.waste_factor}, not "
             f"{current} as it was when the agent looked"
         )
-    result = apply_waste_suggestion(session, ingredient_id=ingredient.id)
-    if result is None:
+    # Compare against the read-only calculation BEFORE writing anything, so a refused
+    # accept leaves the ingredient untouched. The agent narrates, it does not choose
+    # numbers (CLAUDE.md §9): only the value the drift report computes may be applied,
+    # and only when it is the one proposed.
+    found = waste_suggestion(session, ingredient_id=ingredient.id)
+    if found is None:
         raise _Superseded(
             f"the latest count no longer suggests a different waste allowance for {ingredient.name}"
         )
-    old, new = result
-    # The agent narrates, it does not choose numbers (CLAUDE.md §9): only the value the
-    # drift report computes may be applied, and only when it is the one proposed.
-    if new.quantize(Decimal("0.001")) != proposed.quantize(Decimal("0.001")):
+    suggested = found[1]
+    if suggested.quantize(Decimal("0.001")) != proposed.quantize(Decimal("0.001")):
         raise _Superseded(
-            f"the drift report now suggests {new.normalize()} for {ingredient.name}, not "
-            f"the proposed {proposed.normalize()}"
+            f"the drift report now suggests {suggested.normalize()} for "
+            f"{ingredient.name}, not the proposed {proposed.normalize()}"
         )
+    result = apply_waste_suggestion(session, ingredient_id=ingredient.id)
+    assert result is not None
+    old, new = result
     applied = {"ingredient": ingredient.name, "old": str(old), "new": str(new)}
     message = (
         f"Accepted. {ingredient.name}'s waste allowance is now {_pct(new)} (was "
@@ -571,9 +611,16 @@ def accept_proposal(
 ) -> DecisionOutcome:
     """Accept, through the kind's service. The caller commits.
 
-    SUPERSEDED and APPLY_FAILED are decisions too, recorded with the person's name:
-    the world moved, or the service refused, and nothing was applied. A failed apply
-    rolls back to a savepoint, so the refusal is on record but none of the change is.
+    SUPERSEDED is a decision too, recorded with the person's name in the caller's
+    transaction: every "the world moved" check runs before the service writes, so a
+    superseded accept changes nothing but the proposal row. ACCEPTED lands in the same
+    transaction as the change it records.
+
+    An unexpected failure inside the service raises `ProposalApplyFailed` instead of
+    recording anything: the service may have written part of its change, and only the
+    caller can discard it (roll back). The caller then records APPLY_FAILED in a fresh
+    transaction with `record_apply_failure`. No savepoint: on pysqlite releasing the
+    outermost one is a real COMMIT (ARCHITECTURE 8R).
     """
     name = _operator(decided_by)
     row = _load_for_decision(session, proposal_id)
@@ -602,13 +649,12 @@ def accept_proposal(
         return _accept_template(session, row, decided_by=name, note=note)
 
     try:
-        with session.begin_nested():
-            if row.kind is ProposalKind.WASTE_FACTOR:
-                applied, message = _apply_waste_factor(session, row)
-            elif row.kind is ProposalKind.CHANNEL_IMPORT:
-                applied, message = _apply_channel_import(session, row)
-            else:  # pragma: no cover - _presentation makes every other kind navigate
-                raise ProposalConflict("no service applies this kind of proposal")
+        if row.kind is ProposalKind.WASTE_FACTOR:
+            applied, message = _apply_waste_factor(session, row)
+        elif row.kind is ProposalKind.CHANNEL_IMPORT:
+            applied, message = _apply_channel_import(session, row)
+        else:  # pragma: no cover - _presentation makes every other kind navigate
+            raise ProposalConflict("no service applies this kind of proposal")
     except _Superseded as exc:
         _decide(
             row,
@@ -626,19 +672,7 @@ def accept_proposal(
     except ProposalConflict:
         raise
     except Exception as exc:
-        _decide(
-            row,
-            ProposalStatus.APPLY_FAILED,
-            decided_by=name,
-            note=note,
-            applied_result={"error": f"{type(exc).__name__}: {exc}"[:1000]},
-        )
-        return DecisionOutcome(
-            proposal=proposal_view(row),
-            outcome="failed",
-            applied=None,
-            message=f"It didn't apply, and nothing was changed: {exc}",
-        )
+        raise ProposalApplyFailed(proposal_id, decided_by=name, note=note, cause=exc) from exc
 
     _decide(row, ProposalStatus.ACCEPTED, decided_by=name, note=note, applied_result=applied)
     return DecisionOutcome(
@@ -649,7 +683,11 @@ def accept_proposal(
 def _accept_template(
     session: Session, row: AgentProposal, *, decided_by: str, note: str | None
 ) -> DecisionOutcome:
-    """Materialise commits its own transaction, so the decision is recorded after it."""
+    """Materialise and record the decision in the caller's one transaction.
+
+    `materialise_proposal` raises NotFound / AlreadyMaterialised / HasConflicts /
+    Ambiguous before it writes anything, so a SUPERSEDED row needs no rollback, and a
+    conflict propagates for the caller to roll back."""
     from cafeops.services.materialise_template import (
         AmbiguousProposal,
         ProposalAlreadyMaterialised,
@@ -659,46 +697,35 @@ def _accept_template(
     )
 
     key = str((row.payload or {})["proposal_id"])
-    row_id = row.id
     try:
         report = materialise_proposal(session, key, actor=decided_by)
     except (ProposalAlreadyMaterialised, ProposalNotFound) as exc:
-        session.rollback()
-        fresh = session.get(AgentProposal, row_id)
-        if fresh is None:  # pragma: no cover
-            raise LookupError(f"no agent proposal {row_id}") from exc
         _decide(
-            fresh,
+            row,
             ProposalStatus.SUPERSEDED,
             decided_by=decided_by,
             note=note,
             applied_result={"superseded": str(exc)},
         )
         return DecisionOutcome(
-            proposal=proposal_view(fresh),
+            proposal=proposal_view(row),
             outcome="superseded",
             applied=None,
             message=f"This changed since the agent proposed it: {exc}. Nothing was applied.",
         )
     except (ProposalHasConflicts, AmbiguousProposal) as exc:
-        session.rollback()
         raise ProposalConflict(
             f"{exc} Review it in Recipes, where the conflicting quantities are shown."
         ) from exc
 
-    fresh = session.get(AgentProposal, row_id)
-    if fresh is None:  # pragma: no cover
-        raise LookupError(f"no agent proposal {row_id}")
     applied = {
         "template": report.proposal_name,
         "template_id": str(report.template_id),
         "items_repointed": str(report.items_repointed),
     }
-    _decide(
-        fresh, ProposalStatus.ACCEPTED, decided_by=decided_by, note=note, applied_result=applied
-    )
+    _decide(row, ProposalStatus.ACCEPTED, decided_by=decided_by, note=note, applied_result=applied)
     return DecisionOutcome(
-        proposal=proposal_view(fresh),
+        proposal=proposal_view(row),
         outcome="applied",
         applied=applied,
         message=(

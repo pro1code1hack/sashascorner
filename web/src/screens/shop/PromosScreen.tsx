@@ -13,6 +13,7 @@ import {
   Empty,
   ErrorBox,
   Field,
+  IconButton,
   Input,
   Loading,
   PageBody,
@@ -74,7 +75,9 @@ export function PromosScreen() {
               width={460}
               compactWidth={400}
             >
-              {open?.kind === 'banner' && <BannerEditor key={banner ? `${banner.id}` : 'new'} b={banner} onClose={close} />}
+              {open?.kind === 'banner' && (
+                <BannerEditor key={banner ? `${banner.id}` : 'new'} b={banner} onClose={close} onCreated={(b) => setOpen({ kind: 'banner', id: b.id })} />
+              )}
               {open?.kind === 'upsell' && <UpsellEditor key={upsell ? `${upsell.id}` : 'new'} u={upsell} placement={open.placement} cat={data} onClose={close} />}
             </Drawer>
           </div>
@@ -121,7 +124,8 @@ function Banners({ banners, onOpen, openId }: { banners: BannerAdmin[]; onOpen: 
         <Empty>No banners. The carousel is hidden until there is one to show.</Empty>
       ) : (
         <div className="overflow-hidden rounded-card-lg bg-surface shadow-raised">
-          <div className={cx(LIST_HEAD, BCOLS)}>
+          {/* Visual column heads only; each row's cells carry their own hidden labels. */}
+          <div className={cx(LIST_HEAD, BCOLS)} aria-hidden="true">
             <span />
             <span>Banner</span>
             <span>Link</span>
@@ -131,8 +135,9 @@ function Banners({ banners, onOpen, openId }: { banners: BannerAdmin[]; onOpen: 
           <ul>
             {banners.map((b, i) => {
               const when = bannerWhen(b)
+              // A banner that is off keeps full contrast; the pill says when it shows.
               return (
-                <li key={b.id} className={cx('grid grid-cols-[64px_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 border-b border-line-row px-3.5 py-2 last:border-b-0', BCOLS, openId === b.id && 'bg-brand-wash', !when.live && 'opacity-70')}>
+                <li key={b.id} className={cx('grid grid-cols-[64px_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 border-b border-line-row px-3.5 py-2 last:border-b-0', BCOLS, openId === b.id && 'bg-brand-wash')}>
                   <button type="button" onClick={() => onOpen(b.id)} aria-label={`Edit ${b.title}`} className="rounded-control">
                     <Thumb url={b.photo_url} className="h-9 w-16" />
                   </button>
@@ -146,8 +151,12 @@ function Banners({ banners, onOpen, openId }: { banners: BannerAdmin[]; onOpen: 
                       {b.link_href ? ` · ${b.link_href}` : ''}
                     </span>
                   </span>
-                  <span className="fig hidden min-w-0 truncate text-sm compact:block">{b.link_href ?? <span className="text-ink-2">no link</span>}</span>
+                  <span className="fig hidden min-w-0 truncate text-sm compact:block">
+                    <span className="sr-only">Link </span>
+                    {b.link_href ?? <span className="text-ink-2">no link</span>}
+                  </span>
                   <span className="hidden compact:block">
+                    <span className="sr-only">Showing </span>
                     <Pill tone={when.live ? 'brand' : 'muted'}>{when.text}</Pill>
                   </span>
                   <span className="col-start-3 row-start-1 flex justify-end compact:col-auto compact:row-auto">
@@ -163,7 +172,11 @@ function Banners({ banners, onOpen, openId }: { banners: BannerAdmin[]; onOpen: 
   )
 }
 
-function BannerEditor({ b, onClose }: { b: BannerAdmin | null; onClose: () => void }) {
+/**
+ * `onCreated` re-keys the drawer to the new banner once the server answers, so
+ * the photo slot appears and a second Save updates rather than creating a twin.
+ */
+function BannerEditor({ b, onClose, onCreated }: { b: BannerAdmin | null; onClose: () => void; onCreated: (b: BannerAdmin) => void }) {
   const w = useWrite()
   const [title, setTitle] = useState(b?.title ?? '')
   const [subtitle, setSubtitle] = useState(b?.subtitle ?? '')
@@ -186,7 +199,7 @@ function BannerEditor({ b, onClose }: { b: BannerAdmin | null; onClose: () => vo
       ) : (
         <p className="text-sm text-ink-2">Create the banner first, then add its photo.</p>
       )}
-      <Toggle checked={active} onChange={setActive} label={active ? 'On' : 'Off'} />
+      <Toggle checked={active} onChange={setActive} label="Shown in the carousel" />
       <Field label="Title">
         <Input value={title} maxLength={120} onChange={(e) => setTitle(e.target.value)} placeholder="Pumpkin spice is back" />
       </Field>
@@ -224,6 +237,9 @@ function BannerEditor({ b, onClose }: { b: BannerAdmin | null; onClose: () => vo
               void w.run(() => (b ? catalogueWrites.bannerUpdate(b.id, body) : catalogueWrites.bannerCreate(body)), {
                 invalidate: [SHOP_KEY],
                 ok: () => (b ? 'Saved.' : 'Banner created. Add its photo next.'),
+                after: (created) => {
+                  if (!b) onCreated(created)
+                },
               })
             }
           >
@@ -265,7 +281,7 @@ function Upsells({ upsells, cat, onOpen, openId }: { upsells: UpsellAdmin[]; cat
             ) : (
               <ul className="overflow-hidden rounded-card-lg bg-surface shadow-raised">
                 {rows.map((u) => (
-                  <li key={u.id} className={cx('flex items-center gap-3 border-b border-line-row px-3.5 py-2.5 last:border-b-0', openId === u.id && 'bg-brand-wash', !u.active && 'opacity-70')}>
+                  <li key={u.id} className={cx('flex items-center gap-3 border-b border-line-row px-3.5 py-2.5 last:border-b-0', openId === u.id && 'bg-brand-wash')}>
                     <span className="min-w-0 flex-1">
                       <button type="button" onClick={() => onOpen(u.id)} className="block max-w-full truncate text-left text-md font-bold text-ink hover:underline">
                         {u.heading}
@@ -306,7 +322,7 @@ function UpsellEditor({ u, placement, cat, onClose }: { u: UpsellAdmin | null; p
   const body: UpsellIn = { placement: pl, heading: heading.trim(), product_ids: ids, active }
   return (
     <>
-      <Toggle checked={active} onChange={setActive} label={active ? 'On' : 'Off'} />
+      <Toggle checked={active} onChange={setActive} label="Shown to customers" />
       <Field label="Heading">
         <Input value={heading} maxLength={80} onChange={(e) => setHeading(e.target.value)} placeholder="Fancy a pastry?" />
       </Field>
@@ -334,9 +350,7 @@ function UpsellEditor({ u, placement, cat, onClose }: { u: UpsellAdmin | null; p
                     {p && !p.available && <span className="text-sm text-ink-2"> · sold out today</span>}
                   </span>
                   <MoveButtons name={label} mover={{ enabled: true, index: i, count: ids.length, move: (from, to) => setIds((s) => moved(s, from, to)) }} idBase={domId('shu', String(id))} />
-                  <Button variant="ghost" size="sm" aria-label={`Remove ${label}`} onClick={() => setIds((s) => s.filter((x) => x !== id))}>
-                    <span aria-hidden="true">×</span>
-                  </Button>
+                  <IconButton label={`Remove ${label}`} onClick={() => setIds((s) => s.filter((x) => x !== id))} />
                 </li>
               )
             })}

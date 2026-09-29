@@ -26,7 +26,8 @@ export function PhotosScreen() {
   const tab: Tab = useLocation().query.get('tab') === 'library' ? 'library' : 'places'
   return (
     <>
-      <PageHeader title="Photos" subtitle={<PhotosTabs current={tab} />} />
+      <PageHeader title="Photos" />
+      <PhotosTabs current={tab} />
       <WebsiteGate>
         <Loaded tab={tab} />
       </WebsiteGate>
@@ -40,7 +41,7 @@ function PhotosTabs({ current }: { current: Tab }) {
     { id: 'library' as const, label: 'Photo library', to: href(PATH, { tab: 'library' }) },
   ]
   return (
-    <span className="inline-flex flex-wrap items-center gap-1" role="navigation" aria-label="Photos sections">
+    <nav aria-label="Photos sections" className="flex flex-none flex-wrap items-center gap-1 border-b border-line-soft px-4 py-2 sm:px-5">
       {tabs.map((t) => (
         <a
           key={t.id}
@@ -54,7 +55,7 @@ function PhotosTabs({ current }: { current: Tab }) {
           {t.label}
         </a>
       ))}
-    </span>
+    </nav>
   )
 }
 

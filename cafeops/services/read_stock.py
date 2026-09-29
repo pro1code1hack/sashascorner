@@ -13,10 +13,9 @@ from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from cafeops.db.models import StockBatch
+from cafeops.db.repositories.batch import SqlBatchRepository
 from cafeops.db.repositories.ingredient import SqlIngredientRepository
 from cafeops.db.repositories.stock import SqlStockRepository
 from cafeops.domain.stock import theoretical_on_hand
@@ -75,6 +74,7 @@ def read_on_hand(
 ) -> list[StockReading]:
     ingredient_repo = SqlIngredientRepository(session)
     stock_repo = SqlStockRepository(session)
+    batch_repo = SqlBatchRepository(session)
 
     ingredients = (
         ingredient_repo.list_all()
@@ -102,7 +102,11 @@ def read_on_hand(
                     movement_sum=movement_sum,
                     movement_count=movement_count,
                 ),
-                batches=_open_batches(session, ingredient.id, as_of, open_life_days),
+                # The repository's read, not a copy of it: `batch_spec` is the one
+                # mapping, and `open_batches` carries the `expired_at IS NULL` filter
+                # and the Python re-check of `qty_remaining` (ARCHITECTURE.md 8E) that
+                # a hand-rolled query here had drifted without.
+                batches=tuple(batch_repo.open_batches(ingredient.id, at=as_of)),
                 shelf_life_days=shelf_life_days,
                 open_life_days=open_life_days,
             )
@@ -117,36 +121,3 @@ def _shelf_life(session: Session, ingredient_id: int) -> tuple[int | None, int |
     if row is None:
         return None, None
     return row.shelf_life_days, row.open_life_days
-
-
-def _open_batches(
-    session: Session, ingredient_id: int, as_of: datetime, open_life_days: int | None
-) -> tuple[BatchSpec, ...]:
-    """Batches with stock left as of `as_of`, soonest effective expiry first."""
-    rows = session.scalars(
-        select(StockBatch).where(
-            StockBatch.ingredient_id == ingredient_id,
-            StockBatch.received_at <= as_of,
-            StockBatch.qty_remaining > 0,
-        )
-    )
-    specs = [
-        BatchSpec(
-            batch_id=b.id,
-            ingredient_id=b.ingredient_id,
-            qty_remaining=b.qty_remaining,
-            received_at=b.received_at,
-            expires_at=b.expires_at,
-            opened_at=b.opened_at,
-            unit_cost_pence=b.unit_cost_pence,
-        )
-        for b in rows
-    ]
-
-    def key(spec: BatchSpec) -> tuple[int, float, int]:
-        expiry = spec.effective_expiry(open_life_days)
-        if expiry is None:
-            return (1, spec.received_at.timestamp(), spec.batch_id)
-        return (0, expiry.timestamp(), spec.batch_id)
-
-    return tuple(sorted(specs, key=key))

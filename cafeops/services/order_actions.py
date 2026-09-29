@@ -1,15 +1,16 @@
 """What the web may do to a purchase order that already exists. DECISIONS 1.
 
-The web **never creates or confirms** a purchase order: `api/routers.py`'s docstring
-stands, and confirmation happens in Telegram with a named human, enforced by
-`ck_po_confirmed_requires_human` (invariant 1, ARCHITECTURE 5). What DECISIONS 1 does
-allow is everything after or beside that decision:
+Creating a DRAFT and confirming it are `services/web_orders.py` (DECISIONS 18): a named
+human confirms, enforced by `ck_po_confirmed_requires_human` (invariant 1, ARCHITECTURE
+5). This module is everything after or beside that decision, for the web and the bot
+alike:
 
 * **Cancel** -- from DRAFT, PENDING_CONFIRM or CONFIRMED. Refused from SENT (the supplier
   already has it; cancelling here would not reach them) and RECEIVED (the stock is on the
   shelf). Signed and timed: `cancelled_requires_human` is a CHECK.
-* **Mark sent** -- CONFIRMED only, through `SqlPurchaseOrderRepository.mark_sent`, the
-  same guard the bot's dispatch path uses. Records `sent_by`.
+* **Mark sent** -- CONFIRMED only, through `SqlPurchaseOrderRepository.mark_sent`.
+  Records `sent_by`. The bot's dispatch path calls `mark_order_sent` too, so a
+  Telegram-dispatched order is signed the same way a web one is.
 * **Receive** -- line by line through `receive_delivery.receive_po_line`, which already
   refuses anything a human has not confirmed and closes the order when complete.
 * **Log a shop run** -- stock bought at a supermarket because a delivery would come too
@@ -17,6 +18,12 @@ allow is everything after or beside that decision:
   line through `receive_adhoc`, and a `tesco_routing` row per line carrying what was
   actually paid and the premium over the usual supplier, which is the figure the Shop
   runs report sums (spec 4.4).
+* **Adjust a line's packs** (`adjust_line_packs`) and **attach / clear a receipt photo**.
+
+**The order-state rules live here and nowhere else.** `CONFIRMABLE`, `AWAITING_DELIVERY`,
+`CANCELLABLE` and `OPEN_STATUSES` below, plus `receive_delivery.RECEIVABLE`, are the only
+lists of which status permits what; `allowed_actions` turns them into what a screen may
+offer. The web view, `web_orders` and the bot all import them rather than keeping a copy.
 """
 
 from __future__ import annotations
@@ -24,6 +31,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from decimal import ROUND_HALF_UP, Decimal
+from typing import Literal
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -37,29 +45,85 @@ from cafeops.db.models import (
     SupplierProduct,
     TescoRouting,
 )
-from cafeops.db.repositories.purchase_order import SqlPurchaseOrderRepository
+from cafeops.db.repositories.purchase_order import (
+    OPEN_PO_STATUSES,
+    OPEN_TO_EDITS,
+    SqlPurchaseOrderRepository,
+    order_total_pence,
+)
 from cafeops.domain.units import IncompatibleUnitsError, convert
-from cafeops.services.receive_delivery import DeliveryReceipt, receive_adhoc, receive_po_line
+from cafeops.services.actor import require_actor
+from cafeops.services.receive_delivery import (
+    RECEIVABLE,
+    DeliveryReceipt,
+    receive_adhoc,
+    receive_po_line,
+)
 
 __all__ = [
+    "AWAITING_DELIVERY",
     "CANCELLABLE",
+    "CONFIRMABLE",
+    "OPEN_STATUSES",
+    "OrderAction",
     "OrderActionRefused",
     "ReceiveLine",
     "ShopRunLine",
     "ShopRunOutcome",
+    "adjust_line_packs",
+    "allowed_actions",
+    "attach_receipt",
     "cancel_order",
+    "clear_receipt",
     "log_shop_run",
     "mark_order_sent",
+    "order_total_pence",
     "receive_order",
 ]
 
-#: Statuses a web Cancel may move from. SENT and RECEIVED are past the point where
+#: Statuses still waiting for a human: packs may be adjusted and the order confirmed
+#: (invariant 1). Past these, a +/- or a confirm would change an order nobody approved.
+CONFIRMABLE: tuple[POStatus, ...] = OPEN_TO_EDITS
+
+#: Statuses where stock is still expected through the door. A strict subset of
+#: `RECEIVABLE`: a RECEIVED order still accepts a late partial delivery, but nobody is
+#: waiting on it, so no screen offers "receive" for it.
+AWAITING_DELIVERY: tuple[POStatus, ...] = (POStatus.CONFIRMED, POStatus.SENT)
+
+#: Statuses a Cancel may move from. SENT and RECEIVED are past the point where
 #: cancelling here would mean anything to the supplier.
 CANCELLABLE: tuple[POStatus, ...] = (
     POStatus.DRAFT,
     POStatus.PENDING_CONFIRM,
     POStatus.CONFIRMED,
 )
+
+#: An order still in flight: one per (supplier, delivery date), and what an open-order
+#: count counts. The repository's set (it guards double-ordering in `open_po_qty`),
+#: re-exported so callers above the repository have one name for it.
+OPEN_STATUSES: tuple[POStatus, ...] = OPEN_PO_STATUSES
+
+OrderAction = Literal["confirm", "cancel", "mark_sent", "receive"]
+
+
+def allowed_actions(status: POStatus) -> tuple[OrderAction, ...]:
+    """What a person may do next to an order in `status`, in display order.
+
+    Built from the status sets above, which are the same sets the services check, so a
+    screen cannot offer a button the service would refuse. `mark_sent` is CONFIRMED
+    only (`mark_order_sent`); `receive` is offered while a delivery is awaited.
+    """
+    actions: list[OrderAction] = []
+    if status in CONFIRMABLE:
+        actions.append("confirm")
+    if status is POStatus.CONFIRMED:
+        actions.append("mark_sent")
+    if status in AWAITING_DELIVERY and status in RECEIVABLE:
+        actions.append("receive")
+    if status in CANCELLABLE:
+        actions.append("cancel")
+    return tuple(actions)
+
 
 _REASON_MAX = 400
 
@@ -125,6 +189,60 @@ def mark_order_sent(
         )
     SqlPurchaseOrderRepository(session).mark_sent(po_id, at=at or datetime.now(UTC))
     po.sent_by = who
+    session.flush()
+    return po
+
+
+def adjust_line_packs(
+    session: Session, *, po_id: int, line_id: int, packs: int, actor: str
+) -> PurchaseOrder:
+    """Set one line's `final_packs` while the order still waits for a human.
+
+    Moves `final_packs`, never `suggested_packs`: the difference is the record of what
+    the person decided against what the system proposed. Refused once the order has left
+    `CONFIRMABLE` -- a confirmed order whose packs quietly changed under a stale button
+    is an order nobody approved (invariant 1). `total_pence` is recomputed with it.
+    """
+    require_actor(actor, error=OrderActionRefused)
+    po = _order(session, po_id)
+    line = session.get(POLine, line_id)
+    if line is None or line.po_id != po_id:
+        raise LookupError(f"po_line {line_id} is not on purchase order {po_id}")
+    if po.status not in CONFIRMABLE:
+        raise OrderActionRefused(
+            f"purchase order {po_id} is {po.status.value}: packs can only be "
+            "adjusted while it is still waiting for a human"
+        )
+    if packs < 0:
+        raise OrderActionRefused(f"po_line {line_id}: packs cannot be negative")
+    line.final_packs = packs
+    po.total_pence = order_total_pence(po.lines)
+    session.flush()
+    return po
+
+
+def attach_receipt(
+    session: Session, *, po_id: int, asset_id: int, actor: str | None
+) -> PurchaseOrder:
+    """Attach a stored receipt photo. Evidence only: no quantity, price or status moves.
+
+    The name is recorded when given (trimmed by `require_actor`'s rule) and left NULL
+    when not: the web sends `X-Operator` only if an operator name is set, and a receipt
+    is evidence rather than a decision, so it is not refused for want of one.
+    """
+    who = require_actor(actor, error=OrderActionRefused) if (actor or "").strip() else None
+    po = _order(session, po_id)
+    po.receipt_asset_id = asset_id
+    po.receipt_uploaded_by = who
+    session.flush()
+    return po
+
+
+def clear_receipt(session: Session, *, po_id: int) -> PurchaseOrder:
+    """Detach the receipt photo. The media asset itself is kept."""
+    po = _order(session, po_id)
+    po.receipt_asset_id = None
+    po.receipt_uploaded_by = None
     session.flush()
     return po
 

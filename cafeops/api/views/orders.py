@@ -45,12 +45,11 @@ from cafeops.api.schemas import (
     SupplierOut,
     TopUpCandidateOut,
 )
-from cafeops.api.views.common import forecast_out
+from cafeops.api.views.common import forecast_out, supplier_out
 from cafeops.config import settings
 from cafeops.db.models import (
     Ingredient,
     POLine,
-    POStatus,
     PurchaseOrder,
     Supplier,
     SupplierProduct,
@@ -60,47 +59,16 @@ from cafeops.db.repositories.sourcing import SqlSourcingRepository
 from cafeops.domain.ordering import SizingOutcome, SizingPlan, cap_note, terms_of, top_up_pool
 from cafeops.domain.types import EmergencyLine, SourcingChoice, SupplierTerms, Tier
 from cafeops.services.build_order import SplitResult, build_split
-from cafeops.services.suppliers import contact_details
+
+# A purchase order still in flight (`order_actions.OPEN_STATUSES`). The pending basket on
+# the draft screen is the one of these matching (supplier, target_delivery_date) -- the
+# pre-delivery job's own idempotency key (spec C14).
+from cafeops.services.order_actions import OPEN_STATUSES
 
 __all__ = ["draft_orders_view", "persisted_order_out", "suppliers_view"]
 
-#: A purchase order still in flight. The pending basket on the draft screen is the one
-#: of these matching (supplier, target_delivery_date) -- the pre-delivery job's own
-#: idempotency key (spec C14).
-OPEN_STATUSES: tuple[POStatus, ...] = (
-    POStatus.DRAFT,
-    POStatus.PENDING_CONFIRM,
-    POStatus.CONFIRMED,
-    POStatus.SENT,
-)
-
 #: How many top-up suggestions a basket shows (the design's chips).
 TOP_UP_CANDIDATES_SHOWN = 4
-
-
-def _supplier_out(
-    terms: SupplierTerms, row: Supplier | None = None, product_count: int | None = None
-) -> SupplierOut:
-    return SupplierOut(
-        kind=row.kind if row is not None else None,
-        contact=row.contact if row is not None else None,
-        order_url=row.order_url if row is not None else None,
-        notes=row.notes if row is not None else None,
-        email=contact_details(row)["email"] if row is not None else None,
-        phone=contact_details(row)["phone"] if row is not None else None,
-        archived=row is not None and row.archived_at is not None,
-        product_count=product_count,
-        supplier_id=terms.supplier_id,
-        name=terms.name,
-        lead_time_days=terms.lead_time_days,
-        delivery_weekdays=tuple(terms.delivery_weekdays),
-        min_order_pence=terms.min_order_pence,
-        order_channel=terms.order_channel.value,
-        cutoff_time=terms.cutoff_time.isoformat() if terms.cutoff_time is not None else None,
-        delivery_fee_pence=terms.delivery_fee_pence,
-        free_delivery_threshold_pence=terms.free_delivery_threshold_pence,
-        terms_are_placeholders=terms.terms_are_placeholders,
-    )
 
 
 def suppliers_view(session: Session) -> tuple[SupplierOut, ...]:
@@ -111,11 +79,13 @@ def suppliers_view(session: Session) -> tuple[SupplierOut, ...]:
             select(SupplierProduct.supplier_id, func.count(SupplierProduct.id))
             .where(SupplierProduct.archived_at.is_(None))
             .group_by(SupplierProduct.supplier_id)
-        ).all()
+        )
+        .tuples()
+        .all()
     )
     rows = {row.id: row for row in session.scalars(select(Supplier))}
     return tuple(
-        _supplier_out(terms, rows.get(terms.supplier_id), int(counts.get(terms.supplier_id, 0)))
+        supplier_out(terms, rows.get(terms.supplier_id), int(counts.get(terms.supplier_id, 0)))
         for terms in sorted(SqlSourcingRepository(session).all_terms(), key=lambda t: t.name)
     )
 
@@ -281,7 +251,7 @@ def _supplier_order(
 
     lines = tuple(_line_out(outcome) for outcome in plan.ordered)
     return SupplierOrderOut(
-        supplier=_supplier_out(resolved),
+        supplier=supplier_out(resolved),
         target_delivery_date=suggestion.target_delivery_date,
         cover_window_days=window.length,
         cover_window_from=window.days[0] if window.days else None,

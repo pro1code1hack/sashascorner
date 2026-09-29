@@ -1,10 +1,28 @@
-"""One browser job, end to end: scripted steps, model fallback, snapshot, audit.
+"""One browser job, end to end: tiers, scripted steps, model fallback, snapshot, audit.
 
-docs/agents/BROWSER-ORDERING.md §4 steps 3-6. `run_stage_basket` takes a claimed
-RUNNING `browser_job` and leaves it SUCCEEDED (a basket was staged, possibly with
-warnings), NEEDS_HUMAN (the portal wants a sign-in, a code or a CAPTCHA), CANCELLED
-(a person asked) or FAILED (nothing could be read at all; an escaped exception is the
-worker's FAILED). The purchase order is never touched.
+docs/agents/BROWSER-ORDERING.md §4 steps 3-6 and §10. `run_stage_basket` takes a
+claimed RUNNING `browser_job` and leaves it SUCCEEDED (a basket was staged, possibly
+with warnings), NEEDS_HUMAN (the portal wants a sign-in, a code, a CAPTCHA, or a
+display the worker does not have), CANCELLED (a person asked) or FAILED (nothing
+could be read at all; an escaped exception is the worker's FAILED). The purchase
+order is never touched.
+
+### The tier ladder (§10)
+
+Tier 0 (a cart link, no browser at all) is decided in `services/browser_jobs.py`
+before a job is queued; when the link covers every line the job never reaches this
+module. What arrives here is the rest of the ladder, in order:
+
+1. `params["cart_link"]` -- a partial link: opened once in the worker's browser
+   (`script:cart_link_open`), which pre-fills the lines it covers.
+2. `portal.quick_order(page, lines)` -- the product-code pad (Booker, Brakes): every
+   remaining line with a SKU in ONE form (`script:quick_order`). When the scripted
+   pad breaks, ONE model task drives the pad for all of those lines.
+3. The per-line path: `add_line_scripted`, then the model for the step that broke.
+
+`result["tier"]` is the best tier that put at least one line in the basket and
+`result["tiers_used"]` lists the tiers that ran; each line's `added_by` says which
+half put it in ("cart_link" | "quick_order" | "script" | "model").
 
 ### Where the audit rows are written, and why on this session
 
@@ -17,38 +35,63 @@ This module does not run inside that engine, and deliberately so: the worker is 
 -- a model choosing to write -- cannot happen here, because the model never holds a
 session: the only thing it can do is ask for browser toolset members, and those go
 through `PolicyGuard` and the executor. So the two audit rows are written on the
-worker's ordinary session with the same helpers the engine uses
-(`SqlAgentLogRepository.log`, `insert_proposal`), INSERT only, in the same commit as
-the job's result, so a proposal never exists without the job and log row that made
-it. Invariant 10 holds by construction: nothing here imports a stock, order or
-composition service.
+worker's ordinary session with the same helpers the engine uses (`report.py`),
+INSERT only, in the same commit as the job's result, so a proposal never exists
+without the job and log row that made it. Invariant 10 holds structurally: nothing
+here imports a stock, order or composition service, and the worker's session is bound
+to `policies.browser_worker_engine`, whose connection refuses any write to a table on
+`FORBIDDEN_TABLES`.
+
+### Transactions
+
+SQLite has one writer. The job commits (a) right after resolving the supplier session,
+before Chromium is launched, and (b) after every step (`default_heartbeat`), so no
+write lock is held across a browser launch, a page load or a model call.
+`heartbeat_at` itself is written only by the worker's heartbeat thread.
 
 Every `StepRecord` becomes a `browser_job_step` row as it happens (with its screenshot
-in `media_asset`), the job's heartbeat is touched on every step, and a cancel request
-is honoured at the next step boundary.
+in `media_asset`), committed at once, and a cancel request is honoured at the next
+step boundary.
 """
 
 from __future__ import annotations
 
 import logging
 import re
-import uuid
 from collections.abc import Callable
 from dataclasses import replace
-from datetime import UTC, datetime
-from typing import Any
+from datetime import datetime
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urlsplit
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from cafeops.agent.browser.loop import basket_line_task, read_basket_task, run_model_task
+from cafeops.agent.browser.loop import (
+    basket_line_task,
+    quick_order_task,
+    read_basket_task,
+    run_model_task,
+)
 from cafeops.agent.browser.policy import PolicyGuard
-from cafeops.agent.browser.session import check_signed_in, open_supplier_browser
-from cafeops.agent.browser.types import BrowserExecutor, Budget, StepRecord
+from cafeops.agent.browser.report import (
+    highest_tier,
+    int_or_none,
+    lines_from_params,
+    pounds,
+    summary,
+    warnings_for,
+    write_audit,
+)
+from cafeops.agent.browser.session import (
+    SignInCheckFailed,
+    check_signed_in,
+    open_supplier_browser,
+)
+from cafeops.agent.browser.types import BrowserAction, BrowserExecutor, Budget, StepRecord
+from cafeops.clock import utcnow
 from cafeops.config import settings
 from cafeops.db.models import (
-    AgentActionLog,
     BrowserJob,
     BrowserJobStatus,
     BrowserJobStep,
@@ -58,32 +101,34 @@ from cafeops.db.models import (
     SupplierSession,
     SupplierSessionStatus,
 )
-from cafeops.db.repositories.agent_log import SqlAgentLogRepository
-from cafeops.domain.types import AgentProposal, AgentToolOutcome
+from cafeops.domain.types import AgentToolOutcome
 from cafeops.integrations.suppliers import portals as _portals  # noqa: F401 -- registers adapters
 from cafeops.integrations.suppliers.portals.base import (
     REGISTRY,
     BasketLine,
     BasketSnapshot,
+    Bindable,
     PortalNeedsHuman,
     PortalPolicyRefusal,
-    PortalStepFailed,
+    QuickOrderCapable,
     SupplierPortal,
     portal_for_supplier,
 )
-from cafeops.services.agent_proposals import insert_proposal
 from cafeops.services.media_store import MediaRefusedError, store_image
+
+if TYPE_CHECKING:
+    from playwright.sync_api import Page
 
 log = logging.getLogger("cafeops.browser")
 
-AGENT_NAME = "basket_stager"
-TOOL_NAME = "browser_stage_supplier_basket"
-#: A price seen this far from the order's expectation is worth a warning.
-PRICE_TOLERANCE = 0.05
-
-
-def _utcnow() -> datetime:
-    return datetime.now(UTC)
+#: `AGENT_NAME`, `TOOL_NAME` and the snapshot/audit helpers live in `report.py`.
+__all__ = [
+    "JobCancelled",
+    "StepRecorder",
+    "default_heartbeat",
+    "run_check_session",
+    "run_stage_basket",
+]
 
 
 class JobCancelled(Exception):
@@ -96,15 +141,27 @@ class _StopNeedsHuman(Exception):
         self.reason = reason
 
 
+class _StopFailed(Exception):
+    """The job cannot go on and nothing was staged (the sign-in could not be checked)."""
+
+    def __init__(self, reason: str) -> None:
+        super().__init__(reason)
+        self.reason = reason
+
+
 # ==========================================================================
 # Step recording and heartbeat
 # ==========================================================================
 
 
 def default_heartbeat(session: Session, job: BrowserJob) -> None:
-    """Touch `heartbeat_at`, commit, and re-read the cancel columns (another process
-    sets them). Short: one UPDATE."""
-    job.heartbeat_at = _utcnow()
+    """The per-step pulse: commit what the step wrote (so the web shows progress and the
+    write lock is released before the next slow thing) and re-read the cancel columns
+    (another process sets them).
+
+    It does NOT touch `heartbeat_at`: the worker's `_Heartbeat` thread is the one
+    writer of that column, every few seconds, which also covers a long model call or a
+    slow page where no step is recorded. Two writers of one column was one too many."""
     session.commit()
     session.refresh(job, attribute_names=["cancel_requested_at", "cancel_requested_by"])
 
@@ -118,7 +175,7 @@ class StepRecorder:
         job: BrowserJob,
         *,
         heartbeat: Callable[[BrowserJob], None] | None = None,
-        now: Callable[[], datetime] = _utcnow,
+        now: Callable[[], datetime] = utcnow,
     ) -> None:
         self.session = session
         self.job = job
@@ -217,8 +274,7 @@ def _resolve(session: Session, job: BrowserJob) -> tuple[Supplier, SupplierPorta
     slug = (job.params or {}).get("portal")
     if portal is None and slug:
         template = REGISTRY.get(str(slug))
-        bind = getattr(template, "bind", None)
-        portal = bind(supplier) if callable(bind) else template
+        portal = template.bind(supplier) if isinstance(template, Bindable) else template
     if portal is None:
         raise LookupError(f"no portal adapter for supplier {supplier.name!r}")
     if slug and portal.slug != slug:
@@ -239,9 +295,25 @@ def _open(
     portal: SupplierPortal,
     executor_factory: Callable[..., BrowserExecutor] | None,
 ) -> BrowserExecutor:
+    """Launch the browser. A `PortalNeedsHuman` from here (tier 2: the portal wants a
+    visible window and the worker has no display) is the job's NEEDS_HUMAN, raised
+    before anything is opened."""
     if executor_factory is not None:
         return executor_factory(session_row=session_row, portal=portal)
     return open_supplier_browser(session_row, portal)
+
+
+def _page_of(executor: BrowserExecutor) -> Page:
+    """The executor's Playwright page, which the scripted portal steps drive directly.
+    The protocol does not promise one; an executor without it cannot stage a basket
+    (step 5 always reads the basket page), so say so rather than fail inside an adapter."""
+    page: Page | None = getattr(executor, "page", None)
+    if page is None:
+        raise RuntimeError(
+            f"{type(executor).__name__} exposes no Playwright page; the scripted portal "
+            "steps (quick order, add line, read basket) need one"
+        )
+    return page
 
 
 def _url(executor: BrowserExecutor) -> str | None:
@@ -264,6 +336,19 @@ def _finish(job: BrowserJob, status: BrowserJobStatus, *, now: datetime) -> None
     job.finished_at = now
 
 
+def _record_check_failed(
+    row: SupplierSession, job: BrowserJob, error: str, *, at: datetime
+) -> None:
+    """The sign-in could not be looked at. CHECK_FAILED, not EXPIRED: nobody should be
+    sent to sign in again because the network or the adapter failed."""
+    row.status = SupplierSessionStatus.CHECK_FAILED
+    row.last_checked_at = at
+    row.last_error = error[:1000]
+    job.error = row.last_error
+    job.result = {"signed_in": None, "account_label": None, "error": row.last_error}
+    _finish(job, BrowserJobStatus.FAILED, now=at)
+
+
 def _model_available(client: Any | None) -> bool:
     return client is not None or bool(settings.anthropic_api_key)
 
@@ -278,50 +363,102 @@ def run_check_session(
     job: BrowserJob,
     *,
     executor_factory: Callable[..., BrowserExecutor] | None = None,
-    now: Callable[[], datetime] = _utcnow,
+    now: Callable[[], datetime] = utcnow,
     heartbeat: Callable[[BrowserJob], None] | None = None,
 ) -> None:
-    """Open the stored profile and report signed-in or not; update `supplier_session`."""
+    """Open the stored profile and report signed-in or not; update `supplier_session`.
+
+    Every outcome is recorded on the job and returned normally, so the worker's
+    transaction commits it: a failure raised from here would be rolled back with
+    everything this function wrote about it.
+    """
     recorder = StepRecorder(session, job, heartbeat=heartbeat, now=now)
     _supplier, portal, row = _resolve(session, job)
     job.model = None
+    # Commit before Chromium launches (seconds): nothing may hold SQLite's write lock
+    # across it, or the bot and the API wait out busy_timeout and fail "locked".
+    session.commit()
     started = now()
     try:
         executor = _open(row, portal, executor_factory)
-    except Exception as exc:
-        row.status = SupplierSessionStatus.CHECK_FAILED
-        row.last_checked_at = now()
-        row.last_error = f"browser could not open: {type(exc).__name__}: {str(exc)[:300]}"
-        job.error = row.last_error
-        job.result = {"signed_in": False, "account_label": None, "error": row.last_error}
-        _finish(job, BrowserJobStatus.FAILED, now=now())
+    except PortalNeedsHuman as exc:
+        # Tier 2: no display for a portal that refuses headless. Not a failed check --
+        # the sign-in was never looked at -- so the session row is left alone.
+        job.needs_human_reason = str(exc)[:1000]
+        job.result = {"signed_in": None, "account_label": None, "needs_human_reason": str(exc)}
+        _finish(job, BrowserJobStatus.NEEDS_HUMAN, now=now())
         session.flush()
-        raise
-    try:
-        signed_in, label = check_signed_in(executor, portal)
-        recorder.script(
-            "script:sign_in_check",
-            outcome="OK" if signed_in else "ERROR",
-            output=f"signed in as {label}" if signed_in else "not signed in",
-            url=_url(executor),
-            started=started,
+        return
+    except Exception as exc:
+        log.exception("job %s: the browser could not open", job.id)
+        _record_check_failed(
+            row,
+            job,
+            f"browser could not open: {type(exc).__name__}: {str(exc)[:300]}",
+            at=now(),
         )
-        row.last_checked_at = now()
-        if signed_in:
-            row.status = SupplierSessionStatus.CONNECTED
-            row.last_ok_at = row.last_checked_at
-            row.last_error = None
-            if label:
-                row.account_label = label[:200]
-            if row.connected_at is None:
-                row.connected_at = row.last_checked_at
-            if not row.connected_by:
-                row.connected_by = job.requested_by
+        session.flush()
+        return
+    try:
+        verdict: tuple[bool, str | None] | None = None
+        needs_human: str | None = None
+        failure: str | None = None
+        try:
+            verdict = check_signed_in(executor, portal)
+        except PortalNeedsHuman as exc:
+            needs_human = str(exc)
+        except SignInCheckFailed as exc:
+            failure = str(exc)
+        if needs_human is not None:
+            recorder.script(
+                "script:sign_in_check",
+                outcome="ERROR",
+                output=f"needs a person: {needs_human}"[:1000],
+                url=_url(executor),
+                started=started,
+            )
+            job.needs_human_reason = needs_human[:1000]
+            job.result = {
+                "signed_in": None,
+                "account_label": None,
+                "needs_human_reason": needs_human,
+            }
+            _finish(job, BrowserJobStatus.NEEDS_HUMAN, now=now())
+        elif verdict is None:
+            error = f"sign-in check failed: {failure}"
+            recorder.script(
+                "script:sign_in_check",
+                outcome="ERROR",
+                output=error[:1000],
+                url=_url(executor),
+                started=started,
+            )
+            _record_check_failed(row, job, error, at=now())
         else:
-            row.status = SupplierSessionStatus.EXPIRED
-            row.last_error = "the portal asked to sign in again"
-        job.result = {"signed_in": signed_in, "account_label": label if signed_in else None}
-        _finish(job, BrowserJobStatus.SUCCEEDED, now=now())
+            signed_in, label = verdict
+            recorder.script(
+                "script:sign_in_check",
+                outcome="OK" if signed_in else "ERROR",
+                output=f"signed in as {label}" if signed_in else "not signed in",
+                url=_url(executor),
+                started=started,
+            )
+            row.last_checked_at = now()
+            if signed_in:
+                row.status = SupplierSessionStatus.CONNECTED
+                row.last_ok_at = row.last_checked_at
+                row.last_error = None
+                if label:
+                    row.account_label = label[:200]
+                if row.connected_at is None:
+                    row.connected_at = row.last_checked_at
+                if not row.connected_by:
+                    row.connected_by = job.requested_by
+            else:
+                row.status = SupplierSessionStatus.EXPIRED
+                row.last_error = "the portal asked to sign in again"
+            job.result = {"signed_in": signed_in, "account_label": label if signed_in else None}
+            _finish(job, BrowserJobStatus.SUCCEEDED, now=now())
     except JobCancelled as exc:
         job.error = str(exc)
         _finish(job, BrowserJobStatus.CANCELLED, now=now())
@@ -338,36 +475,11 @@ def run_check_session(
 # ==========================================================================
 
 
-def _lines_from_params(params: dict[str, Any]) -> list[BasketLine]:
-    lines: list[BasketLine] = []
-    for raw in params.get("lines") or []:
-        lines.append(
-            BasketLine(
-                po_line_id=int(raw.get("po_line_id") or 0),
-                ingredient_name=str(raw.get("ingredient_name") or ""),
-                sku=str(raw.get("sku") or ""),
-                product_url=(str(raw["product_url"]) if raw.get("product_url") else None),
-                packs_wanted=int(raw.get("packs") or 0),
-                unit_price_expected_pence=int(raw.get("unit_price_pence") or 0),
-            )
-        )
-    return lines
-
-
-def _int_or_none(value: Any) -> int | None:
-    if value is None or isinstance(value, bool):
-        return None
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return None
-
-
 def _apply_model_line(
     line: BasketLine, outcome: str, data: dict[str, Any], note: str
 ) -> BasketLine:
-    packs = _int_or_none(data.get("packs_in_basket"))
-    price = _int_or_none(data.get("unit_price_pence"))
+    packs = int_or_none(data.get("packs_in_basket"))
+    price = int_or_none(data.get("unit_price_pence"))
     name = data.get("product_name")
     if outcome in ("added", "already"):
         status = outcome
@@ -384,6 +496,84 @@ def _apply_model_line(
         product_name_seen=str(name) if name else line.product_name_seen,
         note=note[:400],
     )
+
+
+def _apply_quick_order_result(
+    lines: list[BasketLine], result_lines: tuple[BasketLine, ...], rejected: dict[int, str]
+) -> list[BasketLine]:
+    """Merge what the pad reported into the job's lines. A line the pad accepted is
+    `added` by "quick_order"; a rejected one stays pending with the pad's own words
+    as its note, so the per-line path picks it up."""
+    by_id = {line.po_line_id: line for line in result_lines}
+    out: list[BasketLine] = []
+    for line in lines:
+        if line.status != "pending":
+            out.append(line)
+            continue
+        if line.po_line_id in rejected:
+            out.append(replace(line, note=f"quick order pad: {rejected[line.po_line_id]}"[:400]))
+            continue
+        got = by_id.get(line.po_line_id)
+        if got is None:
+            out.append(line)
+            continue
+        if got.status in ("added", "already"):
+            out.append(
+                replace(
+                    got,
+                    added_by="quick_order",
+                    packs_in_basket=(
+                        got.packs_in_basket
+                        if got.packs_in_basket is not None
+                        else line.packs_wanted
+                    ),
+                )
+            )
+        elif got.status == "not_found":
+            out.append(got)
+        else:
+            # Anything else the pad said is not final: the per-line path tries again.
+            out.append(replace(got, status="pending"))
+    return out
+
+
+def _apply_quick_order_model(
+    lines: list[BasketLine], data: dict[str, Any], note: str
+) -> list[BasketLine]:
+    """The model drove the pad for every remaining coded line at once; apply its
+    per-line verdicts. `gave_up` leaves a line pending for the per-line path."""
+    raw = data.get("lines")
+    verdicts: dict[int, dict[str, Any]] = {}
+    if isinstance(raw, list):
+        for item in raw:
+            if isinstance(item, dict):
+                po_line_id = int_or_none(item.get("po_line_id"))
+                if po_line_id is not None:
+                    verdicts[po_line_id] = item
+    out: list[BasketLine] = []
+    for line in lines:
+        verdict = verdicts.get(line.po_line_id)
+        if line.status != "pending" or not line.sku or verdict is None:
+            out.append(line)
+            continue
+        status = str(verdict.get("status") or "")
+        line_note = str(verdict.get("note") or note or "")[:400]
+        packs = int_or_none(verdict.get("packs_in_basket"))
+        if status == "added":
+            out.append(
+                replace(
+                    line,
+                    status="added",
+                    added_by="model",
+                    packs_in_basket=packs if packs is not None else line.packs_wanted,
+                    note=line_note,
+                )
+            )
+        elif status == "not_found":
+            out.append(replace(line, status="not_found", note=line_note))
+        else:
+            out.append(replace(line, note=line_note))
+    return out
 
 
 def _norm_url(url: str | None) -> str:
@@ -409,34 +599,43 @@ def _match_rows(
     unmatched = list(range(len(rows)))
     matched: list[BasketLine] = []
 
-    def take(pred: Callable[[dict[str, Any]], bool]) -> dict[str, Any] | None:
+    Pred = Callable[[dict[str, Any]], bool]
+
+    def take(pred: Pred) -> dict[str, Any] | None:
         for idx in list(unmatched):
             if pred(rows[idx]):
                 unmatched.remove(idx)
                 return rows[idx]
         return None
 
+    def by_url(url: str) -> Pred:
+        return lambda r: _norm_url(r.get("product_url")) == url
+
+    def by_sku(sku: str) -> Pred:
+        return lambda r: (
+            sku in str(r.get("product_url") or "").lower()
+            or sku in _norm_name(str(r.get("name") or ""))
+        )
+
+    def by_name(names: set[str]) -> Pred:
+        return lambda r: _name_matches(r, names)
+
     for line in lines:
         row: dict[str, Any] | None = None
         url = _norm_url(line.product_url)
         if url:
-            row = take(lambda r, u=url: _norm_url(r.get("product_url")) == u)  # type: ignore[misc]
+            row = take(by_url(url))
         sku = line.sku.strip().lower()
         if row is None and sku:
-            row = take(
-                lambda r, s=sku: (
-                    s in str(r.get("product_url") or "").lower()  # type: ignore[misc]
-                    or s in _norm_name(str(r.get("name") or ""))
-                )
-            )
+            row = take(by_sku(sku))
         if row is None:
             names = {_norm_name(line.ingredient_name), _norm_name(line.product_name_seen)}
             names.discard("")
-            row = take(lambda r, ns=names: _name_matches(r, ns))  # type: ignore[misc]
+            row = take(by_name(names))
         if row is None:
             matched.append(line)
             continue
-        qty = _int_or_none(row.get("qty"))
+        qty = int_or_none(row.get("qty"))
         status = line.status
         if status == "pending" and qty is not None:
             status = "already" if qty >= line.packs_wanted else "failed"
@@ -445,11 +644,11 @@ def _match_rows(
                 line,
                 status=status,
                 packs_in_basket=qty if qty is not None else line.packs_in_basket,
-                unit_price_seen_pence=_int_or_none(row.get("unit_price_pence"))
-                if _int_or_none(row.get("unit_price_pence")) is not None
+                unit_price_seen_pence=int_or_none(row.get("unit_price_pence"))
+                if int_or_none(row.get("unit_price_pence")) is not None
                 else line.unit_price_seen_pence,
-                line_total_seen_pence=_int_or_none(row.get("line_total_pence"))
-                if _int_or_none(row.get("line_total_pence")) is not None
+                line_total_seen_pence=int_or_none(row.get("line_total_pence"))
+                if int_or_none(row.get("line_total_pence")) is not None
                 else line.line_total_seen_pence,
                 product_name_seen=str(row.get("name") or line.product_name_seen or "") or None,
             )
@@ -464,154 +663,11 @@ def _qty_text(value: Any) -> str:
     return "?" if value is None else str(value)
 
 
-def _off_by(seen: int, expected: int) -> bool:
-    return abs(seen - expected) / expected > PRICE_TOLERANCE
-
-
-def _pounds(pence: int | None) -> str:
-    return "unread" if pence is None else f"£{pence / 100:,.2f}"
-
-
-def _warnings(
-    lines: list[BasketLine],
-    *,
-    subtotal_seen: int | None,
-    total_expected: int,
-    unexpected: list[str],
-    budget_note: str | None,
-    basket_read: bool,
-) -> list[str]:
-    out: list[str] = []
-    incomplete = [line for line in lines if line.status not in ("added", "already")]
-    for line in incomplete:
-        out.append(
-            f"{line.ingredient_name}: {line.status.replace('_', ' ')}"
-            + (f" — {line.note}" if line.note else "")
-        )
-    for line in lines:
-        seen, expected = line.unit_price_seen_pence, line.unit_price_expected_pence
-        if seen is not None and expected > 0 and _off_by(seen, expected):
-            out.append(
-                f"{line.ingredient_name}: price seen {_pounds(seen)} vs {_pounds(expected)} "
-                "on the order"
-            )
-        if (
-            line.status in ("added", "already")
-            and line.packs_in_basket is not None
-            and line.packs_in_basket != line.packs_wanted
-        ):
-            out.append(
-                f"{line.ingredient_name}: basket holds {line.packs_in_basket} pack(s), order wants "
-                f"{line.packs_wanted}"
-            )
-    if not basket_read:
-        out.append("the basket page could not be read; check it before paying")
-    elif subtotal_seen is None:
-        out.append("basket subtotal not read")
-    elif total_expected > 0 and _off_by(subtotal_seen, total_expected):
-        out.append(
-            f"basket subtotal {_pounds(subtotal_seen)} differs from the order's "
-            f"{_pounds(total_expected)}"
-        )
-    if unexpected:
-        out.append(
-            f"{len(unexpected)} line(s) in the basket the order did not ask for: "
-            + "; ".join(unexpected[:6])
-        )
-    if budget_note:
-        out.append(f"stopped early: {budget_note}")
-    return out
-
-
-def _confidence(snapshot: BasketSnapshot) -> str:
-    if not snapshot.complete:
-        return "low"
-    if snapshot.subtotal_seen_pence is None:
-        return "medium"
-    expected = snapshot.total_expected_pence
-    if expected > 0 and abs(snapshot.subtotal_seen_pence - expected) / expected <= PRICE_TOLERANCE:
-        return "high"
-    return "low"
-
-
-def _write_audit(
-    session: Session,
-    job: BrowserJob,
-    *,
-    supplier: Supplier,
-    snapshot: BasketSnapshot | None,
-    outcome: AgentToolOutcome,
-    summary: str,
-    refusal_reason: str | None = None,
-) -> None:
-    """One `agent_action_log` row per job and, when a basket was staged, one proposal."""
-    run_id = job.run_id or uuid.uuid4().hex[:16]
-    job.run_id = run_id
-    repo = SqlAgentLogRepository(session)
-    log_id = repo.log(
-        run_id=run_id,
-        tool_name=TOOL_NAME,
-        inputs={"po_id": job.purchase_order_id, "job_id": job.id, "supplier": supplier.name},
-        outcome=outcome,
-        output=summary,
-        purpose=f"stage a supplier basket for PO {job.purchase_order_id}",
-        refusal_reason=refusal_reason,
-        proposal_ref=f"supplier_basket:po:{job.purchase_order_id}" if snapshot else None,
-        model=job.model,
-    )
-    row = session.get(AgentActionLog, log_id)
-    if row is not None:
-        row.agent = AGENT_NAME
-    if snapshot is None:
-        return
-    added = sum(1 for line in snapshot.lines if line.status in ("added", "already"))
-    title = (
-        f"{supplier.name} basket staged: {added} of {len(snapshot.lines)} lines, "
-        f"{_pounds(snapshot.subtotal_seen_pence)} seen"
-    )
-    figures = [_pounds(snapshot.total_expected_pence)]
-    if snapshot.subtotal_seen_pence is not None:
-        figures.append(_pounds(snapshot.subtotal_seen_pence))
-    payload: dict[str, object] = dict(snapshot.as_dict())
-    payload["basket_url"] = snapshot.basket_url
-    payload["current"] = {"po_status": (job.params or {}).get("po_status")}
-    payload["job_id"] = job.id
-    proposal = AgentProposal(
-        kind="supplier_basket",
-        subject_ref=f"po:{job.purchase_order_id}",
-        summary=title,
-        payload=payload,
-        confidence=_confidence(snapshot),
-    )
-    job.proposal_id = insert_proposal(
-        session,
-        run_id=run_id,
-        log_id=log_id,
-        agent=AGENT_NAME,
-        proposal=proposal,
-        figures=figures,
-        title=title[:80],
-        body=summary,
-    )
-
-
-def _summary(snapshot: BasketSnapshot, supplier: Supplier) -> str:
-    added = [line for line in snapshot.lines if line.status in ("added", "already")]
-    first = (
-        f"{supplier.name}: {len(added)} of {len(snapshot.lines)} order lines are in the basket "
-        f"(subtotal seen {_pounds(snapshot.subtotal_seen_pence)}, order expects "
-        f"{_pounds(snapshot.total_expected_pence)})."
-    )
-    second = (
-        "Warnings: " + " | ".join(snapshot.warnings)
-        if snapshot.warnings
-        else "No warnings: every line is in at the wanted quantity."
-    )
-    third = (
-        "Staged, not sent. Open the basket, check it, pay on the supplier's site, then press "
-        "Mark sent on the order."
-    )
-    return f"{first}\n{second}\n{third}"
+def _skip_rest(lines: list[BasketLine], note: str) -> list[BasketLine]:
+    return [
+        replace(line, status="skipped", note=note) if line.status == "pending" else line
+        for line in lines
+    ]
 
 
 def run_stage_basket(
@@ -620,14 +676,14 @@ def run_stage_basket(
     *,
     client: Any | None = None,
     executor_factory: Callable[..., BrowserExecutor] | None = None,
-    now: Callable[[], datetime] = _utcnow,
+    now: Callable[[], datetime] = utcnow,
     heartbeat: Callable[[BrowserJob], None] | None = None,
 ) -> None:
     """Fill the supplier's basket from `job.params["lines"]` and stop at the basket."""
     recorder = StepRecorder(session, job, heartbeat=heartbeat, now=now)
     supplier, portal, session_row = _resolve(session, job)
     params: dict[str, Any] = dict(job.params or {})
-    lines = _lines_from_params(params)
+    lines = lines_from_params(params)
     po_id = int(job.purchase_order_id or 0)
     job.model = settings.browser_model
     budget = _budget()
@@ -636,8 +692,41 @@ def run_stage_basket(
     basket_url = portal.policy.basket_url
     hints = portal.agent_hints()
     total_expected = sum(line.packs_wanted * line.unit_price_expected_pence for line in lines)
+    tiers_used: list[str] = []
 
-    executor = _open(session_row, portal, executor_factory)
+    def used(tier: str) -> None:
+        if tier not in tiers_used:
+            tiers_used.append(tier)
+
+    def result_dict(base: dict[str, Any]) -> dict[str, Any]:
+        base["tier"] = highest_tier(lines)
+        base["tiers_used"] = list(tiers_used)
+        return base
+
+    # Commit before Chromium launches (see run_check_session): no write lock across it.
+    session.commit()
+    try:
+        executor = _open(session_row, portal, executor_factory)
+    except PortalNeedsHuman as exc:
+        # Tier 2 refused before anything opened: the portal wants a visible window and
+        # this worker has no display. Zero browser launches, zero steps.
+        reason = str(exc)
+        job.needs_human_reason = reason[:1000]
+        job.result = result_dict(
+            {"lines": [line.as_dict() for line in lines], "needs_human_reason": reason}
+        )
+        write_audit(
+            session,
+            job,
+            supplier=supplier,
+            snapshot=None,
+            outcome=AgentToolOutcome.AWAITING_HUMAN,
+            summary_text=f"Stopped: {reason}. Nothing was staged for order {po_id}.",
+        )
+        _finish(job, BrowserJobStatus.NEEDS_HUMAN, now=now())
+        session.flush()
+        return
+
     budget_note: str | None = None
     rows: list[dict[str, Any]] = []
     subtotal_seen: int | None = None
@@ -645,13 +734,16 @@ def run_stage_basket(
     screenshot_asset_id: int | None = None
     needs_human: str | None = None
 
+    def record_step(step: StepRecord) -> None:
+        recorder.record(step)
+
     def model_task(task: Any) -> Any:
         return run_model_task(
             executor=executor,
             guard=guard,
             task=task,
             budget=budget,
-            record=recorder.record,
+            record=record_step,
             client=client,
             now=now,
         )
@@ -659,7 +751,32 @@ def run_stage_basket(
     try:
         # --- step 3: open and check the sign-in ------------------------------
         started = now()
-        signed_in, label = check_signed_in(executor, portal)
+        try:
+            signed_in, label = check_signed_in(executor, portal)
+        except PortalNeedsHuman as exc:
+            recorder.script(
+                "script:sign_in_check",
+                outcome="ERROR",
+                output=f"needs a person: {exc}"[:1000],
+                url=_url(executor),
+                started=started,
+            )
+            lines = _skip_rest(lines, "not attempted")
+            raise _StopNeedsHuman(str(exc)) from exc
+        except SignInCheckFailed as exc:
+            error = f"sign-in check failed: {exc}"
+            recorder.script(
+                "script:sign_in_check",
+                outcome="ERROR",
+                output=error[:1000],
+                url=_url(executor),
+                started=started,
+            )
+            session_row.status = SupplierSessionStatus.CHECK_FAILED
+            session_row.last_checked_at = now()
+            session_row.last_error = error[:1000]
+            lines = _skip_rest(lines, "not attempted")
+            raise _StopFailed(error) from exc
         recorder.script(
             "script:sign_in_check",
             outcome="OK" if signed_in else "ERROR",
@@ -675,33 +792,147 @@ def run_stage_basket(
         session_row.last_ok_at = session_row.last_checked_at
         if label:
             session_row.account_label = label[:200]
-        page = getattr(executor, "page", None)
+        page = _page_of(executor)
 
-        # --- step 4: the lines ----------------------------------------------
-        done: list[BasketLine] = []
-        for index, line in enumerate(lines):
+        # --- tier 0, partial: open the cart link in the worker's browser -------
+        plan = params.get("cart_link")
+        if isinstance(plan, dict) and plan.get("url"):
+            started = now()
+            covered = {int(v) for v in (plan.get("covered") or []) if int_or_none(v) is not None}
+            result = executor.execute(BrowserAction("navigate", {"url": str(plan["url"])}))
+            budget.actions += 1
+            if result.is_error:
+                recorder.script(
+                    "script:cart_link_open",
+                    input={"covered": sorted(covered)},
+                    outcome="ERROR",
+                    output=str(result.content)[:300],
+                    url=_url(executor),
+                    started=started,
+                )
+            else:
+                recorder.script(
+                    "script:cart_link_open",
+                    input={"covered": sorted(covered)},
+                    output=f"{plan.get('label') or 'cart link'}: {len(covered)} line(s) pre-filled",
+                    url=_url(executor),
+                    started=started,
+                )
+                used("cart_link")
+                lines = [
+                    replace(
+                        line,
+                        status="added",
+                        added_by="cart_link",
+                        packs_in_basket=line.packs_wanted,
+                        note="pre-filled by the cart link",
+                    )
+                    if line.po_line_id in covered and line.status == "pending"
+                    else line
+                    for line in lines
+                ]
+
+        # --- tier 1: the quick-order pad ---------------------------------------
+        coded = [line for line in lines if line.status == "pending" and line.sku]
+        if isinstance(portal, QuickOrderCapable) and coded:
             exhausted = budget.exhausted(now())
             if exhausted is not None:
                 budget_note = exhausted
-                done.extend(
-                    replace(pending, status="skipped", note=f"not attempted: {exhausted}")
-                    for pending in lines[index:]
-                )
+            else:
+                used("quick_order")
+                started = now()
+                pad_failed: str | None = None
+                pad_input = {"po_line_ids": [ln.po_line_id for ln in coded]}
+                try:
+                    qr = portal.quick_order(page, coded)
+                except JobCancelled:
+                    raise
+                except PortalNeedsHuman as exc:
+                    recorder.script(
+                        "script:quick_order",
+                        input=pad_input,
+                        outcome="ERROR",
+                        output=f"needs a person: {exc}",
+                        url=_url(executor),
+                        started=started,
+                    )
+                    lines = _skip_rest(lines, "not attempted")
+                    raise _StopNeedsHuman(str(exc)) from exc
+                except PortalPolicyRefusal as exc:
+                    recorder.script(
+                        "script:quick_order",
+                        input=pad_input,
+                        outcome="REFUSED",
+                        source="POLICY",
+                        refusal_reason=str(exc)[:400],
+                        url=_url(executor),
+                        started=started,
+                    )
+                except Exception as exc:  # PortalStepFailed, or the adapter broke
+                    pad_failed = f"{type(exc).__name__}: {str(exc)[:300]}"
+                    recorder.script(
+                        "script:quick_order",
+                        input=pad_input,
+                        outcome="ERROR",
+                        output=pad_failed,
+                        url=_url(executor),
+                        started=started,
+                    )
+                else:
+                    # Outside the `try`: a cancel raised by the step's pulse, or a
+                    # database error writing it, is not "the pad failed".
+                    budget.actions += 1
+                    accepted = sum(1 for ln in qr.lines if ln.status in ("added", "already"))
+                    rejected = dict(qr.rejected)
+                    recorder.script(
+                        "script:quick_order",
+                        input=pad_input,
+                        output=(
+                            f"{accepted} of {len(coded)} codes accepted"
+                            + (f"; rejected: {len(rejected)}" if rejected else "")
+                            + (f"; {qr.note}" if qr.note else "")
+                        ),
+                        url=_url(executor),
+                        started=started,
+                    )
+                    lines = _apply_quick_order_result(lines, tuple(qr.lines), rejected)
+                if pad_failed is not None and _model_available(client):
+                    outcome = model_task(
+                        quick_order_task(
+                            coded,
+                            str(portal.quick_order_hints()),
+                            str(portal.quick_order_url or ""),
+                            basket_url,
+                        )
+                    )
+                    if outcome.stopped_reason == "needs_human":
+                        lines = _skip_rest(lines, "not attempted")
+                        raise _StopNeedsHuman(outcome.note or "the portal asked for a person")
+                    lines = _apply_quick_order_model(lines, outcome.data, outcome.note)
+                    if outcome.stopped_reason == "budget":
+                        budget_note = outcome.note
+
+        # --- the browser tier: one line at a time --------------------------------
+        done: list[BasketLine] = []
+        for index, line in enumerate(lines):
+            if line.status != "pending":
+                done.append(line)
+                continue
+            exhausted = budget.exhausted(now())
+            if exhausted is not None:
+                budget_note = exhausted
+                done.append(replace(line, status="skipped", note=f"not attempted: {exhausted}"))
+                done.extend(_skip_rest(lines[index + 1 :], f"not attempted: {exhausted}"))
                 break
+            used("browser")
             result_line = line
             to_model = not portal.supports_scripted_add
             if portal.supports_scripted_add:
                 started = now()
                 try:
-                    result_line = portal.add_line_scripted(page, line)
-                    recorder.script(
-                        "script:add_line",
-                        input={"po_line_id": line.po_line_id, "packs": line.packs_wanted},
-                        output=f"{result_line.status}: {result_line.packs_in_basket} in basket",
-                        url=_url(executor),
-                        started=started,
-                    )
-                    budget.actions += 1
+                    added = portal.add_line_scripted(page, line)
+                except JobCancelled:
+                    raise
                 except PortalNeedsHuman as exc:
                     recorder.script(
                         "script:add_line",
@@ -712,10 +943,7 @@ def run_stage_basket(
                         started=started,
                     )
                     done.append(replace(line, status="skipped", note=str(exc)[:400]))
-                    done.extend(
-                        replace(p, status="skipped", note="not attempted")
-                        for p in lines[index + 1 :]
-                    )
+                    done.extend(_skip_rest(lines[index + 1 :], "not attempted"))
                     raise _StopNeedsHuman(str(exc)) from exc
                 except PortalPolicyRefusal as exc:
                     recorder.script(
@@ -728,7 +956,7 @@ def run_stage_basket(
                         started=started,
                     )
                     result_line = replace(line, status="skipped", note=f"refused: {exc}"[:400])
-                except (PortalStepFailed, Exception) as exc:
+                except Exception as exc:  # PortalStepFailed, or the adapter broke
                     recorder.script(
                         "script:add_line",
                         input={"po_line_id": line.po_line_id},
@@ -739,6 +967,16 @@ def run_stage_basket(
                     )
                     to_model = True
                     result_line = replace(line, note=f"scripted add failed: {str(exc)[:200]}")
+                else:
+                    result_line = added
+                    recorder.script(
+                        "script:add_line",
+                        input={"po_line_id": line.po_line_id, "packs": line.packs_wanted},
+                        output=f"{result_line.status}: {result_line.packs_in_basket} in basket",
+                        url=_url(executor),
+                        started=started,
+                    )
+                    budget.actions += 1
             if to_model:
                 if not _model_available(client):
                     result_line = replace(
@@ -754,10 +992,7 @@ def run_stage_basket(
                     )
                     if outcome.stopped_reason == "needs_human":
                         done.append(replace(result_line, status="skipped"))
-                        done.extend(
-                            replace(p, status="skipped", note="not attempted")
-                            for p in lines[index + 1 :]
-                        )
+                        done.extend(_skip_rest(lines[index + 1 :], "not attempted"))
                         raise _StopNeedsHuman(outcome.note or "the portal asked for a person")
                     if outcome.stopped_reason == "budget":
                         budget_note = outcome.note
@@ -768,15 +1003,8 @@ def run_stage_basket(
         started = now()
         try:
             raw_rows, subtotal_seen = portal.read_basket(page)
-            rows = [dict(r) for r in raw_rows]
-            basket_read = True
-            recorder.script(
-                "script:read_basket",
-                output=f"{len(rows)} row(s), subtotal {_pounds(subtotal_seen)}",
-                url=_url(executor),
-                started=started,
-            )
-            budget.actions += 1
+        except JobCancelled:
+            raise
         except PortalNeedsHuman as exc:
             recorder.script(
                 "script:read_basket",
@@ -786,7 +1014,7 @@ def run_stage_basket(
                 started=started,
             )
             raise _StopNeedsHuman(str(exc)) from exc
-        except Exception as exc:
+        except Exception as exc:  # PortalStepFailed, or the adapter broke
             recorder.script(
                 "script:read_basket",
                 outcome="ERROR",
@@ -805,10 +1033,20 @@ def run_stage_basket(
                         if isinstance(raw, list)
                         else []
                     )
-                    subtotal_seen = _int_or_none(outcome.data.get("subtotal_pence"))
+                    subtotal_seen = int_or_none(outcome.data.get("subtotal_pence"))
                     basket_read = True
                 elif outcome.stopped_reason == "budget":
                     budget_note = outcome.note
+        else:
+            rows = [dict(r) for r in raw_rows]
+            basket_read = True
+            recorder.script(
+                "script:read_basket",
+                output=f"{len(rows)} row(s), subtotal {pounds(subtotal_seen)}",
+                url=_url(executor),
+                started=started,
+            )
+            budget.actions += 1
 
         if basket_read:
             lines, unexpected = _match_rows(lines, rows)
@@ -839,7 +1077,7 @@ def run_stage_basket(
             screenshot_asset_id = step.screenshot_asset_id
 
         # --- step 6: snapshot, audit, result --------------------------------
-        warnings = _warnings(
+        warnings = warnings_for(
             lines,
             subtotal_seen=subtotal_seen,
             total_expected=total_expected,
@@ -862,55 +1100,68 @@ def run_stage_basket(
             unexpected_lines=tuple(unexpected),
         )
         staged_any = any(line.status in ("added", "already") for line in lines)
-        summary = _summary(snapshot, supplier)
-        job.result = snapshot.as_dict()
+        tier = highest_tier(lines)
+        summary_text = summary(snapshot, supplier)
+        job.result = result_dict(snapshot.as_dict())
         if not basket_read and not staged_any:
             job.error = "nothing could be staged or read"
-            _write_audit(
+            write_audit(
                 session,
                 job,
                 supplier=supplier,
                 snapshot=None,
                 outcome=AgentToolOutcome.FAILED,
-                summary=summary,
+                summary_text=summary_text,
             )
             _finish(job, BrowserJobStatus.FAILED, now=now())
         else:
-            _write_audit(
+            write_audit(
                 session,
                 job,
                 supplier=supplier,
                 snapshot=snapshot,
                 outcome=AgentToolOutcome.AWAITING_HUMAN,
-                summary=summary,
+                summary_text=summary_text,
+                tier=tier,
             )
             _finish(job, BrowserJobStatus.SUCCEEDED, now=now())
     except _StopNeedsHuman as exc:
         needs_human = exc.reason
         job.needs_human_reason = needs_human[:1000]
-        job.result = {
-            "lines": [line.as_dict() for line in lines],
-            "needs_human_reason": needs_human,
-        }
-        _write_audit(
+        job.result = result_dict(
+            {"lines": [line.as_dict() for line in lines], "needs_human_reason": needs_human}
+        )
+        write_audit(
             session,
             job,
             supplier=supplier,
             snapshot=None,
             outcome=AgentToolOutcome.AWAITING_HUMAN,
-            summary=f"Stopped: {needs_human}. Nothing was staged for order {po_id}.",
+            summary_text=f"Stopped: {needs_human}. Nothing was staged for order {po_id}.",
         )
         _finish(job, BrowserJobStatus.NEEDS_HUMAN, now=now())
-    except JobCancelled as exc:
-        job.error = str(exc)
-        job.result = {"lines": [line.as_dict() for line in lines]}
-        _write_audit(
+    except _StopFailed as exc:
+        job.error = exc.reason[:2000]
+        job.result = result_dict({"lines": [line.as_dict() for line in lines], "error": exc.reason})
+        write_audit(
             session,
             job,
             supplier=supplier,
             snapshot=None,
             outcome=AgentToolOutcome.FAILED,
-            summary=f"{exc}. Nothing further was done for order {po_id}.",
+            summary_text=f"Stopped: {exc.reason}. Nothing was staged for order {po_id}.",
+        )
+        _finish(job, BrowserJobStatus.FAILED, now=now())
+    except JobCancelled as exc:
+        job.error = str(exc)
+        job.result = result_dict({"lines": [line.as_dict() for line in lines]})
+        write_audit(
+            session,
+            job,
+            supplier=supplier,
+            snapshot=None,
+            outcome=AgentToolOutcome.FAILED,
+            summary_text=f"{exc}. Nothing further was done for order {po_id}.",
             refusal_reason=str(exc)[:400],
         )
         _finish(job, BrowserJobStatus.CANCELLED, now=now())
@@ -923,14 +1174,3 @@ def run_stage_basket(
         except Exception:  # pragma: no cover - closing a dead browser
             log.warning("job %s: browser close failed", job.id, exc_info=True)
     session.flush()
-
-
-__all__ = [
-    "AGENT_NAME",
-    "TOOL_NAME",
-    "JobCancelled",
-    "StepRecorder",
-    "default_heartbeat",
-    "run_check_session",
-    "run_stage_basket",
-]

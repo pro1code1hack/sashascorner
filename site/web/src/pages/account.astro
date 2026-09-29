@@ -1,0 +1,24 @@
+---
+// My account: sign in / create an account, and the profile (the Rewards card, free
+// drink, orders, details). One Preact island (scripts/shop/AccountApp.tsx), the same
+// screen the ordering app redirects to from /order/account. Private to its holder:
+// noindex, out of the sitemap (astro.config NOT_IN_SITEMAP).
+import Base from '../layouts/Base.astro';
+import AccountApp from '../scripts/shop/AccountApp';
+import '../styles/shop.css';
+---
+
+<Base title="My account · Sasha's Corner" description="Sign in to your Sasha's Corner account: your Rewards card, free drinks, orders and details." noindex>
+  <div class="sh-root" id="account">
+    <AccountApp client:only="preact" />
+    <noscript>
+      <div class="wrap sh-view">
+        <h1 class="sh-h1">My account</h1>
+        <p>
+          Your account needs JavaScript. You can still <a href="/rewards">read about Rewards</a> or ask at the counter at 23
+          Commercial Street.
+        </p>
+      </div>
+    </noscript>
+  </div>
+</Base>

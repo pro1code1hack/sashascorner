@@ -4,7 +4,8 @@
  * it, and Cancel). A draft can be sent from here.
  */
 import { useState } from 'react'
-import { Button, ConfirmTwiceButton, Pill, cx } from '../../../components/ui'
+import { ConfirmTwiceButton, Pill, StatusLine } from '../../../components/ui'
+import type { Outcome } from '../../../components/ui'
 import { loyaltyApi, useInvalidateLoyalty } from '../../../lib/loyalty-api'
 import type { LoyaltyCampaign } from '../../../lib/types/loyalty'
 import { people, segmentPhrase, weekdayDate, weekdayDateTime } from './words'
@@ -30,10 +31,10 @@ function metaLine(c: LoyaltyCampaign): string {
   }
 }
 
-function Figure({ value, label, good }: { value: string; label: string; good?: boolean }) {
+function Figure({ value, label }: { value: string; label: string }) {
   return (
     <div className="flex min-w-[4.5rem] flex-col items-end text-right">
-      <span className={cx('fig text-2xl font-extrabold leading-tight', good ? 'text-ok-ink' : 'text-ink')}>{value}</span>
+      <span className="fig text-2xl font-extrabold leading-tight text-ink">{value}</span>
       <span className="text-xs text-ink-2">{label}</span>
     </div>
   )
@@ -42,7 +43,7 @@ function Figure({ value, label, good }: { value: string; label: string; good?: b
 export function CampaignCard({ c }: { c: LoyaltyCampaign }) {
   const invalidate = useInvalidateLoyalty()
   const [pending, setPending] = useState(false)
-  const [note, setNote] = useState<{ bad: boolean; text: string } | null>(null)
+  const [note, setNote] = useState<Outcome | null>(null)
   const st = STATUS[c.status]
 
   async function cancel() {
@@ -52,7 +53,7 @@ export function CampaignCard({ c }: { c: LoyaltyCampaign }) {
     if (r.kind === 'ok') {
       setNote(null)
       await invalidate()
-    } else setNote({ bad: true, text: r.message })
+    } else setNote({ kind: 'error', text: r.message })
   }
 
   async function send() {
@@ -62,22 +63,17 @@ export function CampaignCard({ c }: { c: LoyaltyCampaign }) {
     if (r.kind === 'ok') {
       const skipped = r.data.skipped_over_limit
       setNote({
-        bad: false,
+        kind: 'ok',
         text:
           `Sent to ${people(r.data.recipients)}.` +
           (skipped > 0 ? ` ${people(skipped)} skipped: they already had this month's promotions.` : ''),
       })
       await invalidate()
-    } else setNote({ bad: true, text: r.message })
+    } else setNote({ kind: 'error', text: r.message })
   }
 
   return (
-    <article
-      className={cx(
-        'flex flex-col gap-3 rounded-card border border-line bg-surface px-4 py-3.5 sm:flex-row sm:items-center',
-        c.status === 'cancelled' && 'opacity-70',
-      )}
-    >
+    <article className="flex flex-col gap-3 rounded-card border border-line bg-surface px-4 py-3.5 sm:flex-row sm:items-center">
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <h3 className="text-md font-bold">{c.title}</h3>
@@ -92,11 +88,7 @@ export function CampaignCard({ c }: { c: LoyaltyCampaign }) {
         </div>
         <p className="mt-1 text-base text-ink">{c.message}</p>
         <p className="mt-1 text-xs text-ink-2">{metaLine(c)}</p>
-        {note && (
-          <p role="status" className={cx('mt-1 text-sm', note.bad ? 'text-bad-ink' : 'text-ok-ink')}>
-            {note.text}
-          </p>
-        )}
+        <StatusLine className="mt-1" outcome={note} />
       </div>
       <div className="flex flex-none items-center justify-end gap-4">
         {c.status === 'sent' && (
@@ -105,7 +97,6 @@ export function CampaignCard({ c }: { c: LoyaltyCampaign }) {
             <Figure
               value={c.return_rate === null ? '—' : `${Math.round(c.return_rate * 100)}%`}
               label={c.return_rate === null ? 'came back (too soon)' : 'came back in 7 days'}
-              good={c.return_rate !== null}
             />
           </>
         )}
@@ -115,7 +106,7 @@ export function CampaignCard({ c }: { c: LoyaltyCampaign }) {
             <ConfirmTwiceButton
               variant="outline"
               armedLabel="Tap again to cancel"
-              onConfirm={cancel}
+              onConfirm={() => void cancel()}
               pending={pending}
               pendingLabel="Cancelling…"
             >
@@ -126,9 +117,15 @@ export function CampaignCard({ c }: { c: LoyaltyCampaign }) {
         {c.status === 'draft' && (
           <>
             <Figure value={c.audience === null ? '—' : String(c.audience)} label="would get it" />
-            <Button variant="outline" onClick={send} pending={pending} pendingLabel="Sending…">
+            <ConfirmTwiceButton
+              variant="outline"
+              armedLabel={c.audience === null ? 'Tap again to send it' : `Tap again to send to ${people(c.audience)}`}
+              onConfirm={() => void send()}
+              pending={pending}
+              pendingLabel="Sending…"
+            >
               Send
-            </Button>
+            </ConfirmTwiceButton>
           </>
         )}
       </div>

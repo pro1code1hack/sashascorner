@@ -32,13 +32,18 @@ from decimal import ROUND_HALF_UP, Decimal
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from cafeops.clock import utcnow
 from cafeops.config import settings
 from cafeops.db.models import MenuCategory, MenuItem, Sale
-from cafeops.db.models.enums import MANUAL_SALE_CHANNELS, SaleChannel, SaleSource, SizeCode
+from cafeops.domain.composition import SIZE_ORDER
+from cafeops.domain.enums import MANUAL_SALE_CHANNELS, SaleChannel, SaleSource, SizeCode
+from cafeops.services.actor import require_actor
 from cafeops.services.ingest_sales import CLOCK_SKEW_TOLERANCE
 
 __all__ = [
     "MANUAL_RECEIPT_PREFIX",
+    "CheckedLine",
+    "CheckedSale",
     "MenuPickItem",
     "RecordedLine",
     "RecordedSale",
@@ -51,6 +56,9 @@ __all__ = [
     "record_sale",
     "recorded_sale",
     "search_menu_items",
+    "size_label",
+    "validate_sale",
+    "validate_sale_lines",
     "void_sale",
 ]
 
@@ -64,12 +72,13 @@ MANUAL_RECEIPT_PREFIX = "manual:"
 #: whose figures were already read.
 MAX_BACKDATE = timedelta(days=62)
 
-_SIZE_LABEL: dict[SizeCode, str] = {
-    SizeCode.S: "S",
-    SizeCode.M: "M",
-    SizeCode.XL: "XL",
-    SizeCode.ONE: "",
-}
+
+def size_label(size: SizeCode | None) -> str:
+    """How a hand-typed sale shows a size: S, M, XL, and nothing for one-size items.
+
+    The transactions CSV writes the same word, so a file the system exported reads back
+    in (`transactions_csv`). One definition for both."""
+    return "" if size is None or size is SizeCode.ONE else size.value
 
 
 class SaleRefused(ValueError):
@@ -156,7 +165,7 @@ def _pick(row: MenuItem) -> MenuPickItem:
     return MenuPickItem(
         menu_item_id=row.id,
         name=row.name,
-        size=_SIZE_LABEL.get(row.size_code, "") if row.size_code else "",
+        size=size_label(row.size_code),
         category=(row.category or "").strip() or None,
         price_pence=row.price_pence,
     )
@@ -191,11 +200,104 @@ def search_menu_items(session: Session, *, q: str, limit: int = 12) -> list[Menu
     return [_pick(r) for r in rows[:limit]]
 
 
-_SIZE_RANK = {SizeCode.S: 0, SizeCode.M: 1, SizeCode.XL: 2, SizeCode.ONE: 3}
+_SIZE_RANK = {size: rank for rank, size in enumerate(SIZE_ORDER)}
 
 
 def _sort_key(row: MenuItem) -> tuple[str, int]:
     return (row.name.lower(), _SIZE_RANK.get(row.size_code, 3) if row.size_code else 3)
+
+
+# ------------------------------------------------------------- validate ---
+
+
+@dataclass(frozen=True, slots=True)
+class CheckedLine:
+    """One line that passed every rule, priced: what `record_sale` will write."""
+
+    menu_item_id: int
+    qty: Decimal
+    unit_price_pence: int
+    gross_pence: int
+
+
+@dataclass(frozen=True, slots=True)
+class CheckedSale:
+    recorded_by: str
+    sold_at: datetime
+    lines: tuple[CheckedLine, ...]
+
+    @property
+    def total_pence(self) -> int:
+        return sum(line.gross_pence for line in self.lines)
+
+
+def validate_sale_lines(session: Session, lines: Sequence[SaleLineIn]) -> tuple[CheckedLine, ...]:
+    """Check and price every line, writing nothing. Raises `SaleRefused` on the first bad
+    one. `record_sale` calls this before its first `add`, and the CSV import's dry run
+    calls it too, so the preview refuses exactly what the real run would."""
+    if not lines:
+        raise SaleRefused("a sale needs at least one line")
+    out: list[CheckedLine] = []
+    for line in lines:
+        item = session.get(MenuItem, line.menu_item_id)
+        if item is None:
+            raise SaleRefused(f"menu item {line.menu_item_id} does not exist")
+        if not item.active:
+            raise SaleRefused(f"{item.name} is not on the menu any more")
+        qty = Decimal(line.qty)
+        if not qty.is_finite() or qty <= 0:
+            raise SaleRefused(f"{item.name}: quantity must be more than zero")
+        price = item.price_pence if line.unit_price_pence is None else line.unit_price_pence
+        if price < 0:
+            raise SaleRefused(f"{item.name}: a price cannot be negative")
+        out.append(
+            CheckedLine(
+                menu_item_id=item.id,
+                qty=qty,
+                unit_price_pence=price,
+                gross_pence=line_gross_pence(price, qty),
+            )
+        )
+    return tuple(out)
+
+
+def validate_sale(
+    session: Session,
+    *,
+    channel: SaleChannel,
+    lines: Sequence[SaleLineIn],
+    recorded_by: str,
+    sold_at: datetime | None = None,
+    source: SaleSource = SaleSource.MANUAL,
+    now: datetime | None = None,
+    max_backdate: timedelta | None = MAX_BACKDATE,
+) -> CheckedSale:
+    """Every rule `record_sale` enforces, writing nothing (see `record_sale` for them)."""
+    now = now or utcnow()
+    if channel not in MANUAL_SALE_CHANNELS:
+        raise SaleRefused(
+            f"channel {channel.value} cannot be typed by hand: the till is synced from "
+            "Lightspeed and a typed till sale would be counted twice. Choose "
+            + ", ".join(c.value for c in MANUAL_SALE_CHANNELS)
+        )
+    if source is SaleSource.POS_API:
+        raise SaleRefused("source POS_API is reserved for the Lightspeed sync")
+    if not lines:
+        raise SaleRefused("a sale needs at least one line")
+    who = require_actor(recorded_by, error=SaleRefused)
+    when = sold_at or now
+    if when.tzinfo is None:
+        raise SaleRefused("sold_at must be timezone-aware")
+    if when > now + CLOCK_SKEW_TOLERANCE:
+        raise SaleRefused(
+            f"sold_at {when.isoformat()} is in the future; a sale is recorded after it happens"
+        )
+    if max_backdate is not None and when < now - max_backdate:
+        raise SaleRefused(
+            f"sold_at {when.date().isoformat()} is more than {max_backdate.days} days ago; "
+            "that month's figures were already read, so a backdated line needs the back office"
+        )
+    return CheckedSale(recorded_by=who, sold_at=when, lines=validate_sale_lines(session, lines))
 
 
 # ----------------------------------------------------------------- write ---
@@ -225,68 +327,42 @@ def record_sale(
     `receipt_id` lets an importer choose a deterministic id so that the same file
     imported twice writes nothing the second time; a typed sale gets a fresh one.
     """
-    now = now or datetime.now(UTC)
-    if channel not in MANUAL_SALE_CHANNELS:
-        raise SaleRefused(
-            f"channel {channel.value} cannot be typed by hand: the till is synced from "
-            "Lightspeed and a typed till sale would be counted twice. Choose "
-            + ", ".join(c.value for c in MANUAL_SALE_CHANNELS)
-        )
-    if source is SaleSource.POS_API:
-        raise SaleRefused("source POS_API is reserved for the Lightspeed sync")
-    if not lines:
-        raise SaleRefused("a sale needs at least one line")
-    who = recorded_by.strip()
-    if not who:
-        raise SaleRefused("recorded_by: who typed this must be named")
-    when = sold_at or now
-    if when.tzinfo is None:
-        raise SaleRefused("sold_at must be timezone-aware")
-    if when > now + CLOCK_SKEW_TOLERANCE:
-        raise SaleRefused(
-            f"sold_at {when.isoformat()} is in the future; a sale is recorded after it happens"
-        )
-    if max_backdate is not None and when < now - max_backdate:
-        raise SaleRefused(
-            f"sold_at {when.date().isoformat()} is more than {max_backdate.days} days ago; "
-            "that month's figures were already read, so a backdated line needs the back office"
-        )
-
+    checked = validate_sale(
+        session,
+        channel=channel,
+        lines=lines,
+        recorded_by=recorded_by,
+        sold_at=sold_at,
+        source=source,
+        now=now,
+        max_backdate=max_backdate,
+    )
     if receipt_id is None:
         receipt_id = f"{MANUAL_RECEIPT_PREFIX}{uuid.uuid4().hex[:12]}"
     elif session.scalar(select(Sale.id).where(Sale.lightspeed_receipt_id == receipt_id)):
         raise SaleRefused(f"receipt {receipt_id} is already recorded")
     clean_note = (note or "").strip()[:400] or None
-    written: list[Sale] = []
-    for index, line in enumerate(lines, start=1):
-        item = session.get(MenuItem, line.menu_item_id)
-        if item is None:
-            raise SaleRefused(f"menu item {line.menu_item_id} does not exist")
-        if not item.active:
-            raise SaleRefused(f"{item.name} is not on the menu any more")
-        qty = Decimal(line.qty)
-        if not qty.is_finite() or qty <= 0:
-            raise SaleRefused(f"{item.name}: quantity must be more than zero")
-        price = item.price_pence if line.unit_price_pence is None else line.unit_price_pence
-        if price < 0:
-            raise SaleRefused(f"{item.name}: a price cannot be negative")
-        sale = Sale(
-            lightspeed_receipt_id=receipt_id,
-            lightspeed_line_id=f"{receipt_id}:{index}",
-            menu_item_id=item.id,
-            qty=qty,
-            gross_pence=line_gross_pence(price, qty),
-            sold_at=when,
-            channel=channel,
-            source=source,
-            recorded_by=who[:120],
-            note=clean_note,
-            applied_modifiers=[],
-            voided=False,
-            is_refund=False,
+    # Every check has passed before the first `add`: a refusal part-way through the
+    # lines used to leave the earlier ones pending in the caller's transaction, and the
+    # CSV importer's commit then wrote half of a receipt it reported as rejected.
+    for index, line in enumerate(checked.lines, start=1):
+        session.add(
+            Sale(
+                lightspeed_receipt_id=receipt_id,
+                lightspeed_line_id=f"{receipt_id}:{index}",
+                menu_item_id=line.menu_item_id,
+                qty=line.qty,
+                gross_pence=line.gross_pence,
+                sold_at=checked.sold_at,
+                channel=channel,
+                source=source,
+                recorded_by=checked.recorded_by,
+                note=clean_note,
+                applied_modifiers=[],
+                voided=False,
+                is_refund=False,
+            )
         )
-        session.add(sale)
-        written.append(sale)
     session.flush()
     return recorded_sale(session, receipt_id)
 
@@ -308,13 +384,11 @@ def void_sale(session: Session, *, receipt_id: str, voided_by: str) -> RecordedS
         )
     if any(r.source is SaleSource.LOYALTY for r in rows):
         raise SaleRefused(f"{receipt_id} is a loyalty redemption; undo it on the card instead")
-    who = voided_by.strip()
-    if not who:
-        raise SaleRefused("voided_by: who voided this must be named")
+    who = require_actor(voided_by, error=SaleRefused)
     for r in rows:
         if not r.voided:
             r.voided = True
-            stamp = f"voided by {who[:80]} {datetime.now(UTC):%Y-%m-%d %H:%M}"
+            stamp = f"voided by {who[:80]} {utcnow():%Y-%m-%d %H:%M}"
             r.note = f"{r.note}; {stamp}" if r.note else stamp
     session.flush()
     return recorded_sale(session, receipt_id)
@@ -336,7 +410,7 @@ def recorded_sale(session: Session, receipt_id: str) -> RecordedSale:
             sale_id=sale.id,
             menu_item_id=item.id,
             name=item.name,
-            size=_SIZE_LABEL.get(item.size_code, "") if item.size_code else "",
+            size=size_label(item.size_code),
             qty=sale.qty,
             unit_price_pence=_unit_price(sale),
             gross_pence=sale.gross_pence,

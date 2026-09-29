@@ -11,35 +11,36 @@
  * (`modifier_version`), so last month's sales keep the swap as it was.
  */
 import { useMemo, useState } from 'react'
-import { Button, Checkbox, Input, Select, cx } from '../../components/ui'
+import { Button, Checkbox, Input, Pill, Select, StatusLine } from '../../components/ui'
+import type { Outcome } from '../../components/ui'
 import { recipeApi, useInvalidateMenu } from '../../lib/menu-api'
 import { useOperator } from '../../lib/operator'
 import type { ComponentRole, IngredientRow, RecipeEditor, Swap, SwapPreview } from '../../lib/types/menu'
 import { MONEY_INPUT, QTY_INPUT, gbp, penceToPounds, poundsToPence, qtyOut, sameQty } from '../menu/common/figures'
 import { usePreview } from '../menu/common/usePreview'
-import { ROLES } from './model'
+import { IngredientPicker } from '../menu/IngredientPicker'
+import { ROLE_LABEL, ROLES } from './model'
+
+const NONE = new Set<number>()
 
 export function SwapsSection({ editor, ingOptions }: { editor: RecipeEditor; ingOptions: IngredientRow[] }) {
   return (
-    <section className="mb-[22px]" aria-labelledby="rec-swaps">
+    <section className="mb-5.5" aria-labelledby="rec-swaps">
       <h2 id="rec-swaps" className="mb-1.5 text-lg font-extrabold tracking-[-.01em]">
         Swaps a customer can ask for
       </h2>
-      <div className="mb-2.5 flex flex-wrap gap-1.5">
+      <ul className="mb-2.5 flex flex-wrap gap-1.5" aria-label="Swaps and whether they apply here">
         {editor.swaps
           .filter((s) => s.is_active)
           .map((s) => (
-            <span
-              key={s.modifier_id}
-              className={cx(
-                'rounded-card border px-3.5 py-1.5 text-base',
-                s.applies_here ? 'border-brand-line bg-brand-wash font-bold text-brand-ink' : 'border-line text-ink',
-              )}
-            >
-              {s.name} +{s.price_pence === 0 ? '£0' : gbp(s.price_pence)}
-            </span>
+            <li key={s.modifier_id}>
+              <Pill tone={s.applies_here ? 'brand' : 'neutral'}>
+                {s.name} +{s.price_pence === 0 ? '£0' : gbp(s.price_pence)}
+                {s.applies_here && <span className="sr-only"> (applies to this recipe)</span>}
+              </Pill>
+            </li>
           ))}
-      </div>
+      </ul>
       <p className="mb-2.5 text-sm text-ink-2">
         Highlighted swaps apply to this recipe because it has a slot they change. To stop a swap for this drink only, untick
         “Swappable” on that slot.
@@ -49,7 +50,7 @@ export function SwapsSection({ editor, ingOptions }: { editor: RecipeEditor; ing
           <SwapCard key={`${s.modifier_id}-${s.version_from}`} swap={s} ingOptions={ingOptions} />
         ))}
       </div>
-      <p className="mb-[22px] mt-1.5 text-sm text-ink-2">
+      <p className="mb-5.5 mt-1.5 text-sm text-ink-2">
         Italic charges are guesses; the workbook only prices oat milk, coconut milk, syrup pumps and marshmallow. A swap
         change applies to every recipe, from today, after you check what it does.
       </p>
@@ -82,7 +83,7 @@ function SwapCard({ swap, ingOptions }: { swap: Swap; ingOptions: IngredientRow[
   const [d, setD] = useState<SwapDraft>(saved)
   const [operator] = useOperator()
   const [applying, setApplying] = useState(false)
-  const [message, setMessage] = useState<string | null>(null)
+  const [message, setMessage] = useState<Outcome | null>(null)
   const invalidate = useInvalidateMenu()
 
   const body: Record<string, unknown> = {}
@@ -101,9 +102,20 @@ function SwapCard({ swap, ingOptions }: { swap: Swap; ingOptions: IngredientRow[
 
   const label = 'flex min-w-0 flex-col gap-1 text-label font-bold uppercase tracking-[.05em] text-ink-2'
   const inner = 'font-normal normal-case tracking-normal text-ink'
+  const checking = current?.status.kind === 'loading'
+  const previewOutcome: Outcome | null = !current
+    ? null
+    : checking
+      ? { kind: 'info', text: 'Checking…' }
+      : 'message' in current.status
+        ? { kind: 'error', text: current.status.message }
+        : (message ?? null)
   return (
-    <div className={cx('flex flex-col gap-2 rounded-card border border-line-soft bg-surface px-3.5 py-3', !swap.is_active && 'opacity-50')}>
-      <div className="px-1 text-base font-bold">{swap.name}</div>
+    <div className="flex flex-col gap-2 rounded-card border border-line-soft bg-surface px-3.5 py-3">
+      <div className="flex items-center gap-2 px-1">
+        <span className="min-w-0 flex-1 truncate text-base font-bold">{swap.name}</span>
+        {!swap.is_active && <Pill tone="muted">Not offered</Pill>}
+      </div>
       <div className="grid grid-cols-2 gap-2">
         <label className={label}>
           Does
@@ -118,35 +130,32 @@ function SwapCard({ swap, ingOptions }: { swap: Swap; ingOptions: IngredientRow[
           <Select size="sm" value={d.role} onChange={(e) => setD({ ...d, role: e.target.value as ComponentRole })} className={inner}>
             {ROLES.map((r) => (
               <option key={r} value={r}>
-                {r.toLowerCase()}
+                {ROLE_LABEL[r]}
               </option>
             ))}
           </Select>
         </label>
       </div>
-      <label className={label}>
-        Ingredient
-        <Select
+      <div className={label}>
+        <span>Ingredient</span>
+        <IngredientPicker
           size="sm"
-          value={d.ingredient_id === null ? '' : String(d.ingredient_id)}
-          onChange={(e) => setD({ ...d, ingredient_id: e.target.value === '' ? null : Number(e.target.value) })}
-          className={inner}
-        >
-          <option value="">— none —</option>
-          {ingOptions.map((o) => (
-            <option key={o.ingredient_id} value={o.ingredient_id}>
-              {o.name}
-            </option>
-          ))}
-        </Select>
-      </label>
+          label={`Ingredient for the ${swap.name} swap`}
+          placeholder="none"
+          value={d.ingredient_id}
+          options={ingOptions}
+          inRecipe={NONE}
+          onPick={(id) => setD({ ...d, ingredient_id: id })}
+          onClear={() => setD({ ...d, ingredient_id: null })}
+        />
+      </div>
       <div className="grid grid-cols-2 gap-2">
         <label className={label}>
           Qty
           <Input
             size="sm"
             numeric
-            placeholder="same"
+            placeholder="same as recipe"
             value={d.qty}
             onChange={(e) => QTY_INPUT.test(e.target.value) && setD({ ...d, qty: e.target.value })}
             className={inner}
@@ -164,10 +173,10 @@ function SwapCard({ swap, ingOptions }: { swap: Swap; ingOptions: IngredientRow[
           />
         </label>
       </div>
-      <Checkbox checked={d.guess} onChange={(v) => setD({ ...d, guess: v })} label={<span className="text-sm">Charge is a guess</span>} />
+      <Checkbox className="min-h-9" checked={d.guess} onChange={(v) => setD({ ...d, guess: v })} label="Charge is a guess" />
       {key !== null && (
-        <div className="border-t border-line pt-2 text-sm" aria-live="polite">
-          {current?.status.kind === 'loading' && <p className="text-ink-2">Checking…</p>}
+        <div className="border-t border-line pt-2 text-sm" aria-busy={checking || undefined}>
+          <StatusLine outcome={previewOutcome} />
           {current?.data?.diff.map((l) => <p key={l}>{l}</p>)}
           {current?.data && (
             <p className="text-ink-2">
@@ -189,10 +198,6 @@ function SwapCard({ swap, ingOptions }: { swap: Swap; ingOptions: IngredientRow[
               {w}
             </p>
           ))}
-          {current && current.status.kind !== 'ready' && current.status.kind !== 'loading' && 'message' in current.status && (
-            <p className="text-bad-ink">{current.status.message}</p>
-          )}
-          {message && <p role="status">{message}</p>}
           <div className="mt-2 flex gap-2">
             <Button variant="outline" size="sm" className="flex-1" onClick={() => setD(saved)} disabled={applying}>
               Discard
@@ -210,9 +215,9 @@ function SwapCard({ swap, ingOptions }: { swap: Swap; ingOptions: IngredientRow[
                 const r = await recipeApi.swapApply(swap.modifier_id, { ...body, actor: operator })
                 setApplying(false)
                 if (r.kind === 'ok') {
-                  setMessage('Applied from today.')
+                  setMessage({ kind: 'ok', text: 'Applied from today.' })
                   await invalidate()
-                } else setMessage(r.message)
+                } else setMessage({ kind: 'error', text: r.message })
               }}
             >
               Apply from today

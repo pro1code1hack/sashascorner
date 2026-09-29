@@ -9,19 +9,18 @@ waste figure would grow every time somebody scrolled up.
 
 from __future__ import annotations
 
-from typing import Any
-
 from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message
 
 from cafeops.bot import formatters as f
+from cafeops.bot.deps import RunSync
 from cafeops.bot.views import build_digest
 
 router = Router(name="digest")
 
 
 @router.message(Command("digest"))
-async def digest(message: Message, run_sync: Any) -> None:
+async def digest(message: Message, run_sync: RunSync) -> None:
     view = await run_sync(build_digest)
     await message.answer(f.digest(view))

@@ -18,13 +18,13 @@ from datetime import date, datetime
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from cafeops.db.models.enums import (
+from cafeops.db.models.payment import PaymentDay
+from cafeops.domain.enums import (
     PAYMENT_SOURCE_PRECEDENCE,
     PaymentBasis,
     PaymentMethod,
     PaymentSourceKind,
 )
-from cafeops.db.models.payment import PaymentDay
 
 __all__ = [
     "DISAGREEMENT_TOLERANCE_PENCE",

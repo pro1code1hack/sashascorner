@@ -1,13 +1,17 @@
-"""The guarded seam to the wallet module (agent B, `cafeops/integrations/wallet/`).
+"""The seam to the wallet module (agent B, `cafeops/integrations/wallet/`).
 
 Loyalty must work with no wallet at all: the web card is a complete card, and a server
 with no Apple certificate is the normal state until the café has an Apple account. So
-every reach into the wallet package goes through here and degrades to "not configured"
-if the package, a module in it, or a setting is missing -- the join page then offers the
-web card only, and nothing 500s because a certificate is absent.
+"is Apple/Google configured?" is asked here, and a missing certificate or setting reads
+as "not configured" -- the join page then offers the web card only.
 
-Imports are by name at call time (`importlib`), not at module import, so this file never
-fails to import and the API starts whatever state the wallet package is in.
+What is NOT degraded any more is a broken module. The wallet package and its models
+ship with the application (`db/models/__init__.py` imports the wallet models, and
+`integrations/wallet/config.py` has no optional dependency), so they are imported
+statically. The one genuinely optional part is a pass builder whose third-party library
+is absent -- `wallet_module` answers None for an `ImportError` and logs it once. Any
+other exception while importing a wallet module is a bug and propagates: five silent
+`except Exception` here used to turn one into "wallet not configured".
 """
 
 from __future__ import annotations
@@ -19,6 +23,9 @@ from typing import Any
 from sqlalchemy import inspect, select
 from sqlalchemy.orm import Session
 
+from cafeops.db.models.wallet import WalletAppleRegistration, WalletGoogleObject
+from cafeops.integrations.wallet.config import wallet_settings
+
 __all__ = [
     "apple_configured",
     "google_configured",
@@ -28,71 +35,66 @@ __all__ = [
 
 log = logging.getLogger("cafeops.loyalty")
 
+#: Wallet modules whose import failed for want of a dependency, logged once each.
+_unavailable: set[str] = set()
+#: Databases (by URL) where the wallet tables were found. Only a positive answer is
+#: cached: tables do not vanish under a running process, but a migration run while it
+#: is up can create them, and a cached "absent" would hide them until a restart.
+_tables_present: set[str] = set()
+
 
 def wallet_module(name: str) -> Any | None:
-    """`cafeops.integrations.wallet.<name>`, or None if it is missing or broken."""
+    """`cafeops.integrations.wallet.<name>`, or None if an optional dependency of it is
+    missing (logged once). Imported at call time so the API starts whatever state the
+    wallet package is in."""
     try:
         return importlib.import_module(f"cafeops.integrations.wallet.{name}")
-    except Exception as exc:  # ImportError, or a module that raises while importing
-        log.debug("wallet module %s unavailable: %s", name, exc)
+    except ImportError as exc:
+        if name not in _unavailable:
+            _unavailable.add(name)
+            log.warning("wallet module %s unavailable (missing dependency?): %s", name, exc)
         return None
-
-
-def _settings() -> Any | None:
-    config = wallet_module("config")
-    if config is None:
-        return None
-    settings = getattr(config, "wallet_settings", None)
-    if callable(settings) and not hasattr(settings, "apple_configured"):
-        try:
-            settings = settings()
-        except Exception:
-            return None
-    return settings
 
 
 def apple_configured() -> bool:
-    s = _settings()
-    try:
-        return bool(s is not None and s.apple_configured and wallet_module("apple") is not None)
-    except Exception:
-        return False
+    return wallet_settings.apple_configured and wallet_module("apple") is not None
 
 
 def google_configured() -> bool:
-    s = _settings()
-    try:
-        return bool(s is not None and s.google_configured and wallet_module("google") is not None)
-    except Exception:
+    return wallet_settings.google_configured and wallet_module("google") is not None
+
+
+def _wallet_tables_present(session: Session) -> bool:
+    """Both wallet tables exist. Inspected until they do, then remembered, so the
+    member list stops paying for a schema read on every render."""
+    bind = session.get_bind()
+    key = str(bind.engine.url)
+    if key in _tables_present:
+        return True
+    names = set(inspect(bind).get_table_names())
+    wanted = {WalletGoogleObject.__tablename__, WalletAppleRegistration.__tablename__}
+    if not wanted <= names:
         return False
+    _tables_present.add(key)
+    return True
 
 
 def wallet_kind_by_card(session: Session, card_ids: list[str]) -> dict[str, str]:
     """ "apple" if a device registered the pass, else "google" if an object exists.
 
-    Reads B's tables through B's models, and only when both the model module and the
-    table exist -- the member list must render on a database B's migration has not
-    reached. "web" (first web-card view) is the caller's fallback; this answers only for
-    the two wallets.
+    Only when the wallet tables exist -- the member list must render on a database the
+    wallet migration has not reached. "web" (first web-card view) is the caller's
+    fallback; this answers only for the two wallets.
     """
-    if not card_ids:
-        return {}
-    try:
-        models = importlib.import_module("cafeops.db.models.wallet")
-    except Exception:
-        return {}
-    bind = session.get_bind()
-    try:
-        names = set(inspect(bind).get_table_names())
-    except Exception:
+    if not card_ids or not _wallet_tables_present(session):
         return {}
     out: dict[str, str] = {}
-    google = getattr(models, "WalletGoogleObject", None)
-    if google is not None and "wallet_google_object" in names:
-        for card_id in session.scalars(select(google.card_id).where(google.card_id.in_(card_ids))):
-            out[str(card_id)] = "google"
-    apple = getattr(models, "WalletAppleRegistration", None)
-    if apple is not None and "wallet_apple_registration" in names:
-        for card_id in session.scalars(select(apple.card_id).where(apple.card_id.in_(card_ids))):
-            out[str(card_id)] = "apple"
+    for card_id in session.scalars(
+        select(WalletGoogleObject.card_id).where(WalletGoogleObject.card_id.in_(card_ids))
+    ):
+        out[str(card_id)] = "google"
+    for card_id in session.scalars(
+        select(WalletAppleRegistration.card_id).where(WalletAppleRegistration.card_id.in_(card_ids))
+    ):
+        out[str(card_id)] = "apple"
     return out

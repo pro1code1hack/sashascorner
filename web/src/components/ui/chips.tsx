@@ -19,7 +19,7 @@ export function FilterChip({
 }: {
   active: boolean
   onClick: () => void
-  /** Trailing count, `text-xs opacity-60`. Omit rather than pass 0 when unknown. */
+  /** Trailing count, 12px at full opacity (opacity-60 measured 2.6–4.1:1). Omit rather than pass 0 when unknown. */
   count?: ReactNode
   /** `alert` is Finance's "Needs a look": red border, solid red when active. */
   tone?: 'default' | 'alert'
@@ -45,7 +45,9 @@ export function FilterChip({
       )}
     >
       {children}
-      {count !== undefined && <span className="fig text-xs opacity-60">{count}</span>}
+      {count !== undefined && (
+        <span className={cx('fig text-xs font-semibold', active ? 'text-brand-ink' : 'text-ink-2')}>{count}</span>
+      )}
     </button>
   )
 }

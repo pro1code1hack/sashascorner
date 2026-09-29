@@ -49,7 +49,7 @@ Deliberate deviations from SPEC.md:
 | Agent | Owns (create/edit) |
 |---|---|
 | **A — loyalty backend** | `cafeops/db/models/loyalty.py`, `cafeops/db/models/staff.py`, the `__init__` re-exports for them, `migrations/versions/b7c1e0a10001_loyalty.py`, `cafeops/domain/loyalty.py`, `cafeops/services/loyalty/**`, `cafeops/api/areas/loyalty*.py`, `cafeops/api/areas/members*.py`, `cafeops/api/areas/staff*.py`, registration in `cafeops/api/app.py` + `api/areas/__init__.py`, loyalty settings in `cafeops/config.py`, loyalty CLI commands in `cafeops/cli.py`, loyalty jobs `cafeops/jobs/loyalty_*.py` + registration in `jobs/scheduler.py`, bot `/member` command + alerts |
-| **B — wallet** | `cafeops/integrations/wallet/**` (incl. its own `config.py`), `cafeops/db/models/wallet.py`, `migrations/versions/b7c1e0a10002_wallet.py`, `assets/pass/**` (repo root), wallet CLI group (a separate `cafeops/integrations/wallet/cli.py` that A's `cli.py` mounts — see §6) |
+| **B — wallet** | `cafeops/integrations/wallet/**` (incl. its own `config.py`), `cafeops/db/models/wallet.py`, `migrations/versions/b7c1e0a10002_wallet.py`, `assets/pass/**` (repo root), wallet CLI group (a separate `cafeops/cli/wallet.py` that `cafeops/cli/__init__.py` mounts — see §6) |
 | **C — customer pages** | `site/web/src/pages/rewards.astro`, `c.astro`, `privacy.astro`, `site/web/src/components/Rw*.astro`, `site/web/src/scripts/rewards/**`, `site/web/src/scripts/track.ts`, `site/deploy/Caddyfile.site`, `site/web/astro.config.mjs` (dev proxy only) |
 | **D — staff scanner** | `site/web/src/pages/staff.astro`, `site/web/src/components/St*.astro`, `site/web/src/scripts/staff/**`, `site/web/public/staff/**` (manifest, service worker, icons), `site/web/package.json` (the only agent that adds npm deps to the site) |
 | **E — dashboard Members** | `web/src/screens/members/**`, `web/src/lib/members-api.ts`, `web/src/lib/types/members.ts`, `web/fixtures/members-*.json`, edits to `web/src/routes.tsx` (add route + nav) |
@@ -326,7 +326,7 @@ GET  /api/members/alerts -> {alerts: [{at, kind, detail}]}   (recent fraud-patte
 - CLI: `cafeops loyalty staff-add NAME --role manager --pin 1234`, `loyalty device-pair NAME`,
   `loyalty members`, `loyalty seed-demo` (a programme + 3 fake members for dev only),
   `loyalty summary`. Mount B's `wallet` Typer/Click group from
-  `cafeops/integrations/wallet/cli.py` if it exists (import guarded).
+  `cafeops/cli/wallet.py` (imported unconditionally since 2026-09-29; it is in-tree).
 
 Config (A, in `cafeops/config.py`, prefix `CAFEOPS_`): `loyalty_public_url`
 (default `https://sashascorner.co.uk`), `loyalty_qr_key` (secret; when unset derive a

@@ -37,7 +37,6 @@ from cafeops.db.models import (
     IngredientPrice,
     OrderChannel,
     POLine,
-    POStatus,
     PriceSource,
     PurchaseOrder,
     Supplier,
@@ -46,11 +45,13 @@ from cafeops.db.models import (
 )
 from cafeops.domain.units import IncompatibleUnitsError, convert
 from cafeops.jobs.cost_rollup import rollup_for_ingredient
+from cafeops.services.actor import require_actor
 from cafeops.services.confirm_terms import (
     ConfirmationRefused,
     SupplierTerms,
     confirm_supplier_terms,
 )
+from cafeops.services.order_actions import OPEN_STATUSES  # one home for the open set
 
 __all__ = [
     "OPEN_STATUSES",
@@ -66,13 +67,6 @@ __all__ = [
     "update_supplier_profile",
 ]
 
-#: An order in any of these still needs its supplier (and its product rows).
-OPEN_STATUSES: tuple[POStatus, ...] = (
-    POStatus.DRAFT,
-    POStatus.PENDING_CONFIRM,
-    POStatus.CONFIRMED,
-    POStatus.SENT,
-)
 
 _NAME_MAX = 160
 _KIND_MAX = 40
@@ -97,11 +91,10 @@ class SupplierRefused(ValueError):
 # ==========================================================================
 
 
-def _who(name: str, what: str = "changed_by") -> str:
-    clean = name.strip()
-    if not clean:
-        raise SupplierRefused(f"{what} is required: say who is making this change")
-    return clean[:120]
+def _who(name: str) -> str:
+    """The operator-name rule (`services.actor.require_actor`), refused as this module's
+    `SupplierRefused`."""
+    return require_actor(name, error=SupplierRefused)
 
 
 def _text(value: str | None, limit: int) -> str | None:
@@ -222,7 +215,7 @@ def create_supplier(
     guess and the placeholder flag stays set. Confirmed terms go through
     `confirm_supplier_terms`, all together, exactly as the /confirm endpoint does.
     """
-    _who(created_by, "created_by")
+    _who(created_by)
     if terms_confirmed and terms is None:
         raise SupplierRefused("there are no terms to confirm: fill them all in first")
     if terms is not None and not terms_confirmed:
@@ -339,7 +332,7 @@ def archive_supplier(
     session: Session, *, supplier_id: int, archived_by: str, at: datetime | None = None
 ) -> tuple[Supplier, list[str]]:
     """'Delete' = archive. Refused while an order is open. Returns (row, re-starred names)."""
-    who = _who(archived_by, "archived_by")
+    who = _who(archived_by)
     row = _supplier(session, supplier_id)
     if row.archived_at is not None:
         raise SupplierRefused(f"{row.name} is already archived")
@@ -695,7 +688,7 @@ def archive_product(
 
     Returns (row, the ingredient re-starred to another link, if this was ★).
     """
-    who = _who(archived_by, "archived_by")
+    who = _who(archived_by)
     at = at or datetime.now(UTC)
     product = _product(session, product_id)
     if product.archived_at is not None:

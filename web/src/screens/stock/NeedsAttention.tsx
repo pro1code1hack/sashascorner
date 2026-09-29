@@ -73,7 +73,7 @@ export function NeedsAttention({
     <div className="min-h-0 flex-1 overflow-y-auto bg-canvas">
       <nav
         aria-label="Jump to"
-        className="sticky top-0 z-10 flex flex-wrap gap-1.5 border-b border-line-soft bg-canvas/95 px-4 py-2.5 backdrop-blur sm:px-5"
+        className="sticky top-0 z-10 flex flex-wrap gap-1.5 border-b border-line-soft bg-canvas px-4 py-2.5 sm:px-5"
       >
         {lines.map(({ job, hits }) => (
           <a
@@ -81,8 +81,14 @@ export function NeedsAttention({
             href={`#att-${job.id}`}
             onClick={(e) => {
               // Hash routing owns location.hash: scroll instead of navigating.
+              // Smooth only when motion is welcome; focus follows so a keyboard
+              // user lands on the card they jumped to.
               e.preventDefault()
-              document.getElementById(`att-${job.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              const el = document.getElementById(`att-${job.id}`)
+              if (!el) return
+              const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+              el.scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'start' })
+              el.focus({ preventScroll: true })
             }}
             className="inline-flex h-8 items-center gap-1.5 rounded-full border border-line-control bg-surface px-3 text-base text-ink no-underline hover:bg-canvas-2"
           >
@@ -139,7 +145,12 @@ function JobCard({
   const [all, setAll] = useState(false)
   const shown = all ? hits : hits.slice(0, PREVIEW)
   return (
-    <section id={`att-${job.id}`} aria-labelledby={`att-h-${job.id}`} className="scroll-mt-14 overflow-hidden rounded-card-lg bg-surface shadow-raised">
+    <section
+      id={`att-${job.id}`}
+      tabIndex={-1}
+      aria-labelledby={`att-h-${job.id}`}
+      className="scroll-mt-14 overflow-hidden rounded-card-lg bg-surface shadow-raised focus:outline-none"
+    >
       <header className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line px-4 py-3">
         <span className={cx('fig w-10 text-3xl font-extrabold', job.urgent ? 'text-bad-ink' : 'text-ink')}>{hits.length}</span>
         <div className="min-w-0 flex-1">
@@ -171,6 +182,7 @@ function JobCard({
                 <span className="block truncate text-sm text-ink-2">
                   {[r.category ?? 'Uncategorised', r.pack?.supplier_name].filter(Boolean).join(' · ')}
                 </span>
+                {job.id === 'out' && <Reason r={r} />}
               </span>
               <Figure job={job.id} r={r} />
             </a>
@@ -188,6 +200,13 @@ function JobCard({
       )}
     </section>
   )
+}
+
+/** Why there is no run-out date, in full: the sentence the forecast gave. */
+function Reason({ r }: { r: StockRow }) {
+  const ro = runsOutCell(r)
+  if (!ro.reason) return null
+  return <span className="block text-sm text-ink-2">{ro.title ?? ro.text}</span>
 }
 
 /** The one figure each job is about, right-aligned. */
@@ -213,8 +232,9 @@ function Figure({ job, r }: { job: JobId; r: StockRow }) {
     }
     case 'out': {
       const ro = runsOutCell(r)
-      // A withheld forecast's reason is a sentence; keep the row scannable and put it in the tooltip.
-      const main = ro.reason ? <span title={ro.title ?? ro.text}>no forecast yet</span> : ro.text ? `runs out ${ro.text}` : 'out now'
+      // A withheld forecast says so where the date would be (invariant 9); the
+      // reason itself is printed under the name (Reason), never only in a tooltip.
+      const main = ro.reason ? 'no forecast yet' : ro.text ? `runs out ${ro.text}` : 'out now'
       return cell(main, <em>{leftCell(r)} left (est.)</em>, ro.alert)
     }
     case 'drift':

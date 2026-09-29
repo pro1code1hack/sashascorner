@@ -81,6 +81,7 @@ from cafeops.domain.types import (
     MovementType,
     SubstitutionError,
 )
+from cafeops.domain.units import gbp_code
 
 #: `stock_movement.ref_type` values. A reversal is retyped rather than reusing "sale",
 #: so `_already_reversed` can tell a correction from the thing it corrected and no
@@ -125,7 +126,7 @@ class ExpansionReport:
         if self.expiry_write_offs:
             parts.append(
                 f"{self.expiry_write_offs} expiry write-off(s) swept before allocating, worth "
-                f"GBP {self.expired_value_pence / 100:.2f}"
+                f"{gbp_code(self.expired_value_pence)}"
             )
         if self.shortfall_movements:
             parts.append(
@@ -297,9 +298,7 @@ class _BatchAllocator:
 
         # 2. Allocate from what is left, soonest effective expiry first.
         specs = self._specs(rows, at)
-        allocations, shortfall = allocate_fifo(
-            qty=qty, batches=specs, open_life_days=open_life, at=at
-        )
+        allocations, shortfall = allocate_fifo(qty=qty, batches=specs, open_life_days=open_life)
 
         opened_before = sum(1 for row in rows if row.opened_at is not None)
         self.report.allocations += self.repo.apply_allocations(allocations, at=at)

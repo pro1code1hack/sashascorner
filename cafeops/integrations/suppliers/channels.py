@@ -8,8 +8,7 @@ them credentials, rather than pretending to succeed.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
-
+from cafeops.clock import utcnow
 from cafeops.domain.types import OrderChannel
 from cafeops.integrations.suppliers.base import (
     DispatchResult,
@@ -18,10 +17,6 @@ from cafeops.integrations.suppliers.base import (
     PreparedOrder,
     register,
 )
-
-
-def _now() -> datetime:
-    return datetime.now(UTC)
 
 
 @register
@@ -50,7 +45,7 @@ class ManualChannel(OrderChannelAdapter):
             po_id=prepared.po_id,
             channel=self.channel,
             succeeded=True,
-            dispatched_at=_now(),
+            dispatched_at=utcnow(),
             detail="Shopping list issued; purchase happens in person.",
             requires_human_completion=True,
         )
@@ -60,11 +55,13 @@ class ManualChannel(OrderChannelAdapter):
 class BrowserAgentChannel(OrderChannelAdapter):
     """Cups Direct and similar: a web shop with a basket and no API.
 
-    `prepare` builds an instruction script and stops. Phase 2 hands that script
-    to a browser agent, which fills the basket and halts *before* checkout --
-    `requires_human_completion` is always True. Nothing is purchased without a
-    person pressing the last button, which is operational rule 1 surviving
-    contact with automation.
+    `prepare` builds an instruction script and stops. The real basket is staged by
+    `services/order_dispatch`, which hands a supplier with a portal adapter to the
+    browser worker (`services/browser_jobs.enqueue_stage_basket`); the worker halts
+    *before* checkout. `dispatch` here is only the fallback when staging was refused
+    (no adapter, worker off, sign-in lapsed). `requires_human_completion` is always
+    True: nothing is purchased without a person pressing the last button, which is
+    operational rule 1 surviving contact with automation.
     """
 
     channel = OrderChannel.BROWSER_AGENT
@@ -103,15 +100,15 @@ class BrowserAgentChannel(OrderChannelAdapter):
         )
 
     def dispatch(self, prepared: PreparedOrder) -> DispatchResult:
-        # Phase 2 replaces this with a real browser-agent invocation. Until then
-        # it hands the script back rather than claiming to have done anything.
+        # The fallback: staging was refused upstream, so hand the script back rather
+        # than claim to have done anything.
         return DispatchResult(
             po_id=prepared.po_id,
             channel=self.channel,
             succeeded=False,
-            dispatched_at=_now(),
+            dispatched_at=utcnow(),
             detail=(
-                "Browser agent not wired yet (Phase 2). Instruction script "
+                "Basket not staged (see the staging refusal). Instruction script "
                 "prepared and ready:\n" + prepared.instructions
             ),
             requires_human_completion=True,
@@ -137,7 +134,7 @@ class _NotYetConfigured(OrderChannelAdapter):
             po_id=prepared.po_id,
             channel=self.channel,
             succeeded=False,
-            dispatched_at=_now(),
+            dispatched_at=utcnow(),
             detail=(
                 f"{self.channel.value} channel is not configured. "
                 "Order left CONFIRMED; send it by hand or configure the channel."

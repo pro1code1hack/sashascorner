@@ -103,8 +103,9 @@ export function useShopSummary(poll = false) {
     enabled: LIVE,
     staleTime: 10 * 1000,
     refetchInterval: poll ? LIVE_POLL_MS : false,
-    // The board rings from a background tab too: keep polling when the window is not focused.
-    refetchIntervalInBackground: true,
+    // Only the board polls (poll=true), and it rings from a background tab too, so
+    // it keeps polling when hidden; nothing else refetches from a hidden tab.
+    refetchIntervalInBackground: poll,
     retry: false,
   })
 }
@@ -137,8 +138,9 @@ export function useShopOrders(p: OrdersQuery, poll = false) {
     enabled: LIVE,
     staleTime: 5 * 1000,
     refetchInterval: poll ? LIVE_POLL_MS : false,
-    // The board rings from a background tab too: keep polling when the window is not focused.
-    refetchIntervalInBackground: true,
+    // Only the board polls (poll=true), and it rings from a background tab too, so
+    // it keeps polling when hidden; nothing else refetches from a hidden tab.
+    refetchIntervalInBackground: poll,
     placeholderData: (prev) => prev,
     retry: false,
   })
@@ -166,8 +168,8 @@ export function useShopOrder(id: number, poll = false) {
     enabled: LIVE,
     staleTime: 5 * 1000,
     refetchInterval: poll ? LIVE_POLL_MS : false,
-    // The board rings from a background tab too: keep polling when the window is not focused.
-    refetchIntervalInBackground: true,
+    // Nothing on the order page rings: a hidden tab stops polling and catches up when it is shown.
+    refetchIntervalInBackground: false,
     retry: false,
   })
 }

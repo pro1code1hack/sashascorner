@@ -14,7 +14,10 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", extra="ignore", env_prefix="CAFEOPS_"
+        env_file=REPO_ROOT / ".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+        env_prefix="CAFEOPS_",
     )
 
     # --- database -----------------------------------------------------------
@@ -32,16 +35,24 @@ class Settings(BaseSettings):
     lightspeed_base_url: str = "https://api.lsk.lightspeed.app/v3"
     lightspeed_client_id: str | None = None
     lightspeed_client_secret: str | None = None
+    #: Shared secret the online-payment notification must present as X-Lightspeed-Secret;
+    #: unset = the route is closed (no documented signature scheme).
+    lightspeed_webhook_secret: str | None = None
     lightspeed_refresh_token: str | None = None
     lightspeed_business_id: str | None = None
     lightspeed_rate_limit_per_second: float = 5.0
     lightspeed_max_retries: int = 5
 
     # --- read-only API ------------------------------------------------------
-    #: Single shared password (spec 10: no user management). The API FAILS CLOSED
-    #: when unset -- every route but /api/health answers 503 rather than serving the
-    #: café's costs and margins to anyone who finds the port.
-    api_password: str | None = None
+    #: The shared password (spec 10: no user management) is NOT declared here: it is
+    #: read per call by `services/auth.AuthSettings`, so a password changed in the
+    #: environment takes effect without a restart and there is one place it can come
+    #: from. The API FAILS CLOSED when neither the database nor the environment has one.
+
+    # --- payment reports (ARCHITECTURE 8T) -----------------------------------
+    #: Where the till's daily takings exports are looked for by `cafeops payments`.
+    #: Unset means the bundled FIXTURES, which are sample data -- `doctor` says so.
+    payments_csv_dir: Path | None = None
 
     # --- menu photos (recipes spec A5) --------------------------------------
     #: Where uploaded menu photos are written, as `<sha256>.<ext>`. Served read-only

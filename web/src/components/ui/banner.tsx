@@ -29,11 +29,13 @@ export function Banner({
     <div
       role={tone === 'alert' ? 'alert' : 'status'}
       className={cx(
+        // Phone: tighter strip so two banners do not take the first screen (audit 2026-09-29).
         'mx-4 mt-2.5 flex flex-none flex-wrap items-center gap-x-3 gap-y-1 rounded-card py-2 pl-4 pr-2 text-base',
+        'max-sm:mx-2 max-sm:mt-1.5 max-sm:gap-y-0 max-sm:py-1 max-sm:pl-3 max-sm:pr-1 max-sm:text-sm',
         tone === 'alert' ? 'bg-alert-wash' : 'bg-wash',
       )}
     >
-      <div className="flex min-w-0 flex-[1_1_100%] items-center gap-3 py-0.5 sm:flex-[1_1_0%]">
+      <div className="flex min-w-0 flex-[1_1_100%] items-center gap-3 py-0.5 max-sm:gap-2 sm:flex-[1_1_0%]">
         <Dot tone={tone === 'alert' ? 'alert' : 'muted'} />
         <span className="min-w-0">{children}</span>
       </div>

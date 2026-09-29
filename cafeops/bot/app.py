@@ -21,6 +21,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from cafeops.bot.deps import run_sync
 from cafeops.bot.handlers import build_root_router
 from cafeops.config import settings
+from cafeops.logging_setup import configure_logging
 
 __all__ = ["build_dispatcher", "main", "run"]
 
@@ -67,5 +68,5 @@ async def run() -> None:
 
 
 def main() -> None:
-    logging.basicConfig(level=logging.INFO)
+    configure_logging()
     asyncio.run(run())

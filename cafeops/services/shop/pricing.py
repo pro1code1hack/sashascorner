@@ -45,6 +45,7 @@ from cafeops.domain.shop import (
     line_unit_price,
     selection_problem,
 )
+from cafeops.domain.units import pounds
 from cafeops.services.loyalty.common import available_rewards
 from cafeops.services.loyalty.programs import item_facts, program_rule
 from cafeops.services.shop.catalog import groups_for_product, option_groups_by_id
@@ -291,7 +292,7 @@ def quote(
                     reward_info = RewardInfo(
                         True,
                         pick.line_index,
-                        f"{card.program.reward_text}: -£{discount / 100:.2f} on "
+                        f"{card.program.reward_text}: -{pounds(discount)} on "
                         f"{quoted[pick.line_index].name}",
                         held.id,
                     )

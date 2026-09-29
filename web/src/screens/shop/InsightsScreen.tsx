@@ -40,7 +40,8 @@ function Vs({ pct, label }: { pct: number | null; label: string }) {
   const p = Math.round(pct)
   const glyph = p > 0 ? '▲' : p < 0 ? '▼' : '='
   return (
-    <span className={p < 0 ? 'text-bad-ink' : 'text-ink-2'} title={`Compared with ${label}`}>
+    // A dip is not a crossed threshold, so it stays ink (DECISIONS 23); the words say which way.
+    <span className="text-ink-2">
       <span aria-hidden="true">{glyph}</span> {p === 0 ? 'level' : `${Math.abs(p)}% ${p > 0 ? 'up' : 'down'}`}
       <span className="text-ink-3"> vs {label}</span>
     </span>

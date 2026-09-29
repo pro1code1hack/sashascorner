@@ -19,7 +19,8 @@ the scheduler (expiry), and none of those three knows the rules -- they are here
   pays at the counter, and the counter sees the corrected total.
 - **Stamps at COLLECTED** through `services/loyalty/stamping.apply_units`, one per
   eligible unit up to the programme's `max_stamps_per_scan` (a free drink earns none),
-  points on the total for a POINTS card.
+  points on the eligible spend for a POINTS card -- `domain.loyalty.receipt_units`, the
+  same rule a till receipt is stamped by, so a basket earns the same either way.
 - **Cancel or reject after COLLECTED is refused** (§3.2). Cancelling a PAID order does
   not touch the payment: an event says "refund needed" and a person refunds in Stripe.
 - **Every change is an event row and bumps `updated_at`** (§3.8).
@@ -41,6 +42,7 @@ from sqlalchemy.orm import Session
 from cafeops.db.models import (
     DiningOption,
     LoyaltyCard,
+    LoyaltyProgram,
     LoyaltyReward,
     OrderStatus,
     PaymentStatus,
@@ -55,10 +57,11 @@ from cafeops.db.models import (
     ShopSettings,
 )
 from cafeops.domain.loyalty import (
+    ReceiptLine,
     item_matches,
     normalise_email,
     normalise_phone,
-    points_for_spend,
+    receipt_units,
 )
 from cafeops.domain.shop import (
     CUSTOMER_CANCELLABLE,
@@ -68,6 +71,7 @@ from cafeops.domain.shop import (
     new_code,
     normalise_code,
 )
+from cafeops.domain.units import pounds
 from cafeops.services.loyalty.common import (
     audit,
     enqueue_wallet_update,
@@ -102,6 +106,11 @@ __all__ = [
 ONLINE_RECORDED_BY = "online shop"
 #: A Stripe Checkout the customer walked away from (§3.6).
 PENDING_PAYMENT_TTL = timedelta(minutes=30)
+
+SIGN_IN_REQUIRED_DETAIL = (
+    "Sign in with your Rewards card to place an order — it takes a moment and every "
+    "order earns stamps."
+)
 
 _STATUS_EVENT = {
     OrderStatus.NEW: "placed",
@@ -235,6 +244,11 @@ def place_order(
     shop = load_settings(session)
     if not shop.enabled:
         raise ShopError(403, "shop_closed", shop.closed_message)
+    live_card = card if card is not None and card.voided_at is None else None
+    if live_card is None and not shop.guest_orders:
+        # §10.J: placing needs a Rewards card unless the owner lets guests order.
+        # Browsing, the basket and `quote` stay open, so guests still see prices.
+        raise ShopError(401, "sign_in_required", SIGN_IN_REQUIRED_DETAIL)
     if not req.allergy_ack:
         raise ShopError(422, "allergy_ack_required", "Please read the allergy notice first.")
     try:
@@ -258,7 +272,6 @@ def place_order(
     else:
         raise ShopError(422, "bad_payment", "Choose how you will pay: counter or online.")
 
-    live_card = card if card is not None and card.voided_at is None else None
     priced = quote(session, lines=req.lines, reward=req.reward, card=live_card, now=now)
     if not priced.ok:
         first = next((p for ln in priced.lines for p in ln.problems), None) or (
@@ -270,7 +283,7 @@ def place_order(
             409,
             "price_changed",
             f"Prices changed while you were ordering: the total is now "
-            f"£{priced.total_pence / 100:.2f}.",
+            f"{pounds(priced.total_pence)}.",
             extra={"quote": _quote_payload(priced)},
         )
 
@@ -340,7 +353,7 @@ def place_order(
             )
         )
     detail = (
-        f"{len(priced.lines)} line(s), £{order.total_pence / 100:.2f}, "
+        f"{len(priced.lines)} line(s), {pounds(order.total_pence)}, "
         f"{'pay online' if method is ShopPaymentMethod.ONLINE else 'pay at the counter'}"
     )
     if priced.reward.applied:
@@ -404,6 +417,13 @@ def queue_customer_notice(session: Session, order_id: int, kind: str) -> None:
     if not session.info.get("shop_customer_notices_hooked"):
         session.info["shop_customer_notices_hooked"] = True
         event.listen(session, "after_commit", _fire_customer_notices)
+        event.listen(session, "after_rollback", _drop_customer_notices)
+
+
+def _drop_customer_notices(session: Session) -> None:
+    """A rolled-back transaction's notices describe statuses that never existed; left
+    queued, the NEXT commit on this session would send them."""
+    session.info.pop("shop_customer_notices", None)
 
 
 def _fire_customer_notices(session: Session) -> None:
@@ -505,14 +525,14 @@ def _cancel(
         session, order, "rejected" if rejected else "cancelled", reason, actor=actor, at=now
     )
     if order.payment_status is PaymentStatus.PAID:
-        pounds = f"£{order.total_pence // 100}.{order.total_pence % 100:02d}"
+        paid = pounds(order.total_pence)
         if order.payment_method is ShopPaymentMethod.ONLINE:
             detail = (
-                f"Paid {pounds} online; refund it with the payment provider "
+                f"Paid {paid} online; refund it with the payment provider "
                 f"({order.payment_ref or 'no payment reference'})."
             )
         else:
-            detail = f"Paid {pounds} at the counter; refund it from the till."
+            detail = f"Paid {paid} at the counter; refund it from the till."
         record_event(session, order, "refund_needed", detail, actor="system", at=now)
     if order.reward_id is not None:
         record_event(
@@ -549,7 +569,7 @@ def mark_paid(
         session,
         order,
         "paid",
-        f"£{order.total_pence / 100:.2f} "
+        f"{pounds(order.total_pence)} "
         + ("online" if order.payment_method is ShopPaymentMethod.ONLINE else "at the counter"),
         actor=actor,
         at=now,
@@ -630,6 +650,52 @@ def _reward_still_available(reward: LoyaltyReward, now: datetime) -> bool:
     )
 
 
+def _sale_gross(order: ShopOrder, line: ShopOrderLine, discount_line: ShopOrderLine | None) -> int:
+    """What one order line takes in money: its total, less the free drink's discount on
+    the line it was for, never more than price x qty."""
+    gross = line.line_total_pence
+    if discount_line is not None and line.id == discount_line.id:
+        gross = max(0, gross - order.discount_pence)
+    if line.qty == 1:
+        return gross
+    return min(gross, line_gross_pence(line.unit_price_pence, Decimal(line.qty)))
+
+
+def _receipt_lines(
+    session: Session,
+    order: ShopOrder,
+    program: LoyaltyProgram,
+    discount_line: ShopOrderLine | None,
+    free_line: ShopOrderLine | None,
+) -> list[ReceiptLine]:
+    """The order as the stamper sees a till receipt. The free drink is its own line --
+    one unit, gross 0, not eligible -- so it earns neither a stamp nor points."""
+    rule = program_rule(program)
+    facts = item_facts(session, (ln.menu_item_id for ln in order.lines))
+    out: list[ReceiptLine] = []
+    for ln in order.lines:
+        qty = ln.qty
+        if free_line is not None and ln.id == free_line.id:
+            out.append(
+                ReceiptLine(
+                    menu_item_id=ln.menu_item_id, qty=1, gross_pence=0, voided=False, eligible=False
+                )
+            )
+            qty -= 1
+        if qty <= 0:
+            continue
+        out.append(
+            ReceiptLine(
+                menu_item_id=ln.menu_item_id,
+                qty=qty,
+                gross_pence=_sale_gross(order, ln, discount_line),
+                voided=False,
+                eligible=ln.menu_item_id in facts and item_matches(rule, facts[ln.menu_item_id]),
+            )
+        )
+    return out
+
+
 def _collect(session: Session, order: ShopOrder, *, actor: str, now: datetime) -> ShopOrder:
     shop: ShopSettings = load_settings(session)
     card = session.get(LoyaltyCard, order.card_id) if order.card_id else None
@@ -637,13 +703,28 @@ def _collect(session: Session, order: ShopOrder, *, actor: str, now: datetime) -
         card = None
 
     # 1. the reward: still there, or the discount is withdrawn (the counter sees the total)
+    #    -- unless the order was already PAID online at the discounted price: the money
+    #    taken is the money taken, so the discount stays on the order and on the sale
+    #    line it was for, nothing is redeemed, and staff decide what to do.
     reward: LoyaltyReward | None = None
     reward_line: ShopOrderLine | None = None
+    discount_line: ShopOrderLine | None = None
     if order.reward_id is not None:
         held = session.get(LoyaltyReward, order.reward_id)
         if held is not None and _reward_still_available(held, now) and card is not None:
             reward = held
             reward_line = _reward_line(session, order, card)
+            discount_line = reward_line
+        elif order.payment_status is PaymentStatus.PAID:
+            discount_line = _reward_line(session, order, card)
+            record_event(
+                session,
+                order,
+                "reward_unavailable",
+                "The free drink had already been used; the online price stands.",
+                actor="system",
+                at=now,
+            )
         else:
             forfeited = order.discount_pence
             order.discount_pence = 0
@@ -652,8 +733,8 @@ def _collect(session: Session, order: ShopOrder, *, actor: str, now: datetime) -
                 session,
                 order,
                 "reward_unavailable",
-                f"The free drink was already used elsewhere; £{forfeited / 100:.2f} discount "
-                f"withdrawn, total is now £{order.total_pence / 100:.2f}.",
+                f"The free drink was already used elsewhere; {pounds(forfeited)} discount "
+                f"withdrawn, total is now {pounds(order.total_pence)}.",
                 actor="system",
                 at=now,
             )
@@ -669,7 +750,7 @@ def _collect(session: Session, order: ShopOrder, *, actor: str, now: datetime) -
             session,
             order,
             "paid",
-            f"£{order.total_pence / 100:.2f} at the counter",
+            f"{pounds(order.total_pence)} at the counter",
             actor=actor,
             at=now,
         )
@@ -681,9 +762,6 @@ def _collect(session: Session, order: ShopOrder, *, actor: str, now: datetime) -
         select(Sale.id).where(Sale.lightspeed_receipt_id == receipt)
     ):
         for n, ln in enumerate(order.lines, start=1):
-            gross = ln.line_total_pence
-            if reward_line is not None and ln.id == reward_line.id:
-                gross = max(0, gross - order.discount_pence)
             modifiers = [
                 int(o["modifier_id"])
                 for o in ln.options
@@ -694,9 +772,7 @@ def _collect(session: Session, order: ShopOrder, *, actor: str, now: datetime) -
                 lightspeed_line_id=f"{receipt}:{n}",
                 menu_item_id=ln.menu_item_id,
                 qty=Decimal(ln.qty),
-                gross_pence=gross
-                if ln.qty == 1
-                else min(gross, line_gross_pence(ln.unit_price_pence, Decimal(ln.qty))),
+                gross_pence=_sale_gross(order, ln, discount_line),
                 sold_at=now,
                 channel=SaleChannel.WEB,
                 source=SaleSource.ONLINE,
@@ -750,23 +826,19 @@ def _collect(session: Session, order: ShopOrder, *, actor: str, now: datetime) -
             at=now,
         )
 
-    # 5. stamps
+    # 5. stamps -- by the same rule as a till receipt (`domain.loyalty.receipt_units`,
+    #    which `services/loyalty/pos.py` uses): stamps per eligible unit up to the scan
+    #    cap, points on the ELIGIBLE spend. This path used to award points on the whole
+    #    total, so the same basket earned differently online and at the till.
     if shop.loyalty_stamps_online and card is not None and card.program.active:
         program = card.program
-        units = 0
-        if program.kind is ProgramKind.POINTS:
-            units = points_for_spend(order.total_pence, program.points_per_pound or 0)
-        else:
-            rule = program_rule(program)
-            facts = item_facts(session, (ln.menu_item_id for ln in order.lines))
-            units = sum(
-                ln.qty
-                for ln in order.lines
-                if ln.menu_item_id in facts and item_matches(rule, facts[ln.menu_item_id])
-            )
-            if reward is not None:
-                units -= 1  # a free drink earns no stamp
-            units = max(0, min(units, program.max_stamps_per_scan))
+        free_line = reward_line if reward is not None else None
+        units = receipt_units(
+            _receipt_lines(session, order, program, discount_line, free_line),
+            kind=program.kind.value,
+            max_per_receipt=program.max_stamps_per_scan,
+            points_per_pound=program.points_per_pound,
+        )
         if units > 0:
             event = apply_units(
                 session, card, units, note=f"online order {display_code(order.code)}", now=now

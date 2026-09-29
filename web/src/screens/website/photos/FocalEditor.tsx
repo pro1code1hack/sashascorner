@@ -68,6 +68,7 @@ export function FocalEditor({ slot, idx }: { slot: Slot; idx: number }) {
           <div
             ref={pad}
             tabIndex={0}
+            // Kept on purpose (audit, Low): the arrow keys move the point, so a screen reader must hand them to the widget rather than browse with them.
             role="application"
             aria-roledescription="focal point picker"
             aria-label={`Focal point for ${slot.label}: ${focalWords(it.focal)}`}

@@ -360,7 +360,7 @@ def _proxy_items(session: Session) -> dict[int, _ProxyItem]:
     for menu_item_id, qty, name, lightspeed_id, ingredient_id in rows:
         grouped.setdefault(menu_item_id, []).append((ingredient_id, qty, name, lightspeed_id))
 
-    names = dict(session.execute(select(MenuItem.id, MenuItem.name)).all())
+    names = dict(session.execute(select(MenuItem.id, MenuItem.name)).tuples().all())
     ingredient_names = _ingredient_names(session)
 
     out: dict[int, _ProxyItem] = {}
@@ -391,7 +391,7 @@ def _proxy_items(session: Session) -> dict[int, _ProxyItem]:
 def _ingredient_names(session: Session) -> dict[int, str]:
     from cafeops.db.models import Ingredient
 
-    return dict(session.execute(select(Ingredient.id, Ingredient.name)).all())
+    return dict(session.execute(select(Ingredient.id, Ingredient.name)).tuples().all())
 
 
 def _price_index(session: Session) -> dict[int, Sequence[str]]:

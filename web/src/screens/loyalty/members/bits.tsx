@@ -1,10 +1,9 @@
 /**
  * Small pieces shared by the Members list and one member's card
- * (docs/loyalty/BACKOFFICE-V2.md). Words, pills and the dot meter.
+ * (docs/loyalty/BACKOFFICE-V2.md). Words, pills, the dot meter and the switch row.
  */
-import type { ReactNode } from 'react'
-import { cx } from '../../../components/ui'
-import type { WriteResult } from '../../../lib/api'
+import { useId } from 'react'
+import { Toggle, cx } from '../../../components/ui'
 import type { WalletKind } from '../../../lib/types/loyalty'
 
 /** The `?src=` tag a member joined from, in words. null = the website, untagged. */
@@ -37,14 +36,11 @@ export function initials(name: string): string {
   return (first + last).toUpperCase()
 }
 
-/** A soft, stable colour per member so the avatar column is scannable. */
-const AVATAR = [
-  'bg-warn-wash text-warn-ink',
-  'bg-ok-wash text-ok-ink',
-  'bg-brand-wash text-brand-ink',
-  'bg-bad-wash text-bad-ink',
-  'bg-wash text-ink-2',
-]
+/**
+ * A soft, stable tint per member so the avatar column is scannable. Neutral washes
+ * only: a red or amber avatar would read as a crossed threshold (DECISIONS 23).
+ */
+const AVATAR = ['bg-brand-wash text-brand-ink', 'bg-wash text-ink-2', 'bg-seq-1 text-brand-deep', 'bg-canvas text-ink-2']
 
 export function Avatar({ name, id, size = 32 }: { name: string; id: number; size?: number }) {
   return (
@@ -61,34 +57,26 @@ export function Avatar({ name, id, size = 32 }: { name: string; id: number; size
 export const WALLET_NAME: Record<WalletKind, string> = { apple: 'Apple', google: 'Google', web: 'Web' }
 
 export function WalletPill({ wallet }: { wallet: WalletKind | null }) {
-  if (wallet === null) return <span className="text-sm text-ink-3">none yet</span>
-  const tone =
-    wallet === 'apple' ? 'bg-ink text-white' : wallet === 'google' ? 'bg-ok-wash text-ok-ink' : 'bg-brand-wash text-brand-ink'
+  if (wallet === null) return <span className="text-sm text-ink-2">none yet</span>
+  const tone = wallet === 'apple' ? 'bg-ink text-white' : wallet === 'google' ? 'bg-wash text-ink-2' : 'bg-brand-wash text-brand-ink'
   return (
     <span className={cx('inline-flex h-6 items-center rounded-full px-2.5 text-xs font-bold', tone)}>{WALLET_NAME[wallet]}</span>
   )
 }
 
-/** Eight small circles: filled for stamps; a full card is green. */
+/** Up to twelve small circles: filled for stamps, hollow for the rest. Decorative; the count is beside it. */
 export function StampDots({ current, required }: { current: number; required: number }) {
   const n = Math.min(Math.max(required, 1), 12)
-  const full = current >= required
   return (
     <span className="inline-flex items-center gap-[3px]" aria-hidden="true">
       {Array.from({ length: n }, (_, i) => (
-        <span
-          key={i}
-          className={cx(
-            'size-2 rounded-full',
-            i < current ? (full ? 'bg-ok' : 'bg-brand') : 'border border-line-strong bg-surface',
-          )}
-        />
+        <span key={i} className={cx('size-2 rounded-full', i < current ? 'bg-brand' : 'border border-line-strong bg-surface')} />
       ))}
     </span>
   )
 }
 
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+export const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
 /** "DD-MM" -> "25 March". */
 export function birthdayText(b: string | null): string {
@@ -136,38 +124,50 @@ export function shortDate(iso: string, withYear: 'auto' | 'always' = 'auto'): st
   }).format(d)
 }
 
-/** A white panel with a heading, as in the design's right column. */
-export function Panel({
-  title,
-  right,
-  children,
-  className,
-}: {
-  title?: ReactNode
-  right?: ReactNode
-  children: ReactNode
-  className?: string
-}) {
-  return (
-    <section className={cx('min-w-0 rounded-card-lg border border-line bg-surface px-4 py-4 sm:px-5', className)}>
-      {(title || right) && (
-        <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-          {title && <h2 className="text-lg font-extrabold tracking-[-.01em]">{title}</h2>}
-          {right}
-        </div>
-      )}
-      {children}
-    </section>
-  )
-}
-
-/** The sentence a write left behind: the server's own words on a refusal. */
-export function writeError<T>(r: WriteResult<T>): string | null {
-  return r.kind === 'ok' ? null : r.message
-}
-
 /** "+447700900123" -> "07700900123": UK numbers as people write them. */
 export function phoneText(p: string | null): string | null {
   if (!p) return p
   return p.startsWith('+44') ? `0${p.slice(3)}` : p
+}
+
+/**
+ * A settings row: a bold label, a muted line under it, and the kit's switch on the
+ * right in the programme's brand blue. The switch is named by the label and
+ * described by the hint.
+ */
+export function SwitchRow({
+  label,
+  hint,
+  checked,
+  onChange,
+  disabled,
+}: {
+  label: string
+  hint: string
+  checked: boolean
+  onChange: (next: boolean) => void
+  disabled?: boolean
+}) {
+  const id = useId()
+  return (
+    <div className="flex items-center gap-4 border-t border-line-soft py-3.5">
+      <div className="min-w-0 flex-1">
+        <div className="text-base font-bold" aria-hidden="true">
+          {label}
+        </div>
+        <div id={`${id}-h`} className="text-sm text-ink-2">
+          {hint}
+        </div>
+      </div>
+      <Toggle
+        tone="brand"
+        checked={checked}
+        disabled={disabled}
+        describedBy={`${id}-h`}
+        onChange={onChange}
+        label={<span className="sr-only">{label}</span>}
+        className="flex-none"
+      />
+    </div>
+  )
 }

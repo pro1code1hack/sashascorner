@@ -38,7 +38,7 @@ export function RailColumn({ items, label, footer }: { items: readonly RailItem[
           >
             <span className="min-w-0 truncate">{item.label}</span>
             {item.count !== undefined && item.count !== null && (
-              <span className="fig flex-none text-xs opacity-60">{item.count}</span>
+              <span className={cx('fig flex-none text-xs', item.active ? 'text-brand-ink' : 'text-ink-2')}>{item.count}</span>
             )}
           </button>
         ),

@@ -23,7 +23,6 @@ Enum columns are `enum_col(...)` VARCHAR: adding a member is code only.
 
 from __future__ import annotations
 
-import enum
 from datetime import date, datetime
 from typing import TYPE_CHECKING, Any
 
@@ -43,68 +42,23 @@ from sqlalchemy.types import JSON
 
 from cafeops.db.base import Base
 from cafeops.db.models._common import UTCDateTime, enum_col, utcnow
+from cafeops.domain.enums import (
+    DiningOption,
+    OptionKind,
+    OptionLayout,
+    OrderStatus,
+    PaymentStatus,
+    ShopPaymentMethod,
+    UpsellPlacement,
+)
 
 if TYPE_CHECKING:
     from cafeops.db.models.media import MediaAsset
 
 
-# --------------------------------------------------------------------------
-# enums (CONTRACT §2)
-# --------------------------------------------------------------------------
-
-
-class DiningOption(enum.Enum):
-    TAKEAWAY = "TAKEAWAY"
-    EAT_IN = "EAT_IN"
-
-
-class OptionKind(enum.Enum):
-    SINGLE = "SINGLE"
-    MULTI = "MULTI"
-
-
-class OptionLayout(enum.Enum):
-    #: The name + price/kcal tile.
-    TILES = "TILES"
-    #: The coffee-bean style image card with name and tagline.
-    PHOTO_TILES = "PHOTO_TILES"
-    #: The "Customise" checkbox rows.
-    CHECKLIST = "CHECKLIST"
-
-
-class UpsellPlacement(enum.Enum):
-    ITEM_PAGE = "ITEM_PAGE"
-    BASKET = "BASKET"
-
-
-class OrderStatus(enum.Enum):
-    PENDING_PAYMENT = "PENDING_PAYMENT"
-    NEW = "NEW"
-    ACCEPTED = "ACCEPTED"
-    PREPARING = "PREPARING"
-    READY = "READY"
-    COLLECTED = "COLLECTED"
-    CANCELLED = "CANCELLED"
-    REJECTED = "REJECTED"
-
-
-class ShopPaymentMethod(enum.Enum):
-    """The contract calls this `PaymentMethod`; `enums.PaymentMethod` (finance: how the
-    day's takings arrived) already owns that name, so the shop's carries a prefix.
-    `PaymentMethod` below is an alias for code written against the contract's name."""
-
-    COUNTER = "COUNTER"
-    ONLINE = "ONLINE"
-
-
+#: The enums live in `cafeops.domain.enums` (CONTRACT 2). `PaymentMethod` is the
+#: contract's name for `ShopPaymentMethod`, kept for code written against the contract.
 PaymentMethod = ShopPaymentMethod
-
-
-class PaymentStatus(enum.Enum):
-    UNPAID = "UNPAID"
-    PAID = "PAID"
-    REFUNDED = "REFUNDED"
-    FAILED = "FAILED"
 
 
 # --------------------------------------------------------------------------
@@ -153,6 +107,11 @@ class ShopSettings(Base):
     #: Collected orders stamp the member's card (§3.5).
     loyalty_stamps_online: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     notify_telegram: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    #: CONTRACT §3.5 / §10.J: off (the default) means a customer must be signed in with
+    #: their Rewards card to PLACE an order; browsing and quoting stay open to guests.
+    guest_orders: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="0"
+    )
     #: CONTRACT §3b: which `integrations/payments/providers` key takes online payment
     #: ("stripe" | "lightspeed"). Honoured only when that provider is configured.
     payment_provider: Mapped[str] = mapped_column(

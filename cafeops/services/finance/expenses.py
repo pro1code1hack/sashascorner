@@ -15,14 +15,15 @@ from datetime import date, datetime
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
-from cafeops.db.models.enums import (
+from cafeops.clock import utcnow
+from cafeops.db.models.finance import DirectorEntry, Expense, ExpenseCategory
+from cafeops.domain.enums import (
     DirectorEntryType,
     ExpenseGroup,
     ExpenseKind,
     ExpenseMethod,
     FinanceSource,
 )
-from cafeops.db.models.finance import DirectorEntry, Expense, ExpenseCategory
 from cafeops.services.finance.common import (
     UNSET,
     FinanceConflict,
@@ -31,7 +32,6 @@ from cafeops.services.finance.common import (
     clean_text,
     editor,
     month_range,
-    now_utc,
     require_pence,
 )
 from cafeops.services.finance.common import Unset as _Unset
@@ -216,7 +216,7 @@ def sync_director_mirror(session: Session, e: Expense) -> DirectorEntry | None:
     wants = e.kind is ExpenseKind.DRAWINGS and e.deleted_at is None
     if not wants:
         if mirror is not None and mirror.deleted_at is None:
-            mirror.deleted_at = now_utc()
+            mirror.deleted_at = utcnow()
             mirror.updated_by = e.updated_by
         return None
     if mirror is None:
@@ -315,7 +315,7 @@ def update_expense(
     if not isinstance(needs_review, _Unset):
         e.needs_review = needs_review
     e.updated_by = editor(operator)
-    e.updated_at = now_utc()
+    e.updated_at = utcnow()
     session.flush()
     sync_director_mirror(session, e)
     return e
@@ -329,7 +329,7 @@ def _undo_token(e: Expense) -> str:
 def delete_expense(session: Session, expense_id: int, *, operator: str | None = None) -> str:
     """Soft delete. Returns the undo token that `restore_expense` needs."""
     e = _get(session, expense_id)
-    e.deleted_at = now_utc()
+    e.deleted_at = utcnow()
     e.updated_by = editor(operator)
     session.flush()
     sync_director_mirror(session, e)

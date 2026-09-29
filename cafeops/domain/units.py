@@ -25,7 +25,10 @@ __all__ = [
     "convert",
     "dimension_of",
     "format_qty",
+    "gbp_code",
     "parse_unit",
+    "pounds",
+    "pounds_figure",
     "same_dimension",
 ]
 
@@ -179,3 +182,31 @@ def format_qty(qty: Decimal, unit: Unit) -> str:
     if unit in (Unit.ML, Unit.G):
         return f"{qty.quantize(Decimal('0.1'))} {UNIT_LABELS[unit]}"
     return f"{qty.quantize(Decimal('0.001'))} {UNIT_LABELS[unit]}"
+
+
+def pounds(pence: int | Decimal) -> str:
+    """Integer pence -> "£12.34". Integer arithmetic only; money never becomes a float
+    (invariants 8 and 11). A Decimal is accepted for callers that hold a pence total
+    as one, and is rounded to whole pence before formatting."""
+    value = pence if isinstance(pence, int) else int(pence.to_integral_value())
+    sign = "-" if value < 0 else ""
+    whole, part = divmod(abs(value), 100)
+    return f"{sign}£{whole}.{part:02d}"
+
+
+def pounds_figure(pence: int | Decimal, *, grouped: bool = False) -> str:
+    """Integer pence -> "12.34" (no symbol): a CSV cell, or the number after "GBP".
+
+    `grouped` adds thousands separators ("1,234.56"). A negative is "-1.50". Integer
+    arithmetic only (invariant 11); the `f"{pence / 100:.2f}"` this replaces went
+    through a float. A Decimal (a total of fractional pence) is rounded to whole pence
+    as `pounds` rounds it, which is also what `f"{Decimal / 100:.2f}"` did."""
+    value = pence if isinstance(pence, int) else int(pence.to_integral_value())
+    sign = "-" if value < 0 else ""
+    whole, part = divmod(abs(value), 100)
+    return f"{sign}{whole:,}.{part:02d}" if grouped else f"{sign}{whole}.{part:02d}"
+
+
+def gbp_code(pence: int | Decimal, *, grouped: bool = False) -> str:
+    """Integer pence -> "GBP 12.34", the CLI's plain-ASCII style ("GBP -1.50")."""
+    return f"GBP {pounds_figure(pence, grouped=grouped)}"

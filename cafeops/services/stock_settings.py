@@ -46,6 +46,7 @@ from cafeops.config import settings
 from cafeops.db.models import Ingredient, IngredientTierChange, ParLevel, Tier, Unit
 from cafeops.db.repositories.drift import SqlDriftRepository
 from cafeops.domain.tiers import clean_streak, would_clear_gate
+from cafeops.services.actor import require_actor
 
 __all__ = [
     "ParFloorChange",
@@ -127,8 +128,7 @@ def change_tier(
     at: datetime | None = None,
 ) -> TierChange:
     """Move an ingredient between tiers. Promotion to A only on earned evidence."""
-    if not changed_by.strip():
-        raise SettingRefused("changed_by is required: a tier move is a decision somebody made")
+    who = require_actor(changed_by, error=SettingRefused)
     # The owner dropped the "why" prompt (DECISIONS 22): a tier tap is the decision.
     clean_reason = reason.strip() or "Changed on the ingredient's stock page"
     at = at or datetime.now(UTC)
@@ -165,7 +165,7 @@ def change_tier(
         tier_before=before,
         tier_after=tier,
         changed_at=at,
-        changed_by=changed_by.strip()[:120],
+        changed_by=who,
         reason=clean_reason[:_REASON_MAX],
         would_clear_gate=evidence.would_clear_gate,
     )
@@ -216,8 +216,7 @@ def set_par_floor(
     """Set "Reorder at": `par_level.min_qty`. Never touches `auto_order_enabled`."""
     if isinstance(min_qty, float):
         raise TypeError("min_qty must be Decimal, not float (invariant 11)")
-    if not changed_by.strip():
-        raise SettingRefused("changed_by is required: a reorder level is a decision somebody made")
+    who = require_actor(changed_by, error=SettingRefused)
     if min_qty < 0:
         raise SettingRefused(f"a reorder level cannot be negative, got {min_qty}")
     at = at or datetime.now(UTC)
@@ -248,7 +247,7 @@ def set_par_floor(
         )
     before = par.min_qty
     par.min_qty = min_qty
-    par.min_qty_set_by = changed_by.strip()[:120]
+    par.min_qty_set_by = who
     par.min_qty_set_at = at
     session.flush()
     return ParFloorChange(

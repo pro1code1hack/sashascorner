@@ -25,8 +25,9 @@ from datetime import date
 from sqlalchemy.orm import Session, sessionmaker
 
 from cafeops.bot import formatters as fmt
+from cafeops.bot.deps import run_sync_factory
 from cafeops.bot.notify import Notifier, notifier_for_settings
-from cafeops.db.base import SessionFactory, session_scope
+from cafeops.db.base import session_factory
 from cafeops.services.loyalty import alerts, birthdays, campaigns, retention, stamping, stats
 from cafeops.services.loyalty.common import now_utc
 from cafeops.services.loyalty.messaging import Outgoing, deliver_all
@@ -45,7 +46,7 @@ log = logging.getLogger("cafeops.jobs.loyalty")
 
 
 def _factory(factory: sessionmaker[Session] | None) -> sessionmaker[Session]:
-    return factory or SessionFactory
+    return factory or session_factory()
 
 
 async def job_wallet_outbox(factory: sessionmaker[Session] | None = None) -> None:
@@ -65,11 +66,8 @@ async def flush_alerts(
 ) -> int:
     """Send stored alerts that have not been sent. Marks each only after it went."""
 
-    def _pending() -> list[alerts.AlertView]:
-        with session_scope(_factory(factory)) as session:
-            return alerts.pending(session)
-
-    rows = await asyncio.to_thread(_pending)
+    run = run_sync_factory(factory)
+    rows: list[alerts.AlertView] = await run(alerts.pending)
     if not rows:
         return 0
     notifier = notifier or notifier_for_settings()
@@ -77,33 +75,28 @@ async def flush_alerts(
     # it, and re-logging the same alert every five minutes would bury the new ones.
     await notifier.send(fmt.alerts(rows))
 
-    def _mark() -> None:
-        with session_scope(_factory(factory)) as session:
-            alerts.mark_notified(session, [r.id for r in rows])
-
-    await asyncio.to_thread(_mark)
+    await run(alerts.mark_notified, [r.id for r in rows])
     return len(rows)
 
 
 async def job_loyalty_campaigns(
     factory: sessionmaker[Session] | None = None, notifier: Notifier | None = None
 ) -> None:
-    def _run() -> tuple[list[str], list[Outgoing], int]:
+    def _run(session: Session) -> tuple[list[str], list[Outgoing], int]:
         lines: list[str] = []
         outgoing: list[Outgoing] = []
-        with session_scope(_factory(factory)) as session:
-            now = now_utc()
-            for campaign_id in campaigns.due_campaigns(session, now=now):
-                result = campaigns.send_campaign(session, campaign_id, now=now)
-                outgoing.extend(result.outgoing)
-                lines.append(
-                    f"campaign {campaign_id}: {result.recipients} recipient(s), "
-                    f"{result.skipped_over_limit} skipped at the monthly promo limit"
-                )
-            returned = campaigns.mark_returns(session, now=now)
+        now = now_utc()
+        for campaign_id in campaigns.due_campaigns(session, now=now):
+            result = campaigns.send_campaign(session, campaign_id, now=now)
+            outgoing.extend(result.outgoing)
+            lines.append(
+                f"campaign {campaign_id}: {result.recipients} recipient(s), "
+                f"{result.skipped_over_limit} skipped at the monthly promo limit"
+            )
+        returned = campaigns.mark_returns(session, now=now)
         return lines, outgoing, returned
 
-    lines, outgoing, returned = await asyncio.to_thread(_run)
+    lines, outgoing, returned = await run_sync_factory(factory)(_run)
     for line in lines:
         log.info("loyalty_campaigns: %s", line)
     if returned:
@@ -120,13 +113,10 @@ async def job_loyalty_birthdays(factory: sessionmaker[Session] | None = None) ->
     """Also the daily stamp expiry (BACKOFFICE-V2 §4): cards untouched for the
     programme's `stamps_expire_months` reset to zero. Idempotent -- a reset card is empty."""
 
-    def _run() -> tuple[birthdays.BirthdayReport, int]:
-        with session_scope(_factory(factory)) as session:
-            report = birthdays.run_birthdays(session)
-            expired = stamping.expire_stamps(session)
-            return report, expired
+    def _run(session: Session) -> tuple[birthdays.BirthdayReport, int]:
+        return birthdays.run_birthdays(session), stamping.expire_stamps(session)
 
-    report, expired = await asyncio.to_thread(_run)
+    report, expired = await run_sync_factory(factory)(_run)
     log.info(report.summary())
     if expired:
         log.info("loyalty_birthdays: %s card(s) reset after their stamps expired", expired)
@@ -135,11 +125,7 @@ async def job_loyalty_birthdays(factory: sessionmaker[Session] | None = None) ->
 
 
 async def job_loyalty_retention(factory: sessionmaker[Session] | None = None) -> None:
-    def _run() -> retention.RetentionReport:
-        with session_scope(_factory(factory)) as session:
-            return retention.run_retention(session)
-
-    report = await asyncio.to_thread(_run)
+    report = await run_sync_factory(factory)(retention.run_retention)
     log.info(report.summary())
     if report.erased:
         await job_wallet_outbox(factory)
@@ -150,9 +136,5 @@ async def job_loyalty_daily_summary(
     notifier: Notifier | None = None,
     day: date | None = None,
 ) -> None:
-    def _run() -> stats.DailySummary:
-        with session_scope(_factory(factory)) as session:
-            return stats.daily_summary(session, day=day)
-
-    summary = await asyncio.to_thread(_run)
+    summary = await run_sync_factory(factory)(stats.daily_summary, day=day)
     await (notifier or notifier_for_settings()).send(fmt.daily_summary(summary))

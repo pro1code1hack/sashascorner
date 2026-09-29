@@ -13,7 +13,9 @@ from datetime import date, datetime
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from cafeops.clock import utcnow
 from cafeops.db.models.finance import CashCount, Expense, ExpenseCategory
+from cafeops.domain.units import pounds_figure
 from cafeops.services.finance.common import (
     FinanceRefused,
     Period,
@@ -21,7 +23,6 @@ from cafeops.services.finance.common import (
     month_key,
     month_label,
     month_range,
-    now_utc,
     ordinal,
 )
 from cafeops.services.finance.periods import (
@@ -232,11 +233,6 @@ class FinanceAlerts:
     takings_last_imported_at: datetime | None
 
 
-def _gbp(pence: int) -> str:
-    whole, part = divmod(abs(pence), 100)
-    return f"£{whole:,}.{part:02d}"
-
-
 def finance_alerts(session: Session) -> FinanceAlerts:
     """Newest unexplained cash count out by more than tolerance, and takings freshness."""
     tolerance = finance_settings(session).cash_tolerance_pence
@@ -260,7 +256,8 @@ def finance_alerts(session: Session) -> FinanceAlerts:
             diff_pence=newest.diff_pence,
             direction=direction,
             message=(
-                f"Cash was {_gbp(newest.diff_pence)} {direction} on {when} "
+                f"Cash was £{pounds_figure(abs(newest.diff_pence), grouped=True)} "
+                f"{direction} on {when} "
                 "and nobody has explained it yet."
             ),
             open_count=len(open_rows),
@@ -315,6 +312,6 @@ def update_settings(
             raise FinanceRefused("card_fee_bp: 0 to 1000 basis points (0% to 10%)")
         s.card_fee_bp = card_fee_bp
     s.updated_by = operator
-    s.updated_at = now_utc()
+    s.updated_at = utcnow()
     session.flush()
     return read_settings(session)

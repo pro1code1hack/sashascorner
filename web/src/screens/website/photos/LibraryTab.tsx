@@ -5,7 +5,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import type { DragEvent } from 'react'
-import { Button, ConfirmTwiceButton, Field, Input, cx } from '../../../components/ui'
+import { Button, ConfirmTwiceButton, Field, Input, SectionHead, cx } from '../../../components/ui'
 import { useInvalidateWebsite } from '../../../lib/website-api'
 import { usePhotos } from './context'
 import { dropMediaFromDrafts } from './drafts'
@@ -90,14 +90,18 @@ export function LibraryTab({ onPlace }: { onPlace: (key: string) => void }) {
       </div>
       <UploadList rows={up.rows} label="Uploads" />
 
-      <div className="flex items-baseline justify-between gap-3 border-b border-line pb-2">
-        <h2 className="text-label font-bold uppercase tracking-[.05em] text-ink-2">In the library</h2>
-        {n > 0 && (
-          <span className="fig text-base text-ink-2">
-            {n} {n === 1 ? 'photo' : 'photos'}
-          </span>
-        )}
-      </div>
+      <SectionHead
+        className="border-b border-line pb-2"
+        right={
+          n > 0 ? (
+            <span className="fig text-base text-ink-2">
+              {n} {n === 1 ? 'photo' : 'photos'}
+            </span>
+          ) : undefined
+        }
+      >
+        In the library
+      </SectionHead>
       {n === 0 ? (
         <p className="text-base text-ink-2">No photos yet. Add a few above, then place them on the site.</p>
       ) : (
@@ -120,27 +124,16 @@ function MediaCard({ m, onPlace }: { m: Media; onPlace: (key: string) => void })
   const [state, setState] = useState<{ tone: 'busy' | 'ok' | 'bad'; text: string } | null>(null)
   const [refusal, setRefusal] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
-  const timer = useRef<number | null>(null)
   const editing = useRef(false)
 
   // Follow the server's copy unless the owner is typing in this box.
   useEffect(() => {
-    if (!editing.current && timer.current === null) setAlt(m.alt)
+    if (!editing.current) setAlt(m.alt)
   }, [m.alt])
 
-  useEffect(
-    () => () => {
-      if (timer.current !== null) window.clearTimeout(timer.current)
-    },
-    [],
-  )
-
-  const flush = async (value = alt) => {
-    if (timer.current !== null) {
-      window.clearTimeout(timer.current)
-      timer.current = null
-    }
-    const next = value.trim()
+  // Saved when the owner leaves the box or presses Enter, never mid-sentence.
+  const flush = async () => {
+    const next = alt.trim()
     if (next === m.alt) return
     setState({ tone: 'busy', text: 'Saving…' })
     const r = await patchAlt(m.id, next)
@@ -184,7 +177,7 @@ function MediaCard({ m, onPlace }: { m: Media; onPlace: (key: string) => void })
         <Field
           label={m.alt ? 'Description' : 'Description — needed'}
           error={state?.tone === 'bad' ? state.text : undefined}
-          hint={state && state.tone !== 'bad' ? state.text : undefined}
+          hint={state && state.tone !== 'bad' ? state.text : 'Saved when you leave the box or press Enter.'}
         >
           <Input
             type="text"
@@ -197,11 +190,8 @@ function MediaCard({ m, onPlace }: { m: Media; onPlace: (key: string) => void })
               editing.current = true
             }}
             onChange={(e) => {
-              const v = e.target.value
-              setAlt(v)
+              setAlt(e.target.value)
               setState(null)
-              if (timer.current !== null) window.clearTimeout(timer.current)
-              timer.current = window.setTimeout(() => void flush(v), 900)
             }}
             onBlur={() => {
               editing.current = false

@@ -15,7 +15,7 @@
  */
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { API_BASE, ApiError, LIVE, apiWrite, authHeaders, request, type WriteResult } from './api'
-import type { SiteSummary, WebsiteConnection } from './types/website'
+import type { Media, SiteSettings, SiteSummary, WebsiteConnection } from './types/website'
 
 export const WEBSITE_KEY = ['website'] as const
 
@@ -133,6 +133,69 @@ export function useWebsiteSummary() {
     staleTime: 60 * 1000,
     // The website may simply not be running; that is not worth a retry storm.
     retry: false,
+  })
+}
+
+/** Café details, hours, booking rules and closures. One query, one key, one staleTime, for every screen that reads it. */
+export const SETTINGS_KEY = [...WEBSITE_KEY, 'settings'] as const
+
+export function useSiteSettings() {
+  return useQuery({
+    queryKey: SETTINGS_KEY,
+    queryFn: () => siteGet<SiteSettings>('/settings'),
+    enabled: LIVE,
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+/* ------------------------------------------------------------- photos --- */
+
+type Raw = Record<string, unknown>
+const str = (v: unknown, d = '') => (typeof v === 'string' ? v : d)
+const num = (v: unknown, d = 0) => (typeof v === 'number' && Number.isFinite(v) ? v : d)
+
+/** `MediaOut.usage` arrives as `[{slot_key, position, label}]` (or bare keys); de-duplicated by slot. */
+function normUsage(v: unknown): Media['usage'] {
+  if (!Array.isArray(v)) return []
+  const seen = new Map<string, { slot_key: string; label: string | null }>()
+  for (const u of v) {
+    const key = typeof u === 'string' ? u : str((u as Raw)?.slot_key ?? (u as Raw)?.key)
+    if (!key || seen.has(key)) continue
+    const label = typeof u === 'object' && u !== null ? (u as Raw).label : null
+    seen.set(key, { slot_key: key, label: typeof label === 'string' ? label : null })
+  }
+  return [...seen.values()]
+}
+
+/** A library photo as the site sends it, with every field given a safe default. */
+export function normMedia(v: unknown): Media {
+  const r = (v ?? {}) as Raw
+  return {
+    id: num(r.id),
+    src: str(r.src),
+    srcset: str(r.srcset),
+    width: num(r.width),
+    height: num(r.height),
+    alt: str(r.alt),
+    original_name: str(r.original_name),
+    bytes: num(r.bytes),
+    blur: str(r.blur),
+    usage: normUsage(r.usage),
+  }
+}
+
+/** The photo library, under the one key Photos and Events share, so an upload reaches both. */
+export const MEDIA_KEY = [...WEBSITE_KEY, 'photos', 'media'] as const
+
+export function useMedia() {
+  return useQuery({
+    queryKey: MEDIA_KEY,
+    queryFn: async () => {
+      const v = await siteGet<unknown>('/media')
+      const arr = Array.isArray(v) ? v : ((v as Raw | null)?.items ?? [])
+      return Array.isArray(arr) ? arr.map(normMedia) : []
+    },
+    enabled: LIVE,
   })
 }
 

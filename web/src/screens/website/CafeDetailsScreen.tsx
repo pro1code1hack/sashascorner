@@ -23,23 +23,26 @@ import {
   ErrorBox,
   Field,
   Input,
+  LinkChip,
   Loading,
   PageBody,
   PageHeader,
+  SectionHead,
+  StatusLine,
   Toggle,
   cx,
 } from '../../components/ui'
+import type { Outcome } from '../../components/ui'
+import { REDUCED_MOTION_QUERY } from '../../lib/media'
 import { href } from '../../lib/router'
-import { livePageUrl, useInvalidateWebsite, useWebsiteConnection } from '../../lib/website-api'
+import { SETTINGS_KEY, livePageUrl, useInvalidateWebsite, useSiteSettings, useWebsiteConnection } from '../../lib/website-api'
 import type { BookingRules, Closure, SiteSettings } from '../../lib/types/website'
-import { WebsiteGate } from './shared'
-import { SETTINGS_KEY, longDate, putSettings, todayISO, useDraft, useSiteSettings } from './details-lib'
+import { WD_LONG as WEEKDAYS, longDate, todayISO } from './dates'
+import { putSettings, useDraft } from './details-lib'
 import type { PutResult, SettingsPut } from './details-lib'
-
-const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+import { WebsiteGate } from './shared'
 
 type Errors = Record<string, string>
-type Outcome = { tone: 'ok' | 'bad'; text: string } | null
 
 /* ------------------------------------------------------------ plumbing --- */
 
@@ -65,7 +68,7 @@ function useSectionSave() {
   const qc = useQueryClient()
   const invalidate = useInvalidateWebsite()
   const [busy, setBusy] = useState(false)
-  const [outcome, setOutcome] = useState<Outcome>(null)
+  const [outcome, setOutcome] = useState<Outcome | null>(null)
   const [errors, setErrors] = useState<Errors>({})
 
   async function save(
@@ -82,7 +85,7 @@ function useSectionSave() {
     if (r.kind === 'ok') {
       qc.setQueryData(SETTINGS_KEY, r.data)
       void invalidate()
-      setOutcome({ tone: 'ok', text: okText })
+      setOutcome({ kind: 'ok', text: okText })
       return r.data
     }
     if (r.kind === 'invalid') {
@@ -93,73 +96,59 @@ function useSectionSave() {
         else other.push(v)
       }
       setErrors(mine)
-      setOutcome({ tone: 'bad', text: other.length ? other.join(' ') : 'Check the highlighted field.' })
+      setOutcome({ kind: 'error', text: other.length ? other.join(' ') : 'Check the highlighted field.' })
       return null
     }
-    setOutcome({ tone: 'bad', text: r.message })
+    setOutcome({ kind: 'error', text: r.message })
     return null
   }
 
   /** Client-side validation failed before sending. */
   function refuse(errs: Errors, text = 'Check the highlighted field.') {
     setErrors(errs)
-    setOutcome({ tone: 'bad', text })
+    setOutcome({ kind: 'error', text })
   }
 
   /** Typing again retires a "Saved" line (a refusal stays until the next try). */
   function clear() {
-    setOutcome((o) => (o?.tone === 'ok' ? null : o))
+    setOutcome((o) => (o?.kind === 'ok' ? null : o))
   }
 
   return { busy, outcome, errors, save, refuse, clear }
 }
 
-function Section({ id, title, hint, children }: { id: string; title: string; hint: ReactNode; children: ReactNode }) {
+/** A section is a focus target (tabIndex -1) so the page's table of contents can land on it, not only scroll to it. */
+function Section({ id, title, hint, children }: { id: string; title: string; hint?: ReactNode; children: ReactNode }) {
   return (
     <section
       id={id}
+      tabIndex={-1}
       aria-labelledby={`${id}-h`}
-      className="min-w-0 scroll-mt-4 rounded-card-lg border border-line bg-surface px-4 py-4 sm:px-5"
+      className="min-w-0 scroll-mt-4 rounded-card-lg border border-line bg-surface px-4 py-4 outline-none focus-visible:ring-2 focus-visible:ring-brand sm:px-5"
     >
-      <h2 id={`${id}-h`} className="text-lg font-extrabold tracking-[-.01em]">
-        {title}
-      </h2>
-      <p className="mt-0.5 text-sm text-ink-2">{hint}</p>
+      <SectionHead>
+        <span id={`${id}-h`}>{title}</span>
+      </SectionHead>
+      {hint && <p className="mt-0.5 text-sm text-ink-2">{hint}</p>}
       {children}
     </section>
   )
 }
 
-function OutcomeText({ outcome }: { outcome: Outcome }) {
-  if (!outcome) return null
-  return (
-    <p
-      role={outcome.tone === 'bad' ? 'alert' : 'status'}
-      className={cx('text-sm', outcome.tone === 'bad' ? 'font-semibold text-bad-ink' : 'text-ok-ink')}
-    >
-      {outcome.tone === 'ok' && <span aria-hidden="true">✓ </span>}
-      {outcome.text}
-    </p>
-  )
-}
-
-/** The Save button, and what happened, at the foot of a section. */
-function SaveRow({ label, busy, dirty, outcome }: { label: string; busy: boolean; dirty: boolean; outcome: Outcome }) {
+/** The Save button, and what happened, at the foot of a section. "Unsaved changes." fills the same line while there is nothing newer to say. */
+function SaveRow({ label, busy, dirty, outcome }: { label: string; busy: boolean; dirty: boolean; outcome: Outcome | null }) {
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-line pt-4">
       <Button type="submit" variant="primary" size="sm" pending={busy} pendingLabel="Saving…" className="max-sm:min-h-11">
         {label}
       </Button>
-      {outcome ? (
-        <OutcomeText outcome={outcome} />
-      ) : (
-        <p role="status" className="text-sm text-ink-2">
-          {dirty ? 'Unsaved changes.' : ''}
-        </p>
-      )}
+      <StatusLine outcome={outcome ?? (dirty ? { kind: 'info', text: 'Unsaved changes.' } : null)} />
     </div>
   )
 }
+
+/** A map coordinate: `inputMode="text"` on purpose, since the phone's decimal keypad has no minus and Dundee's longitude is negative. */
+const COORD_PATTERN = '-?[0-9]{1,3}([.,][0-9]+)?'
 
 /* ------------------------------------------------------------- details --- */
 
@@ -210,7 +199,7 @@ const DETAIL_KEYS: Record<keyof DetailsForm, string> = {
 }
 
 function coord(t: string, limit: number): number | null {
-  const v = t.trim()
+  const v = t.trim().replace(',', '.')
   if (!/^-?\d{1,3}(\.\d+)?$/.test(v)) return null
   const n = Number(v)
   return Math.abs(n) <= limit ? n : null
@@ -281,11 +270,11 @@ function DetailsSection({ s }: { s: SiteSettings }) {
         <Field label="Postcode" error={err('postcode')}>
           <Input value={f.postcode} onChange={set('postcode')} />
         </Field>
-        <Field label="Map pin: latitude" hint="Where the map on the Visit page points." error={err('lat')}>
-          <Input numeric value={f.lat} onChange={set('lat')} />
+        <Field label="Map pin: latitude" hint="Where the map on the Visit page points. From −90 to 90." error={err('lat')}>
+          <Input inputMode="text" pattern={COORD_PATTERN} autoComplete="off" spellCheck={false} className="fig" value={f.lat} onChange={set('lat')} />
         </Field>
-        <Field label="Map pin: longitude" hint="In Google Maps, right-click the café to copy both." error={err('lng')}>
-          <Input numeric value={f.lng} onChange={set('lng')} />
+        <Field label="Map pin: longitude" hint="In Google Maps, right-click the café to copy both. From −180 to 180." error={err('lng')}>
+          <Input inputMode="text" pattern={COORD_PATTERN} autoComplete="off" spellCheck={false} className="fig" value={f.lng} onChange={set('lng')} />
         </Field>
         <Field label="Instagram link" error={err('instagram')} className="sm:col-span-2">
           <Input type="url" value={f.instagram} onChange={set('instagram')} placeholder="https://www.instagram.com/…" />
@@ -618,7 +607,7 @@ function ClosuresSection({ s }: { s: SiteSettings }) {
           >
             Add closure
           </Button>
-          <OutcomeText outcome={w.outcome} />
+          <StatusLine outcome={w.outcome} />
         </div>
       </form>
     </Section>
@@ -630,9 +619,9 @@ function ClosuresSection({ s }: { s: SiteSettings }) {
 function SignInAndNotices({ s }: { s: SiteSettings }) {
   return (
     <section aria-labelledby="set-about-h" className="min-w-0 rounded-card-lg border border-line bg-surface px-4 py-4 sm:px-5">
-      <h2 id="set-about-h" className="text-lg font-extrabold tracking-[-.01em]">
-        Sign-in and notices
-      </h2>
+      <SectionHead>
+        <span id="set-about-h">Sign-in and notices</span>
+      </SectionHead>
       <dl className="mt-3 grid grid-cols-1 gap-x-5 gap-y-1 text-base sm:grid-cols-[9rem_minmax(0,1fr)] sm:gap-y-3">
         <dt className="font-bold text-ink-2">Password</dt>
         <dd className="mb-2 sm:mb-0">
@@ -657,24 +646,28 @@ const TOC = [
   { id: 'set-closures', label: 'Closures' },
 ]
 
+/** Scroll to a section and move focus into it, as photos/model.ts `goToSlot` does. */
+function goToSection(id: string) {
+  const el = document.getElementById(id)
+  if (!el) return
+  const reduce = window.matchMedia(REDUCED_MOTION_QUERY).matches
+  el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' })
+  el.focus({ preventScroll: true })
+}
+
 function Body() {
   const q = useSiteSettings()
   if (q.isPending) return <Loading what="Reading the café’s settings" />
   if (q.isError) return <ErrorBox error={q.error} what="the café’s settings" />
   const s = q.data
   return (
-    <div className="flex max-w-[820px] flex-col gap-5">
+    <div className="mx-auto flex w-full max-w-[820px] flex-col gap-5">
       {/* The app routes on the hash, so these scroll rather than link. */}
       <nav aria-label="Sections on this page" className="flex flex-wrap gap-2">
         {TOC.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => document.getElementById(t.id)?.scrollIntoView({ block: 'start' })}
-            className="inline-flex min-h-11 items-center rounded-full border border-line-control bg-surface px-4 text-base font-semibold outline-none hover:bg-canvas focus-visible:edge-brand sm:min-h-9"
-          >
+          <LinkChip key={t.id} onClick={() => goToSection(t.id)}>
             {t.label}
-          </button>
+          </LinkChip>
         ))}
       </nav>
       <DetailsSection s={s} />
@@ -696,7 +689,7 @@ export function CafeDetailsScreen() {
         subtitle="What the website says about the café, and how bookings work."
         actions={
           visit && (
-            <a href={visit} target="_blank" rel="noreferrer" className="text-base">
+            <a href={visit} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center text-base sm:min-h-0">
               See the Visit page<span className="sr-only"> (opens in a new tab)</span>
             </a>
           )

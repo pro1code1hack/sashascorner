@@ -9,19 +9,23 @@
  * than inventing a column.
  */
 import { useState } from 'react'
-import { Empty, ErrorBox, Loading, Segmented, cx } from '../../components/ui'
+import { Empty, ErrorBox, Loading, Segmented, TBody, Td, Th, THead, Table, Tr } from '../../components/ui'
 import { Pagination } from '../../components/ui/Pagination'
 import { dayShort, stamp } from '../../lib/format'
 import { useItemSales } from '../../lib/menu-api'
 import type { SaleChannel } from '../../lib/types/menu'
+import { Figures } from '../money/filters'
 import { gbp, qtyText, sizeLabel } from './common/figures'
 
 const CHANNEL: Record<SaleChannel, string> = {
   EPOS: 'Till',
+  CASH: 'Cash (off till)',
   DELIVEROO: 'Deliveroo',
   JUST_EAT: 'Just Eat',
+  WEB: 'Online order',
   OTHER: 'Other',
 }
+const channelWord = (c: string) => CHANNEL[c as SaleChannel] ?? c
 
 export function ItemSales({
   menuItemId,
@@ -72,55 +76,53 @@ export function ItemSales({
       )}
       {d && d.total_rows > 0 && (
         <>
-          <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <Fig label="Sold" value={qtyText(d.units)} />
-            <Fig label="Taken" value={gbp(d.gross_pence)} />
-            <Fig label="First sale" value={dayShort(d.first_sold_at)} />
-            <Fig label="Last sale" value={dayShort(d.last_sold_at)} />
-          </dl>
+          <Figures
+            className="border-t"
+            items={[
+              { label: 'Sold', value: qtyText(d.units), strong: true },
+              { label: 'Taken', value: gbp(d.gross_pence) },
+              { label: 'First sale', value: dayShort(d.first_sold_at) },
+              { label: 'Last sale', value: dayShort(d.last_sold_at) },
+            ]}
+          />
           <p className="text-sm text-ink-2">
             {Object.entries(d.by_channel)
-              .map(([c, n]) => `${n} via ${CHANNEL[c as SaleChannel] ?? c}`)
+              .map(([c, n]) => `${n} via ${channelWord(c)}`)
               .join(' · ')}
             . {d.payment_note}
           </p>
-          <div className={cx('overflow-hidden rounded-card border border-line', q.isFetching && 'opacity-70')}>
-            <div className="hidden grid-cols-[170px_56px_56px_90px_100px_minmax(0,1fr)] gap-3 border-b border-line bg-canvas-2 px-3 py-2 text-label font-bold uppercase tracking-[.06em] text-ink-3 sm:grid">
-              <span>When</span>
-              <span>Size</span>
-              <span className="text-right">Qty</span>
-              <span className="text-right">Takings</span>
-              <span>Channel</span>
-              <span>Receipt</span>
-            </div>
-            <ul>
-              {d.rows.map((r) => (
-                <li
-                  key={r.sale_id}
-                  className={cx(
-                    'grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-0.5 border-b border-line-row px-3 py-2 text-base last:border-b-0 sm:grid-cols-[170px_56px_56px_90px_100px_minmax(0,1fr)] sm:items-center',
-                    r.voided && 'text-ink-2 line-through',
-                  )}
-                >
-                  <span className="fig">{stamp(r.sold_at)}</span>
-                  <span className="text-ink-2 sm:text-ink max-sm:hidden">{sizeLabel(r.size_code)}</span>
-                  <span className="fig text-right max-sm:hidden">{qtyText(r.qty)}</span>
-                  <span className={cx('fig text-right font-bold', r.is_refund && 'text-alert')}>{gbp(r.gross_pence)}</span>
-                  <span className="text-sm text-ink-2 sm:text-base sm:text-ink">
-                    <span className="sm:hidden">
-                      {sizeLabel(r.size_code)} · ×{qtyText(r.qty)} ·{' '}
-                    </span>
-                    {CHANNEL[r.channel] ?? r.channel}
-                  </span>
-                  <span className="min-w-0 truncate text-right text-sm text-ink-2 sm:text-left">
-                    {r.receipt_id}
-                    {r.voided && ' · voided'}
-                    {r.is_refund && ' · refund'}
-                    {r.modifier_names.length > 0 && ` · ${r.modifier_names.join(', ')}`}
-                  </span>
-                </li>
-              ))}
-            </ul>
+          <div className="rounded-card border border-line px-3" aria-busy={q.isFetching || undefined}>
+            <Table label="Till lines matched to this item" minWidth={620}>
+              <THead>
+                <tr>
+                  <Th>When</Th>
+                  <Th>Size</Th>
+                  <Th numeric>Qty</Th>
+                  <Th numeric>Takings</Th>
+                  <Th>Channel</Th>
+                  <Th>Receipt</Th>
+                </tr>
+              </THead>
+              <TBody>
+                {d.rows.map((r) => (
+                  <Tr key={r.sale_id} className={r.voided ? 'text-ink-2 line-through' : undefined}>
+                    <Td className="fig whitespace-nowrap">{stamp(r.sold_at)}</Td>
+                    <Td>{sizeLabel(r.size_code)}</Td>
+                    <Td numeric>{qtyText(r.qty)}</Td>
+                    <Td numeric strong>
+                      {gbp(r.gross_pence)}
+                    </Td>
+                    <Td>{channelWord(r.channel)}</Td>
+                    <Td secondary>
+                      {r.receipt_id}
+                      {r.voided && ' · voided'}
+                      {r.is_refund && ' · refund'}
+                      {r.modifier_names.length > 0 && ` · ${r.modifier_names.join(', ')}`}
+                    </Td>
+                  </Tr>
+                ))}
+              </TBody>
+            </Table>
           </div>
           <Pagination
             page={page}
@@ -138,14 +140,5 @@ export function ItemSales({
         </>
       )}
     </section>
-  )
-}
-
-function Fig({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-button bg-canvas px-3 py-2">
-      <dt className="text-xs font-bold text-ink-2">{label}</dt>
-      <dd className="fig text-lg font-extrabold">{value}</dd>
-    </div>
   )
 }

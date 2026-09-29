@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import or_, select
+from sqlalchemy import ColumnElement, or_, select
 from sqlalchemy.orm import Session
 
 from cafeops.db.models import (
@@ -76,6 +76,14 @@ def _qty_for_size(qty_by_size: dict[str, str] | None, size: SizeCode | None) -> 
     return Decimal(str(raw))
 
 
+#: The composition tables that carry effective dating. Spelled out rather than as a
+#: structural protocol: mypy will not match a class object against a protocol whose
+#: members are SQLAlchemy `Mapped` descriptors, and this is the whole list anyway.
+type _EffectiveDated = (
+    type[TemplateComponent] | type[VariantOption] | type[ManualRecipeLine] | type[ModifierVersion]
+)
+
+
 class SqlCompositionRepository:
     def __init__(self, session: Session) -> None:
         self.session = session
@@ -83,7 +91,9 @@ class SqlCompositionRepository:
     # -- effective-dated predicates ---------------------------------------
 
     @staticmethod
-    def _live(model: type, at: datetime):  # type: ignore[no-untyped-def]
+    def _live(
+        model: _EffectiveDated, at: datetime
+    ) -> tuple[ColumnElement[bool], ColumnElement[bool]]:
         return (
             model.effective_from <= at,
             or_(model.effective_to.is_(None), model.effective_to > at),

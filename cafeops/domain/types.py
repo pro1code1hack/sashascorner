@@ -4,9 +4,9 @@
 returns these dataclasses out. That is what makes `resolve_recipe` testable without
 a database, and it is non-negotiable.
 
-The enums live in db/models/enums.py and are re-exported here. They are plain
-`enum.Enum` with no ORM dependency, so re-exporting keeps one definition rather
-than two that drift apart.
+The enums live in `domain/enums.py` and are re-exported here. They are plain
+`enum.Enum` with no ORM dependency; `db/models/` imports them from the domain, never
+the other way round, which is what keeps `import cafeops.domain` free of SQLAlchemy.
 
 THIS FILE IS INTEGRATOR-OWNED. An agent that needs a new field or a changed
 signature raises it. It does not edit this file.
@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 
-from cafeops.db.models.enums import (
+from cafeops.domain.enums import (
     AgentToolOutcome,
     CapKind,
     ChannelSourceKind,

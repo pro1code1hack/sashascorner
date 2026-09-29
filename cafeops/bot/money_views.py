@@ -37,7 +37,7 @@ from cafeops.bot.viewmodels import (
 )
 from cafeops.config import settings
 from cafeops.db.models import Sale
-from cafeops.db.models.enums import (
+from cafeops.domain.enums import (
     MANUAL_SALE_CHANNELS,
     PaymentSourceKind,
     SaleChannel,
@@ -59,9 +59,6 @@ from cafeops.services.record_sale import (
     record_sale,
     search_menu_items,
     void_sale,
-)
-from cafeops.services.record_sale import (
-    recorded_sale as _recorded_sale,
 )
 from cafeops.services.transactions_csv import (
     CsvKind,
@@ -242,10 +239,6 @@ def void_recorded_sale(session: Session, *, sale_id: int, voided_by: str) -> Rec
     if receipt_id is None:
         raise LookupError(f"no sale {sale_id}")
     return _recorded_view(void_sale(session, receipt_id=receipt_id, voided_by=voided_by))
-
-
-def recorded_view(session: Session, *, receipt_id: str) -> RecordedSaleView:
-    return _recorded_view(_recorded_sale(session, receipt_id))
 
 
 # ------------------------------------------------------------------ cash ---

@@ -1,7 +1,7 @@
 // The shop's own bar under the site header: back link or store line on the left, the
 // account link and the basket pill on the right. Sticks to the top while scrolling.
-import { session } from '../api';
 import { gbp, plural } from '../format';
+import { member, signedIn } from '../member';
 import { paths, route } from '../router';
 import { basket, catalogue, config } from '../store';
 
@@ -16,7 +16,8 @@ export function TopBar({ back, title, onAllergens }: Props) {
   const count = basket.count();
   const sub = basket.subtotal(catalogue.value);
   const onBasket = route.value.name === 'basket';
-  const signedIn = !!session.token();
+  // The first name once /me has answered; 'Account' while a token is here but unproven.
+  const who = signedIn.value ? member.value?.first_name || 'Account' : 'Sign in';
   const cfg = config.value;
   return (
     <div class="sh-top">
@@ -43,12 +44,12 @@ export function TopBar({ back, title, onAllergens }: Props) {
               Allergens
             </button>
           )}
-          <a class="sh-top__link sh-top__account" href={paths.account()} aria-current={route.value.name === 'account' ? 'page' : undefined}>
+          <a class="sh-top__link sh-top__account" href={paths.account()} aria-current={route.value.name === 'account' ? 'page' : undefined} aria-label={signedIn.value ? `Your profile, ${who}` : undefined}>
             <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" focusable="false">
               <circle cx="10" cy="7" r="3.4" fill="none" stroke="currentColor" stroke-width="1.8" />
               <path d="M3.5 17.5c.8-3.3 3.4-5 6.5-5s5.7 1.7 6.5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
             </svg>
-            <span>{signedIn ? 'Account' : 'Sign in'}</span>
+            <span>{who}</span>
           </a>
           <a class={['sh-pill', count === 0 && 'is-empty'].filter(Boolean).join(' ')} href={paths.basket()} aria-current={onBasket ? 'page' : undefined}>
             <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true" focusable="false">

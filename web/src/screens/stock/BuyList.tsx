@@ -17,6 +17,7 @@ import type { ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   ActiveFilters,
+  Button,
   Empty,
   ErrorBox,
   FilterBar,
@@ -32,9 +33,11 @@ import {
   Th,
   TotalRow,
   Tr,
+  LinkButton,
   cx,
 } from '../../components/ui'
 import { gbp, plural } from '../../lib/format'
+import { href } from '../../lib/router'
 import { KEYS, stockApi } from '../../lib/stock-api'
 import type { Forecast } from '../../lib/types'
 import type { DraftOrdersResponse, StockRow, SupplierOrder } from '../../lib/types/stock'
@@ -195,7 +198,15 @@ export function BuyList({ stockRows }: { stockRows: StockRow[] }) {
   }, [all, showSkipped, supplier, category, search, sort])
 
   const shownLines = shown.filter((r) => r.kind === 'line')
+  // Invariant 8: an unpriced line is left out of the total and the total says so,
+  // rather than counting it as £0.
   const shownTotal = shownLines.reduce((a, r) => a + (r.lineTotal ?? 0), 0)
+  const unpriced = shownLines.filter((r) => r.lineTotal === null).length
+  const clearAll = () => {
+    setSupplier('all')
+    setCategory('all')
+    setSearch('')
+  }
 
   if (q.isPending) return <Loading what="Working out what to buy" />
   if (q.isError) return <ErrorBox error={q.error} what="the shopping list" />
@@ -271,11 +282,7 @@ export function BuyList({ stockRows }: { stockRows: StockRow[] }) {
         </FilterBar>
         <ActiveFilters
           chips={chips}
-          onClearAll={() => {
-            setSupplier('all')
-            setCategory('all')
-            setSearch('')
-          }}
+          onClearAll={clearAll}
           summary={`${shownLines.length} of ${lines.length} ${plural(lines.length, 'line')} to buy`}
         />
       </div>
@@ -291,9 +298,21 @@ export function BuyList({ stockRows }: { stockRows: StockRow[] }) {
 
       <div className="flex-none px-4 py-3.5 sm:px-5">
         {shown.length === 0 ? (
-          <Empty>{lines.length === 0 ? 'Nothing needs buying right now.' : 'Nothing in this view.'}</Empty>
+          <Empty
+            action={
+              lines.length === 0 ? (
+                <LinkButton href={href('/orders/drafts')}>See draft orders</LinkButton>
+              ) : (
+                <Button onClick={clearAll}>Clear filters</Button>
+              )
+            }
+          >
+            {lines.length === 0 ? 'Nothing needs buying right now.' : 'Nothing in this view.'}
+          </Empty>
         ) : (
-          <Table label="What to buy" minWidth={980} stickyHeader>
+          // No sticky header: the table scrolls sideways inside its own box, so a
+          // sticky <th> could never stick to the page scroll anyway.
+          <Table label="What to buy" minWidth={980}>
             <THead>
               <tr>
                 {sortHead('name', 'Ingredient')}
@@ -314,7 +333,10 @@ export function BuyList({ stockRows }: { stockRows: StockRow[] }) {
               <TotalRow>
                 <Td colSpan={7}>
                   {shownLines.length === lines.length ? 'All lines' : `${shownLines.length} lines shown`}
-                  <span className="ml-2 text-sm font-normal text-ink-2">before delivery fees</span>
+                  <span className="ml-2 text-sm font-normal text-ink-2">
+                    before delivery fees
+                    {unpriced > 0 && `; ${unpriced} unpriced ${plural(unpriced, 'line')} not included`}
+                  </span>
                 </Td>
                 <Td numeric>{gbp(shownTotal)}</Td>
                 <Td />
@@ -342,11 +364,7 @@ function BuyTr({ r, stock }: { r: BuyRow; stock: StockRow | undefined }) {
           <span className="font-semibold text-ink">Not bought</span>
           {r.cap && <span> · {r.cap}</span>}
         </Td>
-        <Td className="max-w-[320px] text-sm">
-          <span className="line-clamp-2" title={r.note ?? undefined}>
-            {r.note}
-          </span>
-        </Td>
+        <Td className="max-w-[320px] text-sm">{r.note}</Td>
       </Tr>
     )
   }
@@ -373,9 +391,7 @@ function BuyTr({ r, stock }: { r: BuyRow; stock: StockRow | undefined }) {
       <Td numeric className={lowConf ? 'whitespace-normal text-left text-sm text-ink-2' : undefined}>
         {lowConf ? (
           // Invariant 9: the reason in place of the number.
-          <span className="line-clamp-2 max-w-[200px]" title={r.forecast?.reasons.join(' ')}>
-            {r.forecast?.reasons[0] ?? 'not enough history to say'}
-          </span>
+          <span className="block max-w-[200px]">{r.forecast?.reasons.join(' ') || 'not enough history to say'}</span>
         ) : (
           <>
             <span className="italic">{humanQty(r.forecast?.qty ?? null, r.unit)}</span>
@@ -385,7 +401,8 @@ function BuyTr({ r, stock }: { r: BuyRow; stock: StockRow | undefined }) {
       </Td>
       <Td numeric>
         {r.need === null ? (
-          <span className="text-sm text-ink-2">withheld</span>
+          // The forecast was held back (reason in the column before), so no shortfall either.
+          <span className="text-sm text-ink-2">not worked out</span>
         ) : (
           <>
             <span className="italic">{humanQty(r.need, r.unit)}</span>
@@ -425,7 +442,7 @@ function Why({ r }: { r: BuyRow }) {
   if (r.note) parts.push(<span key="n">{r.note}</span>)
   if (parts.length === 0) return <span className="text-ink-3">covers {r.fullCoverDays ?? r.coverDays} days</span>
   return (
-    <span className="line-clamp-2" title={[r.capDetail, r.note].filter(Boolean).join(' · ')}>
+    <span className="block">
       {parts.map((p, i) => (
         <span key={i}>
           {i > 0 && ' · '}

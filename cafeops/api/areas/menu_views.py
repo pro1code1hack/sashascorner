@@ -103,6 +103,7 @@ from cafeops.api.areas.menu_schemas import (
     UsedInOut,
 )
 from cafeops.api.encoding import as_pence, as_qty, pct
+from cafeops.api.params import HTTP_422
 from cafeops.api.schemas import Cost, MaterialiseIn, MaterialiseResponse
 from cafeops.api.views.common import MISSING_COST_NOTE, cost_from_cached, cost_unknown
 from cafeops.api.views.proposals import materialise_proposal_view
@@ -127,7 +128,6 @@ from cafeops.db.models import (
     VariantAxis,
     VariantOption,
 )
-from cafeops.db.models.enums import MenuKind, Storage
 from cafeops.db.repositories.composition import SqlCompositionRepository
 from cafeops.db.repositories.menu_cost import CachedCost, SqlMenuCostRepository
 from cafeops.domain import composition as dc
@@ -138,6 +138,7 @@ from cafeops.domain.composition import (
     base_prices,
     resolve_recipe,
 )
+from cafeops.domain.enums import MenuKind, Storage
 from cafeops.domain.types import (
     ComponentRole,
     ModifierAction,
@@ -1127,7 +1128,7 @@ def menu_prep_view(session: Session, menu_item_id: int, body: PrepIn) -> PrepOut
             session, dict(body.seconds), actor=body.actor, is_estimate=body.is_estimate
         )
     except ValueError as exc:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
+        raise HTTPException(HTTP_422, detail=str(exc)) from exc
     return PrepOut(
         menu_item_ids=tuple(done.menu_item_ids),
         summary=done.summary,

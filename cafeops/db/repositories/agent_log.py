@@ -86,7 +86,11 @@ class SqlAgentLogRepository:
         refusal_reason: str | None = None,
         proposal_ref: str | None = None,
         model: str | None = None,
+        agent: str | None = None,
     ) -> int:
+        """INSERT one row and return its id. `agent` is part of the INSERT on purpose:
+        the audit engine (`agent/policies.audit_only_engine`) refuses any UPDATE of this
+        table, so a row cannot be stamped after it is written."""
         if not isinstance(outcome, AgentToolOutcome):
             raise TypeError(f"outcome must be an AgentToolOutcome, got {outcome!r}")
         if output is not None and len(output) > MAX_OUTPUT_CHARS:
@@ -101,6 +105,7 @@ class SqlAgentLogRepository:
             refusal_reason=refusal_reason,
             proposal_ref=proposal_ref,
             model=model,
+            agent=agent,
         )
         self.session.add(row)
         self.session.flush()

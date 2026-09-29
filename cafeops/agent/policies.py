@@ -24,9 +24,15 @@ single mistake removes the boundary:
    against a handler misusing an object it was given, and device 3 protects against
    a handler acquiring one some other way.
 
-4. **The audit writer can write to exactly one table.** The log needs a real write,
-   so it gets its own engine whose hook rejects any statement touching a table other
-   than `agent_action_log`. The one permitted write cannot become a second route in.
+4. **The audit writer can only append.** The log needs a real write, so it gets its
+   own engine whose hook permits exactly `INSERT INTO agent_action_log` and
+   `INSERT INTO agent_proposal` and refuses everything else -- an UPDATE or DELETE of
+   the log included, so the trail cannot be rewritten after the fact. The one
+   permitted write cannot become a second route in.
+
+The browser worker is a service process, not the model, and writes its own tables
+(`browser_job`, steps, media); its engine (`browser_worker_engine`) refuses any write
+targeting `FORBIDDEN_TABLES`, so invariant 10 is a property of its connection too.
 
 `stock_movement`, `purchase_order` and the composition tables are named explicitly
 in `FORBIDDEN_TABLES` as well -- redundant given device 3, and kept because a named
@@ -193,12 +199,31 @@ def read_only_engine(url: str | None = None) -> Engine:
     return engine
 
 
+#: The table a write statement targets: `INSERT [OR x] INTO t`, `REPLACE INTO t`,
+#: `UPDATE [OR x] t`, `DELETE FROM t`. Quoted or bare; schema prefixes are not used here.
+_WRITE_TARGET = re.compile(
+    r"^\s*(?:insert(?:\s+or\s+\w+)?\s+into|replace\s+into|update(?:\s+or\s+\w+)?"
+    r"|delete\s+from)\s+[\"`\[]?(\w+)",
+    re.IGNORECASE,
+)
+
+
+def write_target(sql: str) -> str | None:
+    """The lower-cased table a DML statement writes, or None when it cannot be read
+    off the statement (a CTE-prefixed write, DDL...). Pure; callers treat None as
+    "unidentified" and fail closed."""
+    match = _WRITE_TARGET.match(_COMMENTS.sub(" ", sql))
+    return match.group(1).lower() if match else None
+
+
 def audit_only_engine(url: str | None = None) -> Engine:
-    """An engine whose only permitted write is to `agent_action_log`.
+    """An engine whose only permitted writes are INSERTs into `agent_action_log` and
+    `agent_proposal`.
 
     The log has to be written for spec 9's "every action logged" to mean anything,
-    and that write must not become a second way in. A write naming any other table
-    is refused here, so the audit trail cannot be used as a side channel.
+    and that write must not become a second way in. Any other write -- an UPDATE or
+    DELETE of the log itself included, so the trail cannot be rewritten after the
+    fact -- is refused here, so the audit trail cannot be used as a side channel.
     """
     engine = create_db_engine(url or settings.database_url)
 
@@ -215,19 +240,16 @@ def audit_only_engine(url: str | None = None) -> Engine:
         if verdict == "read":
             return
         lowered = statement.lower()
-        if re.search(rf"\b{PROPOSAL_TABLE}\b", lowered):
-            if verdict != "insert" or not re.match(
-                rf"\s*insert\s+into\s+\"?{PROPOSAL_TABLE}\"?[\s(]", lowered
-            ):
-                raise WriteAttemptBlocked(
-                    f"the agent's audit connection may only INSERT into {PROPOSAL_TABLE}; "
-                    f"refused a {verdict.upper()}: {statement.strip()[:200]}. Deciding a "
-                    "proposal is a person's job (DECISIONS.md 7)."
-                )
-        elif AUDIT_TABLE not in lowered:
+        target = write_target(statement)
+        if target not in (AUDIT_TABLE, PROPOSAL_TABLE) or verdict != "insert":
+            # Both tables are append-only from here. The log row carries its `agent`
+            # in the INSERT (`SqlAgentLogRepository.log(agent=...)`), so there is no
+            # legitimate UPDATE left; a proposal's status is a person's decision, made
+            # through `services/agent_proposals.py` on the normal engine (DECISIONS.md 7).
             raise WriteAttemptBlocked(
-                f"the agent's audit connection may only write {AUDIT_TABLE}; refused a "
-                f"{verdict.upper()}: {statement.strip()[:200]}"
+                f"the agent's audit connection may only INSERT into {AUDIT_TABLE} or "
+                f"{PROPOSAL_TABLE}; refused a {verdict.upper()} on "
+                f"{target or 'an unidentified table'}: {statement.strip()[:200]}"
             )
         for table in FORBIDDEN_TABLES:
             if re.search(rf"\b{re.escape(table)}\b", lowered):
@@ -237,6 +259,55 @@ def audit_only_engine(url: str | None = None) -> Engine:
                 )
 
     return engine
+
+
+def refuse_forbidden_writes(engine: Engine, *, who: str) -> Engine:
+    """Install a `before_cursor_execute` hook refusing any write whose target is on
+    `FORBIDDEN_TABLES`, or whose target cannot be identified and names one.
+
+    For a *service process* that must write its own tables but never stock, orders
+    or composition -- the browser worker (invariant 10; ARCHITECTURE.md 8W). Reads
+    are untouched: the worker reads `supplier` and `purchase_order` to do its job.
+    """
+
+    @event.listens_for(engine, "before_cursor_execute")
+    def _refuse_forbidden(
+        _conn: Any,
+        _cursor: Any,
+        statement: str,
+        _parameters: Any,
+        _context: Any,
+        _executemany: bool,
+    ) -> None:
+        verdict = classify_statement(statement)
+        if verdict == "read":
+            return
+        target = write_target(statement)
+        if target is not None:
+            hit = target if target in FORBIDDEN_TABLES else None
+        else:
+            lowered = statement.lower()
+            hit = next(
+                (t for t in FORBIDDEN_TABLES if re.search(rf"\b{re.escape(t)}\b", lowered)),
+                None,
+            )
+        if hit is not None:
+            raise WriteAttemptBlocked(
+                f"{who} may not write {hit!r} (FORBIDDEN_TABLES, invariant 10); refused a "
+                f"{verdict.upper()}: {statement.strip()[:200]}"
+            )
+
+    return engine
+
+
+def browser_worker_engine(url: str | None = None) -> Engine:
+    """The browser worker's engine: an ordinary service engine that cannot write a
+    table on `FORBIDDEN_TABLES`. `cafeops browser-worker` builds its sessions on this,
+    so "the worker never touches stock, orders or composition" is a property of the
+    connection rather than of which modules happen to be imported."""
+    return refuse_forbidden_writes(
+        create_db_engine(url or settings.database_url), who="the browser worker"
+    )
 
 
 # ==========================================================================

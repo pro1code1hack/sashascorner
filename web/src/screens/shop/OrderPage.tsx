@@ -51,6 +51,9 @@ const PRINT_CSS = `
 export function OrderPage({ orderId }: { orderId: number }) {
   const q = useShopOrder(orderId, true)
   const o = q.data
+  useEffect(() => {
+    if (o) document.title = `Order ${o.code_display} · Sasha's Corner`
+  }, [o])
   const st = o ? statusWord(o.status) : null
   return (
     <>
@@ -182,22 +185,19 @@ function Statement({ o }: { o: OrderAdmin }) {
         {o.table ? <span className="font-bold text-ink"> · Table {o.table}</span> : ''} · {plural(unitsCount(o), 'item')}
       </p>
 
-      <div role="table" aria-label="Order lines">
-        <div role="row" className={cx(ROW, 'hidden border-b-2 border-ink pb-1.5 text-label font-bold uppercase tracking-[.06em] text-ink-3 compact:grid')}>
-          <span role="columnheader">Item</span>
-          <span role="columnheader" className="text-right">
-            Qty
-          </span>
-          <span role="columnheader" className="text-right">
-            Each
-          </span>
-          <span role="columnheader" className="text-right">
-            Total
-          </span>
-        </div>
+      {/* Not an ARIA table: the header row is visual only (it is gone on a phone), so
+          every figure carries its own hidden label and the phone sub-line spells the
+          arithmetic out in words. */}
+      <div className={cx(ROW, 'hidden border-b-2 border-ink pb-1.5 text-label font-bold uppercase tracking-[.06em] text-ink-3 compact:grid')} aria-hidden="true">
+        <span>Item</span>
+        <span className="text-right">Qty</span>
+        <span className="text-right">Each</span>
+        <span className="text-right">Total</span>
+      </div>
+      <ul aria-label="Order lines">
         {o.lines.map((l) => (
-          <div role="row" key={l.id} className={cx(ROW, 'items-center border-b-[1.5px] border-dashed border-line py-2.5 text-lg')}>
-            <span role="rowheader" className="min-w-0">
+          <li key={l.id} className={cx(ROW, 'items-center border-b-[1.5px] border-dashed border-line py-2.5 text-lg')}>
+            <span className="min-w-0">
               <span className="text-ink">
                 {l.name}
                 {l.size_label && <span className="text-ink-2"> ({l.size_label})</span>}
@@ -207,25 +207,30 @@ function Statement({ o }: { o: OrderAdmin }) {
                 {l.qty} × {gbp(l.unit_price_pence)} = <b className="text-ink">{gbp(l.line_total_pence)}</b>
               </span>
             </span>
-            <span role="cell" className="fig text-right">
+            <span className="fig text-right">
+              <span className="sr-only">Quantity </span>
               {l.qty}
             </span>
-            <span role="cell" className="fig hidden text-right text-ink-2 compact:block">
+            <span className="fig hidden text-right text-ink-2 compact:block">
+              <span className="sr-only">Each </span>
               {gbp(l.unit_price_pence)}
             </span>
-            <span role="cell" className="fig hidden text-right font-bold compact:block">
+            <span className="fig hidden text-right font-bold compact:block">
+              <span className="sr-only">Line total </span>
               {gbp(l.line_total_pence)}
             </span>
-          </div>
+          </li>
         ))}
+      </ul>
+      <dl>
         <SumRow label="Subtotal" value={gbp(o.subtotal_pence)} />
         {o.discount_pence > 0 && <SumRow label="Free drink (Rewards)" value={`−${gbp(o.discount_pence)}`} />}
         <SumRow label="Total" value={gbp(o.total_pence)} big />
-      </div>
+      </dl>
 
       <div className="mt-5 flex flex-wrap items-center gap-2">
         {act && (
-          <Button variant="primary" pending={w.pending} pendingLabel={act.pending} onClick={() => move(act.to)}>
+          <Button variant="primary" size="lg" pending={w.pending} pendingLabel={act.pending} onClick={() => move(act.to)}>
             {act.label}
             {act.to === 'COLLECTED' && o.payment_status !== 'PAID' && o.payment_method === 'COUNTER' ? ' · paid' : ''}
           </Button>
@@ -283,7 +288,7 @@ function Statement({ o }: { o: OrderAdmin }) {
             >
               {endingWords[ending].confirm}
             </ConfirmTwiceButton>
-            <Button variant="ghost" size="sm" onClick={done}>
+            <Button variant="ghost" onClick={done}>
               Keep it
             </Button>
           </div>
@@ -302,19 +307,17 @@ function Statement({ o }: { o: OrderAdmin }) {
   )
 }
 
+/** One line of the statement's sums; rendered inside a `<dl>`. */
 function SumRow({ label, value, big }: { label: string; value: ReactNode; big?: boolean }) {
   return (
     <div
-      role="row"
       className={cx(
         'grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 py-1.5',
         big ? 'border-b-2 border-ink text-xl font-bold' : 'border-b-[1.5px] border-dashed border-line text-lg',
       )}
     >
-      <span role="rowheader">{label}</span>
-      <span role="cell" className="fig text-right">
-        {value}
-      </span>
+      <dt>{label}</dt>
+      <dd className="fig text-right">{value}</dd>
     </div>
   )
 }
@@ -335,7 +338,8 @@ function PrintTicket({ o }: { o: OrderAdmin }) {
           {o.requested_local}
         </div>
         <div className="pt-meta">
-          {o.customer_name} · {diningWord(o.dining)}
+          {o.customer_name}
+          {o.member ? '' : ' · Guest'} · {diningWord(o.dining)}
           {o.table ? ` · Table ${o.table}` : ''}
         </div>
         <ul className="pt-lines">
@@ -393,7 +397,7 @@ function Customer({ o }: { o: OrderAdmin }) {
         {o.reward_id !== null && <span className="text-ink-2"> · free drink used here</span>}
       </>
     ) : (
-      <span className="text-ink-2">not a member</span>
+      <span className="text-ink-2">Guest</span>
     ),
   ])
   const channels = notifyChannels(o)
@@ -434,7 +438,9 @@ function StaffNote({ o }: { o: OrderAdmin }) {
   const dirty = text.trim() !== (o.staff_note ?? '').trim()
   return (
     <Side title="Staff note">
-      <Textarea rows={2} maxLength={300} className="min-h-0" placeholder="Only the counter sees this" value={text} onChange={(e) => setText(e.target.value)} />
+      <Field label="Note for the counter" hint="Only staff see this; the customer never does.">
+        <Textarea rows={2} maxLength={300} className="min-h-0" value={text} onChange={(e) => setText(e.target.value)} />
+      </Field>
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <Button
           size="sm"

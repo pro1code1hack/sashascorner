@@ -13,17 +13,18 @@
  * to new stamps only; nobody loses what they have.
  */
 import { useEffect, useMemo, useState } from 'react'
-import { Button, ErrorBox, Input, Loading, PageBody, Segmented } from '../../components/ui'
+import { Button, ErrorBox, Field, Input, Loading, PageBody, Segmented, StatusLine } from '../../components/ui'
+import type { Outcome } from '../../components/ui'
 import { href } from '../../lib/router'
 import { loyaltyApi, useInvalidateLoyalty, useProgramSettings } from '../../lib/loyalty-api'
 import type { ProgramSettings, ProgramSettingsIn, StickerKey } from '../../lib/types/loyalty'
-import { StaffAndDevices } from '../members/Staff'
-import { PIN_RE, Panel, PinInput } from '../members/shared'
 import { LoyaltyHeader } from './LoyaltyHeader'
+import { SwitchRow } from './members/bits'
 import { CardPreview } from './programme/CardPreview'
 import { JoiningLink } from './programme/JoiningLink'
 import { StickerSet } from './programme/StickerSet'
-import { SwitchRow } from './programme/Switch'
+import { PIN_RE, Panel, PinInput } from './shared'
+import { StaffAndDevices } from './Staff'
 import { STICKERS } from './stickers'
 
 interface Draft {
@@ -111,10 +112,11 @@ function ProgrammeBody({ program }: { program: ProgramSettings }) {
     ? STAMP_CHOICES
     : [...STAMP_CHOICES, saved.stamps_required].sort((a, b) => a - b)
   const { body, phrases } = diff(saved, draft)
+  const rewardMissing = draft.reward_text.trim() === ''
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="grid items-start gap-5 min-[820px]:grid-cols-[minmax(0,1.65fr)_minmax(17rem,1fr)]">
+      <div className="grid items-start gap-5 compact:grid-cols-[minmax(0,1.65fr)_minmax(17rem,1fr)]">
         <div className="flex min-w-0 flex-col gap-5">
           <Panel title="The deal" id="deal-h">
             <p className="-mt-2 mb-4 text-base text-ink-2">Changes apply to new stamps only; nobody loses what they have.</p>
@@ -131,16 +133,15 @@ function ProgrammeBody({ program }: { program: ProgramSettings }) {
                   className="flex w-full [&>button]:flex-1"
                 />
               </div>
-              <label className="flex min-w-0 flex-col gap-1.5">
-                <span className="text-sm font-bold">The reward</span>
+              <Field label="The reward" error={rewardMissing ? 'The reward needs a few words before it can be saved.' : undefined}>
                 <Input
                   value={draft.reward_text}
                   onChange={(e) => set('reward_text', e.target.value)}
                   maxLength={120}
                   placeholder="A free drink, any drink"
-                  missing={draft.reward_text.trim() === ''}
+                  missing={rewardMissing}
                 />
-              </label>
+              </Field>
             </div>
             <div className="mt-4">
               <SwitchRow
@@ -192,7 +193,7 @@ function ProgrammeBody({ program }: { program: ProgramSettings }) {
           </h2>
           <p className="text-base text-ink-2">Who can stamp on the scanner, with what PIN, and which tablets and phones it is paired to.</p>
         </div>
-        <StaffAndDevices />
+        <StaffAndDevices headingLevel="h3" />
       </section>
 
       <p className="pb-2">
@@ -209,7 +210,7 @@ function ProgrammeBody({ program }: { program: ProgramSettings }) {
           phrases={phrases}
           body={body}
           pinRequired={program.pin_required}
-          invalid={draft.reward_text.trim() === '' || draft.stickers.length === 0}
+          invalid={rewardMissing || draft.stickers.length === 0}
           onDiscard={() => setDraft(saved)}
         />
       )}
@@ -233,19 +234,19 @@ function SaveBar({
   const invalidate = useInvalidateLoyalty()
   const [pin, setPin] = useState('')
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [outcome, setOutcome] = useState<Outcome | null>(null)
   const pinOk = !pinRequired || PIN_RE.test(pin)
 
   const save = async () => {
     setBusy(true)
-    setError(null)
+    setOutcome(null)
     const r = await loyaltyApi.saveProgram(pinRequired ? { ...body, manager_pin: pin } : body)
     setBusy(false)
     if (r.kind === 'ok') {
       setPin('')
       await invalidate()
     } else {
-      setError(r.message)
+      setOutcome({ kind: 'error', text: r.message })
     }
   }
 
@@ -268,12 +269,8 @@ function SaveBar({
           {busy ? 'Saving…' : 'Save changes'}
         </Button>
       </div>
-      {invalid && <p className="mt-1.5 text-sm text-bad-ink">The reward needs a few words before it can be saved.</p>}
-      {error && (
-        <p role="alert" className="mt-1.5 text-sm text-bad-ink">
-          {error}
-        </p>
-      )}
+      {invalid && <p className="mt-1.5 text-sm text-ink-2">Fix the reward and keep at least one sticker on to save.</p>}
+      <StatusLine outcome={outcome} className="mt-1.5" />
     </div>
   )
 }

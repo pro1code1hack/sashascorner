@@ -8,10 +8,9 @@ each one is in a service (`services/auth.py`, `sync_runs.py`, `setup_status.py`,
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Any, cast
 
-from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -286,20 +285,18 @@ def decide_view(
     decided_by: str,
     note: str | None,
 ) -> DecisionOut:
-    try:
-        if accept:
-            outcome = proposals.accept_proposal(
-                session, proposal_id, decided_by=decided_by, note=note
-            )
-        else:
-            outcome = proposals.decline_proposal(
-                session, proposal_id, decided_by=decided_by, note=note
-            )
-    except proposals.ProposalConflict as exc:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail={"message": str(exc)}
-        ) from None
+    # `ProposalConflict` (already decided) propagates: the app answers 409.
+    if accept:
+        outcome = proposals.accept_proposal(session, proposal_id, decided_by=decided_by, note=note)
+    else:
+        outcome = proposals.decline_proposal(session, proposal_id, decided_by=decided_by, note=note)
     return _decision_out(outcome)
+
+
+def apply_failed_view(session: Session, failure: proposals.ProposalApplyFailed) -> DecisionOut:
+    """After the kind's service failed and its transaction was rolled back, record the
+    APPLY_FAILED decision in this fresh one (invariant 10: every action is logged)."""
+    return _decision_out(proposals.record_apply_failure(session, failure))
 
 
 def runs_view(
@@ -341,13 +338,3 @@ def runs_view(
         agents=tuple(AgentLabelOut(agent=a, label=label) for a, label in agents),
         has_more=has_more,
     )
-
-
-def parse_before(raw: str | None) -> datetime | None:
-    if raw is None:
-        return None
-    try:
-        parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
-    except ValueError as exc:
-        raise HTTPException(status_code=422, detail=f"{raw!r}: expected an ISO timestamp") from exc
-    return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)

@@ -12,7 +12,7 @@
  */
 import { useEffect } from 'react'
 import { navigate, useLocation } from '../../lib/router'
-import { Catalogue } from '../members/Catalogue'
+import { Catalogue } from './Catalogue'
 import { InsightsScreen } from './InsightsScreen'
 import { LoyaltyHeader } from './LoyaltyHeader'
 import { MemberCardPage } from './MemberCardPage'
@@ -61,8 +61,10 @@ function loyaltyPathFor(segments: string[]): string {
 export function LoyaltyRedirect() {
   const loc = useLocation()
   const target = loyaltyPathFor(loc.segments)
+  // The query travels with the path: `#/rewards/catalogue?p=cake` keeps its programme.
+  const query = loc.query.toString()
   useEffect(() => {
-    navigate(target, { replace: true })
-  }, [target])
+    navigate(target, { replace: true, query: Object.fromEntries(new URLSearchParams(query)) })
+  }, [target, query])
   return null
 }

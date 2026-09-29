@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from datetime import date
 from typing import Protocol, runtime_checkable
 
-from cafeops.db.models.enums import PaymentMethod, PaymentSourceKind
+from cafeops.domain.enums import PaymentMethod, PaymentSourceKind
 
 
 class PaymentSourceError(Exception):

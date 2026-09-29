@@ -152,3 +152,49 @@ export function DivergingBars({
     </figure>
   )
 }
+
+/**
+ * The accessible twin of a hover-first chart: a visually-hidden table with one
+ * row per mark. Pair it with `aria-hidden` on the decorative marks, so a screen
+ * reader gets the numbers once, in order, instead of one tab stop per bar.
+ */
+export function ChartTable({
+  caption,
+  columns,
+  rows,
+}: {
+  caption: string
+  columns: readonly string[]
+  /** Pre-formatted cells; the first is the row header. */
+  rows: ReadonlyArray<readonly ReactNode[]>
+}) {
+  return (
+    <table className="sr-only">
+      <caption>{caption}</caption>
+      <thead>
+        <tr>
+          {columns.map((c) => (
+            <th key={c} scope="col">
+              {c}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r, i) => (
+          <tr key={i}>
+            {r.map((cell, j) =>
+              j === 0 ? (
+                <th key={j} scope="row">
+                  {cell}
+                </th>
+              ) : (
+                <td key={j}>{cell}</td>
+              ),
+            )}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )
+}

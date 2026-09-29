@@ -27,34 +27,29 @@ import {
   PageBody,
   PageHeader,
   SearchInput,
+  SectionHead,
   Segmented,
+  Toolbar,
 } from '../../components/ui'
 import { navigate, useLocation } from '../../lib/router'
-import { useInvalidateWebsite } from '../../lib/website-api'
+import { useInvalidateWebsite, useSiteSettings } from '../../lib/website-api'
 import type { Booking, BookingStatus } from '../../lib/types/website'
 import { AddBookingDrawer, BookingDrawer, MissingBookingDrawer } from './bookings-drawers'
 import {
   BookingRow,
-  ISO_DATE,
   RowList,
   STATUS_LABEL,
   SlotTimeline,
-  addDays,
   count,
   holds,
   hoursLine,
-  longDate,
   patchBooking,
   people,
-  relDay,
-  shortDate,
-  todayISO,
   useBookingDay,
   useBookingRange,
-  useSiteSettings,
-  weekStart,
 } from './bookings-parts'
 import type { Notice } from './bookings-parts'
+import { ISO_DATE, addDays, longDate, relDay, shortDate, todayISO, weekStart } from './dates'
 import { WebsiteGate } from './shared'
 
 const BASE = '/website/bookings'
@@ -200,38 +195,36 @@ function BookingsBody() {
 
   return (
     <>
-      <div className="flex flex-none flex-col gap-2.5 border-b border-line-soft px-4 py-3 sm:px-5">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2.5">
-          <div role="group" aria-label={`Choose the ${unit}`} className="flex items-center gap-1.5">
-            <Button className="min-h-11 min-w-11" aria-label={`Previous ${unit}`} onClick={() => step(-1)}>
-              <span aria-hidden="true">‹</span>
-            </Button>
-            <Button className="min-h-11" onClick={() => set({ date: today, status: 'all' })}>
-              {state.view === 'week' ? 'This week' : 'Today'}
-            </Button>
-            <Button className="min-h-11 min-w-11" aria-label={`Next ${unit}`} onClick={() => step(1)}>
-              <span aria-hidden="true">›</span>
-            </Button>
-            <Input
-              type="date"
-              aria-label="Go to date"
-              className="min-h-11 w-[9.5rem]"
-              value={state.date}
-              onChange={(e) => {
-                if (ISO_DATE.test(e.target.value)) set({ date: e.target.value, status: 'all' })
-              }}
-            />
-          </div>
-          <Segmented<View>
-            label="View"
-            value={state.view}
-            onChange={(v) => set({ view: v })}
-            options={[
-              { value: 'day', label: 'Day' },
-              { value: 'week', label: 'Week' },
-            ]}
+      <Toolbar className="gap-x-3">
+        <div role="group" aria-label={`Choose the ${unit}`} className="flex items-center gap-1.5">
+          <Button className="min-h-11 min-w-11" aria-label={`Previous ${unit}`} onClick={() => step(-1)}>
+            <span aria-hidden="true">‹</span>
+          </Button>
+          <Button className="min-h-11" onClick={() => set({ date: today, status: 'all' })}>
+            {state.view === 'week' ? 'This week' : 'Today'}
+          </Button>
+          <Button className="min-h-11 min-w-11" aria-label={`Next ${unit}`} onClick={() => step(1)}>
+            <span aria-hidden="true">›</span>
+          </Button>
+          <Input
+            type="date"
+            aria-label="Go to date"
+            className="min-h-11 w-[9.5rem]"
+            value={state.date}
+            onChange={(e) => {
+              if (ISO_DATE.test(e.target.value)) set({ date: e.target.value, status: 'all' })
+            }}
           />
         </div>
+        <Segmented<View>
+          label="View"
+          value={state.view}
+          onChange={(v) => set({ view: v })}
+          options={[
+            { value: 'day', label: 'Day' },
+            { value: 'week', label: 'Week' },
+          ]}
+        />
         <SearchInput
           label="Search bookings by name, reference, email or phone"
           placeholder="Search name, reference or phone"
@@ -242,7 +235,7 @@ function BookingsBody() {
             setSeenQ(e.target.value)
           }}
         />
-      </div>
+      </Toolbar>
 
       {notice && (
         <div className="flex-none pb-1">
@@ -260,28 +253,30 @@ function BookingsBody() {
 
       <div className="flex min-h-0 flex-1">
         <PageBody className="bg-canvas">
-          {searching ? (
-            <SearchView q={state.q.trim()} pool={poolQ} onOpen={open} notify={setNotice} />
-          ) : state.view === 'day' ? (
-            <DayView
-              date={state.date}
-              dayQ={dayQ}
-              settings={settings.data}
-              filter={state.status}
-              setFilter={(f) => set({ status: f })}
-              onOpen={open}
-              notify={setNotice}
-            />
-          ) : (
-            <WeekView
-              from={from}
-              weekQ={weekQ}
-              settings={settings.data}
-              goToDay={(d) => set({ date: d, view: 'day', status: 'all' })}
-              onOpen={open}
-              notify={setNotice}
-            />
-          )}
+          <div className="mx-auto w-full max-w-[1100px]">
+            {searching ? (
+              <SearchView q={state.q.trim()} pool={poolQ} onOpen={open} notify={setNotice} />
+            ) : state.view === 'day' ? (
+              <DayView
+                date={state.date}
+                dayQ={dayQ}
+                settings={settings.data}
+                filter={state.status}
+                setFilter={(f) => set({ status: f })}
+                onOpen={open}
+                notify={setNotice}
+              />
+            ) : (
+              <WeekView
+                from={from}
+                weekQ={weekQ}
+                settings={settings.data}
+                goToDay={(d) => set({ date: d, view: 'day', status: 'all' })}
+                onOpen={open}
+                notify={setNotice}
+              />
+            )}
+          </div>
         </PageBody>
         {sub === 'new' && (
           <AddBookingDrawer
@@ -353,18 +348,20 @@ function DayView({
 
   return (
     <section aria-labelledby="bk-day-h" aria-busy={dayQ.isFetching}>
-      <div className="mb-3 flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
-        <div className="min-w-0">
-          <h2 id="bk-day-h" className="text-xl font-extrabold tracking-[-.01em]">
-            {title}
-          </h2>
-          {sub && <p className="text-base text-ink-2">{sub}</p>}
-        </div>
-        {day && !day.closed && (
-          <Button className="hidden min-h-11 sm:inline-flex" onClick={() => window.print()}>
-            Print day sheet
-          </Button>
-        )}
+      <div className="mb-3 flex flex-col gap-0.5">
+        <SectionHead
+          size="panel"
+          right={
+            day && !day.closed ? (
+              <Button className="min-h-11" onClick={() => window.print()}>
+                Print day sheet
+              </Button>
+            ) : undefined
+          }
+        >
+          <span id="bk-day-h">{title}</span>
+        </SectionHead>
+        {sub && <p className="text-base text-ink-2">{sub}</p>}
       </div>
       {day && <DaySheet day={day} title={title} sub={sub} />}
       {dayQ.isPending && <Loading what="Reading the day's bookings" />}
@@ -389,7 +386,19 @@ function DayView({
               </RowList>
             ) : (
               <div className="rounded-card-lg bg-surface shadow-raised">
-                <Empty>
+                <Empty
+                  action={
+                    filter !== 'all' ? (
+                      <Button className="min-h-11" onClick={() => setFilter('all')}>
+                        Show all bookings
+                      </Button>
+                    ) : !day.closed && date >= todayISO() ? (
+                      <Button className="min-h-11" onClick={() => navigate(`${BASE}/new`, { query: { date } })}>
+                        Add a phone booking
+                      </Button>
+                    ) : undefined
+                  }
+                >
                   {day.closed ? 'Closed. No bookings.' : filter === 'all' ? 'No bookings for this day yet.' : 'None with this status.'}
                 </Empty>
               </div>
@@ -499,9 +508,9 @@ function WeekView({
   const list = weekQ.data
   return (
     <section aria-labelledby="bk-week-h" aria-busy={weekQ.isFetching}>
-      <h2 id="bk-week-h" className="mb-3 text-xl font-extrabold tracking-[-.01em]">
-        Week of {longDate(from)}
-      </h2>
+      <SectionHead size="panel" className="mb-3">
+        <span id="bk-week-h">Week of {longDate(from)}</span>
+      </SectionHead>
       {weekQ.isPending && <Loading what="Reading the week's bookings" />}
       {weekQ.isError && <ErrorBox error={weekQ.error} what="the week's bookings" />}
       {list && (
@@ -573,9 +582,11 @@ function SearchView({
   const title = pool.data ? (hits.length ? `${count(hits.length, 'booking')} matching “${q}”` : `Nothing matches “${q}”`) : 'Searching…'
   return (
     <section aria-labelledby="bk-search-h">
-      <h2 id="bk-search-h" className="mb-1 text-xl font-extrabold tracking-[-.01em]" aria-live="polite">
-        {title}
-      </h2>
+      <SectionHead size="panel" className="mb-1">
+        <span id="bk-search-h" aria-live="polite">
+          {title}
+        </span>
+      </SectionHead>
       <p className="mb-3 text-sm text-ink-2">
         A year either side of today, latest date first{hits.length > 100 ? '; the first 100 are shown' : ''}.
       </p>

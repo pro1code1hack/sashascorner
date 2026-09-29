@@ -21,6 +21,16 @@ Policy notes. Booking a delivery slot is a person's job and costs money on its o
 Tesco's bot protection may serve a "Pardon our interruption" / "Access denied"
 page to automation; that reads as `PortalNeedsHuman` (a person opens the profile
 in a headed browser and gets past it), not as a selector failure.
+
+Tier 2 (`prefers_headed = True`): the 2026-09-29 smoke test
+(docs/agents/BROWSER-ORDERING.md §9) got "Access Denied" from Akamai on the very
+first request from a fresh **headless** Chromium context, before any sign-in --
+Tesco fingerprints the headless build itself, not the session. A headed window with
+the connected profile gets through. The worker therefore launches Tesco headed when
+a display is available (Xvfb in the container, the real screen on a laptop) and
+otherwise reports NEEDS_HUMAN with that reason instead of pretending. Tesco has no
+cart-link or quick-order mechanism, so the per-product scripted add is the only
+scripted tier; `cart_link` and `quick_order_url` are deliberately not defined.
 """
 
 from __future__ import annotations
@@ -79,6 +89,8 @@ class TescoPortal(HeuristicPortal):
     slug = "tesco"
     label = "Tesco groceries"
     supports_scripted_add = True
+    #: Akamai refuses headless Chromium outright (module docstring).
+    prefers_headed = True
     policy = PortalPolicy(
         allowed_hosts=("tesco.com",),
         start_url="https://www.tesco.com/groceries/en-GB/",

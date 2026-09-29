@@ -30,7 +30,8 @@ from aiogram.types import CallbackQuery, Message
 
 from cafeops.bot import formatters as fmt
 from cafeops.bot.callbacks import DeliveryCB
-from cafeops.bot.deps import owner_name, parse_expiry, parse_qty
+from cafeops.bot.deps import RunSync, owner_name, parse_expiry, parse_qty
+from cafeops.bot.handlers.common import accessible
 from cafeops.bot.keyboards import delivery_expiry_kb, delivery_qty_kb
 from cafeops.bot.states import AdhocFlow, DeliveryFlow
 from cafeops.bot.viewmodels import DeliveryLineView, DeliveryOrderView
@@ -45,12 +46,12 @@ from cafeops.domain.types import Unit
 router = Router(name="delivery")
 
 
-async def _lines(run_sync: Any) -> dict[int, DeliveryLineView]:
+async def _lines(run_sync: RunSync) -> dict[int, DeliveryLineView]:
     orders: list[DeliveryOrderView] = await run_sync(build_delivery_orders)
     return {line.po_line_id: line for order in orders for line in order.outstanding_lines}
 
 
-async def _ask(message: Message, state: FSMContext, run_sync: Any) -> None:
+async def _ask(message: Message, state: FSMContext, run_sync: RunSync) -> None:
     data = await state.get_data()
     queue: list[int] = data["queue"]
     index: int = data["index"]
@@ -73,7 +74,7 @@ async def _ask(message: Message, state: FSMContext, run_sync: Any) -> None:
 
 
 @router.message(Command("delivery"))
-async def delivery(message: Message, state: FSMContext, run_sync: Any) -> None:
+async def delivery(message: Message, state: FSMContext, run_sync: RunSync) -> None:
     orders: list[DeliveryOrderView] = await run_sync(build_delivery_orders)
     pending = [order for order in orders if order.outstanding_lines]
     if not pending:
@@ -87,7 +88,7 @@ async def delivery(message: Message, state: FSMContext, run_sync: Any) -> None:
 
 
 @router.message(DeliveryFlow.awaiting_packs)
-async def packs(message: Message, state: FSMContext, run_sync: Any) -> None:
+async def packs(message: Message, state: FSMContext, run_sync: RunSync) -> None:
     data = await state.get_data()
     by_id = await _lines(run_sync)
     line = by_id.get(data["queue"][data["index"]])
@@ -108,7 +109,9 @@ async def packs(message: Message, state: FSMContext, run_sync: Any) -> None:
     )
 
 
-async def _receive(message: Message, state: FSMContext, run_sync: Any, *, expires_at: Any) -> None:
+async def _receive(
+    message: Message, state: FSMContext, run_sync: RunSync, *, expires_at: Any
+) -> None:
     data = await state.get_data()
     po_line_id: int = data["queue"][data["index"]]
     who = owner_name(
@@ -128,7 +131,7 @@ async def _receive(message: Message, state: FSMContext, run_sync: Any, *, expire
 
 
 @router.message(DeliveryFlow.awaiting_expiry)
-async def expiry(message: Message, state: FSMContext, run_sync: Any) -> None:
+async def expiry(message: Message, state: FSMContext, run_sync: RunSync) -> None:
     when = parse_expiry(message.text or "")
     if when is None:
         await message.answer(fmt.err_bad_date())
@@ -137,23 +140,23 @@ async def expiry(message: Message, state: FSMContext, run_sync: Any) -> None:
 
 
 @router.callback_query(DeliveryCB.filter(F.action == "no_date"), DeliveryFlow.awaiting_expiry)
-async def no_date(query: CallbackQuery, state: FSMContext, run_sync: Any) -> None:
+async def no_date(query: CallbackQuery, state: FSMContext, run_sync: RunSync) -> None:
     """No date on the pack. The service assumes one and stamps the batch as assumed."""
     await query.answer()
-    if query.message is not None:
-        await _receive(query.message, state, run_sync, expires_at=None)
+    if (message := accessible(query.message)) is not None:
+        await _receive(message, state, run_sync, expires_at=None)
 
 
 @router.callback_query(DeliveryCB.filter(F.action == "skip"))
-async def skip(query: CallbackQuery, state: FSMContext, run_sync: Any) -> None:
+async def skip(query: CallbackQuery, state: FSMContext, run_sync: RunSync) -> None:
     data = await state.get_data()
     if "queue" not in data:
         await query.answer()
         return
     await state.update_data(index=data["index"] + 1, packs=None)
     await query.answer()
-    if query.message is not None:
-        await _ask(query.message, state, run_sync)
+    if (message := accessible(query.message)) is not None:
+        await _ask(message, state, run_sync)
 
 
 # --------------------------------------------------------------------------
@@ -162,7 +165,7 @@ async def skip(query: CallbackQuery, state: FSMContext, run_sync: Any) -> None:
 
 
 @router.message(Command("adhoc"))
-async def adhoc(message: Message, state: FSMContext, run_sync: Any) -> None:
+async def adhoc(message: Message, state: FSMContext, run_sync: RunSync) -> None:
     """`/adhoc <ingredient>` -- a panic buy, entered so it can still expire.
 
     Without this the only way to record a shop run is an `ADJUSTMENT`, which no batch
@@ -196,7 +199,7 @@ async def adhoc_qty(message: Message, state: FSMContext) -> None:
 
 
 @router.message(AdhocFlow.awaiting_expiry)
-async def adhoc_expiry(message: Message, state: FSMContext, run_sync: Any) -> None:
+async def adhoc_expiry(message: Message, state: FSMContext, run_sync: RunSync) -> None:
     """A retail buy has a date on it too, and this is the only chance to record it."""
     when = parse_expiry(message.text or "")
     if when is None:

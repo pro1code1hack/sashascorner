@@ -38,7 +38,15 @@ from openpyxl import load_workbook
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from cafeops.db.models.enums import (
+from cafeops.db.models.finance import (
+    ChannelStatement,
+    DirectorEntry,
+    Expense,
+    ExpenseCategory,
+    TradingDay,
+)
+from cafeops.db.models.payment import PaymentDay
+from cafeops.domain.enums import (
     ChannelSourceKind,
     DirectorEntryType,
     ExpenseKind,
@@ -49,14 +57,6 @@ from cafeops.db.models.enums import (
     PaymentSourceKind,
     SalesChannelName,
 )
-from cafeops.db.models.finance import (
-    ChannelStatement,
-    DirectorEntry,
-    Expense,
-    ExpenseCategory,
-    TradingDay,
-)
-from cafeops.db.models.payment import PaymentDay
 from cafeops.services.finance.expenses import (
     NEEDS_REVIEW_RE,
     kind_from_notes,

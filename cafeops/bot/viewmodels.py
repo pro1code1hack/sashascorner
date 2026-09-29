@@ -11,7 +11,7 @@ themselves in English prose: `SuggestedLine.cap_reason` is
 paragraph. A Russian bot cannot render English prose, and translating prose at the
 formatter is guesswork.
 
-**Those codes are no longer invented here.** They are `db/models/enums.py`'s -- `CapKind`,
+**Those codes are no longer invented here.** They are `domain/enums.py`'s -- `CapKind`,
 `LowConfidenceKind`, `ReceiptWarningKind`, `OrderNoteKind`, `RevokeCause` -- produced by
 the same comparison that writes each sentence and re-exported through `domain/types.py`.
 This module used to declare its own `CapKind` and `LowConfidenceKind` with *different
@@ -88,7 +88,7 @@ __all__ = [
     "WriteOffView",
 ]
 
-#: The receipt codes come from `db/models/enums.py` like every other one now. The alias is
+#: The receipt codes come from `domain/enums.py` like every other one now. The alias is
 #: kept because `ReceiptIssue` is what the formatter and the handlers already call it, and
 #: renaming a local name adds no meaning.
 ReceiptIssue = ReceiptWarningKind
@@ -292,6 +292,8 @@ class OrderView:
     #: because it is English (spec 5.4 forbids a silent adjustment, and a sentence she
     #: cannot read is silent). Empty for an order written before the column existed.
     notes: tuple[OrderNoteKind, ...] = ()
+    #: Confirming stages a basket on the supplier's website (services/order_dispatch).
+    stages_basket: bool = False
 
     @property
     def goods_pence(self) -> int:
@@ -346,6 +348,14 @@ class DispatchView:
     instruction_steps: int
     items: int
     total_pence: int
+    #: The supplier's website basket is staged by the browser worker (or a cart link).
+    stages_basket: bool = False
+    #: The staging job, when one was started. The order is NOT sent either way.
+    staged_job_id: int | None = None
+    #: A cart link that is ready to open now; None while the worker fills the basket.
+    staged_basket_url: str | None = None
+    #: Why staging could not start, verbatim from the service (English, operator-facing).
+    staging_refused: str | None = None
 
 
 # ==========================================================================

@@ -9,7 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from cafeops.db.base import Base
 from cafeops.db.models._common import Qty, UTCDateTime, enum_col
-from cafeops.db.models.enums import RevokeCause
+from cafeops.domain.enums import RevokeCause
 
 if TYPE_CHECKING:
     from cafeops.db.models.ingredient import Ingredient

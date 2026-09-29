@@ -44,9 +44,9 @@ from datetime import time
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from cafeops.db.models.enums import PriceSource
 from cafeops.db.models.ingredient import Ingredient
 from cafeops.db.models.supplier import Supplier
+from cafeops.domain.enums import PriceSource
 
 
 class ConfirmationRefused(ValueError):

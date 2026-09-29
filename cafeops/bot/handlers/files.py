@@ -17,7 +17,6 @@ from __future__ import annotations
 import io
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
-from typing import Any
 
 from aiogram import F, Router
 from aiogram.filters import Command
@@ -27,7 +26,7 @@ from aiogram.types import BufferedInputFile, CallbackQuery, Message
 from cafeops.bot import formatters as fmt
 from cafeops.bot import money_views as mv
 from cafeops.bot.callbacks import ExportCB, ImportCB
-from cafeops.bot.deps import owner_name
+from cafeops.bot.deps import RunSync, owner_name
 from cafeops.bot.keyboards import export_kb, import_confirm_kb, import_platform_kb
 from cafeops.bot.states import ImportFlow
 from cafeops.config import settings
@@ -57,7 +56,7 @@ async def export(message: Message) -> None:
 
 
 @router.callback_query(ExportCB.filter())
-async def export_period(query: CallbackQuery, callback_data: ExportCB, run_sync: Any) -> None:
+async def export_period(query: CallbackQuery, callback_data: ExportCB, run_sync: RunSync) -> None:
     await query.answer()
     if query.message is None:
         return
@@ -92,7 +91,7 @@ async def _discard_pending(state: FSMContext) -> None:
         mv.discard_upload(Path(path))
 
 
-async def _preview(message: Message, state: FSMContext, run_sync: Any, *, who: str) -> None:
+async def _preview(message: Message, state: FSMContext, run_sync: RunSync, *, who: str) -> None:
     data = await state.get_data()
     path = Path(data["upload_path"])
     view = await run_sync(
@@ -114,7 +113,7 @@ async def _preview(message: Message, state: FSMContext, run_sync: Any, *, who: s
 
 
 @router.message(F.document)
-async def document(message: Message, state: FSMContext, run_sync: Any) -> None:
+async def document(message: Message, state: FSMContext, run_sync: RunSync) -> None:
     doc = message.document
     if doc is None:
         return
@@ -133,7 +132,7 @@ async def document(message: Message, state: FSMContext, run_sync: Any) -> None:
 
 @router.callback_query(ImportCB.filter(F.action == "platform"), ImportFlow.awaiting_confirm)
 async def platform_chosen(
-    query: CallbackQuery, callback_data: ImportCB, state: FSMContext, run_sync: Any
+    query: CallbackQuery, callback_data: ImportCB, state: FSMContext, run_sync: RunSync
 ) -> None:
     await query.answer()
     if not isinstance(query.message, Message):
@@ -143,7 +142,7 @@ async def platform_chosen(
 
 
 @router.callback_query(ImportCB.filter(F.action == "write"), ImportFlow.awaiting_confirm)
-async def write(query: CallbackQuery, state: FSMContext, run_sync: Any) -> None:
+async def write(query: CallbackQuery, state: FSMContext, run_sync: RunSync) -> None:
     await query.answer()
     if query.message is None:
         return

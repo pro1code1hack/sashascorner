@@ -34,7 +34,6 @@ from cafeops.api.areas.stock_schemas import (
     DrawnBatchOut,
     FromDraftIn,
     IngredientOptionOut,
-    OrderAction,
     OrderCounts,
     OrdersListResponse,
     ParChangeOut,
@@ -66,9 +65,14 @@ from cafeops.api.areas.stock_schemas import (
 )
 from cafeops.api.encoding import as_pence, as_qty, pct
 from cafeops.api.schemas import Cost, OnHand, SupplierOut
-from cafeops.api.views.confirm import _parse_cutoff
-from cafeops.api.views.orders import _supplier_out, persisted_order_out
-from cafeops.api.views.stock import _attribution, _drift, trust_label
+from cafeops.api.views.common import (
+    drift_attribution_out,
+    drift_out,
+    parse_cutoff,
+    supplier_out,
+)
+from cafeops.api.views.orders import persisted_order_out
+from cafeops.api.views.stock import trust_label
 from cafeops.config import settings
 from cafeops.db.models import (
     ChecklistStatus,
@@ -87,7 +91,7 @@ from cafeops.db.models import (
     Unit,
     WriteOffReason,
 )
-from cafeops.db.repositories.sourcing import _terms
+from cafeops.db.repositories.sourcing import supplier_terms
 from cafeops.services import order_actions, suppliers, web_orders
 from cafeops.services.confirm_terms import SupplierTerms
 from cafeops.services.media_store import media_url, store_image
@@ -182,7 +186,7 @@ def count_view(session: Session, *, ingredient_id: int, body: CountIn) -> CountO
         note=body.note,
     )
     session.flush()
-    drift = _drift(session, outcome.ingredient)
+    drift = drift_out(session, outcome.ingredient)
     before = outcome.on_hand_before
     recon = outcome.reconciliation
     recon_note: str | None = None
@@ -226,7 +230,9 @@ def count_view(session: Session, *, ingredient_id: int, body: CountIn) -> CountO
         auto_order_enabled=outcome.decision.auto_order_enabled,
         gate_reason=outcome.decision.reason,
         alert_level=outcome.decision.alert_level.value,
-        attribution=None if outcome.explanation is None else _attribution(outcome.explanation),
+        attribution=None
+        if outcome.explanation is None
+        else drift_attribution_out(outcome.explanation),
         reconciliation_note=recon_note,
         notes=outcome.notes,
     )
@@ -364,22 +370,6 @@ def tier_view(session: Session, *, ingredient_id: int, body: TierIn) -> TierOut:
 # orders
 # --------------------------------------------------------------------------
 
-_WAITING = (POStatus.DRAFT, POStatus.PENDING_CONFIRM)
-_OPEN = (POStatus.DRAFT, POStatus.PENDING_CONFIRM, POStatus.CONFIRMED, POStatus.SENT)
-
-
-def _actions(status: POStatus) -> tuple[OrderAction, ...]:
-    """What the web may do next. The server decides, so the screen cannot drift from the
-    service rules. `confirm` is a named human's decision (invariant 1), made here since
-    the owner stopped using the Telegram bot (2026-09-26)."""
-    if status in (POStatus.DRAFT, POStatus.PENDING_CONFIRM):
-        return ("confirm", "cancel")
-    if status is POStatus.CONFIRMED:
-        return ("mark_sent", "receive", "cancel")
-    if status is POStatus.SENT:
-        return ("receive",)
-    return ()
-
 
 def _order_out(session: Session, po: PurchaseOrder) -> PurchaseOrderOut:
     base = persisted_order_out(session, po)
@@ -396,7 +386,9 @@ def _order_out(session: Session, po: PurchaseOrder) -> PurchaseOrderOut:
         routing_reason=po.routing_reason,
         receipt_url=_receipt_url(session, po),
         receipt_uploaded_by=po.receipt_uploaded_by,
-        actions=_actions(po.status),
+        # What the web may do next: `order_actions.allowed_actions`, built from the same
+        # status sets the services check, so the screen cannot offer a refused button.
+        actions=order_actions.allowed_actions(po.status),
     )
 
 
@@ -422,20 +414,14 @@ def receipt_upload_view(
     session: Session, *, po_id: int, data: bytes, actor: str | None
 ) -> PurchaseOrderOut:
     """Attach a receipt photo. Evidence only: it changes no quantity, price or status."""
-    po = _po_or_404(session, po_id)  # 404 before any file is written
+    _po_or_404(session, po_id)  # 404 before any file is written
     stored = store_image(session, data, uploaded_by=actor)  # MediaRefusedError -> 422
-    po.receipt_asset_id = stored.asset_id
-    po.receipt_uploaded_by = actor
-    session.flush()
+    po = order_actions.attach_receipt(session, po_id=po_id, asset_id=stored.asset_id, actor=actor)
     return _order_out(session, po)
 
 
 def receipt_clear_view(session: Session, *, po_id: int) -> PurchaseOrderOut:
-    po = _po_or_404(session, po_id)
-    po.receipt_asset_id = None
-    po.receipt_uploaded_by = None
-    session.flush()
-    return _order_out(session, po)
+    return _order_out(session, order_actions.clear_receipt(session, po_id=po_id))
 
 
 def orders_view(
@@ -455,8 +441,8 @@ def orders_view(
     return OrdersListResponse(
         orders=orders,
         counts=OrderCounts(
-            open=sum(1 for s in every if s in _OPEN),
-            waiting=sum(1 for s in every if s in _WAITING),
+            open=sum(1 for s in every if s in order_actions.OPEN_STATUSES),
+            waiting=sum(1 for s in every if s in order_actions.CONFIRMABLE),
         ),
     )
 
@@ -635,7 +621,7 @@ def _supplier_full(session: Session, row: Supplier) -> SupplierOut:
             )
         )
     )
-    return _supplier_out(_terms(row), row, count)
+    return supplier_out(supplier_terms(row), row, count)
 
 
 def _create_terms(body: SupplierCreateIn) -> SupplierTerms | None:
@@ -652,7 +638,7 @@ def _create_terms(body: SupplierCreateIn) -> SupplierTerms | None:
         delivery_weekdays=tuple(body.delivery_weekdays or ()),
         min_order_pence=body.min_order_pence or 0,
         delivery_fee_pence=body.delivery_fee_pence or 0,
-        cutoff_time=_parse_cutoff(body.cutoff_time),
+        cutoff_time=parse_cutoff(body.cutoff_time),
         free_delivery_threshold_pence=body.free_delivery_threshold_pence,
     )
 

@@ -39,12 +39,14 @@ from cafeops.db.models import (
     MenuItem,
     ProgramKind,
 )
-from cafeops.domain.loyalty import Eligibility, ItemFacts, item_matches
+from cafeops.domain.loyalty import STICKER_NAMES, Eligibility, ItemFacts, item_matches
 from cafeops.services.loyalty.common import now_utc
 from cafeops.services.loyalty.errors import LoyaltyError
 from cafeops.services.loyalty.redeem import DrinkOption, drink_condition, item_label
+from cafeops.services.loyalty.stats import set_targets as merge_targets
 
 __all__ = [
+    "STAMPS_EXPIRE_MONTHS",
     "OptionChange",
     "ProgramChange",
     "apply_change",
@@ -57,8 +59,12 @@ __all__ = [
     "program_rule",
     "programs",
     "reward_options",
+    "set_targets",
     "unit_word",
 ]
+
+#: "Stamps expire" in the design is a switch; the rule behind it is 12 months untouched.
+STAMPS_EXPIRE_MONTHS = 12
 
 _SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$")
 
@@ -203,6 +209,12 @@ class ProgramChange:
     #: The whole catalogue, in order. None = leave it alone; entries missing from a given
     #: list are retired (`active = false`), never deleted -- redeemed rewards point at them.
     reward_options: Sequence[OptionChange] | None = None
+    #: Give a stamp on joining.
+    welcome_stamp: bool | None = None
+    #: True = stamps lapse after `STAMPS_EXPIRE_MONTHS` untouched; False = never.
+    stamps_expire: bool | None = None
+    #: Enabled stickers in scanner order; repeats collapse, at least one must remain.
+    stickers: Sequence[str] | None = None
 
 
 def _has_ledger(session: Session, program_id: int) -> bool:
@@ -258,6 +270,14 @@ def _save_options(
 def apply_change(session: Session, program: LoyaltyProgram, change: ProgramChange) -> None:
     """Validate and apply. Raises `LoyaltyError` before anything is half-applied only for
     the checks that need the database; field checks come first."""
+    stickers: list[str] | None = None
+    if change.stickers is not None:
+        stickers = list(dict.fromkeys(change.stickers))
+        unknown = [k for k in stickers if k not in STICKER_NAMES]
+        if unknown:
+            raise _bad(f"There is no sticker called {unknown[0]!r}.")
+        if not stickers:
+            raise LoyaltyError(422, "stickers_required", "Keep at least one sticker switched on.")
     kind = change.kind or program.kind
     if (
         change.kind is not None
@@ -362,6 +382,24 @@ def apply_change(session: Session, program: LoyaltyProgram, change: ProgramChang
         )
     if change.reward_options is not None:
         _save_options(session, program, change.reward_options)
+    if change.welcome_stamp is not None:
+        program.welcome_stamp = change.welcome_stamp
+    if change.stamps_expire is not None:
+        program.stamps_expire_months = STAMPS_EXPIRE_MONTHS if change.stamps_expire else None
+    if stickers is not None:
+        program.stickers = stickers
+    session.flush()
+
+
+def set_targets(
+    session: Session, program: LoyaltyProgram, changes: dict[str, float | None]
+) -> None:
+    """Merge 90-day target changes into the programme (`None` removes one). A bad value
+    is a 422 `bad_target` with the metric named."""
+    try:
+        program.targets = merge_targets(program.targets, changes) or None
+    except ValueError as exc:
+        raise LoyaltyError(422, "bad_target", str(exc)) from exc
     session.flush()
 
 

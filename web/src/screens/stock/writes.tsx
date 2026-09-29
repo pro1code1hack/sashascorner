@@ -4,11 +4,16 @@
  * FRONTEND-KIT rule 10: nothing is optimistic. A write runs, and on success the
  * caller's query keys are invalidated so the screen re-reads the server's
  * figures; on refusal the message the service wrote is shown as-is.
+ *
+ * `OutcomeLine` is the kit's `StatusLine` under the older `{ tone, text }`
+ * shape: the live region is ALWAYS mounted, so it exists before its text
+ * arrives (a `role="status"` that appears already filled is not reliably
+ * announced). Other areas import it, so the shape stays.
  */
 import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import type { QueryKey } from '@tanstack/react-query'
-import { cx } from '../../components/ui'
+import { StatusLine } from '../../components/ui'
 import type { WriteResult } from '../../lib/api'
 import { SHELL_QUERY_KEY } from '../../lib/shell-api'
 
@@ -46,15 +51,12 @@ export function useWrite() {
   return { pending, outcome, setOutcome, run }
 }
 
-/** The line under an action: what the server said. Refusals in bad-ink, verbatim. */
+/** The line under an action: what the server said. Always mounted; refusals verbatim. */
 export function OutcomeLine({ outcome, className }: { outcome: Outcome; className?: string }) {
-  if (outcome === null) return null
   return (
-    <p
-      role={outcome.tone === 'bad' ? 'alert' : 'status'}
-      className={cx('text-sm', outcome.tone === 'bad' ? 'text-bad-ink' : 'text-ink-2', className)}
-    >
-      {outcome.text}
-    </p>
+    <StatusLine
+      outcome={outcome === null ? null : { kind: outcome.tone === 'bad' ? 'error' : 'ok', text: outcome.text }}
+      className={className}
+    />
   )
 }

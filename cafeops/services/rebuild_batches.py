@@ -40,6 +40,7 @@ from cafeops.db.models import (
 )
 from cafeops.domain.stock import allocate_fifo, find_expiry_losses
 from cafeops.domain.types import BatchSpec
+from cafeops.domain.units import gbp_code
 
 #: Movement types that ADD stock and therefore create a batch.
 _INBOUND = {MovementType.DELIVERY}
@@ -69,7 +70,7 @@ class RebuildReport:
         if self.expiry_losses:
             parts.append(
                 f"{self.expiry_losses} expiry write-off(s) worth "
-                f"GBP {self.expired_value_pence / 100:.2f}"
+                f"{gbp_code(self.expired_value_pence)}"
             )
         if self.shortfalls:
             parts.append(
@@ -297,7 +298,6 @@ def _rebuild_one(
                 qty=-movement.qty,
                 batches=[b for b in live if b.qty_remaining > 0],
                 open_life_days=open_life,
-                at=movement.occurred_at,
             )
             primary: int | None = None
             largest = Decimal("-1")

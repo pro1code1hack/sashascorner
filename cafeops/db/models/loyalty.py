@@ -34,7 +34,6 @@ in `loyalty_pos_receipt` (ids and keyed hashes only), and what each receipt earn
 
 from __future__ import annotations
 
-import enum
 from datetime import datetime
 from typing import Any
 
@@ -52,59 +51,14 @@ from sqlalchemy.types import JSON
 
 from cafeops.db.base import Base
 from cafeops.db.models._common import UTCDateTime, enum_col, utcnow
-
-
-class StampReason(enum.Enum):
-    PURCHASE = "PURCHASE"
-    PAPER_MIGRATION = "PAPER_MIGRATION"
-    MANUAL_FIX = "MANUAL_FIX"
-    #: In the spec's enum; never written. Redeeming touches the reward row, not the
-    #: ledger -- the stamps were consumed when the reward was issued (CONTRACT §2).
-    REDEEM = "REDEEM"
-    REFERRAL = "REFERRAL"
-    UNDO = "UNDO"
-    #: The programme's "first stamp is on us" at join (BACKOFFICE-V2 §4). Not a purchase.
-    WELCOME = "WELCOME"
-
-
-class RewardKind(enum.Enum):
-    STAMP_CARD = "STAMP_CARD"
-    BIRTHDAY = "BIRTHDAY"
-    REFERRAL = "REFERRAL"
-
-
-class OtpChannel(enum.Enum):
-    EMAIL = "EMAIL"
-    SMS = "SMS"
-    STAFF = "STAFF"
-
-
-class ProgramKind(enum.Enum):
-    #: One stamp per eligible item (the paper card).
-    STAMPS = "STAMPS"
-    #: Points per pound spent; the reward at `stamps_required` points.
-    POINTS = "POINTS"
-
-
-class PosAwardStatus(enum.Enum):
-    #: The receipt's units are on the card (`stamp_event_id`).
-    AWARDED = "AWARDED"
-    #: A staff scan on the same card within the dedupe window already counted this visit.
-    SKIPPED_STAFF_SCAN = "SKIPPED_STAFF_SCAN"
-    #: Nothing to give: no eligible line, all voided or refunded, or before the member joined.
-    NOTHING = "NOTHING"
-    #: Frozen: a reversal was due but refused (the reward it completed was already given),
-    #: or staff undid the award by hand. The sync never touches this receipt again.
-    KEPT = "KEPT"
-
-
-class CampaignSegment(enum.Enum):
-    ALL_OPTED_IN = "ALL_OPTED_IN"
-    LAPSED_30 = "LAPSED_30"
-    REWARD_READY = "REWARD_READY"
-    NEW_30 = "NEW_30"
-    #: Birthday in the current calendar month (local).
-    BIRTHDAY = "BIRTHDAY"
+from cafeops.domain.enums import (
+    CampaignSegment,
+    OtpChannel,
+    PosAwardStatus,
+    ProgramKind,
+    RewardKind,
+    StampReason,
+)
 
 
 class LoyaltyProgram(Base):

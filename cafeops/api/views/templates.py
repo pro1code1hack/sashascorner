@@ -557,10 +557,9 @@ def apply_edit_view(
     """Apply the edit from today. The one write in this API.
 
     `apply_component_qty_change` closes the live row, opens a new one and recosts the
-    template in one transaction, and commits it itself -- so this function must not be
-    wrapped in an outer commit that could roll part of it back. `routers.py`
-    calls it through `runtime.in_session`, whose `session_scope` commit is then a no-op
-    on an already-committed session.
+    template, and only FLUSHES: the transaction belongs to `runtime.in_session`, whose
+    `session_scope` commits on success and rolls everything back on any error
+    (ARCHITECTURE 8Y, "services flush, callers commit").
     """
     _component_or_raise(
         session,

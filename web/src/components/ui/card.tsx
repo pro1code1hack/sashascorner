@@ -45,7 +45,7 @@ export function GridCard({
 }: {
   children: ReactNode
   selected?: boolean
-  /** Off the menu: faded. */
+  /** Off the menu: the photo fades and text goes ink-2; text never drops below AA (was opacity-55). */
   inactive?: boolean
   onClick?: () => void
   label?: string
@@ -60,7 +60,7 @@ export function GridCard({
       className={cx(
         'flex flex-col overflow-hidden rounded-card-lg bg-surface text-left transition-shadow',
         selected ? 'shadow-selected' : 'shadow-raised',
-        inactive && 'opacity-55',
+        inactive && 'text-ink-2 [&_img]:opacity-50',
         className,
       )}
     >

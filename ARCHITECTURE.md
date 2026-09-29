@@ -2218,3 +2218,252 @@ what matters architecturally:
   `integrations_schemas.py` are the contract they will be built against, with fixtures
   `web/fixtures/integrations.json` and `browser-jobs.json` captured from the running app.
 
+
+---
+
+## §8X — The 2026-09-29 backend clean-up: dead code out, one home per helper, contracts enforced
+
+The owner asked for the whole backend to be read for dead code and readability. What
+changed, and the reasoning behind the non-obvious parts. Verification was by running
+(§1): `ruff`, `mypy cafeops`, importing every module, the CLI `--help` tree diffed
+before and after, `doctor`, `api-fixtures`, `bot-preview all`, `simulate`, and forty
+read routes of the API hashed before and after.
+
+**`cafeops/cli.py` (3,763 lines) is now the `cafeops/cli/` package.** One module per
+section the file already had (`seed`, `stock`, `composition`, `simulate`, `batches`,
+`reports`, `serve`, `bot`), each exposing `register(app)`; `cli_transactions.py` and
+`cli_posters.py` moved in as `transactions.py` and `posters.py`. `__init__.py` builds
+`app` and mounts every sub-app, so the `cafeops = "cafeops.cli:app"` entry point and
+every command name, option and help string are unchanged (diffed). The late
+`# noqa: E402` imports existed only because `app` had to exist first; they are gone.
+
+**`domain/composition.py:apply_template_ops` was a 447-line `isinstance` ladder.** It is
+now `_ChangesetApplier`, one method per operation kind and a `match` dispatch, with the
+shared vocabulary (`refuse`, `check_sizes`, `component_at`…) as methods instead of
+closures. Every string is the same; the outcome of a 40-operation changeset over a
+real template (every kind, valid and refused) was captured before and diffed after:
+byte-identical.
+
+**One home per helper.** Seven private `_now()`/`_utcnow()` copies became
+`cafeops/clock.py:utcnow` (`db/models/_common.utcnow` re-exports it for column
+defaults). Three identical `pounds()`/`_pounds()` became `domain/units.pounds`; the
+money *formatters* that differ per surface (`GBP 1.23` for the CLI, `£1.23` for the
+bot, bare `1.23` for CSV) were left alone because they are different outputs, not
+copies. Two byte-identical `_signed(actor)` became `services/actor.require_actor`;
+two identical `_weekdays` became `db/repositories/supplier.delivery_weekdays`.
+
+**`db/repositories/protocols.py` was never imported, and had drifted.** Six
+signatures disagreed with the `Sql*` classes that claim to implement them (`object`
+where the implementation takes `Unit` or `GateDecision`; `list[int]` where the
+implementation returns tuples; a `SaleRepository.upsert_many` nobody implements —
+sales are written by `services/ingest_sales.py`). The protocols were corrected to the
+implementations, and `db/repositories/__init__.py` now assigns every `Sql*Repository`
+to its protocol under `TYPE_CHECKING`, so `mypy cafeops` fails the moment they
+disagree again. Zero runtime cost; the block never executes. The file stays
+integrator-owned; this was the integrator.
+
+**Dead code removed** (each confirmed by a whole-tree identifier count of one, then by
+lint and import): `seed/demo.seed_batches` (superseded by `rebuild_batches`),
+`bot/views.local_midnight` and `order_channel_of`, `bot/keyboards.button_labels` and
+`flatten`, `bot/money_views.recorded_view`, `SqlDriftRepository.observed_stock_count_ids`,
+`SqlPurchaseOrderRepository.list_for_supplier`, `SqlSupplierRepository.supplier_id_for_ingredient`,
+`channels/csv_source.stamp_source`, `lightspeed/resilience.iter_names`,
+`finance/trading_days.days_with_rows`, `shop/admin.sales_for`, and the constants
+`BATCH_REF`, `_SCALE_FACTOR`, `RECEIPTS_FIXTURE`, `READINESS_PATH`, `OrdersFilter`,
+`_STATUS_KEYS`. The `PlaywrightExecutor._m_*` methods look unreferenced and are not:
+`executor.py` dispatches to them by name.
+
+**Not removed, deliberately.** The original routes in `api/routers.py` (`/api/today`,
+`/api/margin`, `/api/channels`, `/api/takings`, `/api/templates…`) are no longer called
+by the web app, which reads the `api/areas/` routes instead. They stay because the
+owner's rule for the removed finance screens applies (CLAUDE.md §10: "the backend
+finance endpoints stay; only the screens went"), and `api-fixtures` still dumps them.
+Retiring them is a decision for the owner, not a refactor.
+
+**mypy across the whole package** went from 103 errors to the two in
+`integrations/suppliers/portals/` that belong to work in flight in another session.
+No new `# type: ignore`; several removed. Two things it found were real bugs:
+`bot/preview.py`'s flows were called through an unannotated dict so keyword mistakes
+could not be caught, and `cli jobs` passed an `Awaitable` to `asyncio.run`.
+
+`ruff format` no longer formats `docs/`: the Python in the design specs is
+illustration, not code.
+
+---
+
+## §8Y — The 2026-09-29 backend audit and refactor
+
+The owner asked for the whole backend to be audited and refactored to current good
+practice. Four read-only audits (services; API; integrations/agent/bot/jobs/CLI;
+db/domain/config/seed/migrations) produced ~120 verified findings, and six parallel work
+packages fixed them, each confined to a disjoint file list. Verification was by running
+(§1), against a copy of the database, never `cafeops.db`: ruff, `mypy cafeops` (whole
+package, zero errors, no new ignores; three removed), importing every module, the CLI
+help tree (95 commands), `doctor`, `stock --batches`, `drift`, `simulate`, `bot-preview
+all` and all 63 `api-fixtures` routes, diffed before and after with instants and random
+ids masked. What remains different is listed at the end.
+
+### Layering: what now holds structurally
+
+- **`domain/` is pure in practice, not just in intent.** `domain/types.py` imported
+  `db/models/enums.py`, which ran `db/models/__init__`, which read `.env` and built an
+  engine: `import cafeops.domain` loaded 149 SQLAlchemy modules. Every enum (including
+  the shop, loyalty and staff ones that lived inside model files) is now in
+  `domain/enums.py`, imported by `db/models/`, never the reverse. `domain/shop.py`'s
+  status tables are asserted equal to `OrderStatus` at import.
+- **The engine is lazy.** `db/base.py` exposes `get_engine()`, `session_factory()`,
+  `new_session()` and `session_scope()`; nothing opens a database as a side effect of
+  an import.
+- **`domain/composition.py` (2,270 lines) is a package**: `resolve`, `availability`,
+  `impact`, `display`, `changes`, `changeset`. The public names and every signature
+  are identical (checked against the original module); import from the package.
+- **The CLI lives in `cafeops/cli/`, all of it.** Nine Typer modules moved out of
+  `agent/`, `integrations/` and `services/` (`cli/agent.py`, `portal.py`, `pos.py`,
+  `channels.py`, `payments.py`, `wallet.py`, `supplier.py`, `loyalty.py`, `shop.py`).
+  `typer` and `rich` no longer appear in `services/`.
+- **One logging setup** (`cafeops/logging_setup.configure_logging`, `CAFEOPS_LOG_LEVEL`)
+  replaces four `basicConfig` calls with three formats.
+- **One clock** (`cafeops/clock.py`): `utcnow()`, `local_today(tz)`, and
+  `local_day_bounds(since, until, tz=)`. About twenty copies of the local-day window are
+  gone. Some added `timedelta(days=1)` to an instant, which is wrong on the two
+  clock-change days a year: `shop/slots._taken` and the shop's "today" counted an hour
+  of one day against the next.
+
+### Services flush, callers commit
+
+Nine service modules committed their own transactions (22 try/commit/rollback blocks
+plus ~27 bare commits in `shop/admin.py`). A loop over them (`seed/menu_board.apply`)
+left items 1..N-1 committed when item N failed; a preview needed a `rollback_only`
+connection trick; `agent_proposals` rolled back its caller's session and used
+`begin_nested()`, which under pysqlite commits on RELEASE when it is outermost (§8R).
+Now every service flushes and the entry point owns the transaction: `in_session` /
+`run_sync` (`session_scope`) for the API and bot, `cli/_common.unit_of_work(commit=…)`
+for the CLI. A multi-step operation is atomic and a preview is "do it, roll back".
+
+Watch for: a caller that opens `new_session()` and closes it without committing now
+silently drops writes (three seed commands did exactly that; `purge-demo --commit`
+would have printed "deleted" and rolled back). A refusal whose record must survive (a
+wrong-password audit row, a `refund_failed` event, an APPLY_FAILED decision) goes
+through `api/runtime.in_session_committing(work, refusals=…)` or a second transaction.
+Do not use `begin_nested()` for partial rollback on SQLite; `lightspeed/sync.py` keeps
+one only after probing that an outer transaction is already open.
+
+### One place translates refusals
+
+`api/app.py:_translate` is the only exception-to-`(status, error, detail)` table,
+registered once. Per-view wrappers (`guarded()`, finance `_run`, six `_refused` blocks)
+are gone. `KeyError`, `IndexError` and a pydantic `ValidationError` raised inside a view
+are bugs: they used to answer 404 with the key's repr, or 422, and now answer 500 with
+the traceback logged. Every mapped 4xx is logged at INFO with its route. Statuses that
+were already specific are unchanged; errors that previously became 500 or a generic 422
+depending on the route (`BrowserJobRefused`, `FinanceConflict`) are now consistent.
+
+### Order-state rules have one home
+
+Which purchase-order status permits what lives in `services/order_actions.py`
+(`CONFIRMABLE`, `AWAITING_DELIVERY`, `CANCELLABLE`, `OPEN_STATUSES`, `allowed_actions`),
+with `order_total_pence` in the repository. There were four copies. The Telegram bot's
+order flow wrote `po_line`/`purchase_order` itself, skipped the web's all-zero refusal,
+and marked MANUAL orders SENT with `sent_by` NULL. It now calls the same services as the
+web and every step is signed `telegram:<user>`.
+
+### Bugs found and fixed (wrong behaviour, not style)
+
+| Area | Defect | Fix |
+|---|---|---|
+| CSV import | a receipt refused on line 2 committed line 1, reported "rejected", then "already recorded" on re-import | `validate_sale` runs in full before the first write; the dry run uses it too |
+| Rewards | "Undo last" voided the paid WEB sale of an online order | only a LOYALTY sale is voided; online redemptions refuse 409 `redeemed_online` |
+| Rewards | online POINTS awarded on the whole order, till on eligible spend | both use `domain.loyalty.receipt_units` |
+| Web Push | any `https://` endpoint was stored and POSTed to (SSRF) | allow-list of browser push hosts, checked on subscribe and send |
+| Uploads | size checked only by `Content-Length`; chunked bodies read in full | `api/uploads.read_bounded_body` streams to a cap |
+| Browser agent | spend-money click guard allowed the click when it could not identify the control | fails closed |
+| Browser agent | DNS/config errors read as "signed out" → session EXPIRED; CHECK_FAILED rolled back | `SignInCheckFailed` → CHECK_FAILED, persisted |
+| Browser agent | invariant 10 held by convention | worker engine refuses writes to `FORBIDDEN_TABLES`; the narration audit engine is INSERT-only |
+| Scheduler | an auto-stage failure skipped the owner's notification forever | notify first, then stage under `log.exception` |
+| Scheduler | one unavailable channel committed the others while logging "nothing to import" | one transaction per channel |
+| Payments | `CAFEOPS_PAYMENTS_CSV_DIR` was never read; `payments import --commit` imported fixture takings | real setting |
+| Legacy import | a re-run overwrote tuned waste factors, tiers, confirmed shelf lives, and rewrote open price and recipe rows in place (invariant 3); a missing cost became 0p (invariant 8) | refuses on a populated database without `--force-legacy`; fill-blanks only; supersede, never edit; missing is `None` |
+| Drift gate | classified on a float that could round across 10% / 15% | exact `Decimal` comparison |
+| Money | ~20 `f"£{p/100:.2f}"` sites (invariant 11); one truncated fractional pence | `domain/units.pounds`, `pounds_figure`, `gbp_code` |
+| GET that wrote | `GET /api/shop-admin/products/by-menu-item/{id}` inserted a product | read-only; the PUT creates |
+| Config | `.env` resolved against the working directory | anchored at the repo root |
+
+### What differs from the baseline, and why
+
+- `simulate`: one emergency premium reads £0.77 instead of £0.76 (it was truncated).
+- `import-legacy` / `seed` gained `--force-legacy`; no other help text changed.
+- `/api/meta` invariant note 1 describes today's order flow; `loaded_hourly_rate_pence`
+  is null for anonymous callers. `?as_of=today` ends at `time.max` like a bare date.
+- Generic supplier portals with no quick-order page no longer advertise a quick-order
+  tier they could not run.
+- The bot shows one new refusal, `err_order_all_zero`, where it used to confirm and
+  dispatch an empty order.
+- Negative amounts formatted by `pounds` read `-£1.50` rather than `£-1.50`.
+
+### Left open, deliberately (each is a decision or a migration)
+
+- **Invariant 12 has three ledger-mutating paths, not one** (now stated in CLAUDE.md
+  §13): `rebuild_batches(purge=True)`, the batch-link reset in the same function, and
+  `purge_demo`. A `BEFORE DELETE` trigger would make it structural.
+- **`BEGIN IMMEDIATE`** via SQLAlchemy's pysqlite recipe would make every savepoint safe
+  and close the sync-run read-then-insert race; it changes locking in four processes and
+  needs an owner-run check. The race alone could be closed by a partial unique index.
+- Enum columns carry no CHECK constraint (the docstrings claimed one; corrected).
+- The live database's `purchase_order.receipt_asset_id` FK is unnamed, unlike a fresh
+  migration; autogenerate will keep proposing it until a migration names it.
+- The old API generation (`/api/templates…/apply`, `/api/proposals/{key}/materialise`,
+  `/api/today`, `/api/margin`, `/api/channels`, `/api/takings`) has no web caller; the
+  materialise route still accepts a name, which §8Q argues against. Retiring it is the
+  owner's call (§8X).
+- Still large: `api/areas/menu_views.py` (1.7k lines), `bot/formatters.py` (2.2k),
+  `services/shop/admin.py`; `build_order` passes ~15 parameters through three layers.
+
+---
+
+## §8Z — Three backend gaps closed (2026-09-29, after §8Y)
+
+The owner asked for the missing backend to be built. Checked against the code, three
+links were missing; one further candidate was deliberately NOT built.
+
+**1. Telegram order dispatch now stages the supplier's basket.** The bot's send step for
+PORTAL and BROWSER_AGENT suppliers returned "Browser agent not wired yet (Phase 2)",
+although `services/browser_jobs.enqueue_stage_basket` (the web's "Stage basket") had
+existed since §8W. `services/order_dispatch.dispatch_confirmed_order` now owns the send
+step (the bot's view only presents it): a supplier with a portal adapter gets a cart
+link or a queued STAGE_BASKET job, and the order **stays CONFIRMED** -- staging stops at
+the checkout button, so a person pays and then records "Mark sent" (invariant 1). If
+staging is refused (worker off, no adapter, sign-in lapsed) the refusal is shown
+verbatim and the old instruction script is the fallback. MANUAL is unchanged (a
+shopping list, marked sent). `stages_basket(supplier)` is shared by the order card and
+the dispatch, so what the card promises is what is attempted.
+
+**2. A finished basket job tells the owner.** Before, a job's outcome reached only the
+Agents queue, so a basket staged from Telegram or by auto-stage finished silently.
+`agent/browser/worker.notify_owner_of_basket` sends one Telegram message after the job's
+transaction commits -- basket ready (with link, subtotal, and short lines), stopped for a
+person, or failed -- from `browser_jobs.basket_job_notice` (data) and
+`bot/formatters.basket_job_finished` (wording). Read-only, never raises, never says
+"ordered". Cancelled jobs send nothing.
+
+**3. Waste-factor suggestions reach the review queue without the narration agent.**
+The drift maths computed a suggestion for every tuning-band count, but it reached a
+person only via `cafeops drift --apply-waste` or the Claude-powered agent (no API key
+configured). `services/waste_proposals.propose_waste_factors` runs inside the weekly
+`drift_report` job and puts one WAITING proposal per suggestion on the Agents screen,
+with an `agent_action_log` row, under agent `drift_report`. It is deterministic: the
+value is the drift report's own (`record_count.waste_suggestion`, now split out
+read-only), and accepting re-computes it and refuses if it moved. **One count yields at
+most one proposal**, keyed by the observation's `observed_at`: the first version
+re-proposed after every accept, because a changed waste factor makes the same count
+compute a new suggestion. The accept path now checks before it writes, so the
+`no_autoflush` workaround in `agent_proposals` is gone.
+
+**Not built: the real-time modifier feed.** §8K stands. It would systematically miss
+counter-service checks and has no stable join key; the upcharge-line substitute and
+`cafeops modifier-audit` remain the route.
+
+Verified on a database copy: every supplier channel with the worker off and on;
+the three notice outcomes through the worker's guarded engine; propose, re-run, accept,
+decline, re-run; the real `cafeops jobs --run drift_report`; and the full §8Y suite,
+unchanged apart from wall-clock text. Two new Russian bot messages (the staging outcome
+and the finished-basket notice) should be read by the owner.

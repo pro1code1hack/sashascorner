@@ -7,7 +7,7 @@
  * much of it is priced.
  */
 import { useQuery } from '@tanstack/react-query'
-import { Bars, Empty, ErrorBox, Loading, cx } from '../../components/ui'
+import { Bars, Empty, ErrorBox, Loading, TBody, THead, Table, Td, Th, Tr } from '../../components/ui'
 import { gbp, plural } from '../../lib/format'
 import { KEYS, stockApi } from '../../lib/stock-api'
 import { dayMonth } from '../stock/fmt'
@@ -21,7 +21,8 @@ function poundsNoPence(p: number): string {
   return `£${whole.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`
 }
 
-const GRID = 'grid grid-cols-[110px_minmax(0,1.6fr)_minmax(0,2fr)_90px] gap-2.5'
+/** Rows shown in the table; the rest are summarised, never silently dropped. */
+const SHOWN = 40
 
 export function ShopRuns() {
   const q = useQuery({ queryKey: KEYS.shopRuns, queryFn: stockApi.shopRuns, staleTime: 60_000 })
@@ -64,30 +65,39 @@ export function ShopRuns() {
               }))}
             />
           </div>
-          <div className="scroll-x relative max-w-[900px]">
-            <div className="min-w-[560px]">
-              <div className={cx(GRID, 'border-b border-line py-1.5 text-sm text-ink-2')}>
-                <span>Date</span>
-                <span>Where</span>
-                <span>Why / note</span>
-                <span className="text-right">£</span>
-              </div>
-              {d.runs.slice(0, 40).map((r, i) => (
-                <div key={`${r.occurred_at}-${i}`} className={cx(GRID, 'border-b border-line py-[7px] text-base')}>
-                  <span>{dayMonth(r.occurred_at)}</span>
-                  <span className="truncate">
-                    {r.where}
-                    {r.ingredient_name && <span className="text-ink-2"> · {r.ingredient_name}</span>}
-                  </span>
-                  <span className="truncate text-ink-2" title={r.note}>
-                    {r.note}
-                  </span>
-                  <span className="fig text-right">
-                    {r.amount_pence === null ? <span className="text-sm text-ink-2">not recorded</span> : gbp(r.amount_pence)}
-                  </span>
-                </div>
-              ))}
-            </div>
+          <div className="max-w-[900px]">
+            <Table label="Shop runs, newest first" minWidth={560}>
+              <THead>
+                <tr>
+                  <Th width={110}>Date</Th>
+                  <Th>Where</Th>
+                  <Th>Why / note</Th>
+                  <Th numeric width={90}>
+                    Paid
+                  </Th>
+                </tr>
+              </THead>
+              <TBody>
+                {d.runs.slice(0, SHOWN).map((r, i) => (
+                  <Tr key={`${r.occurred_at}-${i}`}>
+                    <Td className="whitespace-nowrap">{dayMonth(r.occurred_at)}</Td>
+                    <Td>
+                      {r.where}
+                      {r.ingredient_name && <span className="text-ink-2"> · {r.ingredient_name}</span>}
+                    </Td>
+                    {/* The note wraps rather than truncating behind a hover-only title. */}
+                    <Td className="text-ink-2">{r.note}</Td>
+                    <Td numeric>{r.amount_pence === null ? <span className="text-sm text-ink-2">not recorded</span> : gbp(r.amount_pence)}</Td>
+                  </Tr>
+                ))}
+              </TBody>
+            </Table>
+            {d.runs.length > SHOWN && (
+              <p className="mt-2 text-sm text-ink-2">
+                Showing the latest {SHOWN}; {d.runs.length - SHOWN} older {plural(d.runs.length - SHOWN, 'run')} are counted in the
+                total and the chart above.
+              </p>
+            )}
           </div>
         </>
       )}

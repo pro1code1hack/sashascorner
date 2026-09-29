@@ -52,5 +52,5 @@ def push_order_to_pos(order_id: int) -> None:
                     actor="system",
                     at=now,
                 )
-    except Exception as exc:
-        log.warning("push_order_to_pos(%s) failed: %s", order_id, exc)
+    except Exception:
+        log.exception("push_order_to_pos(%s) failed", order_id)

@@ -15,9 +15,6 @@ import type {
   CashRow,
   ChannelUploadOut,
   DeliveryRow,
-  DirectorEntry,
-  DirectorEntryIn,
-  DirectorResponse,
   Expense,
   ExpenseFilters,
   ExpenseIn,
@@ -78,7 +75,6 @@ export const financeApi = {
       })}`,
     ),
   reconcile: (period: Period) => read<ReconcileResponse>(`/api/finance/reconcile${qs({ period })}`),
-  director: () => read<DirectorResponse>('/api/finance/director'),
   alerts: () => read<FinanceAlerts>('/api/finance/alerts'),
   receipts: (f: ReceiptFilters) =>
     read<ReceiptsResponse>(
@@ -159,8 +155,6 @@ export const useReconcile = (period: Period | null) =>
     queryFn: () => financeApi.reconcile(period as Period),
     enabled: period !== null,
   })
-export const useDirector = () =>
-  useQuery({ queryKey: [...FINANCE_KEY, 'director'], queryFn: financeApi.director })
 export const useReceipts = (f: ReceiptFilters, enabled = true) =>
   useQuery({
     queryKey: [...FINANCE_KEY, 'receipts', f],
@@ -249,15 +243,4 @@ export const financeWrite = {
     apiWrite(`/api/finance/cash-counts/${enc(date)}`, { counted_pence, counted_by }, 'PUT'),
   explainCash: (date: string, explanation: string, explained_by: string): Promise<WriteResult<CashRow>> =>
     apiWrite(`/api/finance/cash-counts/${enc(date)}/explain`, { explanation, explained_by }, 'POST'),
-
-  createDirector: (body: DirectorEntryIn): Promise<WriteResult<DirectorEntry>> =>
-    apiWrite('/api/finance/director', body, 'POST'),
-  patchDirector: (id: number, body: DirectorEntryIn): Promise<WriteResult<DirectorEntry>> =>
-    apiWrite(`/api/finance/director/${id}`, body, 'PATCH'),
-  deleteDirector: (id: number, operator: string | null): Promise<WriteResult<{ deleted: string }>> =>
-    apiWrite(
-      `/api/finance/director/${id}${operator ? `?operator=${enc(operator)}` : ''}`,
-      undefined,
-      'DELETE',
-    ),
 }

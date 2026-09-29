@@ -32,7 +32,7 @@ from cafeops.bot.viewmodels import (
     OrderView,
     RecordedSaleView,
 )
-from cafeops.db.models.enums import MANUAL_SALE_CHANNELS, SaleChannel
+from cafeops.domain.enums import MANUAL_SALE_CHANNELS, SaleChannel
 
 __all__ = [
     "cash_day_kb",
@@ -187,17 +187,6 @@ def delivery_expiry_kb(po_line_id: int) -> InlineKeyboardMarkup:
     return builder.as_markup()
 
 
-def button_labels(markup: InlineKeyboardMarkup | None) -> list[list[str]]:
-    """Every caption, row by row. Used by the local preview to show what is on screen."""
-    if markup is None:
-        return []
-    return [[button.text for button in row] for row in markup.inline_keyboard]
-
-
-def flatten(rows: Sequence[Sequence[str]]) -> str:
-    return "\n".join("  [" + "] [".join(row) + "]" for row in rows)
-
-
 # --------------------------------------------------------------------------
 # Hand-typed sale, cash, files (DECISIONS 28)
 # --------------------------------------------------------------------------
@@ -234,7 +223,7 @@ def sale_categories_kb(page: MenuPageView, *, has_lines: bool) -> InlineKeyboard
 
 
 def _item_label(item: MenuPickView) -> str:
-    return f"{item.label} · £{item.price_pence // 100}.{item.price_pence % 100:02d}"
+    return f"{item.label} · {f.money(item.price_pence)}"
 
 
 def sale_items_kb(page: MenuPageView) -> InlineKeyboardMarkup:

@@ -49,7 +49,6 @@ from cafeops.db.models import (
     VariantAxis,
     VariantOption,
 )
-from cafeops.db.models.enums import ModifierAction
 from cafeops.db.repositories.composition import SqlCompositionRepository
 from cafeops.db.repositories.menu_cost import SqlMenuCostRepository
 from cafeops.domain.composition import (
@@ -71,9 +70,11 @@ from cafeops.domain.composition import (
     resolve_recipe,
     summarise_changes,
 )
+from cafeops.domain.enums import ModifierAction
 from cafeops.domain.labour import UNTIMED
 from cafeops.domain.types import ComponentRole, SizeCode
 from cafeops.jobs.cost_rollup import configured_rate_pence, rollup_for_template, snapshots_at
+from cafeops.services.actor import require_actor
 from cafeops.services.edit_composition import RetroactiveEditError, require_not_retroactive
 from cafeops.services.menu_catalog import set_menu_price
 
@@ -493,11 +494,9 @@ def apply_changeset(
     actor: str,
     effective_from: datetime | None = None,
 ) -> ChangesetApplied:
-    """Apply the changeset from `effective_from` (now). One transaction; commits itself."""
+    """Apply the changeset from `effective_from` (now). Flushes; the caller commits."""
     at = require_not_retroactive(effective_from or datetime.now(UTC))
-    actor = actor.strip()
-    if not actor:
-        raise ValueError("say who is applying this (the operator name)")
+    actor = require_actor(actor, error=ValueError)
 
     draft = load_template_draft(session, template_id, at)
     version = template_version(draft)
@@ -528,35 +527,31 @@ def apply_changeset(
         pos_actions=outcome.pos_actions,
     )
 
-    try:
-        _write_components(session, template_id, outcome, at, result)
-        option_ids = _write_options(session, outcome, at, result)
-        _write_items(session, template, outcome, option_ids, at, actor, result)
+    _write_components(session, template_id, outcome, at, result)
+    option_ids = _write_options(session, outcome, at, result)
+    _write_items(session, template, outcome, option_ids, at, actor, result)
 
-        template.name = outcome.after.name
-        template.prep_seconds_by_size = dict(outcome.after.prep_seconds_by_size)
-        template.prep_seconds_is_estimate = outcome.after.prep_is_estimate
+    template.name = outcome.after.name
+    template.prep_seconds_by_size = dict(outcome.after.prep_seconds_by_size)
+    template.prep_seconds_is_estimate = outcome.after.prep_is_estimate
 
-        session.add(
-            RecipeChange(
-                template_id=template_id,
-                change_kind="template_changeset",
-                effective_from=at,
-                actor=actor,
-                summary=result.summary,
-                lines=list(outcome.diff),
-            )
+    session.add(
+        RecipeChange(
+            template_id=template_id,
+            change_kind="template_changeset",
+            effective_from=at,
+            actor=actor,
+            summary=result.summary,
+            lines=list(outcome.diff),
         )
-        session.flush()
-        rollup = rollup_for_template(
-            session, template_id, at=at, trigger=f"recipe changeset by {actor}"
-        )
-        result.rollup_items_recosted = rollup.costed
-        result.rollup_summary = rollup.summary()
-        session.commit()
-    except Exception:
-        session.rollback()
-        raise
+    )
+    session.flush()
+    rollup = rollup_for_template(
+        session, template_id, at=at, trigger=f"recipe changeset by {actor}"
+    )
+    result.rollup_items_recosted = rollup.costed
+    result.rollup_summary = rollup.summary()
+    session.flush()
 
     result.new_version = template_version(
         load_template_draft(session, template_id, datetime.now(UTC))

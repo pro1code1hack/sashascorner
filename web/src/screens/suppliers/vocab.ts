@@ -2,6 +2,7 @@
  * Supplier vocabularies. C13: the backend's order channels, labelled; the
  * design's Phone / Message are display distinctions the adapters do not act on.
  */
+import type { Outcome } from '../../components/ui'
 import type { OrderChannel, Unit } from '../../lib/types/stock'
 
 export const CHANNELS: ReadonlyArray<{ value: OrderChannel; label: string }> = [
@@ -41,4 +42,13 @@ export function emailError(raw: string): string | undefined {
   const v = raw.trim()
   if (v === '') return undefined
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ? undefined : 'That does not look like an email address.'
+}
+
+/**
+ * `useWrite` (screens/stock/writes) reports `{tone, text}`; the kit's StatusLine
+ * takes an `Outcome`. One adapter so the shape lives in one place.
+ */
+export function fromWrite(o: { tone: 'ok' | 'bad'; text: string } | null): Outcome | null {
+  if (o === null) return null
+  return { kind: o.tone === 'bad' ? 'error' : 'ok', text: o.text }
 }

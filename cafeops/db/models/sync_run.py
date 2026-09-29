@@ -18,7 +18,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from cafeops.db.base import Base
 from cafeops.db.models._common import UTCDateTime, enum_col, utcnow
-from cafeops.db.models.enums import SyncSource, SyncStatus, SyncTrigger
+from cafeops.domain.enums import SyncSource, SyncStatus, SyncTrigger
 
 
 class SyncRun(Base):

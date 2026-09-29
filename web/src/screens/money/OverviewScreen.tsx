@@ -10,7 +10,7 @@
  * does; a month with takings but no costs entered shows no profit figure rather
  * than an inflated one.
  */
-import { ErrorBox, Loading, PageBody, PageHeader, cx } from '../../components/ui'
+import { ChartTable, ErrorBox, Loading, PageBody, PageHeader, cx } from '../../components/ui'
 import { navigate } from '../../lib/router'
 import { useOverview } from '../../lib/finance-api'
 import type { FinanceOverview, PeriodFigures } from '../../lib/types/finance'
@@ -300,9 +300,9 @@ function TakingsChart({ data }: { data: FinanceOverview }) {
       {n === 0 ? (
         <p className="mt-2 text-base text-ink-2">Nothing entered yet.</p>
       ) : (
+        // Decorative: the figures are in the table after it, not in hover-only <title>s.
         <svg
-          role="img"
-          aria-label={days ? 'Takings for each day of the month' : 'Takings for each month'}
+          aria-hidden="true"
           viewBox={`0 0 ${W} ${H}`}
           preserveAspectRatio="none"
           className="mt-2 block h-[170px] w-full border-b border-line"
@@ -331,6 +331,17 @@ function TakingsChart({ data }: { data: FinanceOverview }) {
         {days && <span className="text-center">dashes = no sales entered that day</span>}
         <span>{ch.last_label}</span>
       </div>
+      {n > 0 && (
+        <ChartTable
+          caption={days ? 'Takings for each day of the month' : 'Takings for each month'}
+          columns={[days ? 'Day' : 'Month', 'Takings']}
+          rows={
+            days
+              ? ch.day_bars.map((b) => [b.day, b.total_pence === null ? 'nothing entered' : gbp(b.total_pence)])
+              : ch.month_bars.map((b) => [b.label, gbp(b.revenue_pence)])
+          }
+        />
+      )}
     </section>
   )
 }

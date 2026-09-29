@@ -10,7 +10,7 @@ The guards here exist to fail with a sentence a human can read instead of an
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from datetime import date, datetime
 from decimal import Decimal
 
@@ -34,7 +34,15 @@ OPEN_PO_STATUSES: tuple[POStatus, ...] = (
 #: Statuses a draft can still have a line added to. Anything past confirmation is an
 #: order a human approved as it stood, and adding to it would be ordering without
 #: confirmation (invariant 1).
-_OPEN_TO_EDITS: tuple[POStatus, ...] = (POStatus.DRAFT, POStatus.PENDING_CONFIRM)
+#: The statuses in which packs may still be edited and the order confirmed.
+OPEN_TO_EDITS: tuple[POStatus, ...] = (POStatus.DRAFT, POStatus.PENDING_CONFIRM)
+
+
+def order_total_pence(lines: Iterable[POLine]) -> int:
+    """Σ final packs x unit price: the goods total `purchase_order.total_pence` holds.
+    One definition, so the bot, the web and the repository cannot disagree by a line."""
+    return sum(line.final_packs * line.unit_price_pence for line in lines)
+
 
 _CLOSED_TO_CONFIRMATION: tuple[POStatus, ...] = (
     POStatus.CONFIRMED,
@@ -208,7 +216,7 @@ class SqlPurchaseOrderRepository:
             select(PurchaseOrder)
             .where(
                 PurchaseOrder.supplier_id == supplier_id,
-                PurchaseOrder.status.in_(list(_OPEN_TO_EDITS)),
+                PurchaseOrder.status.in_(list(OPEN_TO_EDITS)),
                 PurchaseOrder.target_delivery_date >= target_delivery_date,
             )
             .order_by(PurchaseOrder.target_delivery_date, PurchaseOrder.id)
@@ -260,7 +268,7 @@ class SqlPurchaseOrderRepository:
             )
             self.session.add(line)
         self.session.flush()
-        po.total_pence = sum(row.final_packs * row.unit_price_pence for row in po.lines)
+        po.total_pence = order_total_pence(po.lines)
         self.session.flush()
         return po.id, line.id, created, po.target_delivery_date
 
@@ -300,7 +308,7 @@ class SqlPurchaseOrderRepository:
                 raise ValueError(f"po_line {line.id}: final_packs {packs} is negative")
             line.final_packs = packs
 
-        po.total_pence = sum(line.final_packs * line.unit_price_pence for line in lines)
+        po.total_pence = order_total_pence(lines)
         po.confirmed_by = confirmed_by
         po.confirmed_at = at
         po.status = POStatus.CONFIRMED
@@ -317,14 +325,6 @@ class SqlPurchaseOrderRepository:
             )
         po.sent_at = at
         po.status = POStatus.SENT
-
-    def list_for_supplier(
-        self, supplier_id: int, *, statuses: Sequence[POStatus] | None = None
-    ) -> list[PurchaseOrder]:
-        stmt = select(PurchaseOrder).where(PurchaseOrder.supplier_id == supplier_id)
-        if statuses:
-            stmt = stmt.where(PurchaseOrder.status.in_(list(statuses)))
-        return list(self.session.scalars(stmt.order_by(PurchaseOrder.id)))
 
 
 #: `po_line.cap_reason` is String(80). The phrase is written to fit, so a longer one is

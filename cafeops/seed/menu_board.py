@@ -30,7 +30,8 @@ from typing import Literal
 from sqlalchemy import inspect, select, text
 from sqlalchemy.orm import Session
 
-from cafeops.db.models.enums import MenuKind, SizeCode
+from cafeops.domain.enums import MenuKind, SizeCode
+from cafeops.domain.units import pounds
 
 ACTOR = "board-import"
 FOOD_SLUGS = frozenset({"breakfast", "lunch", "waffles", "cakes"})
@@ -250,10 +251,6 @@ def plan(session: Session, board_path: Path) -> Plan:
     return result
 
 
-def _gbp(p: int) -> str:
-    return f"£{p // 100}.{p % 100:02d}"
-
-
 def report_lines(p: Plan) -> list[str]:
     out: list[str] = []
     if not p.migrated:
@@ -271,13 +268,13 @@ def report_lines(p: Plan) -> list[str]:
         out.append(f"  ~ {name}: {cur or '(none)'} -> {new}")
     out.append(f"New products from the boards: {len(p.create)}")
     for it in p.create:
-        sizes = ", ".join(f"{s} {_gbp(v)}" for s, v in it.prices.items())
+        sizes = ", ".join(f"{s} {pounds(v)}" for s, v in it.prices.items())
         out.append(f"  + {it.name}  [{it.category}]  {sizes}")
     out.append(f"Price conflicts (owner decides: --prices board | keep): {len(p.conflicts)}")
-    for c in p.conflicts:
+    for conflict in p.conflicts:
         out.append(
-            f"  ! {c.name} {c.size}: board {_gbp(c.board_pence)}, now {_gbp(c.current_pence)}"
-            f" (from {c.current_source})"
+            f"  ! {conflict.name} {conflict.size}: board {pounds(conflict.board_pence)}, "
+            f"now {pounds(conflict.current_pence)} (from {conflict.current_source})"
         )
     if p.sizes_missing:
         out.append(

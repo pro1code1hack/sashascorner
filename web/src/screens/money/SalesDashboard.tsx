@@ -28,7 +28,7 @@
  */
 import { useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
-import { Segmented, cx } from '../../components/ui'
+import { ChartTable, Segmented, cx } from '../../components/ui'
 import { useReconcile } from '../../lib/finance-api'
 import type { DeliveryRow, SalesDay, SalesInsights } from '../../lib/types/finance'
 import { Legend, Tip, axisMoney, barPath, niceMax, useWidth } from './chartKit'
@@ -101,9 +101,14 @@ export function sumDays(rows: readonly SalesDay[], paid: Paid): Sums {
   return s
 }
 
+/** Integer pence, half up: `sum / n` without a float ever holding money. */
+export function avgPence(sum: number, n: number): number {
+  return Math.floor((sum * 2 + n) / (n * 2))
+}
+
 /** Integer pence, half up, over days that have an order count. */
 export function avgTicket(s: Sums): number | null {
-  return s.orders > 0 ? Math.floor((s.totalWithOrders * 2 + s.orders) / (s.orders * 2)) : null
+  return s.orders > 0 ? avgPence(s.totalWithOrders, s.orders) : null
 }
 
 const isApp = (channel: string) => channel === 'DELIVEROO' || channel === 'JUST_EAT'
@@ -409,7 +414,7 @@ function OverTime({ till, rows, paid, showTakings }: { till: SalesInsights | nul
 
   // The dashed average: till sales per bucket with sales, else money taken per bucket with a row.
   const avgOf = lineOn ? buckets.filter((b) => b.till !== null).map((b) => b.till ?? 0) : buckets.filter((b) => b.days > 0).map(taken)
-  const avg = avgOf.length ? avgOf.reduce((a, b) => a + b, 0) / avgOf.length : 0
+  const avg = avgOf.length ? avgPence(avgOf.reduce((a, b) => a + b, 0), avgOf.length) : 0
   const avgWhat = lineOn ? 'till' : 'taken'
 
   // Line segments between consecutive buckets the till was open; a gap where it was not.
@@ -465,7 +470,7 @@ function OverTime({ till, rows, paid, showTakings }: { till: SalesInsights | nul
       )}
       <div ref={ref} className="relative w-full" onMouseLeave={() => setHover(null)}>
         {width > 0 && (
-          <svg width={width} height={H} role="group" aria-label={`${what} per ${grain}`}>
+          <svg width={width} height={H} aria-hidden="true">
             {ticks.map((tk) => (
               <g key={tk}>
                 <line x1={PAD.left} x2={width - PAD.right} y1={y(tk)} y2={y(tk)} stroke="var(--color-line)" strokeWidth={tk === 0 ? 1.5 : 1} />
@@ -511,7 +516,7 @@ function OverTime({ till, rows, paid, showTakings }: { till: SalesInsights | nul
               <g>
                 <line x1={PAD.left} x2={width - PAD.right} y1={y(avg)} y2={y(avg)} stroke="var(--color-ink-2)" strokeWidth={1} strokeDasharray="4 4" />
                 <text x={width - PAD.right} y={y(avg) - 5} textAnchor="end" className="fill-ink-2 text-label font-bold">
-                  avg {gbp(Math.round(avg))} {avgWhat}
+                  avg {gbp(avg)} {avgWhat}
                 </text>
               </g>
             )}
@@ -522,7 +527,8 @@ function OverTime({ till, rows, paid, showTakings }: { till: SalesInsights | nul
                 </text>
               ) : null,
             )}
-            {/* Hit targets: the full column, bigger than the bar. */}
+            {/* Hover targets: the full column, bigger than the bar. Decorative: the
+                figures are read from the table below, not one tab stop per column. */}
             {buckets.map((b, i) => (
               <rect
                 key={b.key}
@@ -532,20 +538,26 @@ function OverTime({ till, rows, paid, showTakings }: { till: SalesInsights | nul
                 height={plotH}
                 fill="transparent"
                 onMouseEnter={() => setHover(i)}
-                onFocus={() => setHover(i)}
-                onBlur={() => setHover(null)}
-                tabIndex={0}
-                role="img"
-                aria-label={`${b.long}: ${[
-                  lineOn ? (b.till === null ? 'nothing rung up' : `till ${gbp(b.till)}`) : null,
-                  bars.length ? `taken ${gbp(taken(b))}` : null,
-                ]
-                  .filter(Boolean)
-                  .join(', ')}`}
+                aria-hidden="true"
               />
             ))}
           </svg>
         )}
+        <ChartTable
+          caption={`${what} per ${grain}`}
+          columns={[
+            grain === 'day' ? 'Day' : grain === 'week' ? 'Week' : 'Month',
+            ...(lineOn ? ['Till sales', 'Receipts'] : []),
+            ...bars.map((k) => (k === 'card' ? 'Card' : 'Cash')),
+            ...(bars.length > 1 ? ['Taken'] : []),
+          ]}
+          rows={buckets.map((b) => [
+            b.long,
+            ...(lineOn ? [b.till === null ? 'nothing rung up' : gbp(b.till), count(b.receipts)] : []),
+            ...bars.map((k) => (b.days > 0 ? gbp(b[k]) : 'no row')),
+            ...(bars.length > 1 ? [b.days > 0 ? gbp(taken(b)) : 'no row'] : []),
+          ])}
+        />
         {hb && hover !== null && (
           <Tip x={cx0(hover)} width={width}>
             <div className="mb-1 font-bold text-ink">{hb.long}</div>
@@ -750,11 +762,11 @@ function WeekdaysAndBestDays({
   const byWeekday = WD_SHORT.map((_, w) => {
     if (ledger === 'till' && till) {
       const r = till.by_weekday.find((x) => x.weekday === w)
-      return { n: r?.trading_days ?? 0, avg: r && r.trading_days > 0 ? Math.round(r.gross_pence / r.trading_days) : null }
+      return { n: r?.trading_days ?? 0, avg: r && r.trading_days > 0 ? avgPence(r.gross_pence, r.trading_days) : null }
     }
     const days = rows.filter((d) => weekdayIndex(d.date) === w)
     const sum = days.reduce((n, d) => n + takenOf(d, paid), 0)
-    return { n: days.length, avg: days.length ? Math.round(sum / days.length) : null }
+    return { n: days.length, avg: days.length ? avgPence(sum, days.length) : null }
   })
   const top = Math.max(1, ...byWeekday.map((b) => b.avg ?? 0))
   const best = byWeekday.reduce((bi, b, i) => ((b.avg ?? -1) > (byWeekday[bi]?.avg ?? -1) ? i : bi), 0)

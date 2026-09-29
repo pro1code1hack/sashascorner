@@ -3,7 +3,16 @@
     {
       "supplier_id": 7,
       "supplier_name": "Amazon",
-      "portal": null,
+      "portal": {
+        "slug": "amazon",
+        "label": "Amazon UK",
+        "start_url": "https://www.amazon.co.uk/",
+        "tiers": [
+          "cart_link",
+          "browser"
+        ],
+        "prefers_headed": false
+      },
       "session": {
         "status": "NOT_CONNECTED",
         "account_label": null,
@@ -14,14 +23,27 @@
         "last_error": null
       },
       "auto_stage": false,
-      "can_stage": false,
-      "cannot_stage_reason": "the browser worker is off (CAFEOPS_BROWSER_WORKER_ENABLED)",
-      "last_job": null
+      "can_stage": true,
+      "cannot_stage_reason": null,
+      "last_job": null,
+      "tiers": [
+        "cart_link",
+        "browser"
+      ]
     },
     {
       "supplier_id": 3,
       "supplier_name": "Booker",
-      "portal": null,
+      "portal": {
+        "slug": "booker",
+        "label": "Booker",
+        "start_url": "https://www.booker.co.uk/",
+        "tiers": [
+          "quick_order",
+          "browser"
+        ],
+        "prefers_headed": false
+      },
       "session": {
         "status": "NOT_CONNECTED",
         "account_label": null,
@@ -34,12 +56,25 @@
       "auto_stage": false,
       "can_stage": false,
       "cannot_stage_reason": "the browser worker is off (CAFEOPS_BROWSER_WORKER_ENABLED)",
-      "last_job": null
+      "last_job": null,
+      "tiers": [
+        "quick_order",
+        "browser"
+      ]
     },
     {
       "supplier_id": 2,
       "supplier_name": "Brakes",
-      "portal": null,
+      "portal": {
+        "slug": "brakes",
+        "label": "Brakes",
+        "start_url": "https://www.brake.co.uk/",
+        "tiers": [
+          "quick_order",
+          "browser"
+        ],
+        "prefers_headed": false
+      },
       "session": {
         "status": "NOT_CONNECTED",
         "account_label": null,
@@ -52,12 +87,24 @@
       "auto_stage": false,
       "can_stage": false,
       "cannot_stage_reason": "the browser worker is off (CAFEOPS_BROWSER_WORKER_ENABLED)",
-      "last_job": null
+      "last_job": null,
+      "tiers": [
+        "quick_order",
+        "browser"
+      ]
     },
     {
       "supplier_id": 1,
       "supplier_name": "Cakesmiths",
-      "portal": null,
+      "portal": {
+        "slug": "cakesmiths",
+        "label": "Cakesmiths",
+        "start_url": "https://www.cakesmiths.com/",
+        "tiers": [
+          "browser"
+        ],
+        "prefers_headed": false
+      },
       "session": {
         "status": "NOT_CONNECTED",
         "account_label": null,
@@ -65,17 +112,29 @@
         "connected_by": null,
         "last_ok_at": null,
         "last_checked_at": null,
-        "last_error": "forgotten by Sasha"
+        "last_error": null
       },
       "auto_stage": false,
       "can_stage": false,
       "cannot_stage_reason": "the browser worker is off (CAFEOPS_BROWSER_WORKER_ENABLED)",
-      "last_job": null
+      "last_job": null,
+      "tiers": [
+        "browser"
+      ]
     },
     {
       "supplier_id": 4,
       "supplier_name": "Cups Direct",
-      "portal": null,
+      "portal": {
+        "slug": "cups_direct",
+        "label": "Cups Direct",
+        "start_url": "https://cupsdirect.co.uk/",
+        "tiers": [
+          "cart_link",
+          "browser"
+        ],
+        "prefers_headed": false
+      },
       "session": {
         "status": "NOT_CONNECTED",
         "account_label": null,
@@ -86,14 +145,59 @@
         "last_error": null
       },
       "auto_stage": false,
-      "can_stage": false,
-      "cannot_stage_reason": "the browser worker is off (CAFEOPS_BROWSER_WORKER_ENABLED)",
-      "last_job": null
+      "can_stage": true,
+      "cannot_stage_reason": null,
+      "last_job": null,
+      "tiers": [
+        "cart_link",
+        "browser"
+      ]
     },
     {
       "supplier_id": 5,
       "supplier_name": "Monolith",
-      "portal": null,
+      "portal": {
+        "slug": "monolith",
+        "label": "Monolith",
+        "start_url": "https://www.monolithuk.co.uk/",
+        "tiers": [
+          "cart_link",
+          "quick_order",
+          "browser"
+        ],
+        "prefers_headed": false
+      },
+      "session": {
+        "status": "NOT_CONNECTED",
+        "account_label": null,
+        "connected_at": null,
+        "connected_by": null,
+        "last_ok_at": null,
+        "last_checked_at": null,
+        "last_error": null
+      },
+      "auto_stage": false,
+      "can_stage": true,
+      "cannot_stage_reason": null,
+      "last_job": null,
+      "tiers": [
+        "cart_link",
+        "quick_order",
+        "browser"
+      ]
+    },
+    {
+      "supplier_id": 6,
+      "supplier_name": "Tesco",
+      "portal": {
+        "slug": "tesco",
+        "label": "Tesco groceries",
+        "start_url": "https://www.tesco.com/groceries/en-GB/",
+        "tiers": [
+          "browser"
+        ],
+        "prefers_headed": true
+      },
       "session": {
         "status": "NOT_CONNECTED",
         "account_label": null,
@@ -106,7 +210,10 @@
       "auto_stage": false,
       "can_stage": false,
       "cannot_stage_reason": "the browser worker is off (CAFEOPS_BROWSER_WORKER_ENABLED)",
-      "last_job": null
+      "last_job": null,
+      "tiers": [
+        "browser"
+      ]
     },
     {
       "supplier_id": 8,
@@ -123,28 +230,92 @@
       },
       "auto_stage": false,
       "can_stage": false,
-      "cannot_stage_reason": "the browser worker is off (CAFEOPS_BROWSER_WORKER_ENABLED)",
-      "last_job": null
-    },
-    {
-      "supplier_id": 6,
-      "supplier_name": "Tesco",
-      "portal": null,
-      "session": {
-        "status": "NOT_CONNECTED",
-        "account_label": null,
-        "connected_at": null,
-        "connected_by": null,
-        "last_ok_at": null,
-        "last_checked_at": null,
-        "last_error": null
-      },
-      "auto_stage": false,
-      "can_stage": false,
-      "cannot_stage_reason": "the browser worker is off (CAFEOPS_BROWSER_WORKER_ENABLED)",
-      "last_job": null
+      "cannot_stage_reason": "no portal adapter for this supplier",
+      "last_job": null,
+      "tiers": []
     }
   ],
   "worker_enabled": false,
-  "portals": []
+  "portals": [
+    {
+      "slug": "amazon",
+      "label": "Amazon UK",
+      "start_url": "https://www.amazon.co.uk/",
+      "tiers": [
+        "cart_link",
+        "browser"
+      ],
+      "prefers_headed": false
+    },
+    {
+      "slug": "booker",
+      "label": "Booker",
+      "start_url": "https://www.booker.co.uk/",
+      "tiers": [
+        "quick_order",
+        "browser"
+      ],
+      "prefers_headed": false
+    },
+    {
+      "slug": "brakes",
+      "label": "Brakes",
+      "start_url": "https://www.brake.co.uk/",
+      "tiers": [
+        "quick_order",
+        "browser"
+      ],
+      "prefers_headed": false
+    },
+    {
+      "slug": "cakesmiths",
+      "label": "Cakesmiths",
+      "start_url": "https://www.cakesmiths.com/",
+      "tiers": [
+        "browser"
+      ],
+      "prefers_headed": false
+    },
+    {
+      "slug": "cups_direct",
+      "label": "Cups Direct",
+      "start_url": "https://cupsdirect.co.uk/",
+      "tiers": [
+        "cart_link",
+        "browser"
+      ],
+      "prefers_headed": false
+    },
+    {
+      "slug": "generic",
+      "label": "Web shop (generic)",
+      "start_url": "https://generic.invalid/",
+      "tiers": [
+        "cart_link",
+        "quick_order",
+        "browser"
+      ],
+      "prefers_headed": false
+    },
+    {
+      "slug": "monolith",
+      "label": "Monolith",
+      "start_url": "https://www.monolithuk.co.uk/",
+      "tiers": [
+        "cart_link",
+        "quick_order",
+        "browser"
+      ],
+      "prefers_headed": false
+    },
+    {
+      "slug": "tesco",
+      "label": "Tesco groceries",
+      "start_url": "https://www.tesco.com/groceries/en-GB/",
+      "tiers": [
+        "browser"
+      ],
+      "prefers_headed": true
+    }
+  ]
 }

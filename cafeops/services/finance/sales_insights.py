@@ -24,16 +24,18 @@ from __future__ import annotations
 
 from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from cafeops.clock import local_day_bounds, local_today
 from cafeops.config import settings
-from cafeops.db.models.enums import SaleChannel
 from cafeops.db.models.menu import MenuItem
 from cafeops.db.models.sale import Sale
+from cafeops.domain.composition import SIZE_ORDER
+from cafeops.domain.enums import SaleChannel
 from cafeops.services.finance.common import FinanceRefused
 
 __all__ = [
@@ -49,7 +51,8 @@ MAX_WINDOW_DAYS = 3660
 UNCATEGORISED = "__none__"
 #: Receipt ids the demo seed writes. Real Lightspeed ids never start with this.
 DEMO_PREFIX = "DEMO-"
-_SIZE_ORDER = ("S", "M", "XL", "ONE")
+#: Size codes in the order sizes are shown everywhere (`domain.composition.SIZE_ORDER`).
+_SIZE_ORDER = tuple(size.value for size in SIZE_ORDER)
 _BASKET_CAP = 4  # 1, 2, 3, "4+"
 
 
@@ -166,12 +169,13 @@ class _Line:
 
 def _load(session: Session, since: date, until: date) -> list[_Line]:
     tz = settings.tz
+    start, end = local_day_bounds(since, until, tz=tz)
     stmt = (
         select(Sale, MenuItem.name, MenuItem.category, MenuItem.size_code)
         .join(MenuItem, MenuItem.id == Sale.menu_item_id)
         .where(Sale.voided.is_(False))
-        .where(Sale.sold_at >= datetime.combine(since, time.min, tzinfo=tz))
-        .where(Sale.sold_at < datetime.combine(until + timedelta(days=1), time.min, tzinfo=tz))
+        .where(Sale.sold_at >= start)
+        .where(Sale.sold_at < end)
     )
     out: list[_Line] = []
     for sale, name, category, size in session.execute(stmt):
@@ -298,7 +302,7 @@ def sales_insights(
         since, until = first, last
     # Default: the 30 days up to the last sale, so a quiet week still shows data.
     if until is None:
-        until = last if last is not None else datetime.now(tz).date()
+        until = last if last is not None else local_today(tz)
     if since is None:
         since = until - timedelta(days=DEFAULT_WINDOW_DAYS - 1)
     if since > until:

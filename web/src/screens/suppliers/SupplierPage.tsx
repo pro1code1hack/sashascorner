@@ -8,7 +8,8 @@
  *   grouped form, and the only way to save it is "Confirm these terms", which
  *   posts all six to /confirm (C3, §10.9b). Saving terms IS confirming them, so
  *   the form asks for "I checked these with …" before it will send.
- * - "Delete" archives, with a second tap, and is refused while an order is open (C12).
+ * - "Archive" needs a second tap and is refused while an order is open (C12). Nothing
+ *   is deleted: the button says what it does.
  */
 import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
@@ -23,11 +24,13 @@ import {
   Loading,
   Pill,
   Select,
+  StatusLine,
   Textarea,
   TitleInput,
   WarnBox,
   cx,
 } from '../../components/ui'
+import type { Outcome } from '../../components/ui'
 import { confirmSupplierTerms } from '../../lib/api'
 import { useOperator } from '../../lib/operator'
 import { navigate } from '../../lib/router'
@@ -88,7 +91,7 @@ function Page({ data, onSaved }: { data: SupplierProductsResponse; onSaved: (s: 
   const [name, setName] = useState(s.name)
   useEffect(() => setName(s.name), [s.name])
   useEffect(() => {
-    if (w.outcome?.tone === 'bad') onSaved({ tone: 'bad', text: w.outcome.text })
+    if (w.outcome?.tone === 'bad') onSaved({ kind: 'error', text: w.outcome.text })
   }, [w.outcome, onSaved])
 
   const patch = async (body: PatchBody): Promise<boolean> => {
@@ -97,7 +100,7 @@ function Page({ data, onSaved }: { data: SupplierProductsResponse; onSaved: (s: 
     })
     if (r)
       onSaved({
-        tone: 'ok',
+        kind: 'ok',
         text: r.changed.length ? 'Saved' : 'Nothing changed',
       })
     return r !== null
@@ -107,7 +110,7 @@ function Page({ data, onSaved }: { data: SupplierProductsResponse; onSaved: (s: 
     const r = await w.run(() => supplierWrites.archive(s.supplier_id, operator), { invalidate: AFTER_PROFILE })
     if (r) {
       onSaved({
-        tone: 'ok',
+        kind: 'ok',
         text: `${r.supplier.name} archived.${r.restarred.length ? ` Recipe prices moved to another supplier for: ${r.restarred.join(', ')}.` : ''}`,
       })
       navigate('/suppliers')
@@ -124,7 +127,11 @@ function Page({ data, onSaved }: { data: SupplierProductsResponse; onSaved: (s: 
           onBlur={() => {
             const n = name.trim()
             if (n === '') setName(s.name)
-            else if (n !== s.name) void patch({ name: n })
+            else if (n !== s.name) {
+              // A save on blur is otherwise silent: say it is happening, then what came back.
+              onSaved({ kind: 'info', text: 'Saving the name…' })
+              void patch({ name: n })
+            }
           }}
           variant="compact"
           className="flex-[1_1_14rem]"
@@ -136,14 +143,14 @@ function Page({ data, onSaved }: { data: SupplierProductsResponse; onSaved: (s: 
           pending={w.pending}
           className="rounded-card"
         >
-          Delete
+          Archive
         </ConfirmTwiceButton>
       </div>
 
       <Details s={s} patch={patch} pending={w.pending} />
       <Terms s={s} onSaved={onSaved} />
       <section className="border-t border-line pt-4">
-        <Products data={data} onSaved={onSaved} />
+        <Products data={data} />
       </section>
     </div>
   )
@@ -338,8 +345,12 @@ function Terms({ s, onSaved }: { s: Supplier; onSaved: (x: Saved) => void }) {
   const [tried, setTried] = useState(false)
   const [changed, setChanged] = useState<string[] | null>(null)
   const cw = useWrite()
+  const changedOutcome: Outcome | null =
+    changed === null
+      ? null
+      : { kind: 'ok', text: changed.length === 0 ? 'Confirmed as they were: nothing moved.' : `Changed: ${changed.join('; ')}.` }
   useEffect(() => {
-    if (cw.outcome?.tone === 'bad') onSaved({ tone: 'bad', text: cw.outcome.text })
+    if (cw.outcome?.tone === 'bad') onSaved({ kind: 'error', text: cw.outcome.text })
   }, [cw.outcome, onSaved])
 
   const open = () => {
@@ -362,7 +373,7 @@ function Terms({ s, onSaved }: { s: Supplier; onSaved: (x: Saved) => void }) {
       setChanged(r.changed)
       setEditing(false)
       onSaved({
-        tone: 'ok',
+        kind: 'ok',
         text: r.was_placeholder ? `${s.name}: terms confirmed` : 'Terms saved',
       })
     }
@@ -411,7 +422,7 @@ function Terms({ s, onSaved }: { s: Supplier; onSaved: (x: Saved) => void }) {
         <>
           {s.terms_are_placeholders && (
             <WarnBox className="mb-3">
-              <strong className="text-alert">These terms are a guess.</strong> Nobody has checked them with {s.name}, so
+              <strong>These terms are a guess.</strong> Nobody has checked them with {s.name}, so
               every order built on them says so. Ring them or check their site, then press{' '}
               <em>Check &amp; confirm terms</em>.
             </WarnBox>
@@ -419,11 +430,7 @@ function Terms({ s, onSaved }: { s: Supplier; onSaved: (x: Saved) => void }) {
           <div className={cx(s.terms_are_placeholders && 'italic text-ink-2')}>
             <ReadList rows={termsRows(s)} />
           </div>
-          {changed !== null && (
-            <p role="status" className="mt-2 text-sm text-ink-2">
-              {changed.length === 0 ? 'Confirmed as they were: nothing moved.' : `Changed: ${changed.join('; ')}.`}
-            </p>
-          )}
+          <StatusLine outcome={changedOutcome} className="mt-2" />
         </>
       )}
     </Section>

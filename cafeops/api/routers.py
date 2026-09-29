@@ -1,7 +1,8 @@
 """The original routes. Thin on purpose: parse, delegate to a view on a thread, return.
 
-Everything except `/api/health` and `/api/meta` requires auth. In THIS module everything
-except the composition-editor and confirm POSTs is a GET. The redesign's write routes
+Everything except `/api/health` and `/api/meta` requires auth (`/api/meta` withholds the
+labour rate from a caller without it). In THIS module everything except the
+composition-editor, import-review and confirm POSTs is a GET. The redesign's write routes
 live in `cafeops/api/areas/` (stock, menu, finance, shell), one module per area.
 
 No route in THIS module creates, confirms or sends a purchase order, and
@@ -13,12 +14,14 @@ stands, because confirmation still needs a name. Nothing is ever *sent* by the A
 
 from __future__ import annotations
 
-from datetime import UTC, date, datetime, time, timedelta
+from datetime import date
 from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, Query, status
 
 from cafeops.api import views
+from cafeops.api.params import as_of as as_of_param
+from cafeops.api.params import enum_list
 from cafeops.api.runtime import in_session
 from cafeops.api.schemas import (
     ApplyResponse,
@@ -46,13 +49,9 @@ from cafeops.api.schemas import (
     TodayResponse,
 )
 from cafeops.api.security import ApiAuth, OptionalApiAuth
-from cafeops.config import settings
 from cafeops.domain.types import Tier
 
 __all__ = ["open_router", "router"]
-
-#: See `app.HTTP_422` -- Starlette deprecated the named constant, the number did not move.
-HTTP_422 = 422
 
 #: Unauthenticated. Health must answer before anyone has the password, or "is it up?"
 #: and "is my password right?" become the same question.
@@ -62,55 +61,8 @@ open_router = APIRouter(tags=["meta"])
 router = APIRouter(dependencies=[ApiAuth])
 
 
-# --------------------------------------------------------------------------
-# shared query parsing
-# --------------------------------------------------------------------------
-
-
-def _as_of(raw: str | None) -> datetime | None:
-    """`now` | `today` | `yesterday` | YYYY-MM-DD, the same words the CLI accepts.
-
-    A bare date means END of that local day, because "stock as of today" means after
-    today's trade, not at midnight before it. Lifted from `cli._parse_as_of` so the two
-    surfaces cannot drift on what "today" means.
-    """
-    if raw is None:
-        return None
-    tz = settings.tz
-    lowered = raw.strip().lower()
-    if lowered == "now":
-        return datetime.now(UTC)
-    if lowered in {"today", "yesterday"}:
-        local = datetime.now(tz)
-        if lowered == "yesterday":
-            local -= timedelta(days=1)
-        return local.replace(hour=23, minute=59, second=59, microsecond=0).astimezone(UTC)
-    try:
-        parsed = date.fromisoformat(raw)
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=HTTP_422,
-            detail=f"{raw!r}: expected 'now', 'today', 'yesterday' or YYYY-MM-DD",
-        ) from exc
-    return datetime.combine(parsed, time.max, tzinfo=tz).astimezone(UTC)
-
-
 def _tiers(raw: str | None) -> tuple[Tier, ...] | None:
-    if raw is None:
-        return None
-    out: list[Tier] = []
-    for part in raw.split(","):
-        token = part.strip().upper()
-        if not token:
-            continue
-        try:
-            out.append(Tier(token))
-        except ValueError as exc:
-            raise HTTPException(
-                status_code=HTTP_422,
-                detail=f"{part!r}: expected A, B or C",
-            ) from exc
-    return tuple(out) or None
+    return enum_list(raw, Tier, detail=lambda part: f"{part!r}: expected A, B or C")
 
 
 # --------------------------------------------------------------------------
@@ -128,8 +80,8 @@ async def health(authenticated: Annotated[bool, OptionalApiAuth]) -> Health:
 
 
 @open_router.get("/api/meta", response_model=Meta, summary="Enums and encoding conventions")
-async def meta() -> Meta:
-    return await in_session(views.meta_view)
+async def meta(authenticated: Annotated[bool, OptionalApiAuth]) -> Meta:
+    return await in_session(lambda session: views.meta_view(session, authenticated=authenticated))
 
 
 # --------------------------------------------------------------------------
@@ -146,7 +98,7 @@ async def meta() -> Meta:
 async def templates(
     as_of: Annotated[str | None, Query(description="now | today | yesterday | YYYY-MM-DD")] = None,
 ) -> tuple[TemplateSummary, ...]:
-    at = _as_of(as_of)
+    at = as_of_param(as_of)
     return await in_session(lambda session: views.templates_view(session, at=at))
 
 
@@ -160,7 +112,7 @@ async def template_detail(
     template_id: int,
     as_of: Annotated[str | None, Query(description="Which day's recipe to show.")] = None,
 ) -> TemplateDetail:
-    at = _as_of(as_of)
+    at = as_of_param(as_of)
     return await in_session(
         lambda session: views.template_detail_view(session, template_id=template_id, at=at)
     )
@@ -183,7 +135,7 @@ async def preview_edit(template_id: int, body: ComponentQtyChange) -> PreviewRes
     response_model=ApplyResponse,
     status_code=status.HTTP_200_OK,
     tags=["composition"],
-    summary="Apply the change from today. The only write in this API.",
+    summary="Apply the change from today (effective-dated; history is not rewritten).",
 )
 async def apply_edit(template_id: int, body: ComponentQtyApply) -> ApplyResponse:
     return await in_session(
@@ -290,7 +242,7 @@ async def stock(
         ),
     ] = True,
 ) -> StockResponse:
-    at = _as_of(as_of)
+    at = as_of_param(as_of)
     tiers = _tiers(tier)
     return await in_session(
         lambda session: views.stock_view(
@@ -314,7 +266,7 @@ async def stock_detail(
     as_of: Annotated[str | None, Query()] = None,
     history: Annotated[int, Query(ge=1, le=100)] = 12,
 ) -> StockDetail:
-    at = _as_of(as_of)
+    at = as_of_param(as_of)
     return await in_session(
         lambda session: views.stock_detail_view(
             session, ingredient_id=ingredient_id, as_of=at, history=history
@@ -469,7 +421,7 @@ async def today(
         bool, Query(description="Also compute the draft-order figures. Several seconds.")
     ] = False,
 ) -> TodayResponse:
-    at = _as_of(as_of)
+    at = as_of_param(as_of)
     return await in_session(
         lambda session: views.today_view(session, as_of=at, with_orders=with_orders)
     )

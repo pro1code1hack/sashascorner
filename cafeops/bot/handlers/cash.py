@@ -12,7 +12,6 @@ and silent, which is worse than a refusal that says where to fix it.
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from typing import Any
 
 from aiogram import F, Router
 from aiogram.filters import Command
@@ -22,7 +21,7 @@ from aiogram.types import CallbackQuery, Message
 from cafeops.bot import formatters as fmt
 from cafeops.bot import money_views as mv
 from cafeops.bot.callbacks import CashCB
-from cafeops.bot.deps import owner_name, parse_money, parse_past_day
+from cafeops.bot.deps import RunSync, owner_name, parse_money, parse_past_day
 from cafeops.bot.keyboards import cash_day_kb
 from cafeops.bot.states import CashFlow
 from cafeops.config import settings
@@ -38,7 +37,7 @@ async def cash(message: Message, state: FSMContext) -> None:
     await message.answer(fmt.cash_day_prompt(), reply_markup=cash_day_kb())
 
 
-async def _ask_amount(message: Message, state: FSMContext, run_sync: Any, day: str) -> None:
+async def _ask_amount(message: Message, state: FSMContext, run_sync: RunSync, day: str) -> None:
     from datetime import date
 
     view = await run_sync(mv.cash_day, day=date.fromisoformat(day))
@@ -53,7 +52,7 @@ async def _ask_amount(message: Message, state: FSMContext, run_sync: Any, day: s
 
 @router.callback_query(CashCB.filter(F.action.in_({"today", "yesterday"})), CashFlow.awaiting_date)
 async def quick_day(
-    query: CallbackQuery, callback_data: CashCB, state: FSMContext, run_sync: Any
+    query: CallbackQuery, callback_data: CashCB, state: FSMContext, run_sync: RunSync
 ) -> None:
     await query.answer()
     if not isinstance(query.message, Message):
@@ -71,7 +70,7 @@ async def other_day(query: CallbackQuery) -> None:
 
 
 @router.message(CashFlow.awaiting_date, F.text, ~F.text.startswith("/"))
-async def day_typed(message: Message, state: FSMContext, run_sync: Any) -> None:
+async def day_typed(message: Message, state: FSMContext, run_sync: RunSync) -> None:
     day = parse_past_day(message.text or "")
     if day is None:
         await message.answer(fmt.err_bad_past_day())
@@ -80,7 +79,7 @@ async def day_typed(message: Message, state: FSMContext, run_sync: Any) -> None:
 
 
 @router.message(CashFlow.awaiting_amount, F.text, ~F.text.startswith("/"))
-async def amount_typed(message: Message, state: FSMContext, run_sync: Any) -> None:
+async def amount_typed(message: Message, state: FSMContext, run_sync: RunSync) -> None:
     from datetime import date
 
     pence = parse_money(message.text or "")

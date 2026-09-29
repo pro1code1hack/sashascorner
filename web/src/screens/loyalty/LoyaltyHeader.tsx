@@ -1,7 +1,8 @@
 /**
  * The Loyalty card header: a title (or, on a member's page, "‹ Members / Name #id")
  * and the grey tab strip Members · Insights · Messages · Programme. The Members tab
- * carries the number of members with a free drink waiting.
+ * carries the number of members with a free drink waiting. The strip wraps rather
+ * than scrolls, so no tab's focus ring is ever clipped.
  */
 import type { ReactNode } from 'react'
 import { cx } from '../../components/ui'
@@ -42,7 +43,7 @@ export function LoyaltyHeader({
       ) : (
         <h1 className="text-2xl font-extrabold tracking-[-.01em]">Loyalty card</h1>
       )}
-      <nav aria-label="Loyalty card sections" className="inline-flex max-w-full items-center gap-0.5 overflow-x-auto rounded-button bg-wash p-[3px]">
+      <nav aria-label="Loyalty card sections" className="flex max-w-full flex-wrap items-center gap-0.5 rounded-button bg-wash p-1">
         {TABS.map((t) => {
           const on = t.id === current
           return (
@@ -51,18 +52,15 @@ export function LoyaltyHeader({
               href={href(t.path)}
               aria-current={on ? 'page' : undefined}
               className={cx(
-                'inline-flex h-[34px] flex-none items-center gap-1.5 whitespace-nowrap rounded-[9px] px-3 text-base no-underline transition-colors sm:px-3.5',
+                'inline-flex h-8 flex-none items-center gap-1.5 whitespace-nowrap rounded-sm px-3 text-base no-underline transition-colors sm:px-3.5',
                 on ? 'bg-surface font-bold text-brand-ink shadow-seg' : 'font-semibold text-ink-2 hover:text-ink',
               )}
             >
               {t.label}
               {t.id === 'members' && ready !== null && ready > 0 && (
-                <span
-                  className="fig rounded-full bg-brand px-[6px] py-px text-label font-bold leading-[14px] text-white"
-                  aria-label={`${ready} with a free drink waiting`}
-                  title={`${ready} with a free drink waiting`}
-                >
+                <span className="fig rounded-full bg-brand px-1.5 py-px text-label font-bold leading-[14px] text-white">
                   {ready}
+                  <span className="sr-only"> with a free drink waiting</span>
                 </span>
               )}
             </a>

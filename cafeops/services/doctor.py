@@ -20,6 +20,7 @@ context. Only FAIL sets the exit code, so this is safe to run from cron.
 from __future__ import annotations
 
 import enum
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from decimal import Decimal
@@ -87,14 +88,14 @@ class DoctorReport:
         return 1 if self.failures else 0
 
 
-def _guarded(r: DoctorReport, name: str, fn: object, *args: object) -> None:
+def _guarded(r: DoctorReport, name: str, fn: Callable[..., None], *args: object) -> None:
     """Run one check; report a crash as a finding rather than losing the whole report.
 
     A doctor that dies on its third check tells the operator less than one that says
     "this check broke" and carries on to the other nine.
     """
     try:
-        fn(*args)  # type: ignore[operator]
+        fn(*args)
     except Exception as exc:
         r.add(
             Severity.WARN,
@@ -134,6 +135,7 @@ def run_doctor(session: Session, *, as_of: datetime | None = None) -> DoctorRepo
     _guarded(r, "credentials", _check_credentials, session, r)
     _guarded(r, "integrations", _check_integrations, r)
     _guarded(r, "website", _check_website, r)
+    _guarded(r, "online ordering", _check_shop, session, r)
     return r
 
 
@@ -578,4 +580,67 @@ def _check_website(r: DoctorReport) -> None:
             "photos, café details) say the site isn't connected",
             "set SITE_SERVICE_KEY in .env to one long random value (both apps read it) and "
             "restart the back office and the site API",
+        )
+
+
+def _check_shop(session: Session, r: DoctorReport) -> None:
+    """Order online (docs/shop/GO-LIVE.md): is the shop on, and does its configuration
+    match what the settings promise? Configuration only, like `_check_website`."""
+    from cafeops.db.models import ShopSettings
+    from cafeops.integrations.payments.providers import registry as payment_registry
+
+    shop = session.get(ShopSettings, 1)
+    if shop is None:
+        r.add(
+            Severity.INFO,
+            "online ordering",
+            "no shop settings row: the online-ordering migration has not run",
+            "uv run alembic upgrade head",
+        )
+        return
+    provider = next(
+        (p for p in payment_registry.available() if p["key"] == shop.payment_provider), None
+    )
+    bits: list[str] = []
+    problems: list[str] = []
+    if shop.pay_online:
+        if provider is None:
+            problems.append(f"'pay online' is on but provider {shop.payment_provider!r} is unknown")
+        elif not provider["configured"]:
+            problems.append(
+                f"'pay online' is on but {provider['display_name']} is not configured, so "
+                "customers only see 'pay at the counter'"
+            )
+        else:
+            bits.append(f"card payments via {provider['display_name']}")
+    if shop.push_notify and not settings.push_configured:
+        bits.append("push updates off (no VAPID keys)")
+    if shop.email_notify and not settings.smtp_configured:
+        bits.append("email updates off (no SMTP)")
+    if shop.sms_notify != "off" and not settings.twilio_configured:
+        bits.append("text updates off (no Twilio)")
+    if shop.notify_telegram and not (
+        settings.telegram_bot_token and settings.telegram_owner_chat_id is not None
+    ):
+        bits.append("no Telegram alerts (token or chat id unset)")
+    if not shop.hours:
+        problems.append("no ordering hours at all: nobody can pick a collection time")
+    state = "taking orders" if shop.enabled else "switched off"
+    summary = f"{state}; " + (", ".join(bits) if bits else "nothing else needs configuring")
+    if problems:
+        r.add(
+            Severity.WARN,
+            "online ordering",
+            f"{state}: " + "; ".join(problems),
+            "Online orders > Settings, or the keys in .env (docs/shop/GO-LIVE.md 1)",
+        )
+    elif shop.enabled:
+        r.add(Severity.OK, "online ordering", summary)
+    else:
+        r.add(
+            Severity.INFO,
+            "online ordering",
+            summary,
+            "turn it on in Online orders > Settings when the menu is ready "
+            "(docs/shop/GO-LIVE.md 3)",
         )

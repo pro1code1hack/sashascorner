@@ -6,9 +6,6 @@
 import type { StickerKey } from '../../../lib/types/loyalty'
 import { StickerImg } from '../stickers'
 
-const BLUSH = '#e9dcd6'
-const OLIVE = '#474531'
-
 /** A QR-ish glyph: the real pass carries the member's code here. */
 function QrGlyph() {
   const on = [
@@ -16,10 +13,10 @@ function QrGlyph() {
     [4, 0], [4, 1], [3, 3], [4, 3], [1, 4], [3, 4], [4, 4], [0, 4],
   ]
   return (
-    <span className="grid size-9 flex-none place-items-center rounded-[6px] bg-surface" aria-hidden="true">
+    <span className="grid size-9 flex-none place-items-center rounded-xs bg-surface" aria-hidden="true">
       <svg viewBox="0 0 5 5" width="26" height="26" shapeRendering="crispEdges">
         {on.map(([x, y]) => (
-          <rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" fill={OLIVE} />
+          <rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" className="fill-pass-ink" />
         ))}
       </svg>
     </span>
@@ -42,15 +39,14 @@ export function CardPreview({
   return (
     <figure className="m-0">
       <div
-        className="mx-auto w-full max-w-[20rem] rounded-[18px] px-4 pb-4 pt-4 shadow-raised"
-        style={{ background: BLUSH, color: OLIVE }}
+        className="mx-auto w-full max-w-[20rem] rounded-card-lg bg-pass-blush px-4 pb-4 pt-4 text-pass-ink shadow-raised"
         role="img"
         aria-label={`Card preview: ${filled} of ${required} stamps; ${left} more for the reward (${rewardText.trim() || 'a free drink'}).`}
       >
         <div className="flex items-start justify-between gap-3">
-          <span className="pt-0.5 text-[11px] font-extrabold uppercase tracking-[.14em]">Sasha's Corner</span>
+          <span className="pt-0.5 text-label font-extrabold uppercase tracking-[.14em]">Sasha's Corner</span>
           <span className="text-right leading-none">
-            <span className="block text-[10px] font-extrabold uppercase tracking-[.12em]">Stamps</span>
+            <span className="block text-label font-extrabold uppercase tracking-[.12em]">Stamps</span>
             <span className="fig text-xl font-extrabold">
               {filled}/{required}
             </span>
@@ -66,17 +62,16 @@ export function CardPreview({
             ) : (
               <span
                 key={i}
-                className="fig grid aspect-square place-items-center rounded-full border-[1.5px] border-dashed text-lg font-semibold"
-                style={{ borderColor: 'rgb(71 69 49 / .35)', color: 'rgb(71 69 49 / .7)' }}
+                className="fig grid aspect-square place-items-center rounded-full border-[1.5px] border-dashed border-pass-ink/50 text-lg font-semibold text-pass-ink/80"
               >
                 {i + 1}
               </span>
             ),
           )}
         </div>
-        <div className="mt-3.5 flex items-end justify-between gap-3 border-t pt-2.5" style={{ borderColor: 'rgb(71 69 49 / .18)' }}>
+        <div className="mt-3.5 flex items-end justify-between gap-3 border-t border-pass-ink/20 pt-2.5">
           <span className="leading-tight">
-            <span className="block text-[10px] font-extrabold uppercase tracking-[.12em]">Member</span>
+            <span className="block text-label font-extrabold uppercase tracking-[.12em]">Member</span>
             <span className="text-base font-bold">You</span>
           </span>
           <QrGlyph />

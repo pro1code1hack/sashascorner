@@ -21,7 +21,7 @@ from __future__ import annotations
 from datetime import date
 from typing import Annotated
 
-from fastapi import APIRouter, Header, HTTPException, Query, Request, status
+from fastapi import APIRouter, Header, Query, Request
 
 from cafeops.api.areas import shop_admin_views as views
 from cafeops.api.areas.shop_admin_schemas import (
@@ -54,26 +54,17 @@ from cafeops.api.areas.shop_admin_schemas import (
     SummaryOut,
     UpsellAdminOut,
     UpsellIn,
+    UpsellPatchIn,
 )
 from cafeops.api.runtime import in_session
 from cafeops.api.security import ApiAuth
-from cafeops.services.media_store import MAX_BYTES
+from cafeops.api.uploads import read_bounded_body
 
 router = APIRouter(prefix="/api/shop-admin", tags=["shop-admin"], dependencies=[ApiAuth])
 
 PageQ = Annotated[int, Query(ge=1)]
 PageSizeQ = Annotated[int, Query(ge=1, le=200)]
 OperatorH = Annotated[str | None, Header()]
-LengthH = Annotated[int | None, Header()]
-
-
-async def _image_body(request: Request, content_length: int | None) -> bytes:
-    if content_length is not None and content_length > MAX_BYTES:
-        raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail="that photo is over 2 MB; resize it (1200px wide is plenty) and try again",
-        )
-    return await request.body()
 
 
 # --------------------------------------------------------------------------
@@ -230,9 +221,8 @@ async def category_photo(
     category_id: int,
     request: Request,
     x_operator: OperatorH = None,
-    content_length: LengthH = None,
 ) -> PhotoOut:
-    data = await _image_body(request, content_length)
+    data = await read_bounded_body(request)
     return await in_session(lambda s: views.category_photo_view(s, category_id, data, x_operator))
 
 
@@ -288,9 +278,8 @@ async def product_photo(
     product_id: int,
     request: Request,
     x_operator: OperatorH = None,
-    content_length: LengthH = None,
 ) -> PhotoOut:
-    data = await _image_body(request, content_length)
+    data = await read_bounded_body(request)
     return await in_session(lambda s: views.product_photo_view(s, product_id, data, x_operator))
 
 
@@ -339,9 +328,8 @@ async def option_photo(
     option_id: int,
     request: Request,
     x_operator: OperatorH = None,
-    content_length: LengthH = None,
 ) -> PhotoOut:
-    data = await _image_body(request, content_length)
+    data = await read_bounded_body(request)
     return await in_session(lambda s: views.option_photo_view(s, option_id, data, x_operator))
 
 
@@ -359,7 +347,7 @@ async def upsell_create(body: UpsellIn) -> UpsellAdminOut:
 
 
 @router.put("/upsells/{upsell_id}", response_model=UpsellAdminOut, summary="Replace an upsell row")
-async def upsell_update(upsell_id: int, body: UpsellIn) -> UpsellAdminOut:
+async def upsell_update(upsell_id: int, body: UpsellPatchIn) -> UpsellAdminOut:
     return await in_session(lambda s: views.upsell_update_view(s, upsell_id, body))
 
 
@@ -400,9 +388,8 @@ async def banner_photo(
     banner_id: int,
     request: Request,
     x_operator: OperatorH = None,
-    content_length: LengthH = None,
 ) -> PhotoOut:
-    data = await _image_body(request, content_length)
+    data = await read_bounded_body(request)
     return await in_session(lambda s: views.banner_photo_view(s, banner_id, data, x_operator))
 
 

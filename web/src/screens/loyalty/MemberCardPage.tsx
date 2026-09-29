@@ -13,9 +13,16 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { SwitchRow } from './programme/Switch'
-import { Button, ConfirmTwiceButton, ErrorBox, Field, Input, Loading, Select, Textarea, cx } from '../../components/ui'
-import { MEMBERS_KEY, downloadMemberData, loyaltyApi, useInvalidateLoyalty, useLoyaltyMember } from '../../lib/loyalty-api'
+import { Button, ConfirmTwiceButton, ErrorBox, Field, Input, Loading, Select, StatusLine, Textarea, cx } from '../../components/ui'
+import type { Outcome } from '../../components/ui'
+import {
+  MEMBERS_KEY,
+  downloadMemberData,
+  loyaltyApi,
+  useInvalidateLoyalty,
+  useInvalidateLoyaltyLists,
+  useLoyaltyMember,
+} from '../../lib/loyalty-api'
 import { navigate } from '../../lib/router'
 import type { WriteResult } from '../../lib/api'
 import type {
@@ -28,7 +35,8 @@ import type {
 } from '../../lib/types/loyalty'
 import { LoyaltyHeader } from './LoyaltyHeader'
 import { PhysicalCard } from './members/PhysicalCard'
-import { Panel, WALLET_NAME, birthdayText, phoneText, shortDate, since, sourceLabel } from './members/bits'
+import { MONTHS, SwitchRow, WALLET_NAME, birthdayText, phoneText, shortDate, since, sourceLabel } from './members/bits'
+import { Panel } from './shared'
 import { StickerImg } from './stickers'
 
 type Busy = 'stamp' | 'reward' | 'undo' | 'sticker' | 'patch' | 'link' | 'erase' | null
@@ -37,6 +45,7 @@ export function MemberCardPage({ memberId }: { memberId: number }) {
   const q = useLoyaltyMember(memberId)
   const qc = useQueryClient()
   const invalidate = useInvalidateLoyalty()
+  const refreshLists = useInvalidateLoyaltyLists()
   const [busy, setBusy] = useState<Busy>(null)
   const [busySlot, setBusySlot] = useState<number | null>(null)
   const [error, setError] = useState<{ where: Busy; text: string } | null>(null)
@@ -52,8 +61,9 @@ export function MemberCardPage({ memberId }: { memberId: number }) {
       setError({ where: what, text: r.message })
       return false
     }
+    // The answer is the member: show it at once; only the list and insights need a refetch.
     qc.setQueryData([...MEMBERS_KEY, 'v2-detail', memberId], r.data)
-    void invalidate()
+    void refreshLists()
     return true
   }
 
@@ -176,7 +186,6 @@ function CardPanel({
             disabled={locked || !card.reward_available}
             pending={busy === 'reward'}
             pendingLabel="Giving…"
-            className={cx(card.reward_available && 'font-bold text-ok-ink')}
           >
             Give the free drink
           </Button>
@@ -186,21 +195,16 @@ function CardPanel({
             disabled={locked || !card.can_undo}
             pending={busy === 'undo'}
             pendingLabel="Undoing…"
-            title={card.undo_label ?? 'Nothing to undo'}
           >
             Undo last
           </Button>
         </div>
         {card.can_undo && card.undo_label && <p className="mt-1.5 text-sm text-ink-2">Undo takes back {card.undo_label}.</p>}
-        {error && (
-          <p role="alert" className="mt-2 text-sm text-bad-ink">
-            {error}
-          </p>
-        )}
+        <StatusLine className="mt-2" outcome={error ? { kind: 'error', text: error } : null} />
         <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3">
           <Stat label="Cards filled" value={m.cycles_completed} />
           <Stat label="Free drinks" value={m.rewards_redeemed} />
-          <Stat label="Visits a month" value={m.visits_per_month === null ? '0.0' : m.visits_per_month.toFixed(1)} />
+          <Stat label="Visits a month" value={m.visits_per_month === null ? 'not known yet' : m.visits_per_month.toFixed(1)} />
           <Stat label="Last visit" value={m.last_visit_at ? since(m.last_visit_at) : 'none yet'} />
           <Stat label="Member since" value={shortDate(m.created_at)} />
           <Stat label="Wallet" value={m.wallet ? WALLET_NAME[m.wallet] : 'none yet'} />
@@ -225,7 +229,7 @@ const SHOWN = 8
 
 function HistoryIcon({ e }: { e: HistoryEntry }) {
   if (e.sticker) return <StickerImg sticker={e.sticker} size={30} className="size-[30px]" />
-  const green = e.kind === 'free_drink' || e.kind === 'birthday'
+  const reward = e.kind === 'free_drink' || e.kind === 'birthday'
   const glyph: Record<string, string> = {
     free_drink: '★',
     birthday: '★',
@@ -243,7 +247,7 @@ function HistoryIcon({ e }: { e: HistoryEntry }) {
       aria-hidden="true"
       className={cx(
         'grid size-[30px] place-items-center rounded-full text-md font-extrabold',
-        green ? 'bg-ok-wash text-ok-ink' : 'bg-wash text-ink-2',
+        reward ? 'bg-brand-wash text-brand-ink' : 'bg-wash text-ink-2',
       )}
     >
       {glyph[e.kind] ?? '•'}
@@ -292,8 +296,6 @@ function HistoryPanel({ history }: { history: HistoryEntry[] }) {
 
 /* ------------------------------------------------------------- contact --- */
 
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-2 py-1">
@@ -321,9 +323,9 @@ function ContactPanel({
       title="Contact"
       right={
         !editing && (
-          <button type="button" onClick={() => setEditing(true)} className="text-base font-bold text-brand-ink hover:underline">
+          <Button variant="link" onClick={() => setEditing(true)} className="text-base font-bold text-brand-ink">
             Edit
-          </button>
+          </Button>
         )
       }
     >
@@ -361,11 +363,7 @@ function ContactPanel({
           onChange={(next) => void onSave({ marketing_opt_in: next })}
         />
       </div>
-      {!editing && error && (
-        <p role="alert" className="mt-2 text-sm text-bad-ink">
-          {error}
-        </p>
-      )}
+      <StatusLine className="mt-2" outcome={!editing && error ? { kind: 'error', text: error } : null} />
     </Panel>
   )
 }
@@ -419,11 +417,12 @@ function ContactForm({
       <Field label="Phone">
         <Input size="sm" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
       </Field>
-      <div>
-        <div className="mb-1 text-xs font-bold text-ink-2">Birthday</div>
-        <div className="grid grid-cols-[4.5rem_1fr] gap-2">
-          <Input size="sm" aria-label="Birthday day" inputMode="numeric" maxLength={2} placeholder="Day" value={day} onChange={(e) => setDay(e.target.value.replace(/\D/g, ''))} />
-          <Select size="sm" aria-label="Birthday month" value={month} onChange={(e) => setMonth(e.target.value)}>
+      <div className="grid grid-cols-[4.5rem_1fr] items-start gap-2">
+        <Field label="Birthday day" error={birthdayBad && month !== '' ? 'Add the day.' : undefined}>
+          <Input size="sm" inputMode="numeric" maxLength={2} placeholder="Day" value={day} onChange={(e) => setDay(e.target.value.replace(/\D/g, ''))} />
+        </Field>
+        <Field label="Month" error={birthdayBad && day !== '' ? 'Pick the month, or clear the day.' : undefined}>
+          <Select size="sm" value={month} onChange={(e) => setMonth(e.target.value)}>
             <option value="">Month</option>
             {MONTHS.map((mo, i) => (
               <option key={mo} value={String(i + 1)}>
@@ -431,14 +430,9 @@ function ContactForm({
               </option>
             ))}
           </Select>
-        </div>
-        {birthdayBad && <div className="mt-1 text-sm text-bad-ink">Give both the day and the month, or neither.</div>}
+        </Field>
       </div>
-      {error && (
-        <p role="alert" className="text-sm text-bad-ink">
-          {error}
-        </p>
-      )}
+      <StatusLine outcome={error ? { kind: 'error', text: error } : null} />
       <div className="flex gap-2">
         <Button variant="primary" type="submit" size="sm" pending={busy} pendingLabel="Saving…" disabled={birthdayBad || name.trim() === ''}>
           Save
@@ -453,6 +447,13 @@ function ContactForm({
 
 /* --------------------------------------------------------------- notes --- */
 
+const NOTE_OUTCOME: Record<'idle' | 'saving' | 'saved' | 'failed', Outcome | null> = {
+  idle: null,
+  saving: { kind: 'info', text: 'Saving…' },
+  saved: { kind: 'ok', text: 'Saved' },
+  failed: { kind: 'error', text: 'Not saved. Click in the box and away to try again.' },
+}
+
 function NotesPanel({ m, onSave }: { m: LoyaltyMember; onSave: (notes: string | null) => Promise<boolean> }) {
   const [text, setText] = useState(m.notes ?? '')
   const [state, setState] = useState<'idle' | 'saving' | 'saved' | 'failed'>('idle')
@@ -465,13 +466,7 @@ function NotesPanel({ m, onSave }: { m: LoyaltyMember; onSave: (notes: string | 
   return (
     <Panel
       title="Notes"
-      right={
-        state !== 'idle' && (
-          <span className={cx('text-sm', state === 'failed' ? 'text-bad-ink' : 'text-ink-2')} aria-live="polite">
-            {state === 'saving' ? 'Saving…' : state === 'saved' ? 'Saved' : 'Not saved'}
-          </span>
-        )
-      }
+      right={<StatusLine outcome={NOTE_OUTCOME[state]} />}
     >
       <Textarea
         aria-label="Notes about this member"
@@ -520,9 +515,12 @@ function WalletPanel({ m, memberId }: { m: LoyaltyMember; memberId: number }) {
       <Button variant="secondary" className="mt-3 w-full" pending={pending} pendingLabel="Sending…" onClick={() => void send()}>
         Send the card link
       </Button>
+      <StatusLine
+        className="mt-2"
+        outcome={error ? { kind: 'error', text: error } : result ? { kind: 'ok', text: copied ? `${result.message} Link copied.` : result.message } : null}
+      />
       {result && (
-        <div className="mt-2 text-sm" aria-live="polite">
-          <p className={result.delivery === 'none' ? 'text-ink' : 'text-ok-ink'}>{result.message}</p>
+        <div className="mt-1 text-sm">
           {result.delivery === 'none' && (
             <div className="mt-1.5 flex items-center gap-2">
               <code className="min-w-0 flex-1 truncate rounded-control bg-wash px-2 py-1 text-xs">{result.url}</code>
@@ -538,11 +536,6 @@ function WalletPanel({ m, memberId }: { m: LoyaltyMember; memberId: number }) {
             </div>
           )}
         </div>
-      )}
-      {error && (
-        <p role="alert" className="mt-2 text-sm text-bad-ink">
-          {error}
-        </p>
       )}
     </Panel>
   )
@@ -587,11 +580,7 @@ function DeleteRow({
       <p className="max-w-[30ch] text-xs text-ink-2">
         Deleting erases their name and contact and voids the card. Stamp counts stay in the totals, with no name.
       </p>
-      {(error ?? dlError) && (
-        <p role="alert" className="text-sm text-bad-ink">
-          {error ?? dlError}
-        </p>
-      )}
+      <StatusLine outcome={(error ?? dlError) ? { kind: 'error', text: error ?? dlError } : null} />
     </div>
   )
 }

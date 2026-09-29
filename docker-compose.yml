@@ -176,7 +176,11 @@ services:
       context: .
       target: browser
     image: cafeops:browser
-    command: ["cafeops", "browser-worker"]
+    # No `command:`: the browser image's ENTRYPOINT is deploy/browser-worker-entrypoint.sh,
+    # which execs `cafeops browser-worker` -- under `xvfb-run` when
+    # CAFEOPS_BROWSER_HEADLESS is false and there is no DISPLAY (tier 2: sites such as
+    # Tesco that refuse headless browsers; docs/agents/BROWSER-ORDERING.md 10). Anything
+    # put in `command:` here is appended as arguments (e.g. ["--once"]).
     restart: unless-stopped
     env_file: .env
     environment:
@@ -186,6 +190,9 @@ services:
       CAFEOPS_BROWSER_DATA_DIR: /data/browser
       # Screenshots are media_asset rows; same volume the api serves them from.
       CAFEOPS_MEDIA_DIR: /media
+      # true (default): headless Chromium. false: a visible window on an Xvfb display
+      # inside the container, for portals whose adapter sets `prefers_headed`.
+      CAFEOPS_BROWSER_HEADLESS: ${CAFEOPS_BROWSER_HEADLESS:-true}
     volumes:
       - cafeops_data:/data
       - cafeops_media:/media

@@ -41,6 +41,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
+from cafeops.config import REPO_ROOT
 from cafeops.db.models import AuthAudit, AuthCredential, AuthEvent, AuthSession
 
 __all__ = [
@@ -109,7 +110,10 @@ class AuthSettings(BaseSettings):
     """
 
     model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", extra="ignore", env_prefix="CAFEOPS_"
+        env_file=REPO_ROOT / ".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+        env_prefix="CAFEOPS_",
     )
 
     api_password: str | None = None
@@ -249,7 +253,15 @@ def _forget_cached_verifications() -> None:
 
 
 class RateLimiter:
-    """Sliding window of failures per key. In-process by design (see module doc)."""
+    """Sliding window of failures per key. In-process by design (see module doc).
+
+    Bounded: a key whose failures have all aged out of the hour is dropped, and so is
+    an announcement older than a minute. Keyed by client IP, the maps would otherwise
+    grow by one entry per address that ever mistyped a password, for the life of the
+    process. A full sweep runs at most once a minute (`_sweep`).
+    """
+
+    _SWEEP_EVERY = 60.0
 
     def __init__(self, *, per_minute: int, per_hour: int) -> None:
         self.per_minute = per_minute
@@ -259,12 +271,30 @@ class RateLimiter:
         #: so a flood of blocked attempts writes one row rather than one per attempt.
         self._announced: dict[str, float] = {}
         self._lock = threading.Lock()
+        self._swept_at = time.monotonic()
 
     def _prune(self, key: str, now: float) -> deque[float]:
-        q = self._fails.setdefault(key, deque())
+        """The key's failures inside the hour. An emptied key is removed from the map
+        (the returned deque is then a detached empty one, safe to append to via
+        `record_failure`, which re-inserts it)."""
+        self._sweep(now)
+        q = self._fails.get(key)
+        if q is None:
+            return deque()
         while q and q[0] <= now - 3600:
             q.popleft()
+        if not q:
+            del self._fails[key]
         return q
+
+    def _sweep(self, now: float) -> None:
+        if now - self._swept_at < self._SWEEP_EVERY:
+            return
+        self._swept_at = now
+        for key in [k for k, q in self._fails.items() if not q or q[-1] <= now - 3600]:
+            del self._fails[key]
+        for key in [k for k, at in self._announced.items() if at <= now - 60]:
+            del self._announced[key]
 
     def retry_after(self, key: str) -> int | None:
         """Seconds until another attempt is allowed, or None when one is allowed now."""
@@ -281,12 +311,15 @@ class RateLimiter:
     def record_failure(self, key: str) -> None:
         now = time.monotonic()
         with self._lock:
-            self._prune(key, now).append(now)
+            q = self._prune(key, now)
+            q.append(now)
+            self._fails[key] = q
 
     def first_block(self, key: str) -> bool:
         """True the first time a lockout is observed for `key` (for a single audit row)."""
         now = time.monotonic()
         with self._lock:
+            self._sweep(now)
             last = self._announced.get(key)
             if last is not None and last > now - 60:
                 return False

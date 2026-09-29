@@ -12,9 +12,11 @@ Rules, in the order they are applied:
   `policy.forbidden_url_patterns` (checkout, payment...).
 * click members with a `ref` target: `executor.describe_ref(ref)`. Unknown ref: allow
   (the executor reports it stale, which is an ERROR the model can recover from, not a
-  policy matter). Known ref: refuse when the accessible name matches
-  `forbidden_control_patterns` ("Place order", "Checkout"...) or when the control is a
-  link whose href leaves the allowlist or enters a forbidden URL.
+  policy matter). `describe_ref` raising: refuse -- a control this guard could not
+  identify might be "Place order", and the spend-money guard fails closed. Known ref:
+  refuse when the accessible name matches `forbidden_control_patterns` ("Place order",
+  "Checkout"...) or when the control is a link whose href leaves the allowlist or
+  enters a forbidden URL.
 * click members with a coordinate target: allowed. The name of what sits under a pixel
   is not known here; the executor's route filter still refuses a checkout navigation,
   and a "Place order" button reached that way would still stop at the payment step the
@@ -36,6 +38,7 @@ Rules, in the order they are applied:
 
 from __future__ import annotations
 
+import logging
 import re
 from typing import Any
 from urllib.parse import urlparse
@@ -56,6 +59,8 @@ DISABLED_MEMBERS: frozenset[str] = frozenset(
 #: The longest string the step row keeps. The full page text a `read_page` returns is
 #: the model's business, not the audit trail's.
 MAX_LOGGED_CHARS = 500
+
+log = logging.getLogger("cafeops.browser.policy")
 
 _SECRET_LIKE = re.compile(r"^\S{8,}$")
 _SECRET_KEYS = re.compile(r"pass|pwd|secret|token|otp|code|pin", re.IGNORECASE)
@@ -89,8 +94,15 @@ class PolicyGuard:
                 return PolicyDecision(True)
             try:
                 info = executor.describe_ref(ref)
-            except Exception as exc:  # a describe failure is not a policy verdict
-                return PolicyDecision(True, f"describe_ref failed: {type(exc).__name__}")
+            except Exception as exc:
+                # Fail closed: an unidentified control may be the one that spends money.
+                log.warning("refusing click on ref %r: describe_ref raised", ref, exc_info=True)
+                return PolicyDecision(
+                    False,
+                    f"could not identify control ({type(exc).__name__}); read the page "
+                    "again and click a control that can be identified",
+                    "describe-failed",
+                )
             if info is None:
                 return PolicyDecision(True)
             matched = self.policy.control_forbidden(info.name)

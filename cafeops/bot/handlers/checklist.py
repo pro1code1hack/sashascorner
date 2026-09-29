@@ -27,8 +27,6 @@ halfway has still recorded what was answered, and requested what was requested.
 
 from __future__ import annotations
 
-from typing import Any
-
 from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
@@ -36,7 +34,8 @@ from aiogram.types import CallbackQuery, Message
 
 from cafeops.bot import formatters as fmt
 from cafeops.bot.callbacks import ChecklistCB
-from cafeops.bot.deps import owner_name
+from cafeops.bot.deps import RunSync, owner_name
+from cafeops.bot.handlers.common import accessible
 from cafeops.bot.keyboards import checklist_kb, checklist_order_kb
 from cafeops.bot.states import ChecklistFlow
 from cafeops.bot.viewmodels import ChecklistItemView
@@ -53,7 +52,7 @@ def _who(query: CallbackQuery | Message) -> str:
     )
 
 
-async def _ask(message: Message, state: FSMContext, run_sync: Any) -> None:
+async def _ask(message: Message, state: FSMContext, run_sync: RunSync) -> None:
     data = await state.get_data()
     queue: list[int] = data["queue"]
     index: int = data["index"]
@@ -83,7 +82,7 @@ async def _ask(message: Message, state: FSMContext, run_sync: Any) -> None:
 
 
 @router.message(Command("checklist"))
-async def checklist(message: Message, state: FSMContext, run_sync: Any) -> None:
+async def checklist(message: Message, state: FSMContext, run_sync: RunSync) -> None:
     items: list[ChecklistItemView] = await run_sync(build_checklist)
     if not items:
         await state.clear()
@@ -101,7 +100,7 @@ async def checklist(message: Message, state: FSMContext, run_sync: Any) -> None:
     ChecklistCB.filter(F.action.in_({"ok", "low"})), ChecklistFlow.awaiting_answer
 )
 async def answer(
-    query: CallbackQuery, callback_data: ChecklistCB, state: FSMContext, run_sync: Any
+    query: CallbackQuery, callback_data: ChecklistCB, state: FSMContext, run_sync: RunSync
 ) -> None:
     """The answer is written first, then -- only for a LOW -- the quantity is asked.
 
@@ -122,23 +121,24 @@ async def answer(
         low=data["low"] + (1 if is_low else 0),
     )
     await query.answer()
-    if query.message is None:  # pragma: no cover - Telegram always sends one
+    message = accessible(query.message)
+    if message is None:  # pragma: no cover - Telegram always sends one
         return
-    await query.message.answer(fmt.checklist_result(item))
+    await message.answer(fmt.checklist_result(item))
     if not is_low:
         await state.update_data(index=data["index"] + 1)
-        await _ask(query.message, state, run_sync)
+        await _ask(message, state, run_sync)
         return
     await state.set_state(ChecklistFlow.awaiting_order_packs)
     await state.update_data(pending_ingredient_id=callback_data.ingredient_id)
-    await query.message.answer(
+    await message.answer(
         fmt.checklist_order_prompt(item),
         reply_markup=checklist_order_kb(callback_data.ingredient_id),
     )
 
 
 @router.message(ChecklistFlow.awaiting_order_packs)
-async def order_packs(message: Message, state: FSMContext, run_sync: Any) -> None:
+async def order_packs(message: Message, state: FSMContext, run_sync: RunSync) -> None:
     """A whole number of packs, or a refusal. Never a rounded one.
 
     `9.5 packs` is a typo and the right answer to a typo is to ask again -- rounding it
@@ -180,24 +180,24 @@ async def order_packs(message: Message, state: FSMContext, run_sync: Any) -> Non
 @router.callback_query(
     ChecklistCB.filter(F.action == "no_order"), ChecklistFlow.awaiting_order_packs
 )
-async def no_order(query: CallbackQuery, state: FSMContext, run_sync: Any) -> None:
+async def no_order(query: CallbackQuery, state: FSMContext, run_sync: RunSync) -> None:
     """Marked low, nothing ordered. The answer is already written and stays written."""
     data = await state.get_data()
     await state.update_data(index=data["index"] + 1)
     await query.answer()
-    if query.message is not None:
-        await _ask(query.message, state, run_sync)
+    if (message := accessible(query.message)) is not None:
+        await _ask(message, state, run_sync)
 
 
-async def _item(run_sync: Any, ingredient_id: int) -> ChecklistItemView | None:
+async def _item(run_sync: RunSync, ingredient_id: int) -> ChecklistItemView | None:
     items: list[ChecklistItemView] = await run_sync(build_checklist, only_stale=False)
     return next((i for i in items if i.ingredient_id == ingredient_id), None)
 
 
 @router.callback_query(ChecklistCB.filter(F.action == "skip"), ChecklistFlow.awaiting_answer)
-async def skip(query: CallbackQuery, state: FSMContext, run_sync: Any) -> None:
+async def skip(query: CallbackQuery, state: FSMContext, run_sync: RunSync) -> None:
     data = await state.get_data()
     await state.update_data(index=data["index"] + 1)
     await query.answer()
-    if query.message is not None:
-        await _ask(query.message, state, run_sync)
+    if (message := accessible(query.message)) is not None:
+        await _ask(message, state, run_sync)

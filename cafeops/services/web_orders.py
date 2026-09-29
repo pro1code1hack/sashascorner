@@ -25,15 +25,13 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from cafeops.config import settings
-from cafeops.db.models import POStatus, PurchaseOrder
+from cafeops.db.models import PurchaseOrder
 from cafeops.db.repositories.purchase_order import SqlPurchaseOrderRepository
+from cafeops.services.actor import require_actor
 from cafeops.services.build_order import build_split, create_draft_po
-from cafeops.services.order_actions import OrderActionRefused
+from cafeops.services.order_actions import CONFIRMABLE, OPEN_STATUSES, OrderActionRefused
 
 __all__ = ["confirm_order", "create_order_from_draft"]
-
-_OPEN = (POStatus.DRAFT, POStatus.PENDING_CONFIRM, POStatus.CONFIRMED, POStatus.SENT)
-_CONFIRMABLE = (POStatus.DRAFT, POStatus.PENDING_CONFIRM)
 
 
 def _existing_open(session: Session, *, supplier_id: int, target: date) -> int | None:
@@ -41,7 +39,7 @@ def _existing_open(session: Session, *, supplier_id: int, target: date) -> int |
         select(PurchaseOrder.id)
         .where(PurchaseOrder.supplier_id == supplier_id)
         .where(PurchaseOrder.target_delivery_date == target)
-        .where(PurchaseOrder.status.in_(list(_OPEN)))
+        .where(PurchaseOrder.status.in_(list(OPEN_STATUSES)))
         .limit(1)
     )
 
@@ -63,7 +61,7 @@ def create_order_from_draft(session: Session, *, supplier_id: int, created_by: s
         pending = session.scalar(
             select(PurchaseOrder.id)
             .where(PurchaseOrder.supplier_id == supplier_id)
-            .where(PurchaseOrder.status.in_(list(_CONFIRMABLE)))
+            .where(PurchaseOrder.status.in_(list(CONFIRMABLE)))
             .limit(1)
         )
         if pending is not None:
@@ -88,11 +86,16 @@ def create_order_from_draft(session: Session, *, supplier_id: int, created_by: s
 def confirm_order(
     session: Session, *, po_id: int, confirmed_by: str, final_packs: Mapping[int, int]
 ) -> PurchaseOrder:
-    """INVARIANT 1: a named human confirms, with the packs they settled on."""
+    """INVARIANT 1: a named human confirms, with the packs they settled on.
+
+    The one confirmation path: the web's Confirm and the bot's «Подтвердить» both land
+    here, so both get the all-lines-at-zero refusal and the same name rule.
+    """
+    who = require_actor(confirmed_by, error=OrderActionRefused)
     po = session.get(PurchaseOrder, po_id)
     if po is None:
         raise LookupError(f"purchase order {po_id} not found")
-    if po.status not in _CONFIRMABLE:
+    if po.status not in CONFIRMABLE:
         raise OrderActionRefused(
             f"order {po_id} is {po.status.value.lower()}; only a draft can be confirmed"
         )
@@ -106,7 +109,7 @@ def confirm_order(
         )
     SqlPurchaseOrderRepository(session).confirm(
         po_id,
-        confirmed_by=confirmed_by.strip()[:120],
+        confirmed_by=who,
         at=datetime.now(UTC),
         final_packs=final_packs,
     )

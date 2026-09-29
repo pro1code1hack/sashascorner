@@ -20,7 +20,6 @@ till never asks "who are you" as well as "what is your PIN".
 
 from __future__ import annotations
 
-import enum
 from datetime import datetime
 
 from sqlalchemy import BigInteger, Boolean, ForeignKey, Index, String
@@ -28,15 +27,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from cafeops.db.base import Base
 from cafeops.db.models._common import UTCDateTime, enum_col, utcnow
-
-
-class StaffRole(enum.Enum):
-    """SPEC: "One user table: roles staff / manager / owner"."""
-
-    STAFF = "STAFF"
-    #: May approve a cooldown override, undo anyone's stamp, and make later corrections.
-    MANAGER = "MANAGER"
-    OWNER = "OWNER"
+from cafeops.domain.enums import (
+    StaffRole,
+)
 
 
 class StaffUser(Base):

@@ -498,10 +498,6 @@ def program_view(session: Session) -> ProgramSettingsOut:
     return _program_settings(session, default_program(session))
 
 
-#: "Stamps expire" in the design is a switch; the rule behind it is 12 months untouched.
-STAMPS_EXPIRE_MONTHS = 12
-
-
 def program_update_view(session: Session, body: ProgramIn, ip: str) -> ProgramSettingsOut:
     _approve_rules(session, body.manager_pin, ip)
     program = default_program(session)
@@ -520,18 +516,11 @@ def program_update_view(session: Session, body: ProgramIn, ip: str) -> ProgramSe
             birthday_reward=body.birthday_reward,
             referral_stamps=body.referral_stamps,
             active=body.active,
+            welcome_stamp=body.welcome_stamp,
+            stamps_expire=body.stamps_expire,
+            stickers=body.stickers,
         ),
     )
-    if body.welcome_stamp is not None:
-        program.welcome_stamp = body.welcome_stamp
-    if body.stamps_expire is not None:
-        program.stamps_expire_months = STAMPS_EXPIRE_MONTHS if body.stamps_expire else None
-    if body.stickers is not None:
-        keys = list(dict.fromkeys(body.stickers))
-        if not keys:
-            raise LoyaltyError(422, "stickers_required", "Keep at least one sticker switched on.")
-        program.stickers = keys
-    session.flush()
     return _program_settings(session, program)
 
 
@@ -726,11 +715,7 @@ def targets_view(session: Session, program: str | None, days: int = 90) -> Targe
 
 def targets_update_view(session: Session, body: TargetsIn) -> TargetsOut:
     p = _program_for(session, body.program)
-    try:
-        p.targets = stats_service.set_targets(p.targets, body.targets) or None
-    except ValueError as exc:
-        raise LoyaltyError(422, "bad_target", str(exc)) from exc
-    session.flush()
+    programs.set_targets(session, p, body.targets)
     return targets_view(session, p.slug)
 
 

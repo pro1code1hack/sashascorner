@@ -37,7 +37,6 @@ from cafeops.db.models import (
     Season,
     SizeCode,
     SizeProfile,
-    StockBatch,
     StockCount,
     StockMovement,
     Supplier,
@@ -443,9 +442,9 @@ def _suppliers_and_pars(session: Session, report: DemoReport) -> None:
 
     # --- alternate sources, so sourcing has a real decision to make ----------
     for ing_name, sup_name, pack_size_text, pack_pence in ALTERNATE_SOURCES:
-        ingredient = _ing(session, ing_name)
-        supplier = suppliers.get(sup_name)
-        if ingredient is None or supplier is None:
+        alt_ingredient = _ing(session, ing_name)
+        alt_supplier = suppliers.get(sup_name)
+        if alt_ingredient is None or alt_supplier is None:
             report.warnings.append(
                 f"alternate source skipped: {ing_name!r} at {sup_name!r} not found"
             )
@@ -453,19 +452,19 @@ def _suppliers_and_pars(session: Session, report: DemoReport) -> None:
         sku = f"ALT-{sup_name[:3].upper()}"
         if session.scalar(
             select(SupplierProduct).where(
-                SupplierProduct.supplier_id == supplier.id,
-                SupplierProduct.ingredient_id == ingredient.id,
+                SupplierProduct.supplier_id == alt_supplier.id,
+                SupplierProduct.ingredient_id == alt_ingredient.id,
                 SupplierProduct.sku == sku,
             )
         ):
             continue
         session.add(
             SupplierProduct(
-                supplier_id=supplier.id,
-                ingredient_id=ingredient.id,
+                supplier_id=alt_supplier.id,
+                ingredient_id=alt_ingredient.id,
                 sku=sku,
                 pack_size=Decimal(pack_size_text),
-                pack_unit=ingredient.unit,
+                pack_unit=alt_ingredient.unit,
                 price_pence=pack_pence,
                 is_preferred=False,
                 moq_packs=1,
@@ -851,7 +850,7 @@ def _daily_sale_consumption(
     ).all()
     out: dict[date, Decimal] = {}
     for occurred_at, qty in rows:
-        day = occurred_at.astimezone(tz).date()  # type: ignore[arg-type]
+        day = occurred_at.astimezone(tz).date()
         out[day] = out.get(day, Decimal("0")) + (-qty)
     return out
 
@@ -896,87 +895,4 @@ def seed_seasons(session: Session, report: DemoReport) -> None:
         if season is None or option is None:
             continue
         option.season_id = season.id
-    session.flush()
-
-
-def seed_batches(session: Session, report: DemoReport) -> None:
-    """Create stock_batch rows for existing stock. Spec 4.1, spec 16.
-
-    Two sources, both needed for the demo to be honest:
-
-    1. **Opening counts** -- stock that was already there. Received at the count
-       instant, expiring per the ingredient's shelf life. A count is not a purchase,
-       so these batches have no `po_line_id`, which is exactly why that column is
-       nullable.
-    2. **DELIVERY movements** -- each synthetic restock becomes a batch, so FIFO has
-       several lots per ingredient with different dates to choose between.
-
-    Runs after restocking, because it reads the delivery ledger.
-    """
-    shelf_by_ing: dict[int, Ingredient] = {i.id: i for i in session.scalars(select(Ingredient))}
-
-    def expiry_for(ingredient: Ingredient, received_at: datetime) -> datetime | None:
-        if ingredient.shelf_life_days is None:
-            return None
-        return received_at + timedelta(days=ingredient.shelf_life_days)
-
-    # --- from opening counts -------------------------------------------------
-    first_counts: dict[int, StockCount] = {}
-    for count in session.scalars(select(StockCount).order_by(StockCount.counted_at)):
-        first_counts.setdefault(count.ingredient_id, count)
-
-    for ingredient_id, count in first_counts.items():
-        ingredient = shelf_by_ing.get(ingredient_id)
-        if ingredient is None or count.counted_qty <= 0:
-            continue
-        if session.scalar(
-            select(func.count(StockBatch.id)).where(
-                StockBatch.ingredient_id == ingredient_id,
-                StockBatch.po_line_id.is_(None),
-                StockBatch.note == "opening stock",
-            )
-        ):
-            continue
-        price = ingredient.current_cost_pence_per_unit or Decimal("0")
-        session.add(
-            StockBatch(
-                ingredient_id=ingredient_id,
-                qty_received=count.counted_qty,
-                qty_remaining=count.counted_qty,
-                received_at=count.counted_at,
-                expires_at=expiry_for(ingredient, count.counted_at),
-                unit_cost_pence=price,
-                note="opening stock",
-            )
-        )
-        report.batches += 1
-    session.flush()
-
-    # --- from DELIVERY movements --------------------------------------------
-    deliveries = session.scalars(
-        select(StockMovement)
-        .where(StockMovement.type == MovementType.DELIVERY)
-        .order_by(StockMovement.occurred_at)
-    )
-    for movement in deliveries:
-        ingredient = shelf_by_ing.get(movement.ingredient_id)
-        if ingredient is None or movement.qty <= 0:
-            continue
-        if movement.batch_id is not None:
-            continue
-        price = ingredient.current_cost_pence_per_unit or Decimal("0")
-        batch = StockBatch(
-            ingredient_id=movement.ingredient_id,
-            qty_received=movement.qty,
-            qty_remaining=movement.qty,
-            received_at=movement.occurred_at,
-            expires_at=expiry_for(ingredient, movement.occurred_at),
-            unit_cost_pence=price,
-            note="synthetic delivery",
-        )
-        session.add(batch)
-        session.flush()
-        # Link the ledger row to the batch it created, so provenance is walkable.
-        movement.batch_id = batch.id
-        report.batches += 1
     session.flush()

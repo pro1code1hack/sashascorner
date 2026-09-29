@@ -69,6 +69,7 @@ from cafeops.bot.viewmodels import (
 )
 from cafeops.config import settings
 from cafeops.domain.drift import DriftCause
+from cafeops.domain.enums import BrowserJobStatus
 from cafeops.domain.tiers import GateAction
 from cafeops.domain.types import (
     DriftVerdict,
@@ -85,6 +86,8 @@ from cafeops.domain.types import (
 from cafeops.services.record_checklist import ChecklistOrderRequest
 
 if TYPE_CHECKING:
+    from cafeops.services.browser_jobs import BasketJobNotice
+
     # Type-only: the loyalty services import the bot's notifier, so a runtime import
     # here would make `formatters` and `services.loyalty` import each other.
     from cafeops.services.loyalty.admin import MemberBrief
@@ -133,6 +136,7 @@ __all__ = [
     "err_bad_packs",
     "err_fractional_count",
     "err_not_adjustable",
+    "err_order_all_zero",
     "err_unknown",
     "help_text",
     "job_drift_report",
@@ -141,6 +145,7 @@ __all__ = [
     "member_brief",
     "member_not_found",
     "member_usage",
+    "money",
     "order_card",
     "order_confirmed",
     "order_dispatched",
@@ -225,7 +230,12 @@ def _qty(qty: Decimal, unit: Unit) -> str:
     return f"{_num(qty, unit)} {_UNITS[unit]}"
 
 
-def _money(pence: int | Decimal | None) -> str:
+def money(pence: int | Decimal | None) -> str:
+    """`£12.34` -- the bot's one money format (keyboards import it too).
+
+    Not `domain/units.pounds`: that writes a negative as `-£1.50` and rounds a Decimal to
+    whole pence first; this writes `£-1.50`. Different output, so not a copy (8X).
+    """
     if pence is None:
         return "цена неизвестна"
     return f"£{Decimal(pence) / 100:.2f}"
@@ -276,10 +286,10 @@ def _basis(line: StockLineView) -> str:
     elif line.days_since_count is not None:
         ago = f", {_days(line.days_since_count)} назад"
     figure = "—" if counted is None else _qty(counted, unit)
-    return (
-        f"опора: пересчёт {figure} от {_d(line.basis_counted_at)}{ago} "
-        f"плюс {line.movement_count} движ. по журналу"
-    )
+    # `has_count_basis` implies a count date, but the view model carries them as two
+    # fields, so the type does not know that; the dash is the same one `figure` uses.
+    when = "—" if line.basis_counted_at is None else _d(line.basis_counted_at)
+    return f"опора: пересчёт {figure} от {when}{ago} плюс {line.movement_count} движ. по журналу"
 
 
 def _stock_figure(line: StockLineView) -> str:
@@ -547,7 +557,7 @@ _STATUS: dict[POStatus, str] = {
 def _order_line(line: OrderLineView, index: int) -> list[str]:
     rows = [
         f"{index}. {line.ingredient_name} — {_packs(line.packs)} "
-        f"x {_qty(line.pack_size, line.pack_unit)} = {_money(line.line_total_pence)}"
+        f"x {_qty(line.pack_size, line.pack_unit)} = {money(line.line_total_pence)}"
     ]
     if line.adjusted:
         rows.append(
@@ -590,10 +600,10 @@ def _order_top_ups(view: OrderView) -> list[str]:
     total = sum(line.line_total_pence for line in top_ups)
     rows = [
         "",
-        f"ДОБОР — {_lines_word(len(top_ups))} на {_money(total)}, которые прогноз НЕ просил:",
+        f"ДОБОР — {_lines_word(len(top_ups))} на {money(total)}, которые прогноз НЕ просил:",
     ]
     rows += [
-        f"  – {line.ingredient_name}: {_packs(line.packs)}, {_money(line.line_total_pence)}"
+        f"  – {line.ingredient_name}: {_packs(line.packs)}, {money(line.line_total_pence)}"
         for line in top_ups
     ]
     rows.append(
@@ -604,7 +614,7 @@ def _order_top_ups(view: OrderView) -> list[str]:
 
 
 def _order_channel_note(view: OrderView) -> list[str]:
-    if view.channel is OrderChannel.BROWSER_AGENT:
+    if view.channel is OrderChannel.BROWSER_AGENT or view.stages_basket:
         return [
             "",
             "КАНАЛ: корзина на сайте поставщика собирается автоматически и "
@@ -643,24 +653,24 @@ def order_card(view: OrderView) -> str:
         rows += _order_line(line, index)
 
     rows.append("")
-    rows.append(f"товары: {_money(view.goods_pence)}")
+    rows.append(f"товары: {money(view.goods_pence)}")
     if view.delivery_fee_pence > 0:
         threshold = view.free_delivery_threshold_pence
         if threshold is not None and view.goods_pence >= threshold:
             rows.append(
-                f"доставка бесплатно: {_money(view.goods_pence)} перекрывает порог "
-                f"{_money(threshold)}"
+                f"доставка бесплатно: {money(view.goods_pence)} перекрывает порог "
+                f"{money(threshold)}"
             )
         else:
-            rows.append(f"доставка: {_money(view.delivery_fee_pence)}")
-    rows.append(f"ИТОГО: {_money(view.total_pence)}")
+            rows.append(f"доставка: {money(view.delivery_fee_pence)}")
+    rows.append(f"ИТОГО: {money(view.total_pence)}")
 
     if view.min_order_pence > 0:
         if view.meets_minimum:
-            rows.append(f"минимум поставщика {_money(view.min_order_pence)} — выполнен")
+            rows.append(f"минимум поставщика {money(view.min_order_pence)} — выполнен")
         else:
             rows.append(
-                f"МИНИМУМ {_money(view.min_order_pence)} НЕ ВЫПОЛНЕН. Ниже минимума "
+                f"МИНИМУМ {money(view.min_order_pence)} НЕ ВЫПОЛНЕН. Ниже минимума "
                 "поставщик не отгружает ничего: выбор не «заказать меньше», а "
                 "«не заказать вовсе». Решать вам."
             )
@@ -730,9 +740,9 @@ def order_confirmed(view: OrderView) -> str:
     when = "" if view.confirmed_at is None else f" в {_dt(view.confirmed_at)}"
     rows = [
         f"Заказ №{view.po_id} «{view.supplier_name}» ПОДТВЕРЖДЁН — записано на «{who}»{when}.",
-        f"{_lines_word(len(view.lines))}, итого {_money(view.total_pence)}.",
+        f"{_lines_word(len(view.lines))}, итого {money(view.total_pence)}.",
     ]
-    if view.channel is OrderChannel.BROWSER_AGENT:
+    if view.channel is OrderChannel.BROWSER_AGENT or view.stages_basket:
         rows.append(
             "Дальше собирается корзина на сайте поставщика. Заказ ещё НЕ отправлен: "
             "последнюю кнопку нажимаете вы."
@@ -742,13 +752,75 @@ def order_confirmed(view: OrderView) -> str:
     return "\n".join(rows)
 
 
+def basket_job_finished(notice: BasketJobNotice) -> str:
+    """Сообщение, когда сборка корзины закончилась. Никогда не «заказано»."""
+    order = f" (заказ №{notice.po_id})" if notice.po_id is not None else ""
+    if notice.status is BrowserJobStatus.SUCCEEDED:
+        rows = [f"КОРЗИНА ГОТОВА — {notice.supplier_name}{order}."]
+        if notice.lines_short:
+            rows.append(
+                f"Внимание: в корзине не хватает позиций — {notice.lines_short} из "
+                f"{notice.lines_wanted}. Проверьте перед оплатой."
+            )
+        if notice.subtotal_seen_pence is not None:
+            rows.append(f"Сумма в корзине: {money(notice.subtotal_seen_pence)}.")
+        elif notice.total_expected_pence is not None:
+            rows.append(f"Ожидаемая сумма: {money(notice.total_expected_pence)}.")
+        rows.append(
+            "Проверьте корзину и оплатите сами. ЗАКАЗ НЕ ОТПРАВЛЕН — после оплаты "
+            "отметьте его отправленным в бэк-офисе."
+        )
+        if notice.basket_url:
+            rows.append(notice.basket_url)
+        return "\n".join(rows)
+    if notice.status is BrowserJobStatus.NEEDS_HUMAN:
+        rows = [
+            f"Сборка корзины «{notice.supplier_name}»{order} остановлена: нужен человек "
+            "(вход, код подтверждения или проверка «я не робот»).",
+        ]
+    else:
+        rows = [f"Сборка корзины «{notice.supplier_name}»{order} не удалась."]
+    if notice.reason:
+        rows.append(f"Причина: {notice.reason}")
+    rows.append("Заказ НЕ отправлен — оформите его вручную или запустите сборку ещё раз.")
+    return "\n".join(rows)
+
+
 def order_dispatched(view: DispatchView) -> str:
     """Никогда не «заказано», если канал требует человека."""
+    if view.staged_job_id is not None:
+        if view.staged_basket_url:
+            rows = [
+                f"КОРЗИНА ГОТОВА — {view.supplier_name}, {_items(view.items)} на "
+                f"{money(view.total_pence)}. Откройте ссылку, проверьте корзину и "
+                "оплатите сами. ЗАКАЗ НЕ ОТПРАВЛЕН.",
+                view.staged_basket_url,
+            ]
+        else:
+            rows = [
+                f"Корзина «{view.supplier_name}» собирается на сайте поставщика "
+                f"(задание №{view.staged_job_id}), {_items(view.items)} на "
+                f"{money(view.total_pence)}.",
+                "Сборка остановится ДО оплаты. Когда корзина будет готова, придёт "
+                "сообщение. ЗАКАЗ НЕ ОТПРАВЛЕН.",
+            ]
+        rows.append(
+            f"Когда оплатите на сайте — отметьте заказ №{view.po_id} отправленным в бэк-офисе."
+        )
+        return "\n".join(rows)
+    if view.staging_refused is not None:
+        rows = [
+            f"Корзина «{view.supplier_name}» НЕ собрана: {view.staging_refused}",
+            f"Заказ №{view.po_id} подтверждён, но НЕ отправлен — оформите его вручную.",
+        ]
+        if view.target_url:
+            rows.append(view.target_url)
+        return "\n".join(rows)
     if view.channel is OrderChannel.BROWSER_AGENT:
         if view.succeeded:
             rows = [
                 f"КОРЗИНА ГОТОВА — {view.supplier_name}, {_items(view.items)} на "
-                f"{_money(view.total_pence)}.",
+                f"{money(view.total_pence)}.",
                 "Проверьте корзину и нажмите кнопку оплаты сами. ЗАКАЗ НЕ ОТПРАВЛЕН.",
             ]
         else:
@@ -766,7 +838,7 @@ def order_dispatched(view: DispatchView) -> str:
     if view.channel is OrderChannel.MANUAL:
         return (
             f"Список покупок готов — {view.supplier_name}, {_items(view.items)} на "
-            f"{_money(view.total_pence)}.\n"
+            f"{money(view.total_pence)}.\n"
             "Отправлять некуда: это поход в магазин. Когда принесёте — оформите "
             "приёмку, /delivery."
         )
@@ -1040,7 +1112,7 @@ def checklist_ordered(request: ChecklistOrderRequest) -> str:
     rows = [
         f"{request.ingredient_name}: {_packs(request.packs)} "
         f"x {_qty(request.pack_size, request.pack_unit)} = "
-        f"{_money(request.line_total_pence)} — добавлено в черновик заказа "
+        f"{money(request.line_total_pence)} — добавлено в черновик заказа "
         f"№{request.po_id} «{request.supplier_name}».",
     ]
     rows.append(
@@ -1201,7 +1273,7 @@ _RECEIPT_ISSUE: dict[ReceiptIssue, str] = {
 def delivery_receipt(view: ReceiptView) -> str:
     rows = [
         f"Принято: {view.ingredient_name}, {_qty(view.qty, view.unit)} "
-        f"на {_money(view.value_pence)}.",
+        f"на {money(view.value_pence)}.",
         f"партия №{view.batch_id}",
     ]
     if view.expires_at is None:
@@ -1239,14 +1311,14 @@ def _digest_write_offs(rows: Sequence[WriteOffView]) -> list[str]:
     total = sum((row.loss_pence or Decimal("0")) for row in priced)
     out = [
         "",
-        f"СПИСАНИЕ ПО СРОКУ ГОДНОСТИ — {_items(len(rows))} на {_money(total)}:",
+        f"СПИСАНИЕ ПО СРОКУ ГОДНОСТИ — {_items(len(rows))} на {money(total)}:",
     ]
     for row in rows[:8]:
         extra = " (истёк срок после вскрытия)" if row.expired_after_opening else ""
         assumed = " [дата была подставлена]" if row.expiry_was_assumed else ""
         out.append(
             f"  – {row.ingredient_name}: {_qty(row.qty, row.unit)}, "
-            f"{_money(row.loss_pence)}, просрочено {_days(row.days_overdue)}"
+            f"{money(row.loss_pence)}, просрочено {_days(row.days_overdue)}"
             f"{extra}{assumed}"
         )
     if len(rows) > 8:
@@ -1267,7 +1339,7 @@ def _digest_short_dated(rows: Sequence[ExpiryLineView]) -> list[str]:
     for row in sorted(rows, key=lambda r: r.days_left)[:8]:
         out.append(
             f"  – {row.ingredient_name}: {_qty(row.qty, row.unit)}, "
-            f"{_days(row.days_left)} до {_d(row.expires_at)} ({_money(row.value_pence)})"
+            f"{_days(row.days_left)} до {_d(row.expires_at)} ({money(row.value_pence)})"
         )
     if len(rows) > 8:
         out.append(f"  … ещё {len(rows) - 8}")
@@ -1293,7 +1365,7 @@ def _digest_orders(rows: Sequence[OrderView]) -> list[str]:
         tail = f" — {'; '.join(flags)}" if flags else ""
         out.append(
             f"  – №{view.po_id} {view.supplier_name}: {_lines_word(len(view.lines))}, "
-            f"{_money(view.total_pence)}, поставка {_d(view.target_delivery_date)}{tail}"
+            f"{money(view.total_pence)}, поставка {_d(view.target_delivery_date)}{tail}"
         )
     out.append("Ни одна строка не заказана, пока вы не подтвердили. /orders")
     return out
@@ -1374,13 +1446,13 @@ def _digest_emergency(view: EmergencyDigestView | None) -> list[str]:
     out = [
         "",
         "РОЗНИЧНАЯ НАЦЕНКА ЗА СПЕШКУ — "
-        f"ВСЕГО {_money(view.total_premium_pence)} за {_runs(view.total_runs)} "
+        f"ВСЕГО {money(view.total_premium_pence)} за {_runs(view.total_runs)} "
         "в магазин.",
     ]
     if view.recent_runs:
         out.append(
             f"  за последние {_days(view.window_days)}: {_runs(view.recent_runs)} "
-            f"на {_money(view.recent_premium_pence)}"
+            f"на {money(view.recent_premium_pence)}"
         )
     else:
         out.append(
@@ -1388,7 +1460,7 @@ def _digest_emergency(view: EmergencyDigestView | None) -> list[str]:
             "Сумма выше накопилась раньше."
         )
     for name, runs, premium in view.by_ingredient:
-        out.append(f"  – {name}: {_runs(runs)}, {_money(premium)}")
+        out.append(f"  – {name}: {_runs(runs)}, {money(premium)}")
     if view.unpriced_runs:
         out.append(
             f"  {view.unpriced_runs} из {view.total_runs} без цены — в сумму не включены. "
@@ -1612,6 +1684,14 @@ def err_not_adjustable(po_id: int) -> str:
     )
 
 
+def err_order_all_zero(po_id: int) -> str:
+    return (
+        f"Заказ №{po_id} не подтверждён: во всех строках 0 упаковок — заказывать нечего. "
+        f"Ничего не записано. Добавьте упаковки кнопкой «{BTN_ORDER_PLUS}» или оставьте "
+        f"заказ черновиком — «{BTN_ORDER_CANCEL}»."
+    )
+
+
 def err_unknown() -> str:
     return "Не получилось. Ничего не записано — повторите действие или начните заново с /start."
 
@@ -1731,15 +1811,17 @@ def job_drift_report(
             + ", ".join(row.name for row in alerts)
             + ". По этим позициям расчётным остаткам доверять нельзя и автозаказ запрещён.",
         ]
+    # The cause is captured alongside the row: a `not None` test inside a comprehension
+    # does not narrow the attribute for the loop that indexes `_REVOKE_CAUSE` with it.
     revoked = [
-        row
+        (row, cause)
         for row in rows
-        if row.alert_level is GateAlertLevel.NOTICE and row.revoke_cause is not None
+        if row.alert_level is GateAlertLevel.NOTICE and (cause := row.revoke_cause) is not None
     ]
     if revoked:
         body += ["", f"АВТОЗАКАЗ ОТОБРАН — {_items(len(revoked))}:"]
-        for row in revoked:
-            body.append(f"  – {row.name}: {_REVOKE_CAUSE[row.revoke_cause]}")
+        for row, cause in revoked:
+            body.append(f"  – {row.name}: {_REVOKE_CAUSE[cause]}")
         body.append(
             "Черновики по этим позициям больше не собираются сами. Расхождение при этом "
             "ещё в рабочей полосе — истекло не доверие к числам, а основание, на котором "
@@ -1919,7 +2001,7 @@ def sale_channel_prompt() -> str:
 def sale_pick_prompt(basket: BasketView) -> str:
     lines = [f"{_channel(basket.channel).capitalize()}."]
     if basket.lines:
-        lines.append(f"В чеке {_items(len(basket.lines))} на {_money(basket.total_pence)}.")
+        lines.append(f"В чеке {_items(len(basket.lines))} на {money(basket.total_pence)}.")
     lines.append("Что продали? Выберите категорию или напишите часть названия.")
     return "\n".join(lines)
 
@@ -1938,19 +2020,18 @@ def sale_search_results(q: str, found: int) -> str:
 
 
 def sale_qty_prompt(item: MenuPickView) -> str:
-    return f"{item.label} — {_money(item.price_pence)}. Сколько штук?"
+    return f"{item.label} — {money(item.price_pence)}. Сколько штук?"
 
 
 def _basket_lines(lines: Sequence[BasketLineView]) -> list[str]:
     out: list[str] = []
     for index, line in enumerate(lines, start=1):
         price = (
-            f" по {_money(line.unit_price_pence)}" if line.qty != 1 or line.price_is_custom else ""
+            f" по {money(line.unit_price_pence)}" if line.qty != 1 or line.price_is_custom else ""
         )
         custom = " (своя цена)" if line.price_is_custom else ""
         out.append(
-            f"{index}. {line.label} × {_count(line.qty)}{price}{custom} — "
-            f"{_money(line.gross_pence)}"
+            f"{index}. {line.label} × {_count(line.qty)}{price}{custom} — {money(line.gross_pence)}"
         )
     return out
 
@@ -1963,7 +2044,7 @@ def sale_basket(basket: BasketView) -> str:
         [
             f"Чек — {_channel(basket.channel)}, {when}.",
             *_basket_lines(basket.lines),
-            f"Итого: {_money(basket.total_pence)}",
+            f"Итого: {money(basket.total_pence)}",
             "",
             "«Записать» внесёт продажу; со склада спишется ночью, как и кассовые.",
         ]
@@ -1973,7 +2054,7 @@ def sale_basket(basket: BasketView) -> str:
 def sale_price_prompt(line: BasketLineView) -> str:
     return "\n".join(
         [
-            f"Цена за 1 шт. для «{line.label}»? Сейчас {_money(line.unit_price_pence)}.",
+            f"Цена за 1 шт. для «{line.label}»? Сейчас {money(line.unit_price_pence)}.",
             "Напишите сумму, например 4.50. Это цена площадки, меню не меняется.",
         ]
     )
@@ -1993,7 +2074,7 @@ def sale_recorded(view: RecordedSaleView) -> str:
         [
             f"Записано. {_channel(view.channel).capitalize()}, {_dt(view.sold_at)}.",
             *_basket_lines(view.lines),
-            f"Итого: {_money(view.total_pence)}",
+            f"Итого: {money(view.total_pence)}",
             "",
             f"Чек {view.receipt_id}. Внёс: {view.recorded_by or '—'}.",
             "Со склада спишется ночью. Ошиблись — нажмите кнопку ниже.",
@@ -2004,7 +2085,7 @@ def sale_recorded(view: RecordedSaleView) -> str:
 def sale_voided(view: RecordedSaleView) -> str:
     return "\n".join(
         [
-            f"Продажа {view.receipt_id} отменена ({_money(view.total_pence)}).",
+            f"Продажа {view.receipt_id} отменена ({money(view.total_pence)}).",
             "Строки остались в журнале с пометкой «отменено». Если списание уже "
             "прошло, остатки вернутся ночью.",
         ]
@@ -2057,7 +2138,7 @@ def cash_amount_prompt(view: CashDayView) -> str:
     current = (
         "пока ничего не записано"
         if view.cash_pence is None
-        else f"сейчас записано {_money(view.cash_pence)}"
+        else f"сейчас записано {money(view.cash_pence)}"
     )
     return "\n".join(
         [
@@ -2081,9 +2162,9 @@ def cash_saved(view: CashDayView) -> str:
     card = (
         "карта за день не записана"
         if view.card_pence is None
-        else f"карта за день {_money(view.card_pence)}"
+        else f"карта за день {money(view.card_pence)}"
     )
-    return f"Записано: наличные за {_day_label(view.day)} — {_money(view.cash_pence)} ({card})."
+    return f"Записано: наличные за {_day_label(view.day)} — {money(view.cash_pence)} ({card})."
 
 
 def cash_cancelled() -> str:
@@ -2103,7 +2184,7 @@ def export_caption(view: ExportView) -> str:
     voided = f", отменённых строк {view.voided_lines}" if view.voided_lines else ""
     return (
         f"Транзакции {_d(view.since)}–{_d(view.until)}: чеков {view.receipts}, "
-        f"строк {view.lines}, на {_money(view.gross_pence)}{voided}."
+        f"строк {view.lines}, на {money(view.gross_pence)}{voided}."
     )
 
 
@@ -2139,16 +2220,16 @@ def _import_body(view: ImportResultView) -> list[str]:
     if view.kind is CsvKind.TRANSACTIONS:
         out.append(
             f"Транзакции{when}: чеков {view.receipts}, строк {view.lines}, "
-            f"на {_money(view.gross_pence)}."
+            f"на {money(view.gross_pence)}."
         )
         for channel, pence in view.by_channel:
-            out.append(f"  {_channel(channel)}: {_money(pence)}")
+            out.append(f"  {_channel(channel)}: {money(pence)}")
         if view.already_recorded:
             out.append(f"Уже были записаны раньше: {view.already_recorded} — пропущены.")
     elif view.kind is CsvKind.PAYMENTS:
         out.append(
             f"Выручка по дням{when}: новых дней {view.days_inserted}, "
-            f"обновлено {view.days_updated}, всего {_money(view.gross_pence)}."
+            f"обновлено {view.days_updated}, всего {money(view.gross_pence)}."
         )
     elif view.kind is CsvKind.CHANNEL_REPORT:
         out.append(

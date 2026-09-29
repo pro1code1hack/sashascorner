@@ -81,7 +81,7 @@ def drift_pct(*, theoretical_qty: Decimal, counted_qty: Decimal) -> Decimal:
 
 
 def classify_drift(
-    pct: float,
+    pct: Decimal | float,
     *,
     eligible_max_pct: float = DEFAULT_ELIGIBLE_MAX_PCT,
     warn_max_pct: float = DEFAULT_WARN_MAX_PCT,
@@ -92,10 +92,13 @@ def classify_drift(
     auto-ordering turns on -- that needs two consecutive clears and lives in
     `domain/tiers.py`.
     """
-    magnitude = abs(pct)
-    if magnitude < eligible_max_pct:
+    # Compare exactly. A float here would let a gap of 15.0000001% round DOWN to the
+    # tuning band and one of 9.9999999% round UP out of eligibility -- the two edges
+    # where invariant 2 is decided.
+    magnitude = abs(Decimal(str(pct)) if isinstance(pct, float) else pct)
+    if magnitude < Decimal(str(eligible_max_pct)):
         return DriftVerdict.ELIGIBLE
-    if magnitude <= warn_max_pct:
+    if magnitude <= Decimal(str(warn_max_pct)):
         return DriftVerdict.TUNE_WASTE_FACTOR
     return DriftVerdict.FORCE_MANUAL
 
@@ -174,9 +177,7 @@ def evaluate_drift(
     both stopped describing reality.
     """
     pct = drift_pct(theoretical_qty=theoretical_qty, counted_qty=counted_qty)
-    verdict = classify_drift(
-        float(pct), eligible_max_pct=eligible_max_pct, warn_max_pct=warn_max_pct
-    )
+    verdict = classify_drift(pct, eligible_max_pct=eligible_max_pct, warn_max_pct=warn_max_pct)
 
     suggested: Decimal | None = None
     if verdict is DriftVerdict.TUNE_WASTE_FACTOR:

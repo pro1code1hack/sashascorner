@@ -31,11 +31,11 @@ from pydantic import (
     field_validator,
     model_validator,
 )
-from sqlalchemy import select
+from sqlalchemy import inspect, select
 from sqlalchemy.orm import Session
 
 from sashasite.config import Address, CafeFacts, Closure, Geo, get_cafe_file, get_settings
-from sashasite.db import SiteSetting, session_scope, utcnow
+from sashasite.db import SiteSetting, get_engine, session_scope, utcnow
 
 KEYS = ("cafe", "booking", "closures")
 HHMM = r"^([01]\d|2[0-3]):[0-5]\d$"
@@ -239,8 +239,17 @@ def _raw(session: Session) -> dict[str, Any]:
     return {r.key: json.loads(r.value_json) for r in rows}
 
 
+def _table_exists() -> bool:
+    """`site_setting` is created by the site's Alembic history. The Docker image's data
+    stage (`sashasite menu-export` / `info-export`) runs against no database at all, so
+    without this the build died on "no such table" -- the seed file is the answer there."""
+    return inspect(get_engine()).has_table(SiteSetting.__tablename__)
+
+
 def ensure_seeded() -> list[str]:
     """Insert any missing key from cafe.toml. Returns the keys it seeded."""
+    if not _table_exists():
+        return []
     with session_scope() as session:
         if len(_raw(session)) == len(KEYS):
             return []
@@ -263,6 +272,17 @@ def _load(session: Session) -> tuple[CafeSettings, BookingSettings, list[Closure
 
 
 def load_settings() -> SettingsOut:
+    if not _table_exists():
+        raw = _seed_values()
+        cafe = CafeSettings.model_validate(raw["cafe"])
+        booking = BookingSettings.model_validate(raw["booking"])
+        closures = [ClosureSettings.model_validate(c) for c in raw["closures"]]
+        return SettingsOut(
+            cafe=cafe,
+            booking=booking,
+            closures=closures,
+            telegram_configured=get_settings().telegram_configured,
+        )
     ensure_seeded()
     with session_scope() as session:
         cafe, booking, closures = _load(session)

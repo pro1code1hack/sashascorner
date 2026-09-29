@@ -10,3 +10,25 @@ export function showToast(text: string, action?: { label: string; href: string }
   if (timer !== undefined) window.clearTimeout(timer);
   timer = window.setTimeout(() => (toast.value = null), ms);
 }
+
+// A toast for the next page when that page is a full load away (the /account island
+// sends "Order again" to /order/basket): kept for one visit in sessionStorage and
+// shown by the shell on mount.
+const STASH_KEY = 'sc.shop.toast.v1';
+export function stashToast(text: string): void {
+  try {
+    sessionStorage.setItem(STASH_KEY, text);
+  } catch {
+    /* storage off: nothing to show, nothing lost */
+  }
+}
+export function showStashedToast(): void {
+  try {
+    const t = sessionStorage.getItem(STASH_KEY);
+    if (!t) return;
+    sessionStorage.removeItem(STASH_KEY);
+    showToast(t);
+  } catch {
+    /* fine */
+  }
+}

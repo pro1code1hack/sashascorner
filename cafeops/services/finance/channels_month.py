@@ -16,14 +16,14 @@ from pathlib import Path
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from cafeops.clock import utcnow
 from cafeops.db.models.channel import ChannelMetric
-from cafeops.db.models.enums import ChannelSourceKind, SalesChannelName
 from cafeops.db.models.finance import ChannelStatement
+from cafeops.domain.enums import ChannelSourceKind, SalesChannelName
 from cafeops.services.finance.common import (
     FinanceRefused,
     month_label,
     month_range,
-    now_utc,
     require_pence,
 )
 
@@ -162,7 +162,7 @@ def upsert_statement(
     st.source = ChannelSourceKind.MANUAL
     st.source_ref = f"typed on Reconcile ({month_label(first)})"
     st.updated_by = operator
-    st.updated_at = now_utc()
+    st.updated_at = utcnow()
     session.flush()
     return month_figures(session, first, channel)
 

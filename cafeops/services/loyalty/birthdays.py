@@ -15,11 +15,12 @@ so the card's cached flag and the pass must be refreshed -- nothing else would n
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, date, datetime, time, timedelta
+from datetime import date, datetime
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from cafeops.clock import local_day_bounds
 from cafeops.config import settings
 from cafeops.db.models import LoyaltyCard, LoyaltyMember, LoyaltyReward, RewardKind
 from cafeops.domain.loyalty import birthday_decision
@@ -51,7 +52,7 @@ class BirthdayReport:
 
 def _end_of_local_day(day: date) -> datetime:
     """The instant a reward valid "until day X" stops: midnight after X, local time."""
-    return datetime.combine(day + timedelta(days=1), time.min, tzinfo=settings.tz).astimezone(UTC)
+    return local_day_bounds(day, tz=settings.tz)[1]
 
 
 def run_birthdays(session: Session, *, now: datetime | None = None) -> BirthdayReport:

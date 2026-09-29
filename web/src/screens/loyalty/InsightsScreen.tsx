@@ -12,6 +12,7 @@ import { href, navigate, useLocation } from '../../lib/router'
 import type { Insights, InsightsDays, Kpi } from '../../lib/types/loyalty'
 import { ChartCard, Columns, ShareRows, useReadout, type ColumnDatum } from './insights/charts'
 import { LoyaltyHeader } from './LoyaltyHeader'
+import { Avatar } from './members/bits'
 
 const RANGES: { value: `${InsightsDays}`; label: string; before: string }[] = [
   { value: '30', label: '30 days', before: 'the 30 days before' },
@@ -39,7 +40,7 @@ export function InsightsScreen() {
               <h2 className="text-xl font-extrabold tracking-[-.01em]">How the card is doing</h2>
               <p className="text-base text-ink-2">
                 Compared with {range.before}.
-                {q.isFetching && q.data && <span className="ml-2 text-ink-3">Updating…</span>}
+                {q.isFetching && q.data && <span className="ml-2">Updating…</span>}
               </p>
             </div>
             <Segmented
@@ -93,45 +94,43 @@ function weekLabel(ymd: string): string {
   )
 }
 
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean)
-  const a = parts[0]?.[0] ?? '?'
-  const b = parts.length > 1 ? (parts[parts.length - 1]?.[0] ?? '') : ''
-  return (a + b).toUpperCase()
-}
+/* ------------------------------------------------------------------- figures --- */
 
-/* --------------------------------------------------------------------- tiles --- */
-
-function KpiTile({
-  label,
-  value,
-  delta,
-  sub,
-}: {
+interface Figure {
   label: string
   value: string | null
   delta?: { text: string; dir: -1 | 0 | 1 } | null
   sub: string
-}) {
+}
+
+/**
+ * The period's figures in one quiet line, label over figure with hairline dividers
+ * (the Sales `Figures` strip, not a card grid). The change against the period before
+ * is plain ink: a fall is not a crossed threshold, so it is not red, and a rise is
+ * not green (DECISIONS 23).
+ */
+function Figures({ items }: { items: readonly Figure[] }) {
   return (
-    <div className="min-w-0 rounded-card border border-line bg-surface px-4 py-3.5">
-      <div className="text-sm text-ink-2">{label}</div>
-      <div className="mt-1 flex items-baseline gap-2">
-        <span className="fig text-4xl font-extrabold leading-none tracking-[-.02em]">{value ?? '—'}</span>
-        {value !== null && delta && (
-          <span
-            className={cx(
-              'fig text-sm font-bold',
-              delta.dir > 0 ? 'text-ok-ink' : delta.dir < 0 ? 'text-bad-ink' : 'text-ink-2',
+    <dl className="flex flex-wrap gap-y-4 rounded-card border border-line bg-surface px-4 py-3.5">
+      {items.map((it, i) => (
+        <div
+          key={it.label}
+          className={cx('min-w-0 pr-5 max-compact:w-1/2', i > 0 && 'compact:border-l compact:border-line compact:pl-5')}
+        >
+          <dt className="text-xs font-bold uppercase tracking-[.06em] text-ink-2">{it.label}</dt>
+          <dd className="mt-0.5 flex flex-wrap items-baseline gap-x-2">
+            <span className="fig text-2xl font-extrabold tracking-[-.01em]">{it.value ?? '—'}</span>
+            {it.value !== null && it.delta && (
+              <span className="fig text-sm font-bold text-ink-2">
+                {it.delta.text}
+                <span className="sr-only"> against the period before</span>
+              </span>
             )}
-            title="Change against the period before"
-          >
-            {delta.text}
-          </span>
-        )}
-      </div>
-      <div className="mt-1.5 text-xs text-ink-2">{sub}</div>
-    </div>
+          </dd>
+          <dd className="text-sm text-ink-2">{it.sub}</dd>
+        </div>
+      ))}
+    </dl>
   )
 }
 
@@ -142,71 +141,66 @@ function Body({ data }: { data: Insights }) {
   const active = data.active_members.value
   return (
     <>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 wide:grid-cols-5">
-        <KpiTile
-          label="Members"
-          value={data.members.value === null ? null : String(data.members.value)}
-          delta={countDelta(data.members)}
-          sub={`${data.joined_in_window} joined in this period`}
-        />
-        <KpiTile
-          label="Came in and stamped"
-          value={active === null ? null : String(active)}
-          delta={countDelta(data.active_members)}
-          sub={
-            active === null
-              ? 'no stamps to count yet'
-              : visits === null
-                ? 'different people'
-                : `different people, ${visits.toFixed(1)} visits a month each`
-          }
-        />
-        <KpiTile
-          label="Stamps given"
-          value={data.stamps.value === null ? null : String(data.stamps.value)}
-          delta={countDelta(data.stamps)}
-          sub={
-            data.stamps.value === null
-              ? 'no stamps to count yet'
-              : data.stamps_per_week > 0 && data.stamps_per_week < 0.5
-                ? 'fewer than one a week'
-                : `about ${Math.round(data.stamps_per_week)} a week`
-          }
-        />
-        <KpiTile
-          label="Free drinks"
-          value={data.free_drinks.value === null ? null : String(data.free_drinks.value)}
-          delta={countDelta(data.free_drinks)}
-          sub="cards filled and used"
-        />
-        <KpiTile
-          label="Came back"
-          value={data.came_back.value === null ? null : whole(data.came_back.value)}
-          delta={shareDelta(data.came_back)}
-          sub={
-            data.came_back.value === null
-              ? 'nobody joined before this period yet'
-              : 'of older members visited in this period'
-          }
-        />
-        <KpiTile
-          label="Opted in to offers"
-          value={data.opted_in_share === null ? null : whole(data.opted_in_share)}
-          sub={
-            data.opted_in_share === null
-              ? 'no members yet'
-              : `${data.opted_in_count} ${plural(data.opted_in_count, 'person', 'people')} you can message`
-          }
-        />
-      </div>
+      <Figures
+        items={[
+          {
+            label: 'Members',
+            value: data.members.value === null ? null : String(data.members.value),
+            delta: countDelta(data.members),
+            sub: `${data.joined_in_window} joined in this period`,
+          },
+          {
+            label: 'Came in and stamped',
+            value: active === null ? null : String(active),
+            delta: countDelta(data.active_members),
+            sub:
+              active === null
+                ? 'no stamps to count yet'
+                : visits === null
+                  ? 'different people'
+                  : `different people, ${visits.toFixed(1)} visits a month each`,
+          },
+          {
+            label: 'Stamps given',
+            value: data.stamps.value === null ? null : String(data.stamps.value),
+            delta: countDelta(data.stamps),
+            sub:
+              data.stamps.value === null
+                ? 'no stamps to count yet'
+                : data.stamps_per_week > 0 && data.stamps_per_week < 0.5
+                  ? 'fewer than one a week'
+                  : `about ${Math.round(data.stamps_per_week)} a week`,
+          },
+          {
+            label: 'Free drinks',
+            value: data.free_drinks.value === null ? null : String(data.free_drinks.value),
+            delta: countDelta(data.free_drinks),
+            sub: 'cards filled and used',
+          },
+          {
+            label: 'Came back',
+            value: data.came_back.value === null ? null : whole(data.came_back.value),
+            delta: shareDelta(data.came_back),
+            sub: data.came_back.value === null ? 'nobody joined before this period yet' : 'of older members visited in this period',
+          },
+          {
+            label: 'Opted in to offers',
+            value: data.opted_in_share === null ? null : whole(data.opted_in_share),
+            sub:
+              data.opted_in_share === null
+                ? 'no members yet'
+                : `${data.opted_in_count} ${plural(data.opted_in_count, 'person', 'people')} you can message`,
+          },
+        ]}
+      />
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 compact:grid-cols-3">
         <WeeklyChart data={data} field="new_members" title="New members" tone="brand" unit={['new member', 'new members']} />
         <WeeklyChart data={data} field="stamps" title="Stamps given" tone="brand" unit={['stamp', 'stamps']} />
-        <WeeklyChart data={data} field="free_drinks" title="Free drinks" tone="ok" unit={['free drink', 'free drinks']} />
+        <WeeklyChart data={data} field="free_drinks" title="Free drinks" tone="brand" unit={['free drink', 'free drinks']} />
       </div>
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 wide:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 compact:grid-cols-2 wide:grid-cols-3">
         <SourcesCard data={data} />
         <HoursCard data={data} />
         <RegularsCard data={data} />
@@ -239,7 +233,7 @@ function WeeklyChart({
   data: Insights
   field: 'new_members' | 'stamps' | 'free_drinks'
   title: string
-  tone: 'brand' | 'ok'
+  tone: 'brand'
   unit: [string, string]
 }) {
   const [readout, setReadout] = useReadout()
@@ -287,8 +281,10 @@ function SourcesCard({ data }: { data: Insights }) {
   )
 }
 
+/** "9am", "12pm", "3pm": the axis says which half of the day it is. */
 function hourLabel(h: number): string {
-  return h === 12 ? '12' : String(h > 12 ? h - 12 : h)
+  const twelve = h % 12 === 0 ? 12 : h % 12
+  return `${twelve}${h < 12 ? 'am' : 'pm'}`
 }
 
 function HoursCard({ data }: { data: Insights }) {
@@ -329,12 +325,7 @@ function RegularsCard({ data }: { data: Insights }) {
         <ol className="flex flex-col">
           {data.regulars.map((r) => (
             <li key={r.member_id} className="flex items-center gap-3 border-b border-line-row py-2 last:border-b-0">
-              <span
-                className="grid size-7 flex-none place-items-center rounded-full bg-brand-wash text-label font-bold text-brand-ink"
-                aria-hidden="true"
-              >
-                {initials(r.first_name)}
-              </span>
+              <Avatar name={r.first_name} id={r.member_id} size={28} />
               <a
                 href={href(`/loyalty/members/${r.member_id}`)}
                 className="min-w-0 flex-1 truncate text-base font-semibold text-ink no-underline hover:text-brand-ink hover:underline"

@@ -12,7 +12,7 @@
  * LOWEST margin across its sizes on sale; a missing cost is "cost unknown",
  * never 0% (invariant 8), and an estimated one is italic with a "~".
  */
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Button,
   Checkbox,
@@ -23,11 +23,14 @@ import {
   Input,
   Loading,
   PageHeader,
+  Pill,
   SearchInput,
   Segmented,
   Select,
+  StatusLine,
   cx,
 } from '../../components/ui'
+import type { Outcome } from '../../components/ui'
 import { ActiveFilters, FilterBar, FilterSelect } from '../../components/ui/FilterBar'
 import type { ActiveFilterChip, FilterOption } from '../../components/ui/FilterBar'
 import { Pagination } from '../../components/ui/Pagination'
@@ -38,7 +41,7 @@ import type { MenuCategory, MenuGroup, MenuKind, SizeCode } from '../../lib/type
 import type { ProductAdmin } from '../../lib/types/shop'
 import { MONEY_INPUT, gbp, pctText, poundsToPence, sizeLabel } from './common/figures'
 import { rememberMenuListQuery } from './listMemory'
-import { MenuTabs } from './MenuTabs'
+import { MENU_TAB_HINT, MenuTabs } from './MenuTabs'
 import { PhotoView } from './Photo'
 import { CategoriesDrawer } from '../shop/CategoriesDrawer'
 import { BulkOnline, ONLINE_OPTIONS, OnlinePills, matchesOnline, useShopProductsByName, type OnlineFilter } from '../shop/menu-list'
@@ -145,7 +148,8 @@ export function MenuItemsScreen() {
   const [selected, setSelected] = useState<number[]>([])
   const shop = useShopProductsByName()
   const fromUrl = readFilters(loc.query)
-  rememberMenuListQuery(loc.query)
+  // Remembered for the item page's "‹ Menu" link; an effect, not a render-time write.
+  useEffect(() => rememberMenuListQuery(loc.query), [loc.query])
   // The search box is typed into, so it is local state first: writing each key
   // to the hash and reading it back would reset the caret between keystrokes.
   const [q, setQ] = useState(fromUrl.q)
@@ -252,12 +256,13 @@ export function MenuItemsScreen() {
     <>
       <PageHeader
         title="Menu"
-        subtitle={<MenuTabs current="items" />}
+        subtitle={MENU_TAB_HINT.items}
         saved={data.isFetching ? 'Loading…' : undefined}
         actions={
           <>
+            <MenuTabs current="items" />
             <Button onClick={() => setCategoriesOpen(true)}>Categories</Button>
-            <Button variant="primary" className="rounded-[18px] px-[18px] text-lg" onClick={() => setCreating(true)}>
+            <Button variant="primary" size="lg" onClick={() => setCreating(true)}>
               + Add item
             </Button>
           </>
@@ -506,7 +511,11 @@ function Card({ group, shop }: { group: MenuGroup; shop: ProductAdmin | undefine
       <div className="flex min-h-16 flex-col gap-[3px] px-3 pb-3 pt-2.5">
         <div className="line-clamp-2 text-md font-bold leading-[1.25]">{group.name}</div>
         <div className="fig text-sm text-ink-2">{priceLine(group)}</div>
-        {!group.is_active && <div className="text-xs font-bold text-ink-2">Off the menu</div>}
+        {!group.is_active && (
+          <div>
+            <Pill tone="muted">Off the menu</Pill>
+          </div>
+        )}
         {shop && <OnlinePills p={shop} compact />}
       </div>
     </GridCard>
@@ -530,13 +539,14 @@ function ListView({
     <div className="overflow-hidden rounded-card-lg bg-surface shadow-raised">
       <div className={cx('hidden gap-3 border-b border-line px-3.5 py-2 text-label font-bold uppercase tracking-[.06em] text-ink-3 compact:grid', shop ? LIST_COLS_ONLINE : LIST_COLS)}>
         {shop && <Checkbox checked={allOn} onChange={(on) => onSelect(on ? [...new Set([...selected, ...ids])] : selected.filter((id) => !ids.includes(id)))} label={<span className="sr-only">Select every item shown</span>} />}
-        <span />
-        <span>Item</span>
-        {shop && <span>Online</span>}
-        <span className="text-right">Price</span>
-        <span className="text-right">Margin</span>
-        <span className="text-right">£ / min</span>
-        <span className="text-right">Sold 30d</span>
+        {/* Visual column heads only: every row cell carries its own sr-only label. */}
+        <span aria-hidden="true" />
+        <span aria-hidden="true">Item</span>
+        {shop && <span aria-hidden="true">Online</span>}
+        <span aria-hidden="true" className="text-right">Price</span>
+        <span aria-hidden="true" className="text-right">Margin</span>
+        <span aria-hidden="true" className="text-right">£ / min</span>
+        <span aria-hidden="true" className="text-right">Sold 30d</span>
       </div>
       <ul>
         {rows.map((g) => {
@@ -559,21 +569,25 @@ function ListView({
                 className={cx(
                   'grid grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-x-3 px-3.5 py-2.5 text-ink no-underline hover:bg-canvas-2',
                   shop ? cx('min-w-0 flex-1 pl-0', LIST_COLS_ONLINE_ROW) : LIST_COLS,
-                  !g.is_active && 'opacity-60',
                 )}
               >
-                <span className="relative size-11 overflow-hidden rounded-control">
+                <span className={cx('relative size-11 overflow-hidden rounded-control', !g.is_active && '[&_img]:opacity-50')}>
                   <PhotoView url={g.photo_url} placeholder="" className="absolute inset-0" />
                 </span>
                 <span className="min-w-0">
-                  <span className="block truncate text-md font-bold">{g.name}</span>
+                  <span className="flex items-center gap-2">
+                    <span className="min-w-0 truncate text-md font-bold">{g.name}</span>
+                    {!g.is_active && <Pill tone="muted">Off the menu</Pill>}
+                  </span>
                   <span className="block truncate text-sm text-ink-2">
                     {catLabel(g.category ?? '')}
                     {g.template_name ? ` · ${g.template_name} recipe` : ''}
                     {g.season_name ? ` · ${g.season_name}` : ''}
-                    {!g.is_active ? ' · off the menu' : ''}
                   </span>
-                  <span className="fig block truncate text-sm text-ink-2 compact:hidden">{priceLine(g)}</span>
+                  <span className="fig block truncate text-sm text-ink-2 compact:hidden">
+                    <span className="sr-only">Price </span>
+                    {priceLine(g)}
+                  </span>
                   {shop && (
                     <span className="mt-0.5 block compact:hidden">
                       <OnlinePills p={sp} />
@@ -582,19 +596,28 @@ function ListView({
                 </span>
                 {shop && (
                   <span className="hidden compact:block">
+                    <span className="sr-only">Online </span>
                     <OnlinePills p={sp} />
                   </span>
                 )}
-                <span className="fig hidden truncate text-right text-base compact:block">{priceLine(g)}</span>
+                <span className="fig hidden truncate text-right text-base compact:block">
+                  <span className="sr-only">Price </span>
+                  {priceLine(g)}
+                </span>
                 <span className="text-right">
+                  <span className="sr-only">Margin </span>
                   <span className={cx('fig inline-block whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-bold', b.cls, b.italic && 'italic')}>
                     {b.text}
                   </span>
                 </span>
                 <span className={cx('fig hidden text-right text-base compact:block', mpmEst && 'italic')}>
+                  <span className="sr-only">£ per minute </span>
                   {mpm === null ? '—' : gbp(mpm.pence)}
                 </span>
-                <span className="fig hidden text-right text-base compact:block">{g.sold_30d ?? '—'}</span>
+                <span className="fig hidden text-right text-base compact:block">
+                  <span className="sr-only">Sold in 30 days </span>
+                  {g.sold_30d ?? '—'}
+                </span>
               </a>
             </li>
           )
@@ -609,16 +632,16 @@ function ListView({
 
 function NewCategory() {
   const [name, setName] = useState('')
-  const [msg, setMsg] = useState<string | null>(null)
+  const [outcome, setOutcome] = useState<Outcome | null>(null)
   const invalidate = useInvalidateMenu()
   const add = async (kind: 'DRINKS' | 'FOOD') => {
     if (!name.trim()) return
     const r = await menuApi.category(name.trim(), kind)
     if (r.kind === 'ok') {
       setName('')
-      setMsg('Added. Pick it above.')
+      setOutcome({ kind: 'ok', text: 'Added. Pick it above.' })
       await invalidate()
-    } else setMsg(r.message)
+    } else setOutcome({ kind: 'error', text: r.message })
   }
   return (
     <div className="flex flex-col gap-1.5 border-t border-line pt-3">
@@ -632,7 +655,7 @@ function NewCategory() {
           + Food
         </Button>
       </div>
-      {msg && <p className="text-xs text-ink-2">{msg}</p>}
+      <StatusLine outcome={outcome} />
     </div>
   )
 }
@@ -654,7 +677,7 @@ function CreateDrawer({
   const [price, setPrice] = useState('')
   const [operator] = useOperator()
   const [busy, setBusy] = useState(false)
-  const [msg, setMsg] = useState<string | null>(null)
+  const [outcome, setOutcome] = useState<Outcome | null>(null)
   const invalidate = useInvalidateMenu()
   const pence = poundsToPence(price)
   return (
@@ -696,11 +719,7 @@ function CreateDrawer({
         Sell price £
         <Input numeric value={price} placeholder="0.00" onChange={(e) => MONEY_INPUT.test(e.target.value) && setPrice(e.target.value)} />
       </label>
-      {msg && (
-        <p role="alert" className="text-sm text-bad-ink">
-          {msg}
-        </p>
-      )}
+      <StatusLine outcome={outcome} />
       <Button
         variant="primary"
         pending={busy}
@@ -720,7 +739,7 @@ function CreateDrawer({
           if (r.kind === 'ok' && r.data.menu_item_ids[0] !== undefined) {
             await invalidate()
             onCreated(r.data.menu_item_ids[0])
-          } else if (r.kind !== 'ok') setMsg(r.message)
+          } else if (r.kind !== 'ok') setOutcome({ kind: 'error', text: r.message })
         }}
       >
         Add item

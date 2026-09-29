@@ -17,38 +17,37 @@ row stays as the record of what the workbook said.
 
 from __future__ import annotations
 
-from collections.abc import Iterable
 from dataclasses import dataclass
-from datetime import date, datetime, time, timedelta
+from datetime import date
 
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
+from cafeops.clock import local_day_bounds, utcnow
 from cafeops.config import settings
-from cafeops.db.models.enums import (
+from cafeops.db.models.finance import CardPayout, CashCount, TradingDay
+from cafeops.db.models.payment import PaymentDay
+from cafeops.db.models.sale import Sale
+from cafeops.domain.enums import (
     FinanceSource,
     PaymentBasis,
     PaymentMethod,
     PaymentSourceKind,
 )
-from cafeops.db.models.finance import CardPayout, CashCount, TradingDay
-from cafeops.db.models.payment import PaymentDay
-from cafeops.db.models.sale import Sale
 from cafeops.services.finance.common import (
     UNSET,
+    WEEKDAY_ABBR,
     FinanceConflict,
     FinanceRefused,
     Period,
     clean_text,
     month_range,
-    now_utc,
     require_pence,
 )
 from cafeops.services.finance.common import Unset as _Unset
 from cafeops.services.finance.takings import ResolvedDay, ResolvedFigure, resolve_takings
 
 __all__ = [
-    "SALES_METHODS",
     "UNSET",
     "SalesDayRow",
     "SalesSource",
@@ -60,16 +59,11 @@ __all__ = [
     "update_day",
 ]
 
-#: The two money columns on the Sales tab, in order: Card, Cash.
-SALES_METHODS: tuple[PaymentMethod, ...] = (PaymentMethod.CARD, PaymentMethod.CASH)
-
 #: Read as part of Cash, never written: the retired "Own cash" (DECISIONS 26).
 _LEGACY_CASH = PaymentMethod.CASH_OFF_TILL
 
 #: A typed figure may replace these; an export (CSV_UPLOAD, POS_API) is never edited here.
 _USER_EDITABLE = frozenset({PaymentSourceKind.MANUAL, PaymentSourceKind.LEGACY_WORKBOOK})
-
-_WEEKDAYS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 
 
 @dataclass(frozen=True, slots=True)
@@ -121,11 +115,9 @@ def _pos_orders(session: Session, since: date | None, until: date | None) -> dic
     tz = settings.tz
     stmt = select(Sale.sold_at, Sale.lightspeed_receipt_id).where(Sale.voided.is_(False))
     if since is not None:
-        stmt = stmt.where(Sale.sold_at >= datetime.combine(since, time.min, tzinfo=tz))
+        stmt = stmt.where(Sale.sold_at >= local_day_bounds(since, tz=tz)[0])
     if until is not None:
-        stmt = stmt.where(
-            Sale.sold_at < datetime.combine(until + timedelta(days=1), time.min, tzinfo=tz)
-        )
+        stmt = stmt.where(Sale.sold_at < local_day_bounds(until, tz=tz)[1])
     receipts: dict[date, set[str]] = {}
     for sold_at, receipt in session.execute(stmt):
         receipts.setdefault(sold_at.astimezone(tz).date(), set()).add(receipt)
@@ -186,7 +178,7 @@ def _row(
 
     return SalesDayRow(
         date=day,
-        weekday=_WEEKDAYS[day.weekday()],
+        weekday=WEEKDAY_ABBR[day.weekday()],
         card_pence=card.gross_pence if card else None,
         cash_pence=cash_pence,
         total_pence=total,
@@ -305,7 +297,7 @@ def _set_figure(
         )
     else:
         manual.gross_pence = pence
-        manual.imported_at = now_utc()
+        manual.imported_at = utcnow()
 
 
 def _set_cash(session: Session, day: date, pence: int | None, operator: str | None) -> None:
@@ -339,7 +331,7 @@ def _validate(
 
 
 def _describe(day: date) -> str:
-    return f"{_WEEKDAYS[day.weekday()]} {day.day} {day.strftime('%b')}"
+    return f"{WEEKDAY_ABBR[day.weekday()]} {day.day} {day.strftime('%b')}"
 
 
 def create_day(
@@ -449,8 +441,3 @@ def delete_day(session: Session, day: date) -> date:
     session.execute(delete(TradingDay).where(TradingDay.business_date == day))
     session.flush()
     return day
-
-
-def days_with_rows(session: Session) -> Iterable[date]:
-    yield from session.scalars(select(PaymentDay.business_date).distinct())
-    yield from session.scalars(select(TradingDay.business_date))

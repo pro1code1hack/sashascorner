@@ -232,6 +232,8 @@ export interface ShopSettings {
   terms_url: string
   loyalty_stamps_online: boolean
   notify_telegram: boolean
+  /** Off (default): customers sign in with their Rewards card to place an order (§10.J). */
+  guest_orders: boolean
   stripe_configured?: boolean
   telegram_configured?: boolean
   /** Customer updates (owner, 2026-09-29). */

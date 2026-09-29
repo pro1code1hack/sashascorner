@@ -11,7 +11,7 @@ import logging
 
 from aiogram import Router
 from aiogram.filters import BaseFilter, Command
-from aiogram.types import CallbackQuery, ErrorEvent, Message
+from aiogram.types import CallbackQuery, ErrorEvent, InaccessibleMessage, Message
 
 from cafeops.bot import formatters as f
 from cafeops.bot.deps import is_owner
@@ -19,6 +19,18 @@ from cafeops.bot.deps import is_owner
 router = Router(name="common")
 
 log = logging.getLogger("cafeops.bot")
+
+
+def accessible(message: Message | InaccessibleMessage | None) -> Message | None:
+    """The message behind a callback, if the bot can still read and edit it.
+
+    Telegram attaches an `InaccessibleMessage` to a callback when the original is too
+    old or no longer visible to the bot: a stub carrying only chat, id and date. None
+    of this bot's flows can edit or continue from such a thing, so every handler
+    treats it exactly like a missing message. One helper, so the check reads the same
+    everywhere instead of an `isinstance` in each handler.
+    """
+    return message if isinstance(message, Message) else None
 
 
 class OwnerFilter(BaseFilter):

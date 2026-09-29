@@ -3,13 +3,16 @@
  * scripts/admin/{api,types,state,dom}.ts).
  *
  * Wire shapes differ from lib/types/website.ts in two places, so they are
- * normalised here:
- *  - `GET /api/slots` is a MAP `{slots: {<key>: {...}}}`, not an array.
- *  - `MediaOut.usage` is `[{slot_key, position, label}]`, not `string[]`.
+ * normalised: `GET /api/slots` is a MAP `{slots: {<key>: {...}}}`, not an array
+ * (here); `MediaOut.usage` is `[{slot_key, position, label}]`, not `string[]`
+ * (lib/website-api.ts `normMedia`, under the one media key Events reads too).
  */
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { request, type WriteResult } from '../../../lib/api'
-import { WEBSITE_KEY, sitePath, siteGet, siteWrite } from '../../../lib/website-api'
+import type { Media as LibMedia } from '../../../lib/types/website'
+import { MEDIA_KEY, WEBSITE_KEY, normMedia, sitePath, siteWrite, useMedia } from '../../../lib/website-api'
+
+export { MEDIA_KEY, normMedia, useMedia }
 
 /* ------------------------------------------------------------ shapes --- */
 
@@ -23,19 +26,8 @@ export interface Usage {
   label: string | null
 }
 
-export interface Media {
-  id: number
-  src: string
-  srcset: string
-  width: number
-  height: number
-  alt: string
-  original_name: string
-  bytes: number
-  blur: string
-  /** De-duplicated by slot key. */
-  usage: Usage[]
-}
+/** The library photo, as lib/types/website.ts declares it (`usage` de-duplicated by slot key). */
+export type Media = LibMedia
 
 export interface SlotItem {
   media_id: number
@@ -91,34 +83,6 @@ function normFocal(v: unknown): Focal {
   return { x: clamp01(num(f.x, 0.5)), y: clamp01(num(f.y, 0.5)) }
 }
 
-function normUsage(v: unknown): Usage[] {
-  if (!Array.isArray(v)) return []
-  const seen = new Map<string, Usage>()
-  for (const u of v) {
-    const key = typeof u === 'string' ? u : str((u as Raw)?.slot_key ?? (u as Raw)?.key)
-    if (!key || seen.has(key)) continue
-    const label = typeof u === 'object' && u !== null ? (u as Raw).label : null
-    seen.set(key, { slot_key: key, label: typeof label === 'string' ? label : null })
-  }
-  return [...seen.values()]
-}
-
-export function normMedia(v: unknown): Media {
-  const r = (v ?? {}) as Raw
-  return {
-    id: num(r.id),
-    src: str(r.src),
-    srcset: str(r.srcset),
-    width: num(r.width),
-    height: num(r.height),
-    alt: str(r.alt),
-    original_name: str(r.original_name),
-    bytes: num(r.bytes),
-    blur: str(r.blur),
-    usage: normUsage(r.usage),
-  }
-}
-
 function normItem(v: unknown): SlotItem {
   const r = (v ?? {}) as Raw
   return {
@@ -149,19 +113,7 @@ export function normSlot(key: string, v: unknown): Slot {
 
 /* ------------------------------------------------------------- reads --- */
 
-export const MEDIA_KEY = [...WEBSITE_KEY, 'photos', 'media'] as const
 export const SLOTS_KEY = [...WEBSITE_KEY, 'photos', 'slots'] as const
-
-export function useMedia() {
-  return useQuery({
-    queryKey: MEDIA_KEY,
-    queryFn: async () => {
-      const v = await siteGet<unknown>('/media')
-      const arr = Array.isArray(v) ? v : ((v as Raw | null)?.items ?? [])
-      return Array.isArray(arr) ? arr.map(normMedia) : []
-    },
-  })
-}
 
 export function useSlots() {
   return useQuery({

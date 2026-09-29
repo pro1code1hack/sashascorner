@@ -70,37 +70,71 @@ _PIN_RE = re.compile(r"^\d{4,6}$")
 
 
 class LockoutLimiter:
-    """N failures lock a key for a fixed time. A success clears the key's failures."""
+    """N failures lock a key for a fixed time. A success clears the key's failures.
 
-    def __init__(self, *, max_failures: int = 5, lock_seconds: int = 300) -> None:
+    Bounded: a key's failure count is forgotten once its newest failure is older than
+    `forget_seconds` (an hour by default), and expired locks go with it. Without that a
+    device or IP that mistyped a PIN once stayed in the map for the life of the process.
+    The sweep runs at most once a minute.
+    """
+
+    _SWEEP_EVERY = 60.0
+
+    def __init__(
+        self, *, max_failures: int = 5, lock_seconds: int = 300, forget_seconds: int = 3600
+    ) -> None:
         self.max_failures = max_failures
         self.lock_seconds = lock_seconds
+        self.forget_seconds = forget_seconds
         self._fails: dict[str, int] = {}
+        self._last_failure: dict[str, float] = {}
         self._locked_until: dict[str, float] = {}
         self._lock = threading.Lock()
+        self._swept_at = time.monotonic()
+
+    def _sweep(self, now: float) -> None:
+        if now - self._swept_at < self._SWEEP_EVERY:
+            return
+        self._swept_at = now
+        stale = [k for k, at in self._last_failure.items() if at <= now - self.forget_seconds]
+        for key in stale:
+            if self._locked_until.get(key, 0.0) > now:
+                continue
+            self._fails.pop(key, None)
+            self._last_failure.pop(key, None)
+            self._locked_until.pop(key, None)
+        for key in [k for k, until in self._locked_until.items() if until <= now]:
+            if key not in self._last_failure:
+                del self._locked_until[key]
 
     def retry_after(self, key: str) -> int | None:
         now = time.monotonic()
         with self._lock:
+            self._sweep(now)
             until = self._locked_until.get(key)
             if until is None:
                 return None
             if until <= now:
                 del self._locked_until[key]
                 self._fails.pop(key, None)
+                self._last_failure.pop(key, None)
                 return None
             return max(1, int(until - now) + 1)
 
     def record_failure(self, key: str) -> None:
+        now = time.monotonic()
         with self._lock:
+            self._sweep(now)
             count = self._fails.get(key, 0) + 1
             self._fails[key] = count
+            self._last_failure[key] = now
             if count >= self.max_failures:
-                self._locked_until[key] = time.monotonic() + self.lock_seconds
+                self._locked_until[key] = now + self.lock_seconds
 
     def record_success(self, key: str) -> None:
         with self._lock:
             self._fails.pop(key, None)
+            self._last_failure.pop(key, None)
 
 
 #: PIN logins and manager-PIN approvals, keyed `device:<id>` (or `ip:<addr>` from the

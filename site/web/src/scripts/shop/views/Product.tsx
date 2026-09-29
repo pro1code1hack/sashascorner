@@ -195,7 +195,8 @@ function Editor({ product: p, editIndex, initial }: { product: P; editIndex: num
             </div>
             <div id="panel-dietary" role="tabpanel" aria-labelledby="tab-dietary" hidden={tab !== 'dietary'} class="sh-info__panel">
               <p>
-                <strong>Energy:</strong> {energy !== null && energy !== undefined ? <span class="num">{kcal(energy)}</span> : '—'}
+                <strong>Energy:</strong>{' '}
+                {energy !== null && energy !== undefined ? <span class="num">{kcal(energy)}</span> : 'not listed yet'}
                 {size && p.sizes.length > 1 && size.label ? ` (${size.label})` : ''}
               </p>
               <p class={allergensKnown ? undefined : 'sh-allergens--unknown'}>

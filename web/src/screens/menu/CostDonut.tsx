@@ -14,12 +14,17 @@ import { gbp } from '../../lib/format'
 import { decStr } from './common/figures'
 import type { MenuLine } from '../../lib/types/menu'
 
-/** Design tokens only (styles.css): brand shades, then a warm and a neutral. */
+/**
+ * Design tokens only (styles.css). Every slice is >= 3:1 on white (WCAG 1.4.11;
+ * brand-line was 1.35:1, seq-2 is 2.1:1 so it is not used), and neighbours
+ * alternate dark/light so adjacent slices stay apart. The legend carries the
+ * name and share, so colour is never the only encoding.
+ */
 const COLOURS = [
-  'var(--color-brand-ink)',
-  'var(--color-brand-line)',
+  'var(--color-seq-5)',
+  'var(--color-seq-3)',
   'var(--color-brand-deep)',
-  'var(--color-brand)',
+  'var(--color-seq-4)',
   'var(--color-warn-ink)',
   'var(--color-ink-3)',
 ]

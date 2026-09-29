@@ -3,9 +3,10 @@
 Same rule as the other areas: build the Pydantic model inside the worker thread,
 because the session closes when the view returns (api/runtime.py). No rule about who
 may stage what lives here -- `services/browser_jobs.py` owns every refusal and this
-module only translates them: `BrowserJobRefused` -> 409 with the service's own reason
-as `detail`, `LookupError` -> 404. A refusal writes nothing, so raising through
-`session_scope` (which rolls back) loses nothing.
+module lets them propagate: the app translates `BrowserJobRefused` -> 409 with the
+service's own reason as `detail`, `LookupError` -> 404 (`api/app.py:_translate`). A
+refusal writes nothing, so raising through `session_scope` (which rolls back) loses
+nothing.
 """
 
 from __future__ import annotations
@@ -29,30 +30,40 @@ from cafeops.api.areas.integrations_schemas import (
     SessionImportIn,
     SessionOut,
 )
+from cafeops.api.params import HTTP_422, enum_list
 from cafeops.config import settings
-from cafeops.db.models import BrowserJob, BrowserJobKind, BrowserJobStep, Supplier
+from cafeops.db.models import BrowserJob, BrowserJobKind, BrowserJobStatus, BrowserJobStep, Supplier
+from cafeops.domain.units import pounds
 from cafeops.services import browser_jobs
-from cafeops.services.browser_jobs import BrowserJobRefused, IntegrationStatus
+from cafeops.services.browser_jobs import IntegrationStatus
 
 # --------------------------------------------------------------------------
 # mapping
 # --------------------------------------------------------------------------
 
 
-def _pounds(pence: int) -> str:
-    """Integer pence -> "£48.20". Text only; every numeric field stays pence."""
-    sign = "-" if pence < 0 else ""
-    pence = abs(pence)
-    return f"{sign}£{pence // 100}.{pence % 100:02d}"
+_TIER_NAMES = ("cart_link", "quick_order", "browser")
+
+
+def job_tier(job: BrowserJob) -> str | None:
+    """`result["tier"]` when it is one of the three tiers, else None."""
+    result = job.result
+    if job.kind is not BrowserJobKind.STAGE_BASKET or not isinstance(result, dict):
+        return None
+    tier = result.get("tier")
+    return str(tier) if tier in _TIER_NAMES else None
 
 
 def result_summary(job: BrowserJob) -> str | None:
     """One sentence from `job.result`, so a list row can say what happened without
-    the frontend re-deriving it from the snapshot. None when there is no result yet."""
+    the frontend re-deriving it from the snapshot. None when there is no result yet.
+    Starts with the tier that did the work (docs/agents/BROWSER-ORDERING.md §10)."""
     result = job.result
     if not isinstance(result, dict):
         return None
     if job.kind is BrowserJobKind.CHECK_SESSION:
+        if result.get("signed_in") is None and result.get("needs_human_reason"):
+            return f"not checked: {result['needs_human_reason']}"
         if not result.get("signed_in"):
             return "not signed in"
         label = result.get("account_label")
@@ -65,16 +76,24 @@ def result_summary(job: BrowserJob) -> str | None:
             for line in lines
             if isinstance(line, dict) and line.get("status") in ("added", "already")
         )
-        parts = [f"{in_basket} of {len(lines)} line{'' if len(lines) == 1 else 's'} in basket"]
+        tier = job_tier(job)
+        plural = "" if len(lines) == 1 else "s"
+        if tier == "cart_link" and in_basket == len(lines):
+            return f"cart link ready: {in_basket} item{plural}"
+        if tier == "quick_order":
+            parts = [f"quick order pad: {in_basket} of {len(lines)} code{plural} accepted"]
+        else:
+            prefix = "browser: " if tier == "browser" else ""
+            parts = [f"{prefix}{in_basket} of {len(lines)} line{plural} in basket"]
         seen = result.get("subtotal_seen_pence")
         expected = result.get("total_expected_pence")
         if isinstance(seen, int) and not isinstance(seen, bool):
-            money = f"{_pounds(seen)} seen"
+            money = f"{pounds(seen)} seen"
             if isinstance(expected, int) and not isinstance(expected, bool):
-                money += f" (expected {_pounds(expected)})"
+                money += f" (expected {pounds(expected)})"
             parts.append(money)
         elif isinstance(expected, int) and not isinstance(expected, bool):
-            parts.append(f"subtotal not read (expected {_pounds(expected)})")
+            parts.append(f"subtotal not read (expected {pounds(expected)})")
         return ", ".join(parts)
     return None
 
@@ -112,6 +131,7 @@ def job_out(job: BrowserJob, *, supplier_name: str | None) -> BrowserJobOut:
         proposal_id=job.proposal_id,
         run_id=job.run_id,
         result_summary=result_summary(job),
+        tier=cast(Any, job_tier(job)),
     )
 
 
@@ -152,7 +172,16 @@ def _portal_out(portal: Any) -> PortalOut | None:
     start_url = getattr(portal, "start_url", None)
     if start_url is None:
         start_url = portal.policy.start_url
-    return PortalOut(slug=portal.slug, label=portal.label, start_url=str(start_url))
+    tiers = getattr(portal, "tiers", None)
+    if tiers is None:  # a registered adapter, not the service's PortalInfo
+        tiers = browser_jobs.portal_tiers(portal)
+    return PortalOut(
+        slug=portal.slug,
+        label=portal.label,
+        start_url=str(start_url),
+        tiers=cast(Any, tuple(tiers)),
+        prefers_headed=bool(getattr(portal, "prefers_headed", False)),
+    )
 
 
 def integration_out(status_: IntegrationStatus) -> IntegrationOut:
@@ -178,6 +207,7 @@ def integration_out(status_: IntegrationStatus) -> IntegrationOut:
             if status_.last_job is None
             else job_out(status_.last_job, supplier_name=status_.supplier_name)
         ),
+        tiers=cast(Any, tuple(status_.tiers)),
     )
 
 
@@ -192,10 +222,6 @@ def _registered_portals() -> tuple[PortalOut, ...]:
         if made is not None:
             out.append(made)
     return tuple(out)
-
-
-def _refused(exc: BrowserJobRefused) -> HTTPException:
-    return HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
 
 
 # --------------------------------------------------------------------------
@@ -229,37 +255,28 @@ def session_import_view(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"storage_state_enc_b64 is not valid base64: {exc}",
             ) from exc
-    try:
-        browser_jobs.import_session_state(
-            session,
-            supplier_id=supplier_id,
-            storage_state=body.storage_state,
-            storage_state_enc=enc,
-            account_label=body.account_label,
-            connected_by=body.connected_by,
-        )
-    except BrowserJobRefused as exc:
-        raise _refused(exc) from exc
+    browser_jobs.import_session_state(
+        session,
+        supplier_id=supplier_id,
+        storage_state=body.storage_state,
+        storage_state_enc=enc,
+        account_label=body.account_label,
+        connected_by=body.connected_by,
+    )
     session.flush()
     return integration_out(browser_jobs.integration_status(session, supplier_id=supplier_id))
 
 
 def session_forget_view(session: Session, *, supplier_id: int, by: str) -> IntegrationOut:
-    try:
-        browser_jobs.forget_session(session, supplier_id=supplier_id, by=by)
-    except BrowserJobRefused as exc:
-        raise _refused(exc) from exc
+    browser_jobs.forget_session(session, supplier_id=supplier_id, by=by)
     session.flush()
     return integration_out(browser_jobs.integration_status(session, supplier_id=supplier_id))
 
 
 def check_session_view(session: Session, *, supplier_id: int, requested_by: str) -> BrowserJobOut:
-    try:
-        job = browser_jobs.enqueue_session_check(
-            session, supplier_id=supplier_id, requested_by=requested_by, via="web"
-        )
-    except BrowserJobRefused as exc:
-        raise _refused(exc) from exc
+    job = browser_jobs.enqueue_session_check(
+        session, supplier_id=supplier_id, requested_by=requested_by, via="web"
+    )
     session.flush()
     return job_out(job, supplier_name=_supplier_names(session, [job]).get(job.supplier_id))
 
@@ -267,12 +284,7 @@ def check_session_view(session: Session, *, supplier_id: int, requested_by: str)
 def auto_stage_view(
     session: Session, *, supplier_id: int, enabled: bool, by: str
 ) -> IntegrationOut:
-    try:
-        status_ = browser_jobs.set_auto_stage(
-            session, supplier_id=supplier_id, enabled=enabled, by=by
-        )
-    except BrowserJobRefused as exc:
-        raise _refused(exc) from exc
+    status_ = browser_jobs.set_auto_stage(session, supplier_id=supplier_id, enabled=enabled, by=by)
     session.flush()
     return integration_out(status_)
 
@@ -283,14 +295,28 @@ def auto_stage_view(
 
 
 def stage_basket_view(session: Session, *, po_id: int, requested_by: str) -> BrowserJobOut:
-    try:
-        job = browser_jobs.enqueue_stage_basket(
-            session, po_id=po_id, requested_by=requested_by, via="web"
-        )
-    except BrowserJobRefused as exc:
-        raise _refused(exc) from exc
+    job = browser_jobs.enqueue_stage_basket(
+        session, po_id=po_id, requested_by=requested_by, via="web"
+    )
     session.flush()
     return job_out(job, supplier_name=_supplier_names(session, [job]).get(job.supplier_id))
+
+
+def _parse_status(raw: str | None) -> BrowserJobStatus | None:
+    """The `?status=` query string as the enum the service filters on: one exact name.
+
+    A 422 rather than letting a stray value reach the query: the enum column is
+    validated on bind, so an unknown name used to surface as a 500 with the same
+    information in a worse place.
+    """
+    names = " | ".join(s.name for s in BrowserJobStatus)
+    message = f"status must be one of {names}; got {raw!r}"
+    found = enum_list(raw, BrowserJobStatus, upper=False, detail=lambda _part: message)
+    if found is None:
+        return None
+    if len(found) != 1:
+        raise HTTPException(status_code=HTTP_422, detail=message)
+    return found[0]
 
 
 def jobs_view(
@@ -303,7 +329,12 @@ def jobs_view(
     before: Any,
 ) -> BrowserJobsOut:
     jobs, has_more = browser_jobs.list_jobs(
-        session, status=status_, supplier_id=supplier_id, po_id=po_id, limit=limit, before=before
+        session,
+        status=_parse_status(status_),
+        supplier_id=supplier_id,
+        po_id=po_id,
+        limit=limit,
+        before=before,
     )
     names = _supplier_names(session, list(jobs))
     return BrowserJobsOut(
@@ -318,10 +349,7 @@ def job_detail_view(session: Session, *, job_id: int) -> BrowserJobDetailOut:
 
 
 def cancel_job_view(session: Session, *, job_id: int, by: str) -> BrowserJobOut:
-    try:
-        job = browser_jobs.cancel_job(session, job_id=job_id, by=by)
-    except BrowserJobRefused as exc:
-        raise _refused(exc) from exc
+    job = browser_jobs.cancel_job(session, job_id=job_id, by=by)
     session.flush()
     return job_out(job, supplier_name=_supplier_names(session, [job]).get(job.supplier_id))
 

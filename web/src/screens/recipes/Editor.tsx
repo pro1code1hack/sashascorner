@@ -9,8 +9,8 @@
  * clean. Discard drops the draft. A 409 (somebody else changed the recipe)
  * keeps the draft and offers a reload.
  */
-import { useEffect, useMemo, useState } from 'react'
-import { Button, IconButton, Input, Select, TitleInput, Toggle, cx } from '../../components/ui'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Button, Checkbox, IconButton, Input, Pill, Select, StatusLine, TBody, Td, Th, THead, Table, TitleInput, Toggle, Tr, cx } from '../../components/ui'
 import { useOperator } from '../../lib/operator'
 import { recipeApi, useIngredients, useInvalidateMenu, useSeasons } from '../../lib/menu-api'
 import type {
@@ -42,11 +42,13 @@ import {
 } from '../menu/common/figures'
 import { ImpactPanel, impactFigures } from '../menu/common/Impact'
 import { usePreview } from '../menu/common/usePreview'
-import { ROLES, buildOps, cellChanged, draftFrom, groupRows } from './model'
+import { ROLES, ROLE_LABEL, buildOps, cellChanged, draftFrom, groupRows } from './model'
+import { IngredientPicker } from '../menu/IngredientPicker'
 import type { DComp, DOption, Draft, Row } from './model'
 import { SwapsSection } from './Swaps'
 
 const FLAVOUR_CATS = new Set(['Syrup', 'Specialty', 'Chocolate', 'Tea'])
+const NONE = new Set<number>()
 
 export function RecipeEditorView({
   editor,
@@ -66,6 +68,20 @@ export function RecipeEditorView({
   const ingredients = useIngredients()
   const seasons = useSeasons()
   const sizes = editor.sizes
+  // Focus after a remove: the next (else previous) card's remove button, else the add button.
+  const compRemove = useRef(new Map<string, HTMLButtonElement>())
+  const addComp = useRef<HTMLButtonElement>(null)
+  const optRemove = useRef(new Map<string, HTMLButtonElement>())
+  const addOpt = useRef(new Map<number, HTMLButtonElement>())
+  const costHead = useRef<HTMLHeadingElement>(null)
+  const focusAfter = (keys: string[], i: number, refs: Map<string, HTMLButtonElement>, fallback: HTMLButtonElement | null | undefined) => {
+    const next = keys[i + 1] ?? keys[i - 1]
+    ;(next !== undefined ? refs.get(next) : undefined)?.focus() ?? fallback?.focus()
+  }
+  const refSetter = (refs: Map<string, HTMLButtonElement>, k: string) => (el: HTMLButtonElement | null) => {
+    if (el) refs.set(k, el)
+    else refs.delete(k)
+  }
 
   useEffect(() => setDraft(saved), [saved])
 
@@ -121,11 +137,17 @@ export function RecipeEditorView({
   const flavourCount = activeOptions.filter((o) => o.active).length
   const rows = groupRows(draft.comps, sizes)
   const hasFlavourAxis = editor.axes.length > 0
+  const usedIngredients = (except: Row) =>
+    new Set(
+      draft.comps
+        .filter((c) => !except.comps.some((r) => r.key === c.key))
+        .flatMap((c) => (c.ingredient_id === null ? [] : [c.ingredient_id])),
+    )
 
   return (
     <div className="min-h-0 flex-1 overflow-y-auto compact:flex compact:overflow-hidden">
       {/* ------------------------------------------------ editor column --- */}
-      <div className="min-w-0 px-4 pb-8 pt-5 sm:px-[22px] compact:flex-1 compact:overflow-y-auto">
+      <div className="min-w-0 px-4 pb-8 pt-5 sm:px-5.5 compact:flex-1 compact:overflow-y-auto">
         <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
           <TitleInput
             aria-label="Recipe name"
@@ -141,11 +163,11 @@ export function RecipeEditorView({
         </p>
 
         {/* What goes in, per size */}
-        <section className="mb-[26px] flex flex-col gap-2.5" aria-labelledby="rec-in">
+        <section className="mb-6.5 flex flex-col gap-2.5" aria-labelledby="rec-in">
           <h2 id="rec-in" className="text-lg font-extrabold tracking-[-.01em]">
             What goes in, per size
           </h2>
-          {rows.map((row) => (
+          {rows.map((row, i) => (
             <ComponentCard
               key={row.key}
               row={row}
@@ -153,38 +175,48 @@ export function RecipeEditorView({
               saved={saved}
               ingOptions={ingOptions}
               ingById={ingById}
+              inRecipe={usedIngredients(row)}
+              removeRef={refSetter(compRemove.current, row.key)}
               onRole={(role) => row.comps.forEach((c) => setComp(c.key, (x) => ({ ...x, role })))}
               onIngredient={(key, id) => setComp(key, (x) => ({ ...x, ingredient_id: id }))}
               onQty={(key, size, v) => setComp(key, (x) => ({ ...x, qty: { ...x.qty, [size]: v } }))}
               onSubst={(v) => row.comps.forEach((c) => setComp(c.key, (x) => ({ ...x, subst: v })))}
-              onRemove={() =>
+              onRemove={() => {
+                focusAfter(
+                  rows.map((r) => r.key),
+                  i,
+                  compRemove.current,
+                  addComp.current,
+                )
                 set((d) => ({ ...d, comps: d.comps.filter((c) => !row.comps.some((r) => r.key === c.key)) }))
-              }
+              }}
             />
           ))}
           {hasFlavourAxis && !draft.comps.some((c) => c.role === 'FLAVOUR' && c.ingredient_id === null) && (
             <div className="flex gap-2.5 rounded-card bg-canvas px-3.5 py-3 text-base text-ink-2">
-              <span className="text-xs font-bold tracking-[.04em] text-ink">FLAVOUR</span>
+              <span className="text-xs font-bold uppercase tracking-[.04em] text-ink">{ROLE_LABEL.FLAVOUR}</span>
               Set by the flavour chosen below, per size
             </div>
           )}
           <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
             <div className="flex flex-col gap-2.5 rounded-card border border-line-soft bg-surface px-3.5 py-3">
-              <div className="flex items-baseline gap-2">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <span className="text-base font-extrabold">Time to make</span>
-                <button
-                  type="button"
-                  onClick={() => set((d) => ({ ...d, prepEst: !d.prepEst }))}
-                  className={cx('text-xs font-bold', draft.prepEst ? 'text-bad-ink' : 'text-ink-2')}
-                  title={draft.prepEst ? 'Mark as timed (after timing it)' : 'Mark as an estimate'}
-                >
-                  {draft.prepEst ? 'estimate, not timed yet' : 'timed'}
-                </button>
+                {/* An estimate is italic, not red: it is a guess, not a crossed threshold. */}
+                <Checkbox
+                  className="min-h-9"
+                  checked={draft.prepEst}
+                  onChange={(v) => set((d) => ({ ...d, prepEst: v }))}
+                  label={<span className="text-sm text-ink-2">Estimate, not timed yet</span>}
+                />
               </div>
               <SizeGrid sizes={sizes}>
                 {(s) => (
                   <label className="flex min-w-0 flex-col gap-1 text-label font-bold uppercase tracking-[.05em] text-ink-2">
-                    {sizeLabel(s)}
+                    <span>
+                      {sizeLabel(s)}
+                      <span className="sr-only"> time to make, seconds</span>
+                    </span>
                     <span className="flex items-center gap-1 normal-case tracking-normal">
                       <Input
                         size="sm"
@@ -212,7 +244,10 @@ export function RecipeEditorView({
               <SizeGrid sizes={sizes}>
                 {(s) => (
                   <label className="flex min-w-0 flex-col gap-1 text-label font-bold uppercase tracking-[.05em] text-ink-2">
-                    {sizeLabel(s)}
+                    <span>
+                      {sizeLabel(s)}
+                      <span className="sr-only"> base price, pounds</span>
+                    </span>
                     <span className="flex items-center gap-1 normal-case tracking-normal">
                       <span className="text-sm font-normal text-ink-2" aria-hidden="true">
                         £
@@ -240,6 +275,7 @@ export function RecipeEditorView({
             </div>
           </div>
           <Button
+            ref={addComp}
             variant="add"
             className="self-start"
             onClick={() =>
@@ -269,7 +305,7 @@ export function RecipeEditorView({
           const opts = draft.options.filter((o) => o.axis_id === axis.axis_id && !o.removed)
           const newCount = opts.filter((o) => o.id === null).length
           return (
-            <section key={axis.axis_id} className="mb-[22px] mt-2.5" aria-labelledby={`rec-ax-${axis.axis_id}`}>
+            <section key={axis.axis_id} className="mb-5.5 mt-2.5" aria-labelledby={`rec-ax-${axis.axis_id}`}>
               <div className="mb-1.5 flex flex-wrap items-baseline gap-x-2.5">
                 <h2 id={`rec-ax-${axis.axis_id}`} className="text-lg font-extrabold tracking-[-.01em]">
                   {axis.name === 'Flavour' ? 'Flavours' : axis.name} · {opts.length}
@@ -277,25 +313,36 @@ export function RecipeEditorView({
                 <span className="text-sm text-ink-2">each flavour makes one menu item per size</span>
               </div>
               <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-2.5">
-                {opts.map((o) => (
+                {opts.map((o, i) => (
                   <FlavourCard
                     key={o.key}
+                    index={i}
                     option={o}
+                    removeRef={refSetter(optRemove.current, o.key)}
                     saved={saved.options.find((x) => x.key === o.key) ?? null}
                     sizes={sizes}
                     flavourOptions={flavourOptions}
                     seasons={seasons.data ?? []}
                     onChange={(fn) => setOpt(o.key, fn)}
-                    onRemove={() =>
-                      o.id === null
-                        ? set((d) => ({ ...d, options: d.options.filter((x) => x.key !== o.key) }))
-                        : setOpt(o.key, (x) => ({ ...x, removed: true }))
-                    }
+                    onRemove={() => {
+                      focusAfter(
+                        opts.map((x) => x.key),
+                        i,
+                        optRemove.current,
+                        addOpt.current.get(axis.axis_id),
+                      )
+                      if (o.id === null) set((d) => ({ ...d, options: d.options.filter((x) => x.key !== o.key) }))
+                      else setOpt(o.key, (x) => ({ ...x, removed: true }))
+                    }}
                   />
                 ))}
               </div>
               <div className="mt-2.5 flex flex-wrap items-center gap-3">
                 <Button
+                  ref={(el) => {
+                    if (el) addOpt.current.set(axis.axis_id, el)
+                    else addOpt.current.delete(axis.axis_id)
+                  }}
                   variant="add"
                   size="sm"
                   className="rounded-card"
@@ -348,6 +395,35 @@ export function RecipeEditorView({
           ))}
           <p className="mt-1 text-base text-ink-2">Imported from the workbook. Every change after this keeps its own date.</p>
         </section>
+
+        {/* Phone: the cost column (with Apply) stacks under everything above, so
+            keep Discard and the way to the mandatory preview in reach. */}
+        {dirty && (
+          <div className="sticky bottom-0 z-10 -mx-1 mt-4 flex flex-wrap items-center gap-2 rounded-card border border-line bg-surface px-3 py-2.5 shadow-login compact:hidden">
+            <span className={cx('min-w-0 flex-1 text-sm', built.errors.length ? 'text-bad-ink' : 'text-ink-2')}>
+              {built.errors.length ? built.errors[0] : 'Unsaved changes. Nothing is saved until you apply.'}
+            </span>
+            <Button
+              variant="outline"
+              disabled={applying}
+              onClick={() => {
+                setDraft(saved)
+                setResult(null)
+              }}
+            >
+              Discard
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => {
+                costHead.current?.scrollIntoView({ block: 'start' })
+                costHead.current?.focus()
+              }}
+            >
+              See the effect and apply
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* --------------------------------------------------- cost column --- */}
@@ -367,6 +443,7 @@ export function RecipeEditorView({
         onApply={apply}
         onReload={onReload}
         result={result}
+        headRef={costHead}
       />
     </div>
   )
@@ -390,6 +467,8 @@ function ComponentCard({
   saved,
   ingOptions,
   ingById,
+  inRecipe,
+  removeRef,
   onRole,
   onIngredient,
   onQty,
@@ -401,6 +480,9 @@ function ComponentCard({
   saved: Draft
   ingOptions: IngredientRow[]
   ingById: Map<number, IngredientRow>
+  /** Ingredients on the recipe's other components, marked in the picker. */
+  inRecipe: Set<number>
+  removeRef: (el: HTMLButtonElement | null) => void
   onRole: (r: ComponentRole) => void
   onIngredient: (key: string, id: number | null) => void
   onQty: (key: string, size: SizeCode, v: string) => void
@@ -412,20 +494,21 @@ function ComponentCard({
   const subst = row.comps.every((c) => c.subst)
   const compFor = (s: SizeCode): DComp | undefined =>
     row.bySize ? row.comps.find((c) => c.key === row.bySize?.[s]) : first
-  const label = first.ingredient_id !== null ? ingById.get(first.ingredient_id)?.name : first.role.toLowerCase()
+  const roleWord = ROLE_LABEL[first.role] ?? first.role
+  const label = first.ingredient_id !== null ? ingById.get(first.ingredient_id)?.name : roleWord.toLowerCase()
   return (
     <div className="flex flex-col gap-2.5 rounded-card border border-line-soft bg-surface px-3.5 py-3">
       <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
         <Select
           variant="role"
-          aria-label="Role"
+          aria-label={`Role of ${label ?? 'this component'}`}
           value={first.role}
           onChange={(e) => onRole(e.target.value as ComponentRole)}
-          className="flex-none"
+          className="flex-none uppercase"
         >
           {ROLES.map((r) => (
             <option key={r} value={r}>
-              {r}
+              {ROLE_LABEL[r]}
             </option>
           ))}
         </Select>
@@ -433,31 +516,30 @@ function ComponentCard({
           {grouped ? (
             <span className="text-base text-ink-2">Different item for each size</span>
           ) : (
-            <IngredientSelect
+            <IngredientPicker
+              size="sm"
+              label={`${roleWord} ingredient`}
+              placeholder={first.role === 'FLAVOUR' ? 'Filled by the flavour' : 'Pick an ingredient…'}
               value={first.ingredient_id}
               options={ingOptions}
-              onChange={(id) => onIngredient(first.key, id)}
-              allowNone={first.role === 'FLAVOUR'}
+              inRecipe={inRecipe}
+              onPick={(id) => onIngredient(first.key, id)}
+              onClear={first.role === 'FLAVOUR' ? () => onIngredient(first.key, null) : undefined}
             />
           )}
         </div>
-        <button
-          type="button"
-          role="checkbox"
-          aria-checked={subst}
-          title="Customer can swap this"
-          onClick={() => onSubst(!subst)}
-          className="ml-auto flex h-[38px] flex-none items-center gap-1.5 rounded-control px-2.5 text-sm text-ink-2 hover:bg-canvas sm:ml-0"
-        >
-          <span
-            className="grid size-[18px] place-items-center rounded-[5px] border-[1.5px] border-line-strong text-xs font-extrabold text-brand-ink"
-            aria-hidden="true"
-          >
-            {subst ? '✓' : ''}
-          </span>
-          <span className="hidden sm:inline">Swappable</span>
-        </button>
-        <IconButton label={`Remove ${label ?? 'component'}`} onClick={onRemove} />
+        <Checkbox
+          className="ml-auto h-[38px] flex-none rounded-control px-2.5 hover:bg-canvas sm:ml-0"
+          checked={subst}
+          onChange={onSubst}
+          label={
+            <span className="text-sm text-ink-2">
+              <span className="max-sm:sr-only">Swappable</span>
+              <span className="sr-only">: a customer can swap the {label ?? 'component'}</span>
+            </span>
+          }
+        />
+        <IconButton ref={removeRef} label={`Remove ${label ?? 'component'}`} onClick={onRemove} />
       </div>
       <SizeGrid sizes={sizes}>
         {(s) => {
@@ -470,7 +552,14 @@ function ComponentCard({
                 {unit && <span className="font-bold sm:hidden"> · {unitWord(unit)}</span>}
               </span>
               {row.bySize !== null && grouped && c && (
-                <IngredientSelect value={c.ingredient_id} options={ingOptions} onChange={(id) => onIngredient(c.key, id)} small />
+                <IngredientPicker
+                  size="sm"
+                  label={`${roleWord} ingredient, size ${sizeLabel(s)}`}
+                  value={c.ingredient_id}
+                  options={ingOptions}
+                  inRecipe={inRecipe}
+                  onPick={(id) => onIngredient(c.key, id)}
+                />
               )}
               {c ? (
                 <div className="flex items-center gap-1.5">
@@ -498,38 +587,9 @@ function ComponentCard({
   )
 }
 
-function IngredientSelect({
-  value,
-  options,
-  onChange,
-  small = false,
-  allowNone = false,
-}: {
-  value: number | null
-  options: IngredientRow[]
-  onChange: (id: number | null) => void
-  small?: boolean
-  allowNone?: boolean
-}) {
-  return (
-    <Select
-      size="sm"
-      aria-label="Ingredient"
-      value={value === null ? '' : String(value)}
-      onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
-      className={small ? 'text-sm' : undefined}
-    >
-      <option value="">{allowNone ? '— filled by the flavour —' : '— pick ingredient —'}</option>
-      {options.map((o) => (
-        <option key={o.ingredient_id} value={o.ingredient_id}>
-          {o.name}
-        </option>
-      ))}
-    </Select>
-  )
-}
-
 function FlavourCard({
+  index,
+  removeRef,
   option,
   saved,
   sizes,
@@ -538,6 +598,8 @@ function FlavourCard({
   onChange,
   onRemove,
 }: {
+  index: number
+  removeRef: (el: HTMLButtonElement | null) => void
   option: DOption
   saved: DOption | null
   sizes: SizeCode[]
@@ -550,45 +612,56 @@ function FlavourCard({
   const values = option.qty ? sizes.map((s) => option.qty?.[s] ?? '') : []
   const uniform = option.qty === null || values.every((v) => v === values[0])
   const single = option.qty === null ? '' : (values[0] ?? '')
+  const who = option.name.trim() || `flavour ${index + 1}`
+  // Off the menu is said with a word, never by fading the card (text stays at full contrast).
   return (
     <div
       className={cx(
         'flex flex-col gap-2.5 rounded-card border border-line-soft px-3.5 py-3',
         missing ? 'bg-alert-wash' : 'bg-surface',
-        !option.active && 'opacity-50',
       )}
     >
       <div className="flex items-center gap-2">
         <Input
           size="sm"
-          aria-label="Flavour name"
+          aria-label={`Name of flavour ${index + 1}`}
           value={option.name}
           changed={saved !== null && saved.name !== option.name}
           onChange={(e) => onChange((o) => ({ ...o, name: e.target.value }))}
           className="flex-1 border-transparent px-1 font-bold"
         />
-        <Toggle checked={option.active} onChange={(v) => onChange((o) => ({ ...o, active: v }))} label={<span className="sr-only">On menu</span>} />
-        <IconButton label={`Remove ${option.name}`} onClick={onRemove} className="size-8" />
+        <Toggle
+          checked={option.active}
+          onChange={(v) => onChange((o) => ({ ...o, active: v }))}
+          label={<span className="sr-only">{who} on the menu</span>}
+        />
+        <IconButton ref={removeRef} label={`Remove ${who}`} onClick={onRemove} />
       </div>
-      <label className="flex min-w-0 flex-col gap-1 text-label font-bold uppercase tracking-[.05em] text-ink-2">
-        Ingredient
-        <Select
-          size="sm"
-          value={option.ingredient_id === null ? '' : String(option.ingredient_id)}
-          onChange={(e) => onChange((o) => ({ ...o, ingredient_id: e.target.value === '' ? null : Number(e.target.value) }))}
-          className={cx('font-normal normal-case tracking-normal text-ink', missing && 'border-alert')}
-        >
-          <option value="">— none —</option>
-          {flavourOptions.map((r) => (
-            <option key={r.ingredient_id} value={r.ingredient_id}>
-              {r.name}
-            </option>
-          ))}
-        </Select>
-      </label>
+      {!option.active && (
+        <div>
+          <Pill tone="muted">Off the menu</Pill>
+        </div>
+      )}
+      <div className="flex min-w-0 flex-col gap-1 text-label font-bold uppercase tracking-[.05em] text-ink-2">
+        <span aria-hidden="true">Ingredient</span>
+        <div className={cx('font-normal normal-case tracking-normal text-ink', missing && '[&>button:first-child]:border-alert')}>
+          <IngredientPicker
+            size="sm"
+            label={`Ingredient for ${who}`}
+            placeholder="None yet"
+            value={option.ingredient_id}
+            options={flavourOptions}
+            inRecipe={NONE}
+            onPick={(id) => onChange((o) => ({ ...o, ingredient_id: id }))}
+            onClear={() => onChange((o) => ({ ...o, ingredient_id: null }))}
+          />
+        </div>
+      </div>
       <div className="grid grid-cols-[70px_80px_minmax(0,1fr)] gap-2">
         <label className="flex min-w-0 flex-col gap-1 text-label font-bold uppercase tracking-[.05em] text-ink-2">
-          Qty
+          <span>
+            Qty<span className="sr-only"> of {who}</span>
+          </span>
           {uniform ? (
             <Input
               size="sm"
@@ -603,13 +676,15 @@ function FlavourCard({
               className="font-normal normal-case tracking-normal"
             />
           ) : (
-            <span className="py-2 text-xs font-normal normal-case tracking-normal text-ink-2" title={values.join(' / ')}>
-              per size
+            <span className="fig py-2 text-xs font-normal normal-case tracking-normal text-ink-2">
+              {sizes.map((s, i) => `${sizeLabel(s)} ${values[i] || '—'}`).join(' · ')}
             </span>
           )}
         </label>
         <label className="flex min-w-0 flex-col gap-1 text-label font-bold uppercase tracking-[.05em] text-ink-2">
-          Extra £
+          <span>
+            Extra £<span className="sr-only"> for {who}</span>
+          </span>
           <Input
             size="sm"
             numeric
@@ -622,7 +697,9 @@ function FlavourCard({
           />
         </label>
         <label className="flex min-w-0 flex-col gap-1 text-label font-bold uppercase tracking-[.05em] text-ink-2">
-          Season
+          <span>
+            Season<span className="sr-only"> for {who}</span>
+          </span>
           <Select
             size="sm"
             value={option.season_id === null ? '' : String(option.season_id)}
@@ -671,6 +748,7 @@ function CostColumn({
   onApply,
   onReload,
   result,
+  headRef,
 }: {
   editor: RecipeEditor
   draft: Draft
@@ -684,6 +762,8 @@ function CostColumn({
   onApply: () => void
   onReload: () => void
   result: { tone: 'ok' | 'bad'; text: string; pos: string[] } | null
+  /** The heading the phone's sticky bar jumps to. */
+  headRef: React.RefObject<HTMLHeadingElement>
 }) {
   const options = draft.options.filter((o) => !o.removed)
   const defaultKey =
@@ -747,90 +827,101 @@ function CostColumn({
 
   const figs = preview ? impactFigures(preview.impact) : []
   return (
-    <aside className="border-t border-line-soft bg-canvas px-4 py-[18px] compact:w-[320px] compact:flex-none compact:overflow-y-auto compact:border-l compact:border-t-0 wide:w-[380px]">
+    <aside
+      aria-labelledby="rec-cost"
+      className="border-t border-line-soft bg-canvas px-4 py-4.5 compact:w-[320px] compact:flex-none compact:overflow-y-auto compact:border-l compact:border-t-0 wide:w-[380px]"
+    >
       <div className="mb-2 flex items-center gap-2">
-        <h2 className="flex-1 text-lg font-extrabold tracking-[-.01em]">What it costs</h2>
+        <h2 id="rec-cost" ref={headRef} tabIndex={-1} className="flex-1 text-lg font-extrabold tracking-[-.01em]">
+          What it costs
+        </h2>
         {options.length > 0 && (
-          <select
+          <Select
+            size="sm"
             aria-label="Flavour to cost"
             value={chosen?.key ?? ''}
             onChange={(e) => setPick(e.target.value)}
-            className="max-w-[170px] rounded-control border border-line-strong bg-surface px-1 py-0.5 text-sm"
+            className="w-auto max-w-[170px]"
           >
             {options.map((o) => (
               <option key={o.key} value={o.key}>
                 {o.name}
               </option>
             ))}
-          </select>
+          </Select>
         )}
       </div>
-      <div
-        className="grid gap-x-2 rounded-card bg-surface px-3.5 py-1.5 text-base"
-        style={{ gridTemplateColumns: `96px repeat(${editor.sizes.length}, minmax(0, 1fr))` }}
-        role="table"
-        aria-label="Cost per size"
-      >
-        <span className="border-b border-line-row py-2" />
-        {editor.sizes.map((s) => (
-          <span key={s} className="border-b border-line-row py-2 text-right text-ink-2">
-            {sizeLabel(s)}
-          </span>
-        ))}
-        {rowsDef.map((r) => (
-          <div key={r.label} className="contents" role="row">
-            <span className="whitespace-nowrap border-b border-line-row py-2 text-ink-2">{r.label}</span>
-            {cells.map((c, i) => {
-              const v = c ? r.value(c) : { text: '—' }
-              return (
-                <span
-                  key={i}
-                  className={cx(
-                    'fig whitespace-nowrap border-b border-line-row py-2 text-right',
-                    r.strong && 'font-bold',
-                    v.alert && 'text-alert',
-                    v.est && 'italic',
-                  )}
-                >
-                  {v.text}
-                </span>
-              )
-            })}
-          </div>
-        ))}
+      <div className="rounded-card bg-surface px-3.5 py-1.5">
+        <Table label={`Cost per size${chosen ? `, ${chosen.name}` : ''}`}>
+          <THead>
+            <tr>
+              <Th>
+                <span className="sr-only">Figure</span>
+              </Th>
+              {editor.sizes.map((s) => (
+                <Th key={s} numeric>
+                  {sizeLabel(s)}
+                </Th>
+              ))}
+            </tr>
+          </THead>
+          <TBody>
+            {rowsDef.map((r) => (
+              <Tr key={r.label}>
+                <th scope="row" className="whitespace-nowrap py-2 pr-2 text-left font-normal text-ink-2">
+                  {r.label}
+                </th>
+                {cells.map((c, i) => {
+                  const v = c ? r.value(c) : { text: '—' }
+                  return (
+                    <Td key={i} numeric strong={r.strong} alert={v.alert} est={v.est} className="py-2">
+                      {v.text}
+                    </Td>
+                  )
+                })}
+              </Tr>
+            ))}
+          </TBody>
+        </Table>
       </div>
-      <p className="mb-[18px] mt-2.5 text-base text-ink-2">
-        Staff time at £
-        <input
-          aria-label="Hourly staff rate, pounds (what-if, not saved)"
-          value={rate}
-          onChange={(e) => {
-            if (MONEY_INPUT.test(e.target.value)) setRate(e.target.value)
-          }}
-          className="fig mx-1 w-[52px] rounded-control border border-line-strong bg-surface px-1 text-right"
-        />
-        an hour <span className="text-sm">(what-if, not saved)</span>
-      </p>
+      <div className="mb-4.5 mt-2.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-base text-ink-2">
+        <label className="flex items-center gap-1.5">
+          Staff time at £
+          <span className="w-[76px]">
+            <Input
+              size="sm"
+              numeric
+              aria-label="Hourly staff rate, pounds (what-if, not saved)"
+              value={rate}
+              onChange={(e) => {
+                if (MONEY_INPUT.test(e.target.value)) setRate(e.target.value)
+              }}
+            />
+          </span>
+          an hour
+        </label>
+        <span className="text-sm">(what-if, not saved)</span>
+      </div>
 
-      {result && (
-        <div
-          role="status"
-          className={cx(
-            'mb-3 rounded-card border px-3 py-2.5 text-base',
-            result.tone === 'ok' ? 'border-line bg-surface' : 'border-alert bg-alert-wash',
-          )}
-        >
-          <p>{result.text}</p>
+      <StatusLine
+        className="mb-2"
+        outcome={
+          result === null
+            ? null
+            : {
+                kind: result.tone === 'ok' ? 'ok' : 'error',
+                text: result.text,
+                action: result.tone === 'bad' ? { label: 'Reload recipe', onClick: onReload } : undefined,
+              }
+        }
+      />
+      {result && result.pos.length > 0 && (
+        <div className="mb-3 rounded-card border border-line bg-surface px-3 py-2.5">
           {result.pos.map((p) => (
-            <p key={p} className="mt-1 text-sm font-semibold">
+            <p key={p} className="text-sm font-semibold">
               {p}
             </p>
           ))}
-          {result.tone === 'bad' && (
-            <Button variant="outline" size="sm" className="mt-2" onClick={onReload}>
-              Reload recipe
-            </Button>
-          )}
         </div>
       )}
 

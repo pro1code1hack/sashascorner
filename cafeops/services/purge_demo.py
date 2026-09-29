@@ -112,7 +112,10 @@ def _delete(session: Session, model: type[Base], ids: list[int]) -> None:
 def purge_demo(
     session: Session, *, commit: bool = False, include_bot_preview: bool = False
 ) -> PurgePlan:
-    """Plan (and with commit=True, perform) the demo purge. Returns what it found."""
+    """Plan (and with commit=True, perform) the demo purge. Returns what it found.
+
+    The deletes are flushed, not committed: the caller's transaction owns the commit
+    (`plan.committed` means "deleted in this transaction")."""
     plan = PurgePlan()
 
     sale_ids = _ids(
@@ -321,22 +324,17 @@ def purge_demo(
     )
 
     if not commit or plan.refusals:
-        session.rollback()
-        return plan
+        return plan  # everything above only read; nothing to undo
 
     # --- delete, children first --------------------------------------------------
-    try:
-        _delete(session, DriftObservation, drift_ids + bot_drift)
-        _delete(session, StockMovement, sorted(doomed_mv))
-        _delete(session, StockCount, count_ids + bot_counts)
-        _delete(session, StockBatch, sorted(doomed_batches))
-        _delete(session, ChecklistResponse, bot_check)
-        _delete(session, POLine, line_ids)
-        _delete(session, PurchaseOrder, po_ids)
-        _delete(session, Sale, sale_ids)
-        session.commit()
-    except Exception:
-        session.rollback()
-        raise
+    _delete(session, DriftObservation, drift_ids + bot_drift)
+    _delete(session, StockMovement, sorted(doomed_mv))
+    _delete(session, StockCount, count_ids + bot_counts)
+    _delete(session, StockBatch, sorted(doomed_batches))
+    _delete(session, ChecklistResponse, bot_check)
+    _delete(session, POLine, line_ids)
+    _delete(session, PurchaseOrder, po_ids)
+    _delete(session, Sale, sale_ids)
+    session.flush()
     plan.committed = True
     return plan

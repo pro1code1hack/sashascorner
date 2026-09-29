@@ -24,7 +24,7 @@ pick it up and must not.
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Awaitable, Callable, Iterator, Mapping, Sequence
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -578,8 +578,3 @@ def run_scenarios(names: Sequence[str] | None = None) -> list[ScenarioResult]:
     """
     specs = [scenario(n) for n in names] if names else list(SCENARIOS)
     return asyncio.run(_run_all(specs))
-
-
-def iter_names() -> Iterator[str]:
-    for spec in SCENARIOS:
-        yield spec.name

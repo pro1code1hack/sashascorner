@@ -11,7 +11,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from cafeops.db.base import Base
 from cafeops.db.models._common import Qty, TimestampedMixin, UTCDateTime, enum_col
-from cafeops.db.models.enums import PriceSource, Storage, Tier, Unit
+from cafeops.domain.enums import PriceSource, Storage, Tier, Unit
 
 if TYPE_CHECKING:
     from cafeops.db.models.batch import StockBatch

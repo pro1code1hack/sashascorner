@@ -26,6 +26,7 @@ from cafeops.api.schemas import (
     PersistedOrderOut,
     SupplierOut,
 )
+from cafeops.services.order_actions import OrderAction
 
 #: A person's name, as typed on this device ("who's using this").
 Name = Annotated[str, Field(min_length=1, max_length=120)]
@@ -177,8 +178,6 @@ class TierOut(Out):
 # Orders
 # ==========================================================================
 
-OrderAction = Literal["confirm", "cancel", "mark_sent", "receive"]
-
 
 class PurchaseOrderOut(PersistedOrderOut):
     supplier_id: int
@@ -202,7 +201,9 @@ class PurchaseOrderOut(PersistedOrderOut):
 
 class OrderCounts(Out):
     open: int = Field(description="DRAFT + PENDING_CONFIRM + CONFIRMED + SENT.")
-    waiting: int = Field(description="DRAFT + PENDING_CONFIRM: waiting for someone in Telegram.")
+    waiting: int = Field(
+        description="DRAFT + PENDING_CONFIRM: waiting for a named person to confirm."
+    )
 
 
 class OrdersListResponse(Out):

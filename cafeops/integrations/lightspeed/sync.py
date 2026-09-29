@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, time
@@ -44,11 +45,12 @@ from cafeops.integrations.lightspeed.mapper import (
 from cafeops.services.ingest_sales import IngestReport, ingest_sale_lines
 from cafeops.services.loyalty.pos import PosReport, ReceiptCustomer, pos_pass
 
+log = logging.getLogger("cafeops.lightspeed.sync")
+
 __all__ = ["SyncResult", "sync_window"]
 
 DEFAULT_FIXTURES_DIR = Path(__file__).parent / "fixtures"
 CATALOG_FIXTURE = "catalog_items.json"
-RECEIPTS_FIXTURE = "receipts_2026-09.json"
 #: Recorded payloads for the awkward cases, one directory each. See `scenarios.py`.
 SCENARIOS_DIR = DEFAULT_FIXTURES_DIR / "scenarios"
 
@@ -187,9 +189,22 @@ def _loyalty_pass(
 ) -> None:
     """Record receipt customers, link members, and (if enabled) auto-stamp.
 
-    In a SAVEPOINT: a loyalty fault must not cost the night's sales, which are the stock
-    ledger's input. The failure is reported instead, and the next sync retries (every
-    step is idempotent).
+    Isolated: a loyalty fault must not cost the night's sales, which are the stock
+    ledger's input. The failure is logged and reported instead, and the next sync
+    retries (every step is idempotent).
+
+    The isolation is a SAVEPOINT, which is only safe here because of the check in
+    front of it. ARCHITECTURE.md 8R measured that pysqlite's legacy transaction
+    handling turns the RELEASE of an *outermost* savepoint into a real COMMIT; a
+    savepoint is outermost when nothing has been written in the transaction yet
+    (re-measured for this path: reads, then `begin_nested()` + INSERT, then the outer
+    rollback -- the row survived). So the pending sales are flushed first and:
+
+    * the driver has a transaction open -> the savepoint nests inside it, RELEASE is
+      a plain release, and the caller's commit (or rollback) decides for both;
+    * it has none -> nothing has been written in this transaction, so no savepoint is
+      needed: the pass runs in the ordinary transaction and a failure rolls back that
+      transaction, which holds only the pass's own writes.
     """
     customers = [
         ReceiptCustomer(
@@ -206,12 +221,33 @@ def _loyalty_pass(
         if r.consumer is not None and r.consumer.key
     ]
     start = datetime.combine(since, time.min, tzinfo=settings.tz).astimezone(UTC)
+    session.flush()
+    if _driver_in_transaction(session):
+        try:
+            with session.begin_nested():
+                result.loyalty = pos_pass(session, customers, since=start, now=now)
+        except Exception as exc:
+            log.exception("sync: the loyalty pass failed; sales kept, loyalty rolled back")
+            result.loyalty = None
+            result.loyalty_error = f"{type(exc).__name__}: {exc}"
+        return
     try:
-        with session.begin_nested():
-            result.loyalty = pos_pass(session, customers, since=start, now=now)
+        result.loyalty = pos_pass(session, customers, since=start, now=now)
+        session.flush()
     except Exception as exc:
+        log.exception("sync: the loyalty pass failed; nothing else was written, rolled back")
+        session.rollback()
         result.loyalty = None
         result.loyalty_error = f"{type(exc).__name__}: {exc}"
+
+
+def _driver_in_transaction(session: Session) -> bool:
+    """Whether the DBAPI connection under `session` has a transaction open. A driver
+    that does not say (no `in_transaction` attribute) is assumed to, which is the
+    normal behaviour everywhere except pysqlite's legacy mode (see `_loyalty_pass`)."""
+    dbapi = session.connection().connection.dbapi_connection
+    flag = getattr(dbapi, "in_transaction", None)
+    return True if flag is None else bool(flag)
 
 
 def _double_count_risks(session: Session, lines: Sequence[MappedSaleLine]) -> tuple[str, ...]:
@@ -241,9 +277,11 @@ def _double_count_risks(session: Session, lines: Sequence[MappedSaleLine]) -> tu
     modifier_ingredients = dict(
         session.execute(
             select(Modifier.id, Modifier.ingredient_id).where(Modifier.ingredient_id.isnot(None))
-        ).all()
+        )
+        .tuples()
+        .all()
     )
-    item_names = dict(session.execute(select(MenuItem.id, MenuItem.name)).all())
+    item_names = dict(session.execute(select(MenuItem.id, MenuItem.name)).tuples().all())
 
     by_receipt: dict[str, list[MappedSaleLine]] = {}
     for line in lines:

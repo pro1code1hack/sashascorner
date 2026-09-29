@@ -31,16 +31,19 @@ import hashlib
 import io
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
-from datetime import UTC, date, datetime, time, timedelta
+from datetime import UTC, date, datetime, time
 from decimal import Decimal, InvalidOperation
 from enum import StrEnum
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from cafeops.clock import local_day_bounds, utcnow
 from cafeops.config import settings
 from cafeops.db.models import MenuItem, Sale
-from cafeops.db.models.enums import MANUAL_SALE_CHANNELS, SaleChannel, SaleSource, SizeCode
+from cafeops.domain.composition import qty_text
+from cafeops.domain.enums import MANUAL_SALE_CHANNELS, SaleChannel, SaleSource, SizeCode
+from cafeops.domain.units import gbp_code, pounds_figure
 from cafeops.integrations.channels.base import UnmappableReportError
 from cafeops.integrations.channels.columns import (
     FieldParseError,
@@ -56,6 +59,8 @@ from cafeops.services.record_sale import (
     SaleRefused,
     line_gross_pence,
     record_sale,
+    size_label,
+    validate_sale,
 )
 
 __all__ = [
@@ -129,7 +134,6 @@ _SIZE_WORDS: dict[str, SizeCode | None] = {
     "one": SizeCode.ONE,
     "one size": SizeCode.ONE,
 }
-_SIZE_LABEL = {SizeCode.S: "S", SizeCode.M: "M", SizeCode.XL: "XL", SizeCode.ONE: ""}
 
 
 class CsvKind(StrEnum):
@@ -182,7 +186,7 @@ class TransactionsImportReport:
             return f"{self.filename}: REFUSED -- {self.refused}"
         return (
             f"{self.filename}: {self.receipts_written} receipt(s), {self.lines_written} "
-            f"line(s), GBP {self.gross_pence / 100:,.2f}; "
+            f"line(s), {gbp_code(self.gross_pence, grouped=True)}; "
             f"{self.receipts_already_recorded} already recorded, "
             f"{len(self.rejected)} row(s) rejected"
         )
@@ -204,11 +208,12 @@ def export_transactions(
     if since > until:
         raise ValueError("since is after until")
     tz = settings.tz
+    start, end = local_day_bounds(since, until, tz=tz)
     stmt = (
         select(Sale, MenuItem)
         .join(MenuItem, MenuItem.id == Sale.menu_item_id)
-        .where(Sale.sold_at >= datetime.combine(since, time.min, tzinfo=tz))
-        .where(Sale.sold_at < datetime.combine(until + timedelta(days=1), time.min, tzinfo=tz))
+        .where(Sale.sold_at >= start)
+        .where(Sale.sold_at < end)
         .order_by(Sale.sold_at.desc(), Sale.lightspeed_receipt_id, Sale.id)
     )
     if channel is not None:
@@ -234,10 +239,10 @@ def export_transactions(
                 sale.channel.value,
                 sale.source.value,
                 item.name,
-                _SIZE_LABEL.get(item.size_code, "") if item.size_code else "",
-                _qty_text(sale.qty),
-                _gbp(unit),
-                _gbp(sale.gross_pence),
+                size_label(item.size_code),
+                qty_text(sale.qty),
+                pounds_figure(unit),
+                pounds_figure(sale.gross_pence),
                 "yes" if sale.voided else "",
                 "yes" if sale.is_refund else "",
                 sale.recorded_by or "",
@@ -260,15 +265,6 @@ def export_transactions(
         gross_pence=gross,
         voided_lines=voided,
     )
-
-
-def _gbp(pence: int) -> str:
-    return f"{Decimal(pence) / 100:.2f}"
-
-
-def _qty_text(q: Decimal) -> str:
-    n = q.normalize()
-    return format(n, "f") if n != n.to_integral_value() else str(int(n))
 
 
 def _unit_price(sale: Sale) -> int:
@@ -364,7 +360,7 @@ def import_transactions(
     required unless the file has one column of it filled throughout; EPOS is refused
     like everywhere else.
     """
-    now = now or datetime.now(UTC)
+    now = now or utcnow()
     report = TransactionsImportReport(filename=filename)
     headers, delimiter = _headers(text)
     mapping = _map(headers, _ALIASES)
@@ -387,7 +383,6 @@ def import_transactions(
 
     groups: dict[str, list[SaleLineIn]] = {}
     meta: dict[str, tuple[SaleChannel, datetime, str | None]] = {}
-    menu_price: dict[int, int] = {}
     order: list[str] = []
     for number, cells in enumerate(reader, start=2):
         if not any(c.strip() for c in cells):
@@ -418,7 +413,6 @@ def import_transactions(
             )
             continue
         groups[receipt_id].append(SaleLineIn(menu_item_id=item.id, qty=qty, unit_price_pence=price))
-        menu_price[item.id] = item.price_pence
 
     for receipt_id in order:
         lines = groups[receipt_id]
@@ -429,19 +423,22 @@ def import_transactions(
         if exists is not None:
             report.receipts_already_recorded += 1
             continue
-        if dry_run:
-            total = sum(
-                line_gross_pence(
-                    line.unit_price_pence
-                    if line.unit_price_pence is not None
-                    else menu_price[line.menu_item_id],
-                    line.qty,
+        try:
+            if dry_run:
+                # The same rules `record_sale` applies, so the preview refuses exactly
+                # the receipts the real run would, and writes nothing.
+                checked = validate_sale(
+                    session,
+                    channel=channel,
+                    lines=lines,
+                    recorded_by=recorded_by,
+                    sold_at=when,
+                    source=SaleSource.CSV_UPLOAD,
+                    now=now,
+                    max_backdate=None,
                 )
-                for line in lines
-            )
-            count = len(lines)
-        else:
-            try:
+                total, count = checked.total_pence, len(checked.lines)
+            else:
                 written = record_sale(
                     session,
                     channel=channel,
@@ -454,10 +451,10 @@ def import_transactions(
                     receipt_id=receipt_id,
                     max_backdate=None,
                 )
-            except SaleRefused as exc:
-                report.rejected.append(f"receipt {receipt_id}: {exc}")
-                continue
-            total, count = written.total_pence, len(written.lines)
+                total, count = written.total_pence, len(written.lines)
+        except SaleRefused as exc:
+            report.rejected.append(f"receipt {receipt_id}: {exc}")
+            continue
         report.receipts_written += 1
         report.lines_written += count
         report.gross_pence += total
@@ -537,7 +534,7 @@ def _row_item(items: Sequence[MenuItem], raw_name: str, raw_size: str) -> MenuIt
     one = [i for i in by_name if i.size_code in (None, SizeCode.ONE)]
     if len(one) == 1:
         return one[0]
-    sizes = ", ".join(_SIZE_LABEL.get(i.size_code, "?") or "one" for i in by_name if i.size_code)
+    sizes = ", ".join(size_label(i.size_code) or "one" for i in by_name if i.size_code)
     raise ValueError(f"item {raw_name!r} comes in sizes {sizes}; the size column is needed")
 
 
@@ -570,7 +567,7 @@ def _row_price(raw_unit: str, raw_gross: str, qty: Decimal) -> int | None:
             unit_pence = int((Decimal(pence) / qty).quantize(Decimal(1)))
             if line_gross_pence(unit_pence, qty) != pence and qty == qty.to_integral_value():
                 raise ValueError(
-                    f"gross {gross} does not divide by qty {_qty_text(qty)} to a whole penny"
+                    f"gross {gross} does not divide by qty {qty_text(qty)} to a whole penny"
                 )
             return unit_pence
     return None

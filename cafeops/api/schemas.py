@@ -1137,9 +1137,10 @@ class SupplierOrderOut(Out):
     status: str = Field(
         default="DRAFT",
         description=(
-            "Always DRAFT and nothing here can change it. Invariant 1: nothing is ordered "
-            "without human confirmation, and confirmation happens in Telegram. This API has "
-            "no endpoint that creates, confirms or sends a purchase order."
+            "Always DRAFT: this basket is computed, not stored. Invariant 1: nothing is "
+            "ordered without human confirmation. POST /api/orders/from-draft stores it as "
+            "a DRAFT order and POST /api/orders/{id}/confirm, with the confirming "
+            "person's name, confirms it; nothing sends it to a supplier."
         ),
     )
     notes: tuple[str, ...] = ()
@@ -1158,7 +1159,8 @@ class SupplierOrderOut(Out):
         default=None,
         description=(
             "An open purchase order already stored for this supplier and delivery date -- "
-            "built by the pre-delivery job and waiting in Telegram, or confirmed there."
+            "created from this basket on the web (or by the pre-delivery job), waiting for "
+            "a named person to confirm it, or confirmed."
         ),
     )
 

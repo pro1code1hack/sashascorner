@@ -8,51 +8,34 @@
  *
  * The public /events page shows published events that have not ended.
  */
-import {
-  ErrorBox,
-  Loading,
-  PageBody,
-  PageHeader,
-  Segmented,
-} from "../../components/ui";
-import { href, navigate, useLocation } from "../../lib/router";
-import { WebsiteGate } from "./shared";
-import { EventPage, NewEventPage } from "./events-page";
-import {
-  EventStatus,
-  priceText,
-  seatsText,
-  shortDate,
-  timeRange,
-  useEvents,
-} from "./events-shared";
-import type { AdminEvent } from "./events-shared";
+import { ErrorBox, LinkButton, Loading, PageBody, PageHeader, Segmented } from '../../components/ui'
+import { href, navigate, useLocation } from '../../lib/router'
+import { WebsiteGate } from './shared'
+import { EventPage, NewEventPage } from './events-page'
+import { EventStatus, priceText, seatsText, shortDate, timeRange, useEvents } from './events-shared'
+import type { AdminEvent } from './events-shared'
 
-type Tab = "upcoming" | "past";
+type Tab = 'upcoming' | 'past'
 
 export function EventsScreen() {
-  const sub = useLocation().segments[2];
-  if (sub === "new") return <NewEventPage />;
-  if (sub !== undefined && /^\d+$/.test(sub))
-    return <EventPage eventId={Number(sub)} />;
-  return <EventsList />;
+  const sub = useLocation().segments[2]
+  if (sub === 'new') return <NewEventPage />
+  if (sub !== undefined && /^\d+$/.test(sub)) return <EventPage eventId={Number(sub)} />
+  return <EventsList />
 }
 
 function EventsList() {
-  const loc = useLocation();
-  const tab: Tab = loc.query.get("tab") === "past" ? "past" : "upcoming";
+  const loc = useLocation()
+  const tab: Tab = loc.query.get('tab') === 'past' ? 'past' : 'upcoming'
   return (
     <>
       <PageHeader
         title="Events"
         subtitle="Evenings at the café, on the website’s Events page."
         actions={
-          <a
-            href={href("/website/events/new")}
-            className="inline-flex h-11 items-center rounded-button bg-brand px-4.5 text-md font-bold text-white no-underline hover:bg-brand-ink sm:h-10"
-          >
+          <LinkButton variant="primary" href={href('/website/events/new')} className="max-sm:h-11">
             New event
-          </a>
+          </LinkButton>
         }
       />
       <PageBody className="bg-canvas">
@@ -61,43 +44,39 @@ function EventsList() {
         </WebsiteGate>
       </PageBody>
     </>
-  );
+  )
 }
 
 function EventsBody({ tab }: { tab: Tab }) {
-  const q = useEvents();
-  if (q.isError) return <ErrorBox error={q.error} what="the events" />;
-  if (q.isPending) return <Loading what="Reading the events" />;
-  const all = q.data;
-  const upcoming = all
-    .filter((e) => !e.past)
-    .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
-  const past = all
-    .filter((e) => e.past)
-    .sort((a, b) => b.starts_at.localeCompare(a.starts_at));
-  const list = tab === "upcoming" ? upcoming : past;
+  const q = useEvents()
+  if (q.isError) return <ErrorBox error={q.error} what="the events" />
+  if (q.isPending) return <Loading what="Reading the events" />
+  const all = q.data
+  const upcoming = all.filter((e) => !e.past).sort((a, b) => a.starts_at.localeCompare(b.starts_at))
+  const past = all.filter((e) => e.past).sort((a, b) => b.starts_at.localeCompare(a.starts_at))
+  const list = tab === 'upcoming' ? upcoming : past
   const setTab = (t: Tab) =>
-    navigate("/website/events", {
+    navigate('/website/events', {
       replace: true,
-      query: { tab: t === "past" ? "past" : undefined },
-    });
+      query: { tab: t === 'past' ? 'past' : undefined },
+    })
   return (
-    <div className="mx-auto flex max-w-[860px] flex-col gap-4">
+    <div className="mx-auto flex max-w-[1100px] flex-col gap-4">
       <Segmented
         label="Which events"
         value={tab}
         onChange={setTab}
         className="self-start"
         options={[
-          { value: "upcoming", label: `Coming up · ${upcoming.length}` },
-          { value: "past", label: `Past · ${past.length}` },
+          { value: 'upcoming', label: `Coming up · ${upcoming.length}` },
+          { value: 'past', label: `Past · ${past.length}` },
         ]}
       />
       {list.length === 0 ? (
         <p className="rounded-card border border-dashed border-line-strong px-4 py-6 text-center text-base text-ink-2">
-          {tab === "upcoming"
-            ? "Nothing coming up. Add an event and publish it to show it on the website."
-            : "No past events yet."}
+          {tab === 'upcoming'
+            ? 'Nothing coming up. Add an event and publish it to show it on the website.'
+            : 'No past events yet.'}
         </p>
       ) : (
         <ul className="overflow-hidden rounded-card-lg border border-line bg-surface">
@@ -107,17 +86,13 @@ function EventsBody({ tab }: { tab: Tab }) {
         </ul>
       )}
     </div>
-  );
+  )
 }
 
 function EventRow({ e }: { e: AdminEvent }) {
-  const meta = [
-    seatsText(e),
-    `${e.rsvps} ${e.rsvps === 1 ? "reply" : "replies"}`,
-    priceText(e.price_pence),
-  ]
+  const meta = [seatsText(e), `${e.rsvps} ${e.rsvps === 1 ? 'reply' : 'replies'}`, priceText(e.price_pence)]
     .filter(Boolean)
-    .join(" · ");
+    .join(' · ')
   return (
     <li className="border-b border-line last:border-b-0">
       <a
@@ -130,17 +105,13 @@ function EventRow({ e }: { e: AdminEvent }) {
         </span>
         <span className="flex min-w-0 flex-col gap-1">
           <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-            <span className="text-md font-bold [overflow-wrap:anywhere]">
-              {e.title}
-            </span>
+            <span className="text-md font-bold [overflow-wrap:anywhere]">{e.title}</span>
             <EventStatus e={e} />
           </span>
           <span className="fig text-sm text-ink-2">{meta}</span>
         </span>
-        <span className="col-start-2 text-sm font-semibold text-brand-ink sm:col-start-auto">
-          Edit · replies
-        </span>
+        <span className="col-start-2 text-sm font-semibold text-brand-ink sm:col-start-auto">Edit · replies</span>
       </a>
     </li>
-  );
+  )
 }

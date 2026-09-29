@@ -210,16 +210,26 @@ export function useNewOrderAlert(orders: OrderAdmin[] | undefined, title: string
     return () => window.clearTimeout(t)
   }, [snoozedUntil])
 
-  // Title flash while NEW orders wait.
+  // Title while NEW orders wait. It flashes only while the chime is live: snoozing
+  // or turning sound off leaves a still title that carries the count (the board's
+  // own status strip is the visual twin of the chime).
   useEffect(() => {
     if (newCount === 0) {
       document.title = title
       return
     }
+    const waiting = `● ${newCount} new ${newCount === 1 ? 'order' : 'orders'}`
+    const snoozed = snoozedUntil !== null && Date.now() < snoozedUntil
+    if (!soundOn || snoozed) {
+      document.title = `${waiting} · ${title}`
+      return () => {
+        document.title = title
+      }
+    }
     let on = false
     const flash = () => {
       on = !on
-      document.title = on ? `● ${newCount} new ${newCount === 1 ? 'order' : 'orders'}` : title
+      document.title = on ? waiting : title
     }
     flash()
     const t = window.setInterval(flash, TITLE_FLASH_MS)
@@ -227,7 +237,7 @@ export function useNewOrderAlert(orders: OrderAdmin[] | undefined, title: string
       window.clearInterval(t)
       document.title = title
     }
-  }, [newCount, title])
+  }, [newCount, title, soundOn, snoozedUntil])
 
   // Sound remembered on: the first touch re-arms the context silently.
   useEffect(() => {

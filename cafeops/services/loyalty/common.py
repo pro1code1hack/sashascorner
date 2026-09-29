@@ -16,11 +16,12 @@ from __future__ import annotations
 
 import hashlib
 import hmac
-from datetime import UTC, datetime
+from datetime import datetime
 
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
+from cafeops.clock import utcnow
 from cafeops.db.models import (
     LoyaltyAudit,
     LoyaltyCard,
@@ -47,8 +48,9 @@ __all__ = [
 DEFAULT_PROGRAM_SLUG = "stamp"
 
 
-def now_utc() -> datetime:
-    return datetime.now(UTC)
+#: `clock.utcnow` under the loyalty package's old name. An alias, not a second clock:
+#: it stays because the API, the CLI, the jobs and `programs.py` import it by this name.
+now_utc = utcnow
 
 
 def sha256_hex(value: str) -> str:

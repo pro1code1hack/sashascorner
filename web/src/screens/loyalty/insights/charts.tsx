@@ -1,17 +1,18 @@
 /**
  * The Insights charts: one-series bar charts (weekly counts, stamps by hour) and a
  * horizontal share list (where members joined). Hand-rolled divs like the kit's
- * `Bars` (CLAUDE.md §3, no chart library), plus what the kit's version lacks: a
- * per-bar hover/focus readout in the card's corner, and a hidden table for screen
- * readers. One series each, so no legend: the card's title names it.
+ * `Bars` (CLAUDE.md §3, no chart library), plus a per-bar hover readout in the
+ * card's corner. The bars are decorative and never tab stops: the numbers reach a
+ * keyboard or screen-reader user once, in order, through the kit's `ChartTable`.
+ * One series each, so no legend: the card's title names it.
  */
 import { useState, type ReactNode } from 'react'
-import { cx } from '../../../components/ui'
+import { ChartTable, cx } from '../../../components/ui'
 
 export interface ColumnDatum {
   key: string
   value: number
-  /** Readout when this bar is hovered or focused: "Week of 29 Jun: 3". */
+  /** Readout when this bar is hovered, and its row in the hidden table: "Week of 29 Jun: 3". */
   readout: string
   /** Axis label under the bar; most are blank so labels never collide. */
   axis?: string
@@ -19,13 +20,12 @@ export interface ColumnDatum {
   strong?: boolean
 }
 
-type Tone = 'brand' | 'ok' | 'seq'
+type Tone = 'brand' | 'seq'
 
 const FILL: Record<Tone, string> = {
   brand: 'bg-brand',
-  ok: 'bg-ok',
-  // Sequential single hue: light for ordinary, full brand for the one that matters.
-  seq: 'bg-seq-2',
+  // Sequential single hue: seq-3 (3:1 on white) for ordinary, full brand for the one that matters.
+  seq: 'bg-seq-3',
 }
 
 /** A white chart card: title, a figure (or the hovered bar's readout) in the corner. */
@@ -79,24 +79,20 @@ export function Columns({
   const max = Math.max(1, ...data.map((d) => d.value))
   const axis = data.some((d) => d.axis !== undefined)
   return (
-    <figure aria-label={label} className="min-w-0">
-      <div className="flex items-end gap-[3px] border-b border-line" style={{ height }} onMouseLeave={() => onHover?.(null)}>
+    <figure className="min-w-0">
+      <div aria-hidden="true" className="flex items-end gap-[3px] border-b border-line" style={{ height }} onMouseLeave={() => onHover?.(null)}>
         {data.map((d) => {
           const h = d.value === 0 ? 1 : Math.max(3, (d.value / max) * (height - 4))
           return (
             <div
               key={d.key}
-              tabIndex={0}
-              aria-label={d.readout}
               onMouseEnter={() => onHover?.(d.readout)}
-              onFocus={() => onHover?.(d.readout)}
-              onBlur={() => onHover?.(null)}
-              className="group flex h-full min-w-0 flex-1 cursor-default items-end justify-center outline-none"
+              className="group flex h-full min-w-0 flex-1 cursor-default items-end justify-center"
             >
               <div
                 style={{ height: h }}
                 className={cx(
-                  'w-full max-w-7 rounded-t-[4px] transition-opacity group-hover:opacity-80 group-focus-visible:ring-2 group-focus-visible:ring-brand',
+                  'w-full max-w-7 rounded-t-xs transition-opacity group-hover:opacity-80',
                   d.value === 0 ? 'bg-line-strong' : d.strong ? 'bg-brand' : FILL[tone],
                 )}
               />
@@ -120,16 +116,7 @@ export function Columns({
           </div>
         )
       )}
-      <table className="sr-only">
-        <caption>{label}</caption>
-        <tbody>
-          {data.map((d) => (
-            <tr key={d.key}>
-              <td>{d.readout}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <ChartTable caption={label} columns={['Bar', 'Count']} rows={data.map((d) => [d.readout.slice(0, Math.max(0, d.readout.lastIndexOf(': '))) || d.readout, String(d.value)])} />
     </figure>
   )
 }

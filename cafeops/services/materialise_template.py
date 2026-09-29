@@ -38,7 +38,7 @@ from datetime import UTC, datetime
 from decimal import Decimal
 
 from sqlalchemy import or_, select
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import Session
 
 from cafeops.db.models import (
     ComponentRole,
@@ -259,31 +259,27 @@ def materialise_proposal(
             "choice is arbitrary -- verify these quantities against the real recipes."
         )
 
-    try:
-        _build(session, proposal, report, effective_from=effective_from, actor=actor)
-        session.flush()
-        report.rollup = rollup_for_template(
-            session,
-            _require_template_id(report),
-            at=effective_from,
-            trigger=f"template {proposal.name!r} materialised by {actor}",
+    _build(session, proposal, report, effective_from=effective_from, actor=actor)
+    session.flush()
+    report.rollup = rollup_for_template(
+        session,
+        _require_template_id(report),
+        at=effective_from,
+        trigger=f"template {proposal.name!r} materialised by {actor}",
+    )
+    # The baseline row of the recipe's history (recipes spec V1.8): who confirmed
+    # it and what it holds. Every later change keeps its own date after this one.
+    session.add(
+        RecipeChange(
+            template_id=_require_template_id(report),
+            change_kind="materialise",
+            effective_from=effective_from,
+            actor=actor,
+            summary=f"Confirmed from the workbook import by {actor}",
+            lines=[report.summary(), *report.warnings[:5]],
         )
-        # The baseline row of the recipe's history (recipes spec V1.8): who confirmed
-        # it and what it holds. Every later change keeps its own date after this one.
-        session.add(
-            RecipeChange(
-                template_id=_require_template_id(report),
-                change_kind="materialise",
-                effective_from=effective_from,
-                actor=actor,
-                summary=f"Confirmed from the workbook import by {actor}",
-                lines=[report.summary(), *report.warnings[:5]],
-            )
-        )
-        session.commit()
-    except Exception:
-        session.rollback()
-        raise
+    )
+    session.flush()
     return report
 
 
@@ -687,74 +683,66 @@ def preview_proposal(proposal_id: str, *, allow_conflicts: bool = False) -> Prop
     to do exactly that and read the rollup. Re-deriving it would be a second
     implementation of `_build` waiting to disagree with the first.
 
-    `join_transaction_mode="rollback_only"`, NOT `create_savepoint`: on pysqlite a
-    savepoint RELEASE becomes a real commit and the "preview" writes (ARCHITECTURE 8R,
-    measured). The service's own `session.commit()` is a no-op against the outer
-    transaction, and the outer `rollback()` undoes everything.
+    Services flush and never commit (their caller owns the transaction), so a plain
+    session that is always rolled back is the whole mechanism. Never a savepoint: on
+    pysqlite a RELEASE of the outermost savepoint is a real commit (ARCHITECTURE 8R).
+    Its own session, not the request's, because the API wraps each request in a
+    transaction that commits on success.
     """
-    from cafeops.db.base import engine
+    from cafeops.db.base import new_session
 
-    with engine.connect() as connection:
-        transaction = connection.begin()
-        try:
-            factory = sessionmaker(
-                bind=connection, join_transaction_mode="rollback_only", expire_on_commit=False
+    session = new_session()
+    try:
+        proposal = find_proposal(session, proposal_id)
+        if proposal.proposal_id != proposal_id.strip().casefold():
+            raise ProposalNotFound(
+                f"{proposal_id!r} is not a proposal id; confirm and preview by id, "
+                "because names are not unique"
             )
-            session = factory()
-            try:
-                proposal = find_proposal(session, proposal_id)
-                if proposal.proposal_id != proposal_id.strip().casefold():
-                    raise ProposalNotFound(
-                        f"{proposal_id!r} is not a proposal id; confirm and preview by id, "
-                        "because names are not unique"
-                    )
-                items = list(
-                    session.scalars(
-                        select(MenuItem).where(MenuItem.name.in_(proposal.base_item_names))
-                    )
+        items = list(
+            session.scalars(select(MenuItem).where(MenuItem.name.in_(proposal.base_item_names)))
+        )
+        ids = [i.id for i in items]
+        before = _costs(session, ids)
+        preview = ProposalPreview(
+            proposal_id=proposal.proposal_id,
+            name=proposal.name,
+            blocked_reason=None,
+            report=None,
+        )
+        try:
+            report = materialise_proposal(
+                session,
+                proposal.proposal_id,
+                actor="preview",
+                allow_conflicts=allow_conflicts,
+            )
+        except (ProposalHasConflicts, ProposalAlreadyMaterialised) as exc:
+            preview.blocked_reason = str(exc)
+            return preview
+        preview.report = report
+        after = _costs(session, ids)
+        for item in sorted(
+            items,
+            key=lambda i: (i.name, _SIZE_SORT.get(i.size_code, 9) if i.size_code else 9),
+        ):
+            b = before.get(item.id, (None, None))
+            a = after.get(item.id, (None, None))
+            if b == a:
+                continue
+            preview.cost_changes.append(
+                ProposalCostChange(
+                    menu_item_id=item.id,
+                    name=item.name,
+                    size_code=item.size_code,
+                    price_pence=item.price_pence,
+                    cost_before=b[0],
+                    source_before=b[1],
+                    cost_after=a[0],
+                    source_after=a[1],
                 )
-                ids = [i.id for i in items]
-                before = _costs(session, ids)
-                preview = ProposalPreview(
-                    proposal_id=proposal.proposal_id,
-                    name=proposal.name,
-                    blocked_reason=None,
-                    report=None,
-                )
-                try:
-                    report = materialise_proposal(
-                        session,
-                        proposal.proposal_id,
-                        actor="preview",
-                        allow_conflicts=allow_conflicts,
-                    )
-                except (ProposalHasConflicts, ProposalAlreadyMaterialised) as exc:
-                    preview.blocked_reason = str(exc)
-                    return preview
-                preview.report = report
-                after = _costs(session, ids)
-                for item in sorted(
-                    items,
-                    key=lambda i: (i.name, _SIZE_SORT.get(i.size_code, 9) if i.size_code else 9),
-                ):
-                    b = before.get(item.id, (None, None))
-                    a = after.get(item.id, (None, None))
-                    if b == a:
-                        continue
-                    preview.cost_changes.append(
-                        ProposalCostChange(
-                            menu_item_id=item.id,
-                            name=item.name,
-                            size_code=item.size_code,
-                            price_pence=item.price_pence,
-                            cost_before=b[0],
-                            source_before=b[1],
-                            cost_after=a[0],
-                            source_after=a[1],
-                        )
-                    )
-                return preview
-            finally:
-                session.close()
-        finally:
-            transaction.rollback()
+            )
+        return preview
+    finally:
+        session.rollback()
+        session.close()

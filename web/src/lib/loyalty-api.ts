@@ -3,13 +3,14 @@
  *
  * Live only (see members-api.ts for why: no sample members in Loyalty). Writes return
  * a `WriteResult`; nothing is optimistic, refusals are shown as the server wrote them.
- * Every write invalidates the whole `['members']` key so the list, the card and the
- * insights agree after any change.
+ * A write that creates, erases or reconfigures invalidates the whole `['members']`
+ * key; one that answers with the member refreshes only the list and the insights
+ * (`useInvalidateLoyaltyLists`).
  */
+import { useSyncExternalStore } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { apiWrite, type WriteResult } from './api'
-import { MEMBERS_KEY, NOT_LIVE_MESSAGE, useDevices, useStaff, membersApi, downloadMemberData } from './members-api'
-import { LIVE, request as rawRequest } from './api'
+import { LIVE, apiWrite, request as rawRequest, type WriteResult } from './api'
+import { MEMBERS_KEY, NOT_LIVE_MESSAGE, downloadMemberData } from './members-api'
 import type {
   InsightsDays,
   Insights,
@@ -29,14 +30,10 @@ import type {
   StickerKey,
 } from './types/loyalty'
 
-export { MEMBERS_KEY, NOT_LIVE_MESSAGE, useDevices, useStaff, downloadMemberData }
-/** Staff & device writes are unchanged (members-api). */
-export const staffApi = {
-  addStaff: membersApi.addStaff,
-  patchStaff: membersApi.patchStaff,
-  pairDevice: membersApi.pairDevice,
-  revokeDevice: membersApi.revokeDevice,
-}
+export { MEMBERS_KEY, NOT_LIVE_MESSAGE, downloadMemberData }
+
+const LIST_KEY = [...MEMBERS_KEY, 'v2-list'] as const
+const INSIGHTS_KEY = [...MEMBERS_KEY, 'insights'] as const
 
 function request<T>(path: string): Promise<T> {
   if (!LIVE) return Promise.reject(new Error(NOT_LIVE_MESSAGE))
@@ -59,17 +56,39 @@ export function useLoyaltyMembers(p: LoyaltyListQuery) {
   qs.set('limit', String(p.limit))
   if (p.offset > 0) qs.set('offset', String(p.offset))
   return useQuery({
-    queryKey: [...MEMBERS_KEY, 'v2-list', p],
+    queryKey: [...LIST_KEY, p],
     queryFn: () => request<LoyaltyMembersResponse>(`/api/members?${qs.toString()}`),
     placeholderData: (prev) => prev,
     staleTime: 30 * 1000,
   })
 }
 
-/** The tab badge: members with a free drink waiting. Cheap (limit=1). */
+/**
+ * The tab badge: members with a free drink waiting. Every list response carries the
+ * segment counts, so the badge reads the freshest list already in the cache and only
+ * asks the server itself (limit=1) when no list has been fetched this session.
+ */
 export function useRewardReadyCount(): number | null {
-  const q = useLoyaltyMembers({ q: '', segment: 'all', sort: 'recent', limit: 1, offset: 0 })
-  return q.data ? q.data.counts.reward_ready : null
+  const qc = useQueryClient()
+  const cache = qc.getQueryCache()
+  const fromList = useSyncExternalStore(
+    (cb) => cache.subscribe(cb),
+    () => {
+      let best: { at: number; n: number } | null = null
+      for (const q of cache.findAll({ queryKey: LIST_KEY })) {
+        const d = q.state.data as LoyaltyMembersResponse | undefined
+        if (d && (best === null || q.state.dataUpdatedAt > best.at)) best = { at: q.state.dataUpdatedAt, n: d.counts.reward_ready }
+      }
+      return best === null ? null : best.n
+    },
+  )
+  const own = useQuery({
+    queryKey: [...LIST_KEY, 'badge'],
+    queryFn: () => request<LoyaltyMembersResponse>('/api/members?sort=recent&limit=1'),
+    enabled: fromList === null,
+    staleTime: 60 * 1000,
+  })
+  return fromList ?? own.data?.counts.reward_ready ?? null
 }
 
 export function useLoyaltyMember(id: number) {
@@ -81,7 +100,7 @@ export function useLoyaltyMember(id: number) {
 
 export function useInsights(days: InsightsDays) {
   return useQuery({
-    queryKey: [...MEMBERS_KEY, 'insights', days],
+    queryKey: [...INSIGHTS_KEY, days],
     queryFn: () => request<Insights>(`/api/members/insights?days=${days}`),
     placeholderData: (prev) => prev,
     staleTime: 60 * 1000,
@@ -106,6 +125,16 @@ export function useProgramSettings() {
 export function useInvalidateLoyalty(): () => Promise<void> {
   const qc = useQueryClient()
   return () => qc.invalidateQueries({ queryKey: MEMBERS_KEY })
+}
+
+/**
+ * After a write that answered with the member (a stamp, a free drink, an undo): the
+ * caller has already put the answer in the detail cache, so only the list (with its
+ * badge counts) and the insights need a refetch, not the programme or the messages.
+ */
+export function useInvalidateLoyaltyLists(): () => Promise<void> {
+  const qc = useQueryClient()
+  return () => Promise.all([qc.invalidateQueries({ queryKey: LIST_KEY }), qc.invalidateQueries({ queryKey: INSIGHTS_KEY })]).then(() => undefined)
 }
 
 export const loyaltyApi = {

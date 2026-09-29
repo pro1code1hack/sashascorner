@@ -23,7 +23,7 @@
  * the takings; "orders" and the £ range pick trading days. The figures strip,
  * the charts and the table are all summed from the same rows, in integer pence.
  */
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import {
   ActiveFilters,
@@ -38,6 +38,7 @@ import {
   MoneyInput,
   PageBody,
   PageHeader,
+  StatusLine,
   TBody,
   THead,
   Table,
@@ -47,7 +48,7 @@ import {
   Tr,
   cx,
 } from '../../components/ui'
-import type { ActiveFilterChip } from '../../components/ui'
+import type { ActiveFilterChip, Outcome } from '../../components/ui'
 import { poundsToPence, penceToPounds } from '../../components/confirm/numbers'
 import { useOperator } from '../../lib/operator'
 import { financeApi, financeWrite, useInvalidateFinance, useSales, useSalesInsights } from '../../lib/finance-api'
@@ -168,6 +169,23 @@ export function SalesScreen() {
         }
   const till = useSalesInsights(tillFilters)
   const opts = till.data?.options
+  // Which section is in view, for `aria-current` on the jump links. The sections
+  // only exist once both ledgers have loaded, so the observer is re-attached then.
+  const [current, setCurrent] = useState<string>(SECTIONS[0].id)
+  const sectionsMounted = Boolean(till.data) && Boolean(q.data)
+  useEffect(() => {
+    if (!sectionsMounted || typeof IntersectionObserver === 'undefined') return
+    const els = SECTIONS.map((s) => document.getElementById(s.id)).filter((el): el is HTMLElement => el !== null)
+    const io = new IntersectionObserver(
+      (entries) => {
+        const hit = entries.filter((e) => e.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]
+        if (hit) setCurrent(hit.target.id)
+      },
+      { rootMargin: '-30% 0px -60% 0px', threshold: [0, 0.25, 0.5, 1] },
+    )
+    els.forEach((el) => io.observe(el))
+    return () => io.disconnect()
+  }, [sectionsMounted])
   // Months with takings or till lines, so a till-only install still has a month bar.
   const barMonths = useMemo(() => [...new Set([...months, ...(till.data?.months ?? [])])].sort(), [months, till.data?.months])
   // Every channel the till can name, then anything else it has seen.
@@ -341,9 +359,18 @@ export function SalesScreen() {
       <div className="flex min-h-0 flex-1">
         <PageBody flush>
           <div className="px-4 pb-8 sm:px-5 compact:px-6">
-            <nav aria-label="Sections" className="sticky top-0 z-10 -mx-4 flex gap-1 overflow-x-auto border-b border-line bg-surface/95 px-4 py-2 backdrop-blur-[2px] sm:-mx-5 sm:px-5 compact:-mx-6 compact:px-6">
+            <nav aria-label="Sections" className="sticky top-0 z-10 -mx-4 flex gap-1 overflow-x-auto border-b border-line bg-surface px-4 py-2 sm:-mx-5 sm:px-5 compact:-mx-6 compact:px-6">
               {SECTIONS.map((x) => (
-                <a key={x.id} href={`#${x.id}`} onClick={jump(x.id)} className="flex min-h-8 items-center whitespace-nowrap rounded-full px-3 text-base font-semibold text-ink-2 hover:bg-canvas hover:text-ink">
+                <a
+                  key={x.id}
+                  href={`#${x.id}`}
+                  onClick={jump(x.id)}
+                  aria-current={current === x.id ? 'location' : undefined}
+                  className={cx(
+                    'flex min-h-8 items-center whitespace-nowrap rounded-full px-3 text-base font-semibold hover:bg-canvas hover:text-ink',
+                    current === x.id ? 'bg-brand-wash text-brand-ink' : 'text-ink-2',
+                  )}
+                >
                   {x.label}
                 </a>
               ))}
@@ -372,9 +399,7 @@ export function SalesScreen() {
               <div className="mt-4 rounded-card border border-dashed border-line-strong px-4 py-4 text-base text-ink-2">
                 <p className="font-bold text-ink">No card or cash entered for this period.</p>
                 <p className="mt-1">
-                  Card and cash totals come from the finance workbook or a payment export. Import them with{' '}
-                  <code className="rounded-xs bg-canvas px-1 py-0.5 font-mono text-sm text-ink">cafeops import-finance --commit</code>, or add a
-                  day&rsquo;s cash with <b>+ Add cash</b>.
+                  Card figures are imported by the office; add a day&rsquo;s cash with <b>+ Add cash</b>.
                 </p>
               </div>
             )}
@@ -414,13 +439,12 @@ function Money({ pence, dagger }: { pence: number | null; dagger?: boolean }) {
   return (
     <>
       {gbp(pence)}
-      <span
-        aria-hidden={!dagger}
-        title={dagger ? 'Bank deposit date, not till takings' : undefined}
-        className="inline-block w-[0.7em] text-left text-ink-3"
-      >
+      {/* The dagger's meaning is printed under the table and said here in words,
+          not only in a hover title. */}
+      <span aria-hidden="true" className="inline-block w-[0.7em] text-left text-ink-3">
         {dagger ? '†' : ''}
       </span>
+      {dagger && <span className="sr-only"> (bank deposit date, not till takings)</span>}
     </>
   )
 }
@@ -596,6 +620,9 @@ function SalesTable({
           )}
         </TBody>
       </Table>
+      {rows.some((d) => d.basis !== 'TILL' && d.card_pence !== null) && showCol(paid, 'card') && (
+        <p className="mt-2 text-sm text-ink-2">† Card is the bank deposit on that date, not the till&rsquo;s takings for the day.</p>
+      )}
     </div>
   )
 }
@@ -612,23 +639,30 @@ function CashDrawer({ day, onClose }: { day: SalesDay | null; onClose: () => voi
   const [date, setDate] = useState(day?.date ?? londonToday())
   const [cash, setCash] = useState(penceToPounds(day?.cash_pence ?? null))
   const [note, setNote] = useState(day?.note ?? '')
-  const [error, setError] = useState<string | null>(null)
+  // Field problems sit on their field (aria-describedby via Field); what the
+  // server said goes in the always-mounted StatusLine.
+  const [fieldErr, setFieldErr] = useState<{ cash?: string; date?: string }>({})
+  const [outcome, setOutcome] = useState<Outcome | null>(null)
+  const setError = (text: string) => setOutcome({ kind: 'error', text })
   const [busy, setBusy] = useState(false)
   const cashLocked = day !== null && !day.editable.cash
 
   async function submit() {
     const c = poundsToPence(cash)
-    if (c.kind === 'bad') return setError(`Cash: ${c.message}`)
     const cashP = c.kind === 'value' ? c.value : null
-    if ((cashP ?? 0) < 0) return setError('Cash cannot be negative.')
-    if (!date) return setError('Pick a date.')
+    const problems: typeof fieldErr = {}
+    if (c.kind === 'bad') problems.cash = c.message
+    else if ((cashP ?? 0) < 0) problems.cash = 'Cash cannot be negative.'
+    else if (day === null && cashP === null) problems.cash = 'Enter the cash taken.'
+    if (!date) problems.date = 'Pick a date.'
+    setFieldErr(problems)
+    if (Object.keys(problems).length > 0) return
     const noteV = note.trim() || null
-    setError(null)
+    setOutcome(null)
     setBusy(true)
     try {
       let target = day
       if (target === null) {
-        if (cashP === null) return setError('Enter the cash taken.')
         // The day may already have a row (card imported): add the cash to it.
         const monthData = await financeApi.sales(date.slice(0, 7))
         target = monthData.days.find((d) => d.date === date) ?? null
@@ -720,11 +754,11 @@ function CashDrawer({ day, onClose }: { day: SalesDay | null; onClose: () => voi
       <section className="flex flex-col gap-3">
         {day && <h3 className="text-md font-extrabold">Cash</h3>}
         {!day && (
-          <Field label="Date">
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          <Field label="Date" error={fieldErr.date}>
+            <Input type="date" required value={date} max={londonToday()} onChange={(e) => setDate(e.target.value)} />
           </Field>
         )}
-        <Field label="Cash" hint={cashLocked ? 'From an export' : 'Cash taken today'}>
+        <Field label="Cash" hint={cashLocked ? 'From an export' : 'Cash taken today'} error={fieldErr.cash}>
           <MoneyInput value={cash} disabled={cashLocked} placeholder="0.00" onChange={(e) => setCash(e.target.value)} />
         </Field>
         <Field label="Note" hint="Optional">
@@ -734,11 +768,7 @@ function CashDrawer({ day, onClose }: { day: SalesDay | null; onClose: () => voi
           All the cash taken that day, in one figure. Card takings are imported from Mettle and Lightspeed, not typed.
           {day ? ' Empty the box to clear it.' : ' If that day already has cash, what you enter here replaces it.'}
         </p>
-        {error && (
-          <p role="alert" className="text-sm text-bad-ink">
-            {error}
-          </p>
-        )}
+        <StatusLine outcome={outcome} />
       </section>
     </Drawer>
   )

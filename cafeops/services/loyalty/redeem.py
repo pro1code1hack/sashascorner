@@ -35,12 +35,16 @@ from cafeops.db.models import (
     MenuCategory,
     MenuItem,
     MenuKind,
+    OrderStatus,
     Sale,
     SaleChannel,
     SaleSource,
+    ShopOrder,
     SizeCode,
 )
 from cafeops.domain.loyalty import UNDO_SECONDS, Eligibility, item_matches
+from cafeops.domain.shop import display_code
+from cafeops.domain.units import pounds
 from cafeops.services.loyalty.common import (
     audit,
     enqueue_wallet_update,
@@ -57,6 +61,7 @@ __all__ = [
     "DrinkOption",
     "RedeemResult",
     "list_drinks",
+    "online_order_code",
     "redeem",
     "undo_redemption",
     "unredeem",
@@ -149,8 +154,7 @@ def _check_item(
         raise LoyaltyError(
             409,
             "over_price_cap",
-            f"The reward covers up to £{cap / 100:.2f}; {item.name} is "
-            f"£{item.price_pence / 100:.2f}.",
+            f"The reward covers up to {pounds(cap)}; {item.name} is {pounds(item.price_pence)}.",
         )
 
 
@@ -282,6 +286,32 @@ def undo_redemption(session: Session, actor: StaffActor, reward_id: int) -> Scan
     return scan_view(session, card, now=now)
 
 
+def online_order_code(session: Session, reward: LoyaltyReward) -> str | None:
+    """The display code of the collected online order this reward was redeemed on, or
+    None for a redemption at the till or from the back office.
+
+    Two signs, either sufficient: the reward's sale is an `ONLINE` line, or (when the
+    order's sale was already written and no line was linked) a COLLECTED order holding
+    this reward was collected at the very instant the reward was redeemed. The instant
+    matters: an order whose reward was used at the till first still carries its
+    `reward_id`, and that till redemption is an ordinary one.
+    """
+    if reward.redeemed_at is None:
+        return None
+    if reward.sale_id is not None:
+        sale = session.get(Sale, reward.sale_id)
+        if sale is None or sale.source is not SaleSource.ONLINE:
+            return None
+    for order in session.scalars(
+        select(ShopOrder).where(
+            ShopOrder.reward_id == reward.id, ShopOrder.status == OrderStatus.COLLECTED
+        )
+    ):
+        if reward.sale_id is not None or order.collected_at == reward.redeemed_at:
+            return display_code(order.code)
+    return "(unknown code)" if reward.sale_id is not None else None
+
+
 def unredeem(
     session: Session,
     card: LoyaltyCard,
@@ -294,10 +324,25 @@ def unredeem(
 ) -> None:
     """Take a given reward back: it is ready again, and its £0 sale is voided. The
     checks (time limit, who may) are the caller's: the scanner's two-minute rule, or the
-    back office, which has none."""
+    back office, which has none.
+
+    A reward redeemed on a collected online order is refused (409 `redeemed_online`).
+    Its `sale_id` points at the PAID web sale line (`services/shop/orders.py` redeems
+    against it rather than writing a second £0 sale), so voiding "its sale" would void
+    real revenue and put back stock for a drink that was made and handed over. Only a
+    `LOYALTY` sale -- the £0 line `redeem` writes -- is ever voided here.
+    """
+    online = online_order_code(session, reward)
+    if online is not None:
+        raise LoyaltyError(
+            409,
+            "redeemed_online",
+            f"That free drink was given on online order {online}, which was paid and "
+            "collected. It can't be undone from the card; correct the order instead.",
+        )
     if reward.sale_id is not None:
         sale = session.get(Sale, reward.sale_id)
-        if sale is not None:
+        if sale is not None and sale.source is SaleSource.LOYALTY:
             sale.voided = True
     reward.redeemed_at = None
     reward.redeemed_menu_item_id = None

@@ -15,7 +15,7 @@
  */
 import { useState } from 'react'
 import type { ReactNode } from 'react'
-import { ErrorBox, Loading, cx } from '../../components/ui'
+import { ChartTable, ErrorBox, Loading, cx } from '../../components/ui'
 import { usePL } from '../../lib/finance-api'
 import type { PLResponse, PeriodFigures } from '../../lib/types/finance'
 import { Caveats, gbp0, pctBp } from './shared'
@@ -79,7 +79,7 @@ function Body({ data }: { data: PLResponse }) {
           </span>
         )}
       </p>
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+      <div className="grid gap-5 compact:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <TakingsCosts cols={data.columns} />
         <NetProfit cols={data.columns} />
       </div>
@@ -113,7 +113,9 @@ function TakingsCosts({ cols }: { cols: PeriodFigures[] }) {
         <Key color={COSTS} label="Costs" />
         <Key dashed label="Costs not entered" />
       </figcaption>
-      <div className="relative">
+      {/* The marks are decorative; the figures are in the table after them (one
+          reading, not one tab stop per month). */}
+      <div className="relative" aria-hidden="true">
         <div className="flex items-end gap-2 border-b border-line" style={{ height: H }} onMouseLeave={() => setHover(null)}>
           {cols.map((f) => {
             const c = costsOf(f)
@@ -123,10 +125,6 @@ function TakingsCosts({ cols }: { cols: PeriodFigures[] }) {
                 className={cx('flex min-w-0 flex-1 items-end justify-center gap-[2px] rounded-t', hover === f.period && 'bg-canvas')}
                 style={{ height: H }}
                 onMouseEnter={() => setHover(f.period)}
-                tabIndex={0}
-                onFocus={() => setHover(f.period)}
-                onBlur={() => setHover(null)}
-                aria-label={`${f.label}: takings ${gbp0(f.revenue_pence)}, ${c === null ? 'no costs entered' : `costs ${gbp0(c)}`}`}
               >
                 <div className="w-full max-w-5 rounded-t" style={{ height: y(f.revenue_pence), background: TAKINGS }} />
                 {c === null ? (
@@ -144,6 +142,14 @@ function TakingsCosts({ cols }: { cols: PeriodFigures[] }) {
         {hovered && <Tip f={hovered} left={cols.indexOf(hovered) >= cols.length / 2} />}
       </div>
       <Axis cols={cols} />
+      <ChartTable
+        caption="Takings and costs by month"
+        columns={['Month', 'Takings', 'Costs']}
+        rows={cols.map((f) => {
+          const c = costsOf(f)
+          return [f.label, gbp0(f.revenue_pence), c === null ? 'no costs entered' : gbp0(c)]
+        })}
+      />
     </figure>
   )
 }
@@ -162,9 +168,9 @@ function NetProfit({ cols }: { cols: PeriodFigures[] }) {
         <span className="font-bold text-ink">Net profit</span>
         <span>above the line a profit, below it a loss</span>
       </figcaption>
-      <div className="relative">
+      <div className="relative" aria-hidden="true">
         <div className="relative flex gap-2" style={{ height: H }} onMouseLeave={() => setHover(null)}>
-          <div className="absolute inset-x-0 border-t border-ink-3" style={{ top: half }} aria-hidden="true" />
+          <div className="absolute inset-x-0 border-t border-ink-3" style={{ top: half }} />
           {cols.map((f, i) => {
             const v = vals[i] ?? null
             const h = v === null ? 0 : Math.max(2, (Math.abs(v) / max) * (half - 6))
@@ -173,10 +179,6 @@ function NetProfit({ cols }: { cols: PeriodFigures[] }) {
                 key={f.period}
                 className={cx('relative min-w-0 flex-1 rounded', hover === f.period && 'bg-canvas')}
                 onMouseEnter={() => setHover(f.period)}
-                tabIndex={0}
-                onFocus={() => setHover(f.period)}
-                onBlur={() => setHover(null)}
-                aria-label={`${f.label}: ${v === null ? 'no costs entered, so no profit figure' : `net profit ${gbp0(v)}`}`}
               >
                 {v === null ? (
                   <div className="absolute inset-x-1/4 border-[1.5px] border-dashed border-line-strong" style={{ top: half - 12, height: 24 }} />
@@ -193,6 +195,14 @@ function NetProfit({ cols }: { cols: PeriodFigures[] }) {
         {hovered && <Tip f={hovered} left={cols.indexOf(hovered) >= cols.length / 2} />}
       </div>
       <Axis cols={cols} />
+      <ChartTable
+        caption="Net profit by month"
+        columns={['Month', 'Net profit']}
+        rows={cols.map((f, i) => {
+          const v = vals[i] ?? null
+          return [f.label, v === null ? 'no costs entered, so no profit figure' : gbp0(v)]
+        })}
+      />
     </figure>
   )
 }

@@ -23,9 +23,9 @@ and are enforced by `ck_po_confirmed_requires_human` in the schema (invariant 1,
 
 from __future__ import annotations
 
-from collections.abc import Collection, Sequence
+from collections.abc import Collection, Iterable, Sequence
 from dataclasses import dataclass, field, replace
-from datetime import UTC, date, datetime, time, timedelta
+from datetime import date, datetime, time, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -33,6 +33,7 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from cafeops.clock import local_day_bounds
 from cafeops.config import settings
 from cafeops.db.models import Ingredient, ParLevel
 from cafeops.db.repositories.ingredient import SqlIngredientRepository
@@ -186,7 +187,7 @@ def _day_start(day: date, tz: ZoneInfo) -> datetime:
     forecast ends the previous day. Local, not UTC: the trading day is the café's day
     (`ARCHITECTURE.md` 6.4).
     """
-    return datetime.combine(day, time.min, tzinfo=tz).astimezone(UTC)
+    return local_day_bounds(day, tz=tz)[0]
 
 
 def forecast_for(
@@ -758,21 +759,21 @@ def build_split(
     emergency = route_to_retail(emergency_requests, retail_supplier_name=retail_supplier_name)
 
     notes: list[str] = []
-    placeholders = sourcing_repo.placeholder_suppliers()
+    placeholders = [t.name for t in terms_by_id.values() if t.terms_are_placeholders]
     if placeholders:
         notes.append(
             f"{len(placeholders)} of {len(terms_by_id)} suppliers' terms are INVENTED "
             f"PLACEHOLDERS: {', '.join(placeholders)}. Lead time, delivery days, cutoff, "
             "minimum order and free-delivery threshold were never confirmed with any of "
             "them (ARCHITECTURE.md 8F.4), and every cover window below is built on them. "
-            f"Only {retail_supplier_name} and Amazon have terms anybody has checked."
+            + _checked_terms_sentence(terms_by_id.values(), retail_supplier_name)
         )
     forgone = [c for c in choices if c.forgone_saving_pence is not None]
     if forgone:
         total = sum((c.forgone_saving_pence or Decimal("0")) for c in forgone)
         notes.append(
             f"SOURCING: {len(forgone)} line(s) kept a dearer supplier on purpose, forgoing "
-            f"{pounds(int(total))} in total. Each reason is on its choice -- the saving was "
+            f"{pounds(total)} in total. Each reason is on its choice -- the saving was "
             "either too small to be worth a second invoice, or taking it would have pushed "
             "another supplier's order below its minimum. Spec 4.4 says surface this "
             "trade-off, so here it is: it is a decision, not an oversight."
@@ -787,7 +788,7 @@ def build_split(
     premium = emergency.total_premium_pence
     if emergency.lines and premium is not None:
         notes.append(
-            f"EMERGENCY PREMIUM this run: {pounds(int(premium))} paid over what the "
+            f"EMERGENCY PREMIUM this run: {pounds(premium)} paid over what the "
             "scheduled suppliers charge for the same goods. That figure is the argument "
             "for fixing the ordering cadence (spec 4.4), and it is logged so it can be "
             "summed over a quarter rather than forgotten each week."
@@ -958,3 +959,16 @@ def _int_or_none(value: Decimal | None) -> int | None:
     if value is None:
         return None
     return int(value.to_integral_value(rounding=ROUND_HALF_UP))
+
+
+def _checked_terms_sentence(terms: Iterable[SupplierTerms], retail_supplier_name: str) -> str:
+    """Who has confirmed terms, read from the suppliers in this run -- not a sentence
+    written when only Tesco and Amazon had them, which went on saying so after
+    `cafeops supplier confirm` had cleared another one."""
+    names = [t.name for t in terms if not t.terms_are_placeholders]
+    names.sort(key=lambda n: (n != retail_supplier_name, n))
+    if not names:
+        return "No supplier has terms anybody has checked."
+    if len(names) == 1:
+        return f"Only {names[0]} has terms anybody has checked."
+    return f"Only {', '.join(names[:-1])} and {names[-1]} have terms anybody has checked."

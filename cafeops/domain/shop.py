@@ -26,6 +26,8 @@ from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 from typing import Any
 
+from cafeops.domain.enums import OrderStatus
+
 __all__ = [
     "ALLERGENS",
     "ALLERGENS_NONE",
@@ -189,6 +191,13 @@ STATUS_LABELS: Mapping[str, str] = {
     "CANCELLED": "Cancelled",
     "REJECTED": "Declined",
 }
+
+#: The tables above are keyed by the status NAME so the domain stays free of ORM types
+#: at call sites; this is the guard that keeps them the same set as `OrderStatus`.
+_STATUS_NAMES = frozenset(m.name for m in OrderStatus)
+for _table in (TRANSITIONS, STATUS_STEPS, STATUS_LABELS):
+    assert frozenset(_table) == _STATUS_NAMES, "shop status tables drifted from OrderStatus"
+assert CUSTOMER_CANCELLABLE <= _STATUS_NAMES and set(LIVE_STATUSES) <= _STATUS_NAMES
 
 
 def can_transition(current: str, target: str) -> bool:

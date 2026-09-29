@@ -3,7 +3,7 @@
  * 2026-09-26: "orders should be a separate page … there 3 sub pages"). Plain
  * links styled like MenuTabs, so back and reload behave.
  */
-import { cx } from '../../components/ui'
+import { CountBadge, cx } from '../../components/ui'
 import { href } from '../../lib/router'
 
 export type OrdersTab = 'orders' | 'drafts' | 'runs'
@@ -29,7 +29,7 @@ export function OrdersTabs({ current, toConfirm }: { current: OrdersTab; toConfi
           )}
         >
           {t.label}
-          {t.id === 'orders' && toConfirm ? <span className="rounded-full bg-alert px-1.5 text-xs text-white">{toConfirm}</span> : null}
+          {t.id === 'orders' && <CountBadge count={toConfirm} label="to confirm" />}
         </a>
       ))}
     </span>

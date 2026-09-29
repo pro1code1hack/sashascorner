@@ -4,86 +4,17 @@
  * shows room at each slot. Moved from the site admin (admin-core/bookings.ts).
  *
  * Dates are YYYY-MM-DD strings in Europe/London and times are HH:MM local; none
- * of them is ever turned into a UTC instant.
+ * of them is ever turned into a UTC instant (see ./dates.ts).
  */
 import { useEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Button, Field, Select, StatusTag, cx } from '../../components/ui'
 import type { WriteResult } from '../../lib/api'
-import { WEBSITE_KEY, siteGet, siteWrite, useInvalidateWebsite } from '../../lib/website-api'
+import { WEBSITE_KEY, siteGet, siteWrite, useInvalidateWebsite, useSiteSettings } from '../../lib/website-api'
 import type { Booking, BookingDay, BookingPatch, BookingRules, BookingStatus, SiteSettings } from '../../lib/types/website'
+import { ISO_DATE, relDay, toMinutes, weekday } from './dates'
 
-/* ------------------------------------------------------------------ dates --- */
-
-const WD = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-const WD_LONG = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-const MON_LONG = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-
-export const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
-
-/** Today in Dundee, as YYYY-MM-DD. */
-export function todayISO(): string {
-  const parts = new Intl.DateTimeFormat('en-GB', {
-    timeZone: 'Europe/London',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(new Date())
-  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? ''
-  return `${get('year')}-${get('month')}-${get('day')}`
-}
-
-function ymd(iso: string): [number, number, number] {
-  const [y = 1970, m = 1, d = 1] = iso.split('-').map(Number)
-  return [y, m, d]
-}
-
-/** Monday = 0, like the site API. */
-export function weekday(iso: string): number {
-  const [y, m, d] = ymd(iso)
-  return (new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7
-}
-
-export function addDays(iso: string, n: number): string {
-  const [y, m, d] = ymd(iso)
-  return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10)
-}
-
-function daysBetween(a: string, b: string): number {
-  const [y1, m1, d1] = ymd(a)
-  const [y2, m2, d2] = ymd(b)
-  return Math.round((Date.UTC(y2, m2 - 1, d2) - Date.UTC(y1, m1 - 1, d1)) / 86400000)
-}
-
-export const weekStart = (iso: string) => addDays(iso, -weekday(iso))
-
-/** "Sat 26 Sep" */
-export function shortDate(iso: string): string {
-  const [, m, d] = ymd(iso)
-  return `${WD[weekday(iso)]} ${d} ${MON[m - 1]}`
-}
-
-/** "Saturday 26 September" (+ the year when it isn't this one). */
-export function longDate(iso: string): string {
-  const [y, m, d] = ymd(iso)
-  const thisYear = Number(todayISO().slice(0, 4))
-  return `${WD_LONG[weekday(iso)]} ${d} ${MON_LONG[m - 1]}${y !== thisYear ? ` ${y}` : ''}`
-}
-
-/** "Today", "Tomorrow", "Yesterday", else "Sat 26 Sep". */
-export function relDay(iso: string): string {
-  const diff = daysBetween(todayISO(), iso)
-  if (diff === 0) return 'Today'
-  if (diff === 1) return 'Tomorrow'
-  if (diff === -1) return 'Yesterday'
-  return shortDate(iso)
-}
-
-function toMinutes(hhmm: string): number {
-  const [h = 0, m = 0] = hhmm.split(':').map(Number)
-  return h * 60 + m
-}
+/* ------------------------------------------------------------------ words --- */
 
 /** "1 person", "3 people", "2 bookings". */
 export const count = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`
@@ -106,15 +37,6 @@ export function useBookingRange(from: string, to: string, enabled = true) {
     queryKey: bookingsKey('range', from, to),
     queryFn: () => siteGet<Booking[]>(`/bookings?from=${from}&to=${to}`),
     enabled,
-  })
-}
-
-/** Café hours, closures and the booking rules. Shared with Café details. */
-export function useSiteSettings() {
-  return useQuery({
-    queryKey: [...WEBSITE_KEY, 'settings'],
-    queryFn: () => siteGet<SiteSettings>('/settings'),
-    staleTime: 5 * 60 * 1000,
   })
 }
 

@@ -11,13 +11,14 @@
  * small "More" control on the ticket; the order's page has the whole story.
  *
  * Keyboard: a ticket is focusable; Enter on it fires its next action, Esc backs
- * out of a pending reject / cancel. Each column carries a polite live region
- * that names a ticket when it arrives, so a screen reader hears what the chime
- * means.
+ * out of a pending reject / cancel. The board carries one polite live region
+ * that names a ticket when it arrives (not when the counter moves one along), so
+ * a screen reader hears what the chime means; a status strip under the header
+ * says how many new orders are waiting and since when, until they are accepted.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
-import { Button, ConfirmTwiceButton, Empty, ErrorBox, InfoPanel, Input, Loading, PageBody, PageHeader, Pill, StatusTag, cx } from '../../components/ui'
+import { Button, ConfirmTwiceButton, Empty, ErrorBox, Field, InfoPanel, Input, LinkButton, Loading, PageBody, PageHeader, Pill, StatusTag, cx } from '../../components/ui'
 import { LIVE } from '../../lib/api'
 import { gbp } from '../../lib/format'
 import { useOperator } from '../../lib/operator'
@@ -43,8 +44,12 @@ const COLUMNS: ReadonlyArray<{ status: OrderStatus; head: string; empty: string 
   { status: 'READY', head: 'Ready', empty: 'Nothing waiting on the counter.' },
 ]
 
-/** What a screen reader hears when tickets join a column: "Order SC-… for Anna, due 14:20, in New". */
-function useArrivals(rows: OrderAdmin[], head: string): string {
+/**
+ * What a screen reader hears when an order joins the board: "Order SC-… for Anna,
+ * due 14:20". Only ids the board has not seen count, so the counter's own moves
+ * between columns are silent.
+ */
+function useArrivals(rows: OrderAdmin[]): string {
   const seen = useRef<Set<number> | null>(null)
   const [text, setText] = useState('')
   useEffect(() => {
@@ -56,9 +61,22 @@ function useArrivals(rows: OrderAdmin[], head: string): string {
     const fresh = rows.filter((o) => !seen.current?.has(o.id))
     seen.current = ids
     if (fresh.length === 0) return
-    setText(fresh.map((o) => `Order ${o.code_display} for ${firstName(o.customer_name)}, ${o.asap ? 'as soon as possible' : `due ${dueClock(o)}`}, in ${head}`).join('. '))
-  }, [rows, head])
+    setText(fresh.map((o) => `Order ${o.code_display} for ${firstName(o.customer_name)}, ${o.asap ? 'as soon as possible' : `due ${dueClock(o)}`}`).join('. '))
+  }, [rows])
   return text
+}
+
+/** "14:03" in London for an instant. */
+function clockAt(ms: number): string {
+  return new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' }).format(new Date(ms))
+}
+
+/** "2 new orders waiting since 14:03", or '' when nothing is NEW: the chime's visual twin. */
+function waitingWords(items: OrderAdmin[] | undefined): string {
+  const fresh = (items ?? []).filter((o) => o.status === 'NEW')
+  if (fresh.length === 0) return ''
+  const since = Math.min(...fresh.map((o) => Date.parse(o.placed_at)).filter((t) => !Number.isNaN(t)))
+  return `${plural(fresh.length, 'new order')} waiting${Number.isFinite(since) ? ` since ${clockAt(since)}` : ''}`
 }
 
 /** The clock, ticking every `ms`, for countdowns and the fresh edge. */
@@ -78,11 +96,12 @@ export function LiveOrdersScreen() {
   const s = summary.data
   const counts = s?.counts
   const live = counts ? counts.new + counts.accepted + counts.preparing + counts.ready : null
+  const waiting = waitingWords(q.data?.items)
   return (
     <>
       <PageHeader
         title="Live orders"
-        subtitle="Orders placed online for collection, as they come in. Takeaway unless it says eat in. With a ticket focused, Enter moves it along and Esc backs out."
+        subtitle="Orders placed online for collection, as they come in. Takeaway unless it says eat in."
         actions={LIVE ? <SoundToggle alert={alert} /> : undefined}
         saved={
           s ? (
@@ -95,8 +114,17 @@ export function LiveOrdersScreen() {
         }
       />
       {LIVE && <SoundBar alert={alert} />}
+      {/* Always mounted, so the live region exists before its text arrives. Stays until every NEW order is accepted. */}
+      <p
+        role="status"
+        aria-live="polite"
+        className={cx('flex-none text-base font-bold text-ink', waiting !== '' && 'border-b border-line-soft bg-brand-wash px-5 py-2 text-brand-ink')}
+      >
+        {waiting}
+      </p>
       <PageBody className="compact:px-5">
         <ShopGate>
+          <p className="sr-only">With a ticket focused, Enter moves it along and Escape backs out of a reject or cancel.</p>
           {summary.isError && <ErrorBox error={summary.error} what="the shop" />}
           {s && !s.enabled && (
             <div className="mb-4">
@@ -135,6 +163,7 @@ function Board({ q }: { q: ReturnType<typeof useShopOrders> }) {
     const pending = all.filter((o) => o.status === 'PENDING_PAYMENT')
     return { board, later, pending }
   }, [items, now])
+  const arrivals = useArrivals(board)
 
   if (q.isPending) return <Loading what="Reading the board" />
   if (q.isError) return <ErrorBox error={q.error} what="live orders" />
@@ -143,6 +172,9 @@ function Board({ q }: { q: ReturnType<typeof useShopOrders> }) {
   const otherDays = later.some((o) => daysAhead(o, now) > 0)
   return (
     <div className="flex flex-col gap-5">
+      <p role="status" aria-live="polite" className="sr-only">
+        {arrivals}
+      </p>
       {total === 0 && pending.length === 0 ? (
         <Empty roomy>Nothing in progress. Orders placed online appear here the moment they are placed; the board checks every 15 seconds.</Empty>
       ) : (
@@ -179,16 +211,12 @@ function Board({ q }: { q: ReturnType<typeof useShopOrders> }) {
 }
 
 function Column({ c, rows, now }: { c: (typeof COLUMNS)[number]; rows: OrderAdmin[]; now: number }) {
-  const arrivals = useArrivals(rows, c.head)
   return (
     <section aria-labelledby={`col-${c.status}`} className="flex min-w-0 flex-col gap-2.5 wide:max-h-[calc(100vh-220px)] wide:overflow-y-auto wide:pr-1">
       <h2 id={`col-${c.status}`} className="sticky top-0 z-[1] flex items-baseline gap-2 border-b border-line bg-canvas pb-1.5 text-label font-bold uppercase tracking-[.06em] text-ink-3">
         {c.head}
         <span className="fig text-base text-ink">{rows.length}</span>
       </h2>
-      <p role="status" aria-live="polite" className="sr-only">
-        {arrivals}
-      </p>
       {rows.length === 0 ? <p className="py-3 text-sm text-ink-2">{c.empty}</p> : rows.map((o) => <Ticket key={o.id} o={o} now={now} />)}
     </section>
   )
@@ -279,6 +307,7 @@ function Ticket({ o, now }: { o: OrderAdmin; now: number }) {
 
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-lg font-bold">{firstName(o.customer_name)}</span>
+        {fresh && <Pill tone="brand">New</Pill>}
         <Pill tone={o.dining === 'EAT_IN' ? 'brand' : 'neutral'}>{diningWord(o.dining)}</Pill>
         {o.dining === 'EAT_IN' && o.table && <span className="fig text-lg font-extrabold">Table {o.table}</span>}
       </div>
@@ -315,49 +344,43 @@ function Ticket({ o, now }: { o: OrderAdmin; now: number }) {
               {o.reward_id !== null ? ' · free drink' : ''}
             </Pill>
           )}
-          <span className="ml-auto flex items-center gap-2 text-sm text-ink-2">
-            {channels.length > 0 && (
-              <span title={`The customer gets updates by ${channels.join(', ')}`}>
-                {channels.map((c) => (
-                  <span key={c} className="mr-1.5">
-                    {c} <span aria-hidden="true">✓</span>
-                  </span>
-                ))}
-              </span>
-            )}
+          <span className="ml-auto text-right text-sm text-ink-2">
             {plural(unitsCount(o), 'item')}
+            {channels.length > 0 && <span className="block">Updates by {channels.join(', ')}</span>}
           </span>
         </div>
         {act && (
-          <Button variant="primary" block pending={w.pending} pendingLabel={act.pending} onClick={() => move(act.to)}>
+          <Button variant="primary" size="lg" block pending={w.pending} pendingLabel={act.pending} onClick={() => move(act.to)}>
             {act.label}
           </Button>
         )}
         <div className="flex items-center justify-between gap-2">
-          <a href={href(orderPath(o.id))} className="text-sm text-ink-2 underline underline-offset-2 hover:text-ink">
+          <LinkButton variant="link" href={href(orderPath(o.id))} className="min-h-11 px-1">
             Open
-          </a>
+          </LinkButton>
           {(may('CANCELLED') || may('REJECTED')) && (
-            <Button variant="ghost" size="sm" aria-expanded={more} onClick={() => setMore((m) => !m)}>
+            <Button variant="ghost" size="md" aria-expanded={more} onClick={() => setMore((m) => !m)}>
               {more ? 'Less' : 'More…'}
             </Button>
           )}
         </div>
         {more && (
           <div className="flex flex-col gap-2 rounded-card bg-canvas-2 px-3 py-2.5">
-            <Input size="sm" value={reason} maxLength={300} placeholder="Why (the customer sees this)" onChange={(e) => setReason(e.target.value)} />
+            <Field label="Why" hint="The customer sees this on their order page.">
+              <Input size="sm" value={reason} maxLength={300} placeholder="Sold out of the pumpkin sauce" onChange={(e) => setReason(e.target.value)} />
+            </Field>
             <div className="flex flex-wrap gap-2">
               {may('REJECTED') && (
-                <ConfirmTwiceButton key={`r${armKey}`} armedLabel="Tap again to reject" pending={w.pending} onConfirm={() => move('REJECTED', reason.trim() || undefined)}>
+                <ConfirmTwiceButton key={`r${armKey}`} size="md" armedLabel="Tap again to reject" pending={w.pending} onConfirm={() => move('REJECTED', reason.trim() || undefined)}>
                   Reject
                 </ConfirmTwiceButton>
               )}
               {may('CANCELLED') && (
-                <ConfirmTwiceButton key={`c${armKey}`} armedLabel="Tap again to cancel" pending={w.pending} onConfirm={() => move('CANCELLED', reason.trim() || undefined)}>
+                <ConfirmTwiceButton key={`c${armKey}`} size="md" armedLabel="Tap again to cancel" pending={w.pending} onConfirm={() => move('CANCELLED', reason.trim() || undefined)}>
                   Cancel order
                 </ConfirmTwiceButton>
               )}
-              <Button variant="ghost" size="sm" onClick={() => { setMore(false); setReason('') }}>
+              <Button variant="ghost" size="md" onClick={() => { setMore(false); setReason('') }}>
                 Keep it
               </Button>
             </div>
@@ -378,8 +401,10 @@ function LaterRow({ o, now }: { o: OrderAdmin; now: number }) {
         href={href(orderPath(o.id))}
         className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 px-3.5 py-2.5 text-ink no-underline hover:bg-canvas-2 compact:grid-cols-[110px_150px_minmax(0,1fr)_170px_100px_90px]"
       >
+        {/* The list has no header row: each docked cell says what it is for a screen reader. */}
         <span className="fig hidden font-bold compact:block">{o.code_display}</span>
         <span className="fig hidden compact:block">
+          <span className="sr-only">Due </span>
           {day ? <span className="font-bold">{day} </span> : ''}
           {clockOf(o.requested_local)}
           {o.asap ? <span className="text-sm text-ink-2"> · ASAP</span> : ''}
@@ -400,9 +425,13 @@ function LaterRow({ o, now }: { o: OrderAdmin; now: number }) {
           {o.table ? ` · Table ${o.table}` : ''} · {plural(unitsCount(o), 'item')}
         </span>
         <span className="hidden compact:block">
+          <span className="sr-only">Status </span>
           <StatusTag tone={st.tone}>{st.label}</StatusTag>
         </span>
-        <span className="fig text-right font-bold">{gbp(o.total_pence)}</span>
+        <span className="fig text-right font-bold">
+          <span className="sr-only">Total </span>
+          {gbp(o.total_pence)}
+        </span>
       </a>
     </li>
   )

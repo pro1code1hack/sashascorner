@@ -543,7 +543,7 @@ def explain_drift_history(
     return rows
 
 
-def apply_waste_suggestion(
+def waste_suggestion(
     session: Session,
     *,
     ingredient_id: int,
@@ -552,14 +552,13 @@ def apply_waste_suggestion(
     eligible_max_pct: float | None = None,
     warn_max_pct: float | None = None,
 ) -> tuple[Decimal, Decimal] | None:
-    """Adopt the waste factor proposed by the latest observation. A deliberate act.
+    """The waste factor the latest observation proposes, as `(current, suggested)`.
+    READS ONLY. None when the latest observation proposes nothing (outside the 10-15%
+    tuning band, or no observation yet).
 
-    Spec 5.1: `waste_factor` is tuned from observed drift, not guessed once. It is a
-    separate call rather than something `record_count` does on its own, because an
-    automatic retune would move the number the gate is judging at the same moment it is
-    judged, and two counts later nobody could say which change caused which reading.
-
-    Returns (old, new) or None when the latest observation proposes nothing.
+    One calculation for every caller -- `apply_waste_suggestion`, the nightly proposer
+    (`services/waste_proposals`) and the accept step (`services/agent_proposals`) -- so
+    the value a person is shown is the value that gets applied.
     """
     ingredients = SqlIngredientRepository(session)
     drift_repo = SqlDriftRepository(session)
@@ -592,10 +591,40 @@ def apply_waste_suggestion(
     )
     if drift.suggested_waste_factor is None:
         return None
+    return ingredient.waste_factor, drift.suggested_waste_factor
 
-    old = ingredient.waste_factor
-    ingredients.set_waste_factor(ingredient_id, drift.suggested_waste_factor)
-    return old, drift.suggested_waste_factor
+
+def apply_waste_suggestion(
+    session: Session,
+    *,
+    ingredient_id: int,
+    damping: Decimal = DEFAULT_WASTE_DAMPING,
+    max_waste_factor: Decimal = MAX_WASTE_FACTOR,
+    eligible_max_pct: float | None = None,
+    warn_max_pct: float | None = None,
+) -> tuple[Decimal, Decimal] | None:
+    """Adopt the waste factor proposed by the latest observation. A deliberate act.
+
+    Spec 5.1: `waste_factor` is tuned from observed drift, not guessed once. It is a
+    separate call rather than something `record_count` does on its own, because an
+    automatic retune would move the number the gate is judging at the same moment it is
+    judged, and two counts later nobody could say which change caused which reading.
+
+    Returns (old, new) or None when the latest observation proposes nothing.
+    """
+    found = waste_suggestion(
+        session,
+        ingredient_id=ingredient_id,
+        damping=damping,
+        max_waste_factor=max_waste_factor,
+        eligible_max_pct=eligible_max_pct,
+        warn_max_pct=warn_max_pct,
+    )
+    if found is None:
+        return None
+    old, new = found
+    SqlIngredientRepository(session).set_waste_factor(ingredient_id, new)
+    return old, new
 
 
 def _eligible(value: float | None) -> float:

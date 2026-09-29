@@ -20,6 +20,8 @@ export interface ShopConfig {
   next_open_local: string | null;
   cafe: { name: string; address_line: string; postcode: string; phone: string };
   loyalty: { program_name: string; stamps_required: number; reward_text: string };
+  /** A Rewards card is needed to place an order, not to browse (Agent J; absent = false). */
+  require_account?: boolean;
 }
 
 export interface Banner {
@@ -240,4 +242,59 @@ export interface RecentOrder {
   lines?: QuoteLineIn[];
   /** False when a line of this order can no longer be ordered as it was (Agent F). */
   reorder_complete?: boolean;
+}
+
+// ---- sign-in wall and profile (Agent K, backend by Agent J) -------------------------
+// Every field is optional on the wire until J ships, so an older API still renders.
+
+/** The member's own details on `GET /api/shop/me` (`member`, Agent J). */
+export interface MeMember {
+  first_name: string;
+  email: string | null;
+  phone: string | null;
+  birthday_day: number | null;
+  birthday_month: number | null;
+  marketing_opt_in: boolean;
+  /** ISO date or datetime */
+  member_since: string | null;
+}
+export interface MeK extends Me {
+  member?: MeMember;
+}
+
+/** `PATCH /api/shop/me`: any subset; a field left out is left alone. */
+export interface MePatch {
+  first_name?: string;
+  email?: string | null;
+  phone?: string | null;
+  birthday_day?: number | null;
+  birthday_month?: number | null;
+  marketing_opt_in?: boolean;
+}
+
+/** One order on `GET /api/shop/me/orders` (Agent J). */
+export interface MyOrderLine {
+  name: string;
+  size_label: string;
+  qty: number;
+  options: { group: string; name: string }[];
+}
+export interface MyOrder {
+  code: string;
+  status: OrderStatus;
+  status_label: string;
+  placed_local: string;
+  requested_local: string;
+  dining: Dining;
+  table: string | null;
+  total_pence: number;
+  lines: MyOrderLine[];
+  /** The lines as basket input, and whether every one of them still maps to the menu. */
+  reorder: { lines: QuoteLineIn[]; complete: boolean };
+}
+export interface MyOrdersPage {
+  items: MyOrder[];
+  total: number;
+  page: number;
+  page_size: number;
 }

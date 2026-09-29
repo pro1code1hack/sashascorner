@@ -23,6 +23,9 @@ import {
   useShopData,
 } from './common';
 import { smsOffered } from './notify';
+import { needsSignIn, setMember, signOut, signedIn as signedInSignal } from '../member';
+import { SignInWall } from '../account/SignInWall';
+import { useTitle } from '../views/useTitle';
 
 const ACK_KEY = 'sc.shop.allergy_ack.v1';
 const readAck = () => {
@@ -44,13 +47,17 @@ type Mode = 'asap' | 'slot';
 type Pay = 'counter' | 'online';
 
 export function Checkout() {
+  useTitle('Checkout');
   const ready = useShopData();
   const cfg = config.value;
   const cat = catalogue.value;
   const lines = basket.lines.value;
   const dining = basket.dining.value;
-  const signedIn = !!session.token();
+  const signedIn = signedInSignal.value && !!session.token();
   const resume = route.value.query.get('resume');
+  // Placing the order answered 401 sign_in_required: the token died, or the setting
+  // was switched on mid-visit. The wall shows in place of the form, basket intact.
+  const [wallReason, setWallReason] = useState<string | null>(null);
 
   // ---- allergy notice ----
   const [ack, setAck] = useState(readAck);
@@ -93,10 +100,11 @@ export function Checkout() {
     void shopApi.me().then((r) => {
       if (r.ok && r.data) {
         setMe(r.data);
+        setMember(r.data);
         setName((n) => n || r.data!.first_name);
         setContact((c) => c || r.data!.phone || r.data!.email || '');
       } else if (r.status === 401) {
-        session.clear();
+        signOut();
       }
     });
   }, [signedIn]);
@@ -236,6 +244,12 @@ export function Checkout() {
       setClosedMsg(r.error?.detail || cfg?.closed_message || 'Online ordering is closed right now.');
       return;
     }
+    if (r.status === 401 && (code === 'sign_in_required' || code === 'bad_token')) {
+      const had = !!session.token();
+      if (had) signOut();
+      setWallReason(had ? 'Your sign-in has expired on this device. Sign in again: your order is still here.' : shopError(r));
+      return;
+    }
     setErr(shopError(r));
   };
 
@@ -266,6 +280,16 @@ export function Checkout() {
           <p>{closedMsg ?? cfg.closed_message}</p>
           {cfg.next_open_local && <p>Online orders open again {cfg.next_open_local}.</p>}
         </EmptyState>
+      </div>
+    );
+  }
+  if (wallReason || (lines.length > 0 && needsSignIn())) {
+    return (
+      <div class="sd-page">
+        <PageHead back={paths.basket()} backLabel="My order" title="Checkout">
+          <CollectionLine short />
+        </PageHead>
+        <SignInWall reason={wallReason} />
       </div>
     );
   }
